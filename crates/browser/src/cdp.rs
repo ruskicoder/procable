@@ -62,6 +62,9 @@ impl From<String> for CdpError {
 
 pub type CdpResult<T> = Result<T, CdpError>;
 
+/// The launch switch that keeps the headless browser offline (procable).
+pub const OFFLINE_PROXY_ARG: &str = "--proxy-server=http://127.0.0.1:9";
+
 /// puppeteer's `ChromeLauncher.defaultArgs()` (headless, no extensions) plus
 /// the user args, in the order puppeteer emits them, with one feature more
 /// switched off (see `--disable-features` below). `--remote-debugging-port`
@@ -114,6 +117,10 @@ pub fn default_chrome_args(user_args: &[String], dangerous_no_sandbox: bool) -> 
     args.push("--hide-scrollbars".to_string());
     args.push("--mute-audio".to_string());
     args.push("--disable-extensions".to_string());
+    // procable runs offline. Every non-loopback request goes to a proxy on the
+    // discard port, which refuses it; Chrome bypasses proxies for loopback
+    // hosts by default, so local dev servers and file pages still load.
+    args.push(OFFLINE_PROXY_ARG.to_string());
     if user_args.iter().all(|a| a.starts_with('-')) {
         args.push("about:blank".to_string());
     }
@@ -2484,6 +2491,13 @@ mod tests {
         let with = default_chrome_args(&["--no-sandbox".to_string()], false);
         assert_eq!(with.last().unwrap(), "--no-sandbox");
         assert!(with.contains(&"about:blank".to_string()));
+    }
+
+    #[test]
+    fn launched_browser_is_offline() {
+        let args = default_chrome_args(&[], false);
+        assert!(args.contains(&OFFLINE_PROXY_ARG.to_string()));
+        assert!(!args.iter().any(|a| a.starts_with("--proxy-bypass-list")));
     }
 
     /// Chrome reads only the last `--disable-features`, so the bound-session

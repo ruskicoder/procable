@@ -13,6 +13,23 @@ launcher swap the skill invokes every verb as `{{scripts_path}}/impeccable
 <verb>` and the scripts are gone from the tree; the contract stands as
 written.
 
+## procable deltas
+
+procable runs fully offline, so these parts of the upstream contract below no
+longer apply. Everything else stands as written.
+
+| Upstream behaviour | procable |
+|---|---|
+| `context` update check (`IMPECCABLE_UPDATE_*`, `IMPECCABLE_NO_UPDATE_CHECK`, `UPDATE_AVAILABLE`) | removed; no request, no cache file, no directive |
+| `context` directives `AUTONOMY_DIRECTIVE_CHECK`, `SUBAGENT_AUTHORIZATION`, `IMAGE_GEN_AVAILABLE` | removed; prompt-orchestrator's communication rules and harness govern autonomy and subagents |
+| `concept-seed` catalog roll and choice ping (`IMPECCABLE_API_URL`, `X-Impeccable-Client`, `X-Impeccable-Telemetry`) | removed; every round takes the local degraded path |
+| `serve-question` card image download and picker ping (`IMPECCABLE_CARD_BASE`) | removed; kept files are used, other images stay named by URL |
+| `telemetry off/on/status` and its opt-outs (`DO_NOT_TRACK`, `IMPECCABLE_NO_TELEMETRY`) | `telemetry` prints that there is none and exits 0 |
+| `generate-image` OpenAI path (`OPENAI_API_KEY`) | removed; only `IMPECCABLE_IMAGE_GEN_FAKE` placeholders remain, anything else exits 1 |
+| `skills` help command list, bundle and engine downloads (`IMPECCABLE_DOWNLOAD_BASE`) | removed; help is local, bundles come only from `IMPECCABLE_BUNDLE_PATH`, engines are installed by the prompt-orchestrator installer |
+| Launchers and npm shim first-run engine download | removed; a missing engine is an error |
+| Network in general | every engine HTTP client refuses non-loopback hosts (`crates/context/src/http.rs`), and the headless browser runs behind a dead proxy so only loopback and file pages load |
+
 Quoted strings, regexes, and JSON in this document are verbatim from the
 source, including any em dashes inside user-facing messages; do not "fix" them.
 

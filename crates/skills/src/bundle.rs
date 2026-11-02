@@ -360,8 +360,13 @@ pub fn download_and_extract_bundle(sys: &Sys) -> Result<String, BundleError> {
     if let Some(local) = sys.env.get("IMPECCABLE_BUNDLE_PATH").filter(|v| !v.is_empty()) {
         return copy_or_extract_local_bundle(sys, local).map_err(BundleError::Local);
     }
-    download_remote_bundle(sys, &mut ureq_fetch, bundle_signature::trusted_keys())
+    // procable runs offline: no bundle is ever downloaded. The installer
+    // points IMPECCABLE_BUNDLE_PATH at the bundle it ships.
+    Err(BundleError::Download(OFFLINE_BUNDLE_MESSAGE.to_string()))
 }
+
+/// Why a bundle cannot come from anywhere but IMPECCABLE_BUNDLE_PATH.
+pub const OFFLINE_BUNDLE_MESSAGE: &str = "procable runs offline and downloads nothing; set IMPECCABLE_BUNDLE_PATH to a local bundle (the prompt-orchestrator installer does this)";
 
 /// Lets in-crate command tests stand in for the network: the next
 /// `download_and_extract_bundle` on this thread returns the forced result.
@@ -428,7 +433,7 @@ impl BundleError {
 
 impl std::fmt::Display for BundleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        const RETRY: &str = ". Nothing was installed; retry or update the CLI. If this persists, report it at https://github.com/pbakaus/impeccable/issues/new";
+        const RETRY: &str = ". Nothing was installed.";
         match self {
             BundleError::Download(e) => write!(f, "Could not download skill bundle: {e}{RETRY}"),
             BundleError::Verify(e) => write!(f, "{}{e}{RETRY}", bundle_signature::ERROR_PREFIX),

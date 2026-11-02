@@ -360,7 +360,7 @@ fn request_live_bar_hidden(port: u64, token: &str) -> bool {
     if port == 0 || token.is_empty() {
         return false;
     }
-    let agent = ureq::AgentBuilder::new()
+    let agent = impeccable_context::http::agent_builder()
         .timeout(std::time::Duration::from_millis(3000))
         .build();
     agent

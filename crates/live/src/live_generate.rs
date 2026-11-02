@@ -389,7 +389,7 @@ fn fetch_generate_event(port: i64, token: &str, session_id: &str, budget: Durati
             crate::live_poll::DEFAULT_EVENT_LEASE_MS,
             crate::live_poll::form_encode(session_id)
         );
-        let agent = ureq::AgentBuilder::new()
+        let agent = impeccable_context::http::agent_builder()
             .timeout(Duration::from_millis(slice + 30_000))
             .build();
         let Ok(res) = agent.get(&url).call() else { return None };
@@ -701,7 +701,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
     }
 
     let url = format!("http://127.0.0.1:{}/agent-target", port);
-    let agent = ureq::AgentBuilder::new()
+    let agent = impeccable_context::http::agent_builder()
         .timeout(Duration::from_millis(REQUEST_TIMEOUT_MS))
         .build();
     let sent = agent

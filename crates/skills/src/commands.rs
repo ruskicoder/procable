@@ -6,7 +6,7 @@
 use impeccable_common::Io;
 use serde_json::Value;
 
-use crate::bundle::{self, download};
+use crate::bundle;
 use crate::engine_binary::install_engine_binaries;
 use crate::hook_manifest::{self, copy_provider_hooks, hook_installed_for_provider, hook_installed_for_provider_at_scope, HOOK_EXPLAINER};
 use crate::prompt::{CheckboxOption, Prompt, RadioOption};
@@ -90,46 +90,16 @@ fn hook_paths_line(sys: &Sys, dests: &[String]) -> String {
 
 /// JS: showHelp()
 fn show_help(io: &mut Io) -> R<()> {
-    let commands: Vec<Value> = match download(&format!("{API_BASE}/api/commands"))
-        .ok()
-        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
-    {
-        Some(Value::Array(a)) => a,
-        _ => {
-            err(io, "Could not fetch command list from impeccable.style. Check your network connection.");
-            return Err(Flow::Exit(1));
-        }
-    };
-    let pad = |s: &str, n: usize| -> String {
-        let len = utf16_len(s);
-        format!("{s}{}", " ".repeat(n.saturating_sub(len)))
-    };
-    out(io, "\n  Impeccable Skills & Commands\n");
-    out(io, "  Install:  npx impeccable install");
-    out(io, "  Link:     npx impeccable link --source=.impeccable");
-    out(io, "  Update:   npx impeccable update");
-    out(io, "  Docs:     https://impeccable.style/cheatsheet\n");
-    out(io, &format!("  {} Description", pad("Command", 22)));
-    out(io, &format!("  {} {}", "-".repeat(22), "-".repeat(52)));
-
-    let mut sorted: Vec<(String, String)> = commands
-        .iter()
-        .map(|c| {
-            let id = c.get("id").and_then(Value::as_str).unwrap_or("").to_string();
-            let desc = c.get("description").and_then(Value::as_str).unwrap_or("").to_string();
-            (id, desc)
-        })
-        .collect();
-    sorted.sort_by(|a, b| locale_compare(&a.0, &b.0));
-    for (id, description) in &sorted {
-        let desc = if utf16_len(description) > 72 {
-            format!("{}...", utf16_prefix(description, 69))
-        } else {
-            description.clone()
-        };
-        out(io, &format!("  {} {desc}", pad(&format!("/{id}"), 22)));
+    // procable runs offline: the help is local. Upstream fetched the command
+    // list from impeccable.style.
+    out(io, "\n  procable skills\n");
+    out(io, "  procable runs offline. The prompt-orchestrator installer places the skill, its hooks and the engine.");
+    out(io, "  `install` and `update` read a local bundle from IMPECCABLE_BUNDLE_PATH; nothing is downloaded.\n");
+    for (sub, help) in SUBCOMMAND_HELP {
+        let first = help.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim();
+        out(io, &format!("  {sub:<10} {first}"));
     }
-    out(io, &format!("\n  {} commands available. Run /<command> in your AI harness.\n", commands.len()));
+    out(io, "\n  Design commands are listed in the skill's SKILL.md. Run /<command> in your AI harness.\n");
     Ok(())
 }
 

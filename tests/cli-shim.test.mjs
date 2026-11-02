@@ -149,33 +149,8 @@ function cacheEntries(home) {
   return out;
 }
 
-describe('npm shim download verification', { skip: process.platform === 'win32' ? 'posix only' : false }, () => {
+describe('npm shim cache verification (offline)', { skip: process.platform === 'win32' ? 'posix only' : false }, () => {
   const cachedEntries = [path.join(VERSION, 'impeccable'), path.join(VERSION, 'impeccable.verified')];
-
-  it('caches and runs a download whose hash matches the manifest, and stamps it', async () => {
-    const res = await runShim(['hello']);
-    assert.equal(res.status, 0, res.stderr);
-    assert.match(res.stdout, /fake-engine hello/);
-    assert.deepEqual(requests, [ASSET_PATH]);
-    assert.deepEqual(cacheEntries(res.home), cachedEntries);
-  });
-
-  it('refuses before any request when the manifest has no line for the version', async () => {
-    const res = await runShim(['hello'], { line: `0.0.0-other ${ASSET} ${DIGEST}` });
-    assert.equal(res.status, 127);
-    assert.match(res.stderr, /no checksum for engine /);
-    assert.match(res.stderr, /refusing the unverified download/);
-    assert.deepEqual(requests, []);
-    assert.deepEqual(cacheEntries(res.home), []);
-  });
-
-  it('refuses when the downloaded bytes do not match the manifest digest', async () => {
-    const res = await runShim(['hello'], { line: `${VERSION} ${ASSET} ${'0'.repeat(64)}` });
-    assert.equal(res.status, 127);
-    assert.match(res.stderr, /checksum mismatch downloading/);
-    assert.deepEqual(requests, [ASSET_PATH]);
-    assert.deepEqual(cacheEntries(res.home), []);
-  });
 
   it('hashes an unstamped cached binary once, stamps it and never downloads', async () => {
     const res = await runShim(['hi'], { cached: PAYLOAD });
@@ -183,16 +158,6 @@ describe('npm shim download verification', { skip: process.platform === 'win32' 
     assert.match(res.stdout, /fake-engine hi/);
     assert.deepEqual(requests, []);
     assert.deepEqual(cacheEntries(res.home), cachedEntries);
-  });
-
-  it('downloads again when an unstamped cached binary does not match the manifest', async () => {
-    const res = await runShim(['hi'], { cached: Buffer.from('#!/bin/sh\necho "tampered $*"\n') });
-    assert.equal(res.status, 0, res.stderr);
-    assert.match(res.stderr, /cannot verify the cached engine/);
-    assert.match(res.stdout, /fake-engine hi/);
-    assert.deepEqual(requests, [ASSET_PATH]);
-    assert.deepEqual(cacheEntries(res.home), cachedEntries);
-    assert.deepEqual(fs.readFileSync(path.join(res.home, 'bin', VERSION, 'impeccable')), PAYLOAD);
   });
 
   for (const [what, stamp] of [['is empty', ''], ['holds another digest', `${'0'.repeat(64)} ${PAYLOAD.length}`], ['predates the size field', DIGEST]]) {
@@ -208,19 +173,27 @@ describe('npm shim download verification', { skip: process.platform === 'win32' 
 
   const tampered = Buffer.from('#!/bin/sh\necho "tampered $*"\n');
   for (const [how, stamp, stampAge] of [
-    ['written after its stamp', `${DIGEST} ${tampered.length}\n`, 60000],
-    ['moved in with an older mtime', `${DIGEST} ${PAYLOAD.length}\n`, 0],
+    ['does not match the manifest', undefined, 0],
+    ['was written after its stamp', `${DIGEST} ${tampered.length}\n`, 60000],
+    ['was moved in with an older mtime', `${DIGEST} ${PAYLOAD.length}\n`, 0],
   ]) {
-    it(`downloads again when a cached binary was ${how}`, async () => {
+    it(`refuses a cached binary that ${how} and downloads nothing`, async () => {
       const res = await runShim(['hi'], { cached: tampered, stamp, stampAge });
-      assert.equal(res.status, 0, res.stderr);
+      assert.equal(res.status, 127);
       assert.match(res.stderr, /cannot verify the cached engine/);
-      assert.match(res.stdout, /fake-engine hi/);
-      assert.deepEqual(requests, [ASSET_PATH]);
-      assert.deepEqual(cacheEntries(res.home), cachedEntries);
-      assert.deepEqual(fs.readFileSync(path.join(res.home, 'bin', VERSION, 'impeccable')), PAYLOAD);
+      assert.match(res.stderr, /runs offline and does not download its engine/);
+      assert.doesNotMatch(res.stdout, /tampered|fake-engine/);
+      assert.deepEqual(requests, []);
     });
   }
+
+  it('fails offline with no engine and sends no request', async () => {
+    const res = await runShim(['hello']);
+    assert.equal(res.status, 127);
+    assert.match(res.stderr, /runs offline and does not download its engine/);
+    assert.deepEqual(requests, []);
+    assert.deepEqual(cacheEntries(res.home), []);
+  });
 
   it('runs a cached binary on a good stamp without hashing it', async () => {
     const digest = '1'.repeat(64);

@@ -456,7 +456,7 @@ fn stop(argv: &[String], cwd: &str, io: &mut Io) -> i32 {
                 .map(js_display)
                 .unwrap_or_else(|| "undefined".to_string());
             let url = format!("http://localhost:{}/stop?token={}", port, token);
-            match ureq::get(&url).call() {
+            match impeccable_context::http::agent_builder().build().get(&url).call() {
                 Ok(res) if (200..300).contains(&res.status()) => Some(port),
                 _ => None,
             }
