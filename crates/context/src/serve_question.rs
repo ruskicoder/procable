@@ -692,7 +692,9 @@ fn card_fetch_allowed(env: &Env, url: &str) -> bool {
 /// `IMPECCABLE_IMAGE_GEN_FAKE` makes no request.
 fn fetch_world_cards(env: &Env, cwd: &str, worlds: &[Value]) -> Vec<(String, String, String)> {
     let s = |w: &Value, k: &str| w.get(k).and_then(Value::as_str).unwrap_or_default().to_string();
-    let offline = env_set(env, "IMPECCABLE_IMAGE_GEN_FAKE");
+    // procable runs offline: card images are never downloaded; kept files are
+    // used and every other image stays named by its URL.
+    let offline = true;
     // (id, kind, url) per image, board then hero per world.
     let images: Vec<(String, &str, String)> = worlds.iter().flat_map(|w| ["board", "hero"].map(|kind| (s(w, "id"), kind, s(w, kind)))).collect();
     let fetch = |id: &str, kind: &str, url: &str| -> Option<String> {
@@ -1868,27 +1870,6 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
                 }
             }
             let answer = json_compact(&Value::Object(ans.clone()));
-            // The choice ping, sent by the page itself when the hand took an
-            // API-dealt roll (`picker_choice`): the chosen card, or the hand
-            // rejected by a re-roll.
-            // The round is claimed (pending) before the answer is written, so
-            // the agent's `--kind` rerun, which only runs once it has the
-            // answer, waits for this send and sends itself only if it fails.
-            let picker_ping = if crate::telemetry::telemetry_disabled(&env, &st.cwd) {
-                None
-            } else {
-                st.detached_key
-                    .as_deref()
-                    .and_then(|k| read_hand(&st.qdir, k))
-                    .filter(|h| h.get("digest").and_then(Value::as_str) == Some(hand_digest(&st.payload).as_str()))
-                    .and_then(|h| h.get("seed").cloned())
-                    .and_then(|seed| crate::telemetry::picker_choice(&seed, &st.payload, option_id.as_str().unwrap_or(""), ans.get("register").and_then(Value::as_str)))
-                    .and_then(|mut p| {
-                        let round = crate::telemetry::Ledger::new(&env, &st.cwd).claim(p.key.as_deref().unwrap_or(""), p.reroll.unwrap_or(0))?;
-                        p.ping_id = round.ping_id;
-                        Some(p)
-                    })
-            };
             let was_awaiting = st.awaiting_next;
             st.awaiting_next = (is_reroll || followup_open) && st.detached_key.is_some();
             if st.awaiting_next && !was_awaiting {
@@ -1902,28 +1883,10 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
                 print_answer(io, &st.cwd, &answer, &declared_comps(&st.payload));
                 let _ = io.stdout.flush();
             }
-            // Sent after the answer is on disk, off the request loop, within
-            // the API budget; a ping that fails clears its mark so the
-            // agent's rerun may still send it. Never fails the round.
-            let ping_thread = picker_ping.map(|ping| {
-                let (env, cwd) = (env.clone(), st.cwd.clone());
-                std::thread::spawn(move || {
-                    let ledger = crate::telemetry::Ledger::new(&env, &cwd);
-                    let (key, reroll) = (ping.key.clone().unwrap_or_default(), ping.reroll.unwrap_or(0));
-                    if crate::telemetry::send_choice(&env, &cwd, &ping, crate::telemetry::api_timeout(&env)) {
-                        ledger.confirm(&key, reroll, "picker", ping.ping_id.as_deref());
-                    } else {
-                        ledger.release(&key, reroll, ping.ping_id.as_deref());
-                    }
-                })
-            });
             if !((is_reroll || followup_open) && st.detached_key.is_some()) {
                 drop(st);
                 sleep_ms(150);
                 let _ = io.stdout.flush();
-                if let Some(t) = ping_thread {
-                    let _ = t.join();
-                }
                 return 0;
             }
             continue;
@@ -3570,98 +3533,6 @@ mod tests {
     }
 
     #[test]
-    fn next_line_fetches_and_names_the_dealt_worlds_card_images() {
-        let _proxy_lock = crate::http::PROXY_ENV_LOCK.lock().unwrap();
-        let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
-        let base = format!("http://{}", server.server_addr());
-        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let handle = card_server(server, stop.clone());
-        let dir = temp_project("world-cards");
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
-        write_state(&dir, &json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/" }));
-        std::fs::write(dir.join("p.json"), direction_round(true).to_string()).unwrap();
-        let card_base = format!("{base}/cards");
-        let update = |extra: &[(&str, &str)]| run_env(&dir, &[extra, &[("IMPECCABLE_CARD_BASE", card_base.as_str())]].concat(), &["--update", "--key", "k1", "--payload", "p.json"]);
-        const SENTENCE: &str = " The catalog worlds dealt in this roll have card images, listed at the end of this line: when a card's direction builds on one of these worlds, attach that world's board and hero as reference images to that card's comp (the harness image tool's input images, or `impeccable generate-image --ref <board> --ref <hero>`), as style inspiration only, never to copy layout or content; a card for a direction you invented yourself has no card images and gets none. WORLD CARDS: ";
-        const FILES: &str = "print-fillmore-handbill board .impeccable/mocks/worlds/print-fillmore-handbill-board.webp hero .impeccable/mocks/worlds/print-fillmore-handbill-hero.webp | broadcast-teletext board .impeccable/mocks/worlds/broadcast-teletext-board.png hero .impeccable/mocks/worlds/broadcast-teletext-hero.webp\n";
-
-        // Two dealt worlds: four files land in the workspace and the line
-        // names them, after the page took the roll (the record is gone).
-        write_dealt_roll(&dir, "direction", now_ms(), &two_worlds(&base));
-        let (code, out) = update(&[]);
-        assert_eq!(code, 0);
-        assert_eq!(next_line(&out), format!("{}{}{}", NEXT_TODAY.trim_end(), SENTENCE, FILES));
-        assert!(read_roll(&qdir).is_none());
-        let card = |name: &str| String::from_utf8_lossy(&std::fs::read(dir.join(".impeccable/mocks/worlds").join(name)).unwrap_or_default()).into_owned();
-        assert!(card("print-fillmore-handbill-board.webp").ends_with("/cards/print-fillmore-handbill.webp"));
-        assert!(card("broadcast-teletext-board.png").ends_with("/cards/broadcast-teletext.png?v=3"));
-        assert!(card("broadcast-teletext-hero.webp").ends_with("/cards/broadcast-teletext-hero.webp"));
-        // The hand keeps the worlds, so a --wait flip names them too.
-        assert_eq!(Value::Array(hand_worlds(read_hand(&qdir, "k1").as_ref())), two_worlds(&base));
-
-        // The same worlds dealt again: every file is there, nothing is fetched.
-        write_dealt_roll(&dir, "direction", now_ms(), &two_worlds(&base));
-        let (_, out) = update(&[]);
-        assert_eq!(next_line(&out), format!("{}{}{}", NEXT_TODAY.trim_end(), SENTENCE, FILES));
-        stop.store(true, std::sync::atomic::Ordering::SeqCst);
-        let mut seen = handle.join().unwrap();
-        seen.sort();
-        assert_eq!(seen, vec!["/cards/broadcast-teletext-hero.webp", "/cards/broadcast-teletext.png?v=3", "/cards/print-fillmore-handbill-hero.webp", "/cards/print-fillmore-handbill.webp"]);
-
-        // An expired record, a surface roll, and no record print today's line.
-        write_dealt_roll(&dir, "direction", now_ms() - ROLL_WINDOW_MS - 1000.0, &two_worlds(&base));
-        assert_eq!(next_line(&update(&[]).1), NEXT_TODAY);
-        std::fs::write(dir.join("s.json"), surface_round(true).to_string()).unwrap();
-        write_dealt_roll(&dir, "surface", now_ms(), &two_worlds(&base));
-        assert_eq!(next_line(&run_env(&dir, &[("IMPECCABLE_CARD_BASE", card_base.as_str())], &["--update", "--key", "k1", "--payload", "s.json"]).1), NEXT_TODAY);
-        assert!(read_roll(&qdir).is_none());
-        assert_eq!(next_line(&update(&[]).1), NEXT_TODAY);
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn a_card_that_cannot_be_fetched_is_named_by_url_and_fails_nothing() {
-        let _proxy_lock = crate::http::PROXY_ENV_LOCK.lock().unwrap();
-        let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
-        let base = format!("http://{}", server.server_addr());
-        let stop = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-        let handle = card_server(server, stop.clone());
-        let dir = temp_project("world-cards-fail");
-        write_state(&dir, &json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/" }));
-        let mut round = direction_round(true);
-        round["options"][2]["catalogId"] = json!("a");
-        round["options"][3]["catalogId"] = json!("b");
-        std::fs::write(dir.join("p.json"), round.to_string()).unwrap();
-        // One image 404s, one URL sits outside the card base on a loopback
-        // host (never requested), one answers 200 with a sign-in page, an
-        // extensionless one is a webp, and one is served.
-        let worlds = json!([
-            { "id": "a", "board": format!("{base}/cards/a.webp"), "hero": format!("{base}/cards/missing-hero.webp") },
-            { "id": "b", "board": format!("{base}/elsewhere/b.webp"), "hero": format!("{base}/cards/b-hero") },
-            { "id": "c", "board": format!("{base}/cards/wall.webp"), "hero": format!("{base}/cards/c-hero.webp") }
-        ]);
-        write_dealt_roll(&dir, "direction", now_ms(), &worlds);
-        let card_base = format!("{base}/cards");
-        let (code, out) = run_env(&dir, &[("IMPECCABLE_CARD_BASE", card_base.as_str())], &["--update", "--key", "k1", "--payload", "p.json"]);
-        assert_eq!(code, 0);
-        assert!(out.starts_with("next round delivered; the page reloads itself\n"), "{out}");
-        let line = next_line(&out);
-        assert!(line.contains("`impeccable generate-image --ref <board> --ref <hero>`; any image listed as a URL could not be fetched, so download it into the workspace first when the tool takes files), as style inspiration only"), "{line}");
-        assert!(line.ends_with(&format!("WORLD CARDS: a board .impeccable/mocks/worlds/a-board.webp hero {base}/cards/missing-hero.webp | b board {base}/elsewhere/b.webp hero .impeccable/mocks/worlds/b-hero.webp | c board {base}/cards/wall.webp hero .impeccable/mocks/worlds/c-hero.webp\n")), "{line}");
-        // Nothing but the three real images is kept: no page saved as a card.
-        let cards = dir.join(".impeccable/mocks/worlds");
-        let mut kept: Vec<String> = std::fs::read_dir(&cards).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n != ".gitignore").collect();
-        kept.sort();
-        assert_eq!(kept, vec!["a-board.webp", "b-hero.webp", "c-hero.webp"]);
-        // The kept copies name the dealt hand, so their directory ignores itself.
-        assert!(std::fs::read_to_string(cards.join(".gitignore")).unwrap().ends_with("\n*\n"));
-        stop.store(true, std::sync::atomic::Ordering::SeqCst);
-        let seen = handle.join().unwrap();
-        assert!(!seen.iter().any(|p| p.contains("elsewhere")), "{seen:?}");
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
     fn fake_image_mode_fetches_no_card_and_names_what_is_there() {
         let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
         let base = format!("http://{}", server.server_addr());
@@ -4061,110 +3932,6 @@ mod tests {
         }
         ureq::post(&format!("http://127.0.0.1:{}/answer?key=pk", port)).send_string(&json!({ "optionId": "a" }).to_string()).unwrap();
         assert_eq!(server.join().unwrap(), 0);
-    }
-
-    #[test]
-    fn the_page_sends_the_choice_ping_itself_and_the_agent_rerun_becomes_a_no_op() {
-        let dir = temp_project("picker-ping");
-        let cwd = dir.to_string_lossy().to_string();
-        let qdir = dir.join(".impeccable/questions").to_string_lossy().to_string();
-        let worlds = json!([
-            { "id": "teletext-service", "board": "https://cards.test/teletext-service.webp", "hero": "https://cards.test/teletext-service-hero.webp" },
-            { "id": "microfiche-reader", "board": "https://cards.test/microfiche-reader.webp", "hero": "https://cards.test/microfiche-reader-hero.webp" }
-        ]);
-        let payload = json!({
-            "options": [
-                { "id": "assigned", "kind": "assigned", "label": "Fillmore", "kicker": "THE ROLL" },
-                { "id": "challenger-teletext", "kind": "challenger", "catalogId": "teletext-service", "label": "Teletext", "verdict": "competitive", "hero": "https://cards.test/teletext-service-hero.webp" }
-            ],
-            "buildPath": { "value": "code", "toggle": true }, "canon": true
-        });
-        let round = |n: usize| crate::telemetry::SeedRound { scope: "direction".into(), reroll: n, mode: Some("persuade".into()), pool_revision: Some("0123456789ab".into()), dealt: vec!["teletext-service".into(), "microfiche-reader".into()], ..Default::default() };
-        // What concept-seed leaves after an API roll, then what --start does with it.
-        let ledger = crate::telemetry::Ledger::new(&Env::from([("IMPECCABLE_SEED_SALT".to_string(), "test-salt".to_string())]), &cwd);
-        let deal = |n: usize| {
-            ledger.record_key("seed-1");
-            record_roll(&cwd, "direction", ledger.reference("seed-1").as_deref(), n, worlds.as_array().unwrap(), Some(&ApiRoll { mode: Some("persuade"), register: None, pool_revision: Some("0123456789ab"), hand_id: Some("00112233445566778899aabbccddeeff") }));
-            ledger.record_round("seed-1", &round(n));
-            let roll = read_roll(&qdir);
-            let _ = std::fs::remove_file(hand_file(&qdir, "pk"));
-            let seed = seed_with_key(roll_seed(roll.as_deref(), &payload), &Env::from([("IMPECCABLE_SEED_SALT".to_string(), "test-salt".to_string())]), &cwd);
-            assert!(seed.is_some());
-            start_hand(&qdir, "pk", &cwd, &payload, &dealt_worlds(roll.as_deref(), &payload), seed).unwrap();
-        };
-        let (base, seen) = chosen_api();
-
-        deal(0);
-        assert_eq!(answer_on_page(&dir, &payload, "challenger-teletext", &[("IMPECCABLE_API_URL", &base), ("IMPECCABLE_TELEMETRY_CHANNEL", "test")]), 0);
-        let got = seen.lock().unwrap().clone();
-        assert_eq!(got.len(), 1, "{got:?}");
-        assert_eq!(got[0].0, format!("impeccable/{}+engine test", env!("CARGO_PKG_VERSION")));
-        let r0 = ledger.round("seed-1", Some(0)).unwrap();
-        assert_eq!(got[0].1, format!(r#"{{"chosenId":"teletext-service","key":"seed-1","scope":"direction","mode":"persuade","kind":"challenger","option":1,"reroll":0,"poolRevision":"0123456789ab","handId":"00112233445566778899aabbccddeeff","pingId":"{}","kindSource":"explicit","source":"picker"}}"#, r0.ping_id.clone().unwrap()));
-        assert_eq!(r0.recorded.as_deref(), Some("picker"));
-        // The agent's rerun for the same round sends nothing.
-        let home = dir.join("home").to_string_lossy().into_owned();
-        let agent = |extra: &[(&str, &str)], args: &[&str]| -> String {
-            let mut e = Env::from([("IMPECCABLE_API_URL".to_string(), base.clone()), ("IMPECCABLE_SEED_SALT".to_string(), "test-salt".to_string()), ("HOME".to_string(), home.clone()), ("USERPROFILE".to_string(), home.clone())]);
-            for (k, v) in extra {
-                e.insert(k.to_string(), v.to_string());
-            }
-            let (mut io, cap) = Io::captured("", dir.clone(), e);
-            let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
-            assert_eq!(crate::concept_seed::run(&argv, &mut io), 0);
-            let out = String::from_utf8(cap.stdout.borrow().clone()).unwrap();
-            out
-        };
-        assert_eq!(agent(&[], &["--kind", "challenger", "--chosen", "teletext-service", "--from", "seed-1", "--scope", "direction"]), "choice already recorded\n");
-        assert_eq!(seen.lock().unwrap().len(), 1);
-
-        // A send still pending: the rerun waits, and a confirmation makes it a no-op.
-        deal(4);
-        let claimed = ledger.claim("seed-1", 4).unwrap();
-        let confirm = {
-            let cwd = cwd.clone();
-            std::thread::spawn(move || {
-                sleep_ms(300);
-                crate::telemetry::Ledger::new(&Env::from([("IMPECCABLE_SEED_SALT".to_string(), "test-salt".to_string())]), &cwd).confirm("seed-1", 4, "picker", claimed.ping_id.as_deref());
-            })
-        };
-        assert_eq!(agent(&[], &["--kind", "assigned", "--from", "seed-1", "--scope", "direction", "--reroll", "4"]), "choice already recorded\n");
-        confirm.join().unwrap();
-        assert_eq!(seen.lock().unwrap().len(), 1);
-        // One that never resolves: past the deadline the rerun sends, under the same pingId.
-        deal(5);
-        let pending = ledger.claim("seed-1", 5).unwrap();
-        assert_eq!(agent(&[("IMPECCABLE_API_TIMEOUT", "300")], &["--kind", "assigned", "--from", "seed-1", "--scope", "direction", "--reroll", "5"]), "choice recorded\n");
-        assert!(seen.lock().unwrap().last().unwrap().1.contains(&format!(r#""pingId":"{}""#, pending.ping_id.unwrap())));
-        assert_eq!(ledger.round("seed-1", Some(5)).unwrap().recorded.as_deref(), Some("agent"));
-
-        // Opted out: no ping and no mark, so nothing claims the round.
-        let sent_before = seen.lock().unwrap().len();
-        deal(1);
-        answer_on_page(&dir, &payload, "assigned", &[("IMPECCABLE_API_URL", &base), ("DO_NOT_TRACK", "1")]);
-        assert_eq!(seen.lock().unwrap().len(), sent_before);
-        assert_eq!(ledger.round("seed-1", Some(1)).unwrap().recorded, None);
-
-        // A re-roll on the page is the hand rejected, sent once for that round.
-        deal(3);
-        answer_on_page(&dir, &payload, "reroll", &[("IMPECCABLE_API_URL", &base)]);
-        let deadline = now_ms() + 5000.0;
-        let sent = seen.lock().unwrap().len();
-        while seen.lock().unwrap().len() == sent && now_ms() < deadline {
-            sleep_ms(20);
-        }
-        while ledger.round("seed-1", Some(3)).unwrap().recorded.as_deref() == Some("pending") && now_ms() < deadline {
-            sleep_ms(20);
-        }
-        let r3 = ledger.round("seed-1", Some(3)).unwrap();
-        assert_eq!(seen.lock().unwrap().last().unwrap().1, format!(r#"{{"key":"seed-1","scope":"direction","mode":"persuade","kind":"reroll","reroll":3,"poolRevision":"0123456789ab","handId":"00112233445566778899aabbccddeeff","pingId":"{}","kindSource":"explicit","source":"picker"}}"#, r3.ping_id.clone().unwrap()));
-        assert_eq!(r3.recorded.as_deref(), Some("picker"));
-
-        // A ping that cannot leave the machine clears its mark for the agent's rerun.
-        deal(2);
-        answer_on_page(&dir, &payload, "assigned", &[("IMPECCABLE_API_URL", "http://127.0.0.1:9/api"), ("IMPECCABLE_API_TIMEOUT", "300")]);
-        assert_eq!(ledger.round("seed-1", Some(2)).unwrap().recorded, None);
-        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

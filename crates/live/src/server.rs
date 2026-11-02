@@ -17,7 +17,7 @@ pub fn probe_status(port: u16, token: &str, timeout_ms: u64) -> bool {
         port,
         crate::util::encode_uri_component(token)
     );
-    let agent = ureq::AgentBuilder::new()
+    let agent = impeccable_context::http::agent_builder()
         .timeout_connect(Duration::from_millis(timeout_ms))
         .timeout(Duration::from_millis(timeout_ms))
         .build();
@@ -31,7 +31,7 @@ pub fn probe_status(port: u16, token: &str, timeout_ms: u64) -> bool {
 /// None on any failure or non-2xx.
 pub fn fetch_status(port: i64, token: &str) -> Option<Value> {
     let url = format!("http://localhost:{}/status?token={}", port, token);
-    let res = ureq::get(&url).call().ok()?;
+    let res = impeccable_context::http::agent_builder().build().get(&url).call().ok()?;
     if !(200..300).contains(&res.status()) {
         return None;
     }
@@ -42,7 +42,9 @@ pub fn fetch_status(port: i64, token: &str) -> Option<Value> {
 /// `res.json()`; None on any failure or non-2xx.
 pub fn post_poll(port: i64, body: &Value) -> Option<Value> {
     let url = format!("http://localhost:{}/poll", port);
-    let res = ureq::post(&url)
+    let res = impeccable_context::http::agent_builder()
+        .build()
+        .post(&url)
         .set("Content-Type", "application/json")
         .send_string(&serde_json::to_string(body).unwrap_or_default())
         .ok()?;

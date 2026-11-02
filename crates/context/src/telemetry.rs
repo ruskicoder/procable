@@ -1,10 +1,11 @@
-//! The roll API's client side, shared by `concept-seed` (the roll and the
-//! agent-run choice ping) and `serve-question` (the picker's own ping).
+//! Seed references, the local seed ledger, and the choice record of a round.
 //!
-//! Three pieces live here:
-//! - the request plumbing: API base, timeout, opt-outs, and the
-//!   `X-Impeccable-Client` header every `/api/roll` and `/api/chosen` request
-//!   carries;
+//! procable has no telemetry and runs offline. Upstream Impeccable sent the
+//! roll request and a choice ping to impeccable.style from here; the request
+//! plumbing, the client header and the sender are removed, and
+//! `telemetry_disabled` is always true, so every caller takes its local path.
+//!
+//! What remains:
 //! - the seed reference and the seed ledger. The reference,
 //!   `seed:<16 hex of sha256("impeccable-seed:" + key)>`, is what committed
 //!   files (the surface brief's FORM line) record instead of the key. The
@@ -40,11 +41,6 @@ pub const MAX_REROLL: usize = 8;
 /// The highest zero-based card position the choice ping reports.
 pub const MAX_OPTION: usize = 15;
 
-pub fn api_base(env: &Env) -> String {
-    let base = env.get("IMPECCABLE_API_URL").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| "https://impeccable.style/api".to_string());
-    base.strip_suffix('/').unwrap_or(&base).to_string()
-}
-
 /// `IMPECCABLE_API_TIMEOUT` in ms (default 4000): one budget for the API
 /// calls a run makes.
 pub fn api_timeout(env: &Env) -> Duration {
@@ -53,97 +49,10 @@ pub fn api_timeout(env: &Env) -> Duration {
     Duration::from_millis(ms as u64)
 }
 
-/// An opt-out variable is set when it is non-empty and not `0` or `false`
-/// (any case): `DO_NOT_TRACK=1` opts out, `DO_NOT_TRACK=0` does not.
-pub fn env_opts_out(v: Option<&String>) -> bool {
-    v.map(|v| v.trim()).is_some_and(|v| !v.is_empty() && v != "0" && !v.eq_ignore_ascii_case("false"))
-}
-
-/// The user-level config, `~/.impeccable/config.json`, where
-/// `impeccable telemetry off` records `"telemetry": false`.
-pub fn user_config_path(env: &Env) -> String {
-    jsp::join(&[&crate::util::homedir(env), ".impeccable", "config.json"])
-}
-
-fn config_says_off(path: &str) -> bool {
-    safe_read(path).and_then(|t| serde_json::from_str::<Value>(&t).ok()).and_then(|v| v.get("telemetry").and_then(Value::as_bool)) == Some(false)
-}
-
-/// Why telemetry is off, or `None` when it is on: `DO_NOT_TRACK` or
-/// `IMPECCABLE_NO_TELEMETRY` (`env_opts_out`), `"telemetry": false` in the
-/// user config, or in the project's `.impeccable/config.json` /
-/// `config.local.json` (a project may opt everyone out; nothing opts back in
-/// over an off anywhere).
-pub fn opt_out_reason(env: &Env, cwd: &str) -> Option<String> {
-    for var in ["DO_NOT_TRACK", "IMPECCABLE_NO_TELEMETRY"] {
-        if env_opts_out(env.get(var)) {
-            return Some(format!("{} is set", var));
-        }
-    }
-    let user = user_config_path(env);
-    if config_says_off(&user) {
-        return Some(format!("\"telemetry\": false in {}", impeccable_common::jsp::to_posix(&user)));
-    }
-    // The project config is read where `context` reads its defaults: the
-    // working directory, the resolved project root, then the repo root.
-    let project = crate::context::resolve_project(cwd, &crate::target_args::TargetOptions::default(), env);
-    let mut roots: Vec<String> = Vec::new();
-    for r in [cwd, project.project_root.as_str(), project.repo_root.as_str()] {
-        if r.is_empty() {
-            continue;
-        }
-        let a = jsp::resolve(r, &[]);
-        if !roots.contains(&a) {
-            roots.push(a);
-        }
-    }
-    for root in &roots {
-        for name in ["config.local.json", "config.json"] {
-            let p = jsp::join(&[root, ".impeccable", name]);
-            if config_says_off(&p) {
-                // Shown with forward slashes on every platform, like every
-                // path the engine prints.
-                let shown = jsp::relative(cwd, cwd, &p);
-                return Some(format!("\"telemetry\": false in {}", impeccable_common::jsp::to_posix(if shown.is_empty() { &p } else { &shown })));
-            }
-        }
-    }
-    None
-}
-
-pub fn telemetry_disabled(env: &Env, cwd: &str) -> bool {
-    opt_out_reason(env, cwd).is_some()
-}
-
-/// Sent on the roll request when telemetry is off: the roll still happens
-/// (it is the feature), and the server records nothing for it.
-pub const TELEMETRY_HEADER: &str = "X-Impeccable-Telemetry";
-
-pub fn agent(timeout: Duration) -> ureq::Agent {
-    crate::http::agent_builder().timeout_connect(timeout).timeout(timeout).build()
-}
-
-pub const CLIENT_HEADER: &str = "X-Impeccable-Client";
-
-fn version_token(v: &str) -> bool {
-    !v.is_empty() && v.len() <= 32 && v.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'.' | b'+' | b'-'))
-}
-
-/// `impeccable/<version>[ <channel>]`, matching
-/// `^impeccable/[0-9A-Za-z.+-]{1,32}( [a-z]{1,16})?$`. The version is the
-/// installed skill's (SKILL.md frontmatter, what `/api/version` compares)
-/// when the engine can read it, else the engine's own as `<engine>+engine`.
-/// The channel is `IMPECCABLE_TELEMETRY_CHANNEL` when it is 1 to 16 lowercase
-/// letters (`test` in this repo's tests and CI), else absent.
-pub fn client_header(env: &Env, cwd: &str) -> String {
-    let skill = crate::context_cli::installed_skill_version(env, cwd).filter(|v| version_token(v));
-    let version = skill.unwrap_or_else(|| format!("{}+engine", env!("CARGO_PKG_VERSION")));
-    let channel = env
-        .get("IMPECCABLE_TELEMETRY_CHANNEL")
-        .filter(|c| !c.is_empty() && c.len() <= 16 && c.bytes().all(|b| b.is_ascii_lowercase()))
-        .map(|c| format!(" {}", c))
-        .unwrap_or_default();
-    format!("impeccable/{}{}", version, channel)
+/// Always true: procable has no telemetry. Callers that upstream gated on an
+/// opt-out keep their local path.
+pub fn telemetry_disabled(_env: &Env, _cwd: &str) -> bool {
+    true
 }
 
 /// A roll response's `poolRevision` when it is the 12 lowercase hex the API
@@ -593,21 +502,6 @@ impl ChoicePing {
     }
 }
 
-/// POSTs the ping to `/api/chosen` within `timeout`. Never fails the
-/// caller: any error is a false.
-pub fn send_choice(env: &Env, cwd: &str, ping: &ChoicePing, timeout: Duration) -> bool {
-    if timeout.is_zero() {
-        return false;
-    }
-    let url = format!("{}/chosen", api_base(env));
-    agent(timeout)
-        .post(&url)
-        .set("Content-Type", "application/json")
-        .set(CLIENT_HEADER, &client_header(env, cwd))
-        .send_string(&json_compact(&ping.body()))
-        .is_ok()
-}
-
 // ---- the picker's choice -----------------------------------------------------
 
 fn card_text<'a>(card: &'a Value, k: &str) -> Option<&'a str> {
@@ -727,66 +621,18 @@ pub fn picker_choice(seed: &Value, payload: &Value, option_id: &str, steer: Opti
 
 // ---- `impeccable telemetry off|on|status` -------------------------------------
 
-pub const PRIVACY_URL: &str = "https://impeccable.style/privacy";
+/// What `procable telemetry` prints.
+pub const OFFLINE_STATUS: &str = "telemetry: none. procable runs offline and sends nothing anywhere.\n";
 
-fn status_line(env: &Env, cwd: &str) -> String {
-    match opt_out_reason(env, cwd) {
-        Some(reason) => format!("telemetry: off ({}). Rolls still work; the roll API is told not to record them, and no choice is sent.\n", reason),
-        None => format!("telemetry: on. The roll request and the choice ping carry the seed key, scope, mode, round, pool revision, the card kind and catalog id that won, and the client version; never your project's names or code. Turn it off with `impeccable telemetry off`, DO_NOT_TRACK=1, or IMPECCABLE_NO_TELEMETRY=1. Details: {}\n", PRIVACY_URL),
-    }
-}
-
-/// `impeccable telemetry off|on|status`: `off` records `"telemetry": false`
-/// in the user config (`user_config_path`), `on` removes it, `status` says
-/// whether telemetry is on and, when off, why. Other keys in the file are
-/// kept.
+/// `procable telemetry [status]`: there is no telemetry to turn on or off.
 pub fn run(args: &[String], io: &mut impeccable_common::Io) -> i32 {
-    let env = io.env.clone();
-    let cwd = io.cwd.to_string_lossy().into_owned();
-    let path = user_config_path(&env);
-    // A missing file is an empty config; one that does not parse to an
-    // object is the user's to fix, never overwritten.
-    let read = || -> Result<Map<String, Value>, String> {
-        let Some(text) = safe_read(&path) else { return Ok(Map::new()) };
-        match serde_json::from_str::<Value>(&text) {
-            Ok(Value::Object(m)) => Ok(m),
-            Ok(_) => Err(format!("{} is not a JSON object", impeccable_common::jsp::to_posix(&path))),
-            Err(e) => Err(format!("{} is not valid JSON ({})", impeccable_common::jsp::to_posix(&path), e)),
-        }
-    };
-    let write = |m: &Map<String, Value>| -> Result<(), String> {
-        let dir = jsp::join(&[&crate::util::homedir(&env), ".impeccable"]);
-        std::fs::create_dir_all(&dir)
-            .and_then(|_| std::fs::write(&path, format!("{}\n", crate::util::json_pretty(&Value::Object(m.clone())))))
-            .map_err(|e| format!("{}: {}", path, e))
-    };
     match args.first().map(String::as_str) {
-        Some("status") | None => {
-            io.out(&status_line(&env, &cwd));
-            0
-        }
-        Some(cmd @ ("off" | "on")) => {
-            let mut m = match read() {
-                Ok(m) => m,
-                Err(e) => {
-                    io.err(&format!("telemetry: {}; fix or remove it, then run `impeccable telemetry {}` again. Nothing was changed.\n", e, cmd));
-                    return 1;
-                }
-            };
-            if cmd == "off" {
-                m.insert("telemetry".into(), Value::Bool(false));
-            } else {
-                m.remove("telemetry");
-            }
-            if let Err(e) = write(&m) {
-                io.err(&format!("telemetry: could not write the user config ({})\n", e));
-                return 1;
-            }
-            io.out(&status_line(&env, &cwd));
+        None | Some("status" | "off" | "on") => {
+            io.out(OFFLINE_STATUS);
             0
         }
         Some(other) => {
-            io.err(&format!("telemetry: unknown command \"{}\"; use off, on, or status\n", other));
+            io.err(&format!("telemetry: unknown command \"{}\"; procable has no telemetry\n", other));
             1
         }
     }
@@ -795,6 +641,17 @@ pub fn run(args: &[String], io: &mut impeccable_common::Io) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn telemetry_is_always_off_and_the_verb_says_so() {
+        let env = Env::from([("DO_NOT_TRACK".into(), "0".into())]);
+        assert!(telemetry_disabled(&env, "."));
+        for args in [vec![], vec!["status".to_string()], vec!["on".to_string()]] {
+            let (mut io, captured) = impeccable_common::Io::captured("", std::env::temp_dir(), Env::new());
+            assert_eq!(run(&args, &mut io), 0);
+            assert_eq!(String::from_utf8(captured.stdout.borrow().clone()).unwrap(), OFFLINE_STATUS);
+        }
+    }
 
     fn temp_dir(name: &str) -> String {
         let dir = std::env::temp_dir().join(format!("impeccable-telemetry-{}-{}", name, std::process::id()));
@@ -805,36 +662,6 @@ mod tests {
 
     fn env(pairs: &[(&str, &str)]) -> Env {
         pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect()
-    }
-
-    fn header_ok(h: &str) -> bool {
-        let re = regex::Regex::new(r"^impeccable/[0-9A-Za-z.+-]{1,32}( [a-z]{1,16})?$").unwrap();
-        re.is_match(h)
-    }
-
-    #[test]
-    fn client_header_names_the_skill_version_else_the_engine_and_the_channel() {
-        let dir = temp_dir("header");
-        let skill = format!("{}/skill", dir);
-        std::fs::create_dir_all(&skill).unwrap();
-        let e = env(&[("IMPECCABLE_SKILL_DIR", &skill)]);
-        let h = client_header(&e, &dir);
-        assert_eq!(h, format!("impeccable/{}+engine", env!("CARGO_PKG_VERSION")));
-        assert!(header_ok(&h), "{h}");
-        std::fs::write(format!("{}/SKILL.md", skill), "---\nname: impeccable\nversion: 4.5.2\n---\n# x\n").unwrap();
-        assert_eq!(client_header(&e, &dir), "impeccable/4.5.2");
-        let e = env(&[("IMPECCABLE_SKILL_DIR", &skill), ("IMPECCABLE_TELEMETRY_CHANNEL", "test")]);
-        let h = client_header(&e, &dir);
-        assert_eq!(h, "impeccable/4.5.2 test");
-        assert!(header_ok(&h), "{h}");
-        // A channel that does not fit the format is dropped, never sent malformed.
-        for bad in ["Test", "te st", "abcdefghijklmnopq", "t3st"] {
-            let e = env(&[("IMPECCABLE_SKILL_DIR", &skill), ("IMPECCABLE_TELEMETRY_CHANNEL", bad)]);
-            assert_eq!(client_header(&e, &dir), "impeccable/4.5.2", "{bad}");
-        }
-        // A frontmatter version outside the token alphabet falls back to the engine.
-        std::fs::write(format!("{}/SKILL.md", skill), "---\nversion: 4.5 beta\n---\n").unwrap();
-        assert!(client_header(&env(&[("IMPECCABLE_SKILL_DIR", &skill)]), &dir).ends_with("+engine"));
     }
 
     pub(crate) fn test_ledger(cwd: &str) -> Ledger {
@@ -1164,97 +991,6 @@ mod tests {
         assert_eq!(l.resolve(&r).unwrap(), "3f9a1c2e");
         // The key record carries no telemetry round.
         assert_eq!(l.round("3f9a1c2e", None), None);
-    }
-
-    #[test]
-    fn opt_outs_follow_the_env_convention_and_both_configs() {
-        let cwd = temp_dir("optout");
-        let home = format!("{}/home", cwd);
-        let base = |extra: &[(&str, &str)]| {
-            let mut e = env(&[("HOME", home.as_str()), ("USERPROFILE", home.as_str())]);
-            for (k, v) in extra {
-                e.insert(k.to_string(), v.to_string());
-            }
-            e
-        };
-        assert_eq!(opt_out_reason(&base(&[]), &cwd), None);
-        for v in ["1", "true", "yes", "anything"] {
-            assert!(telemetry_disabled(&base(&[("DO_NOT_TRACK", v)]), &cwd), "{v}");
-            assert!(telemetry_disabled(&base(&[("IMPECCABLE_NO_TELEMETRY", v)]), &cwd), "{v}");
-        }
-        for v in ["", "0", "false", "FALSE", " "] {
-            assert!(!telemetry_disabled(&base(&[("DO_NOT_TRACK", v)]), &cwd), "{v:?}");
-        }
-        std::fs::create_dir_all(format!("{}/.impeccable", home)).unwrap();
-        std::fs::write(format!("{}/.impeccable/config.json", home), r#"{"telemetry": false}"#).unwrap();
-        assert!(opt_out_reason(&base(&[]), &cwd).unwrap().contains("telemetry\": false in"));
-        std::fs::write(format!("{}/.impeccable/config.json", home), r#"{"telemetry": true}"#).unwrap();
-        assert_eq!(opt_out_reason(&base(&[]), &cwd), None);
-        std::fs::create_dir_all(format!("{}/.impeccable", cwd)).unwrap();
-        std::fs::write(format!("{}/.impeccable/config.json", cwd), r#"{"telemetry": false}"#).unwrap();
-        assert_eq!(opt_out_reason(&base(&[]), &cwd).as_deref(), Some("\"telemetry\": false in .impeccable/config.json"));
-    }
-
-    #[test]
-    fn the_telemetry_verb_records_the_choice_in_the_user_config() {
-        let cwd = temp_dir("verb");
-        let home = format!("{}/home", cwd);
-        let call = |args: &[&str]| {
-            let e = env(&[("HOME", home.as_str()), ("USERPROFILE", home.as_str())]);
-            let (mut io, cap) = impeccable_common::Io::captured("", std::path::PathBuf::from(&cwd), e);
-            let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
-            let code = run(&argv, &mut io);
-            let out = String::from_utf8(cap.stdout.borrow().clone()).unwrap();
-            (code, out)
-        };
-        assert!(call(&["status"]).1.starts_with("telemetry: on."));
-        std::fs::create_dir_all(format!("{}/.impeccable", home)).unwrap();
-        std::fs::write(format!("{}/.impeccable/config.json", home), r#"{"other": 1}"#).unwrap();
-        let (code, out) = call(&["off"]);
-        assert_eq!(code, 0);
-        assert!(out.starts_with("telemetry: off (\"telemetry\": false in "), "{out}");
-        let cfg: Value = serde_json::from_str(&std::fs::read_to_string(format!("{}/.impeccable/config.json", home)).unwrap()).unwrap();
-        assert_eq!(cfg, json!({ "other": 1, "telemetry": false }));
-        assert!(call(&["status"]).1.starts_with("telemetry: off"));
-        assert!(call(&["on"]).1.starts_with("telemetry: on."));
-        let cfg: Value = serde_json::from_str(&std::fs::read_to_string(format!("{}/.impeccable/config.json", home)).unwrap()).unwrap();
-        assert_eq!(cfg, json!({ "other": 1 }));
-        assert_eq!(call(&["maybe"]).0, 1);
-    }
-
-    #[test]
-    fn a_project_opt_out_counts_from_a_subdirectory() {
-        let root = temp_dir("optout-root");
-        std::fs::create_dir_all(format!("{}/.git", root)).unwrap();
-        std::fs::create_dir_all(format!("{}/.impeccable", root)).unwrap();
-        std::fs::write(format!("{}/.impeccable/config.json", root), r#"{"telemetry": false}"#).unwrap();
-        // A workspace monorepo, run from a package: the same roots `context`
-        // reads its config defaults from.
-        std::fs::write(format!("{}/package.json", root), r#"{"private": true, "workspaces": ["packages/*"]}"#).unwrap();
-        let sub = format!("{}/packages/web", root);
-        std::fs::create_dir_all(&sub).unwrap();
-        std::fs::write(format!("{}/package.json", sub), r#"{"name": "web"}"#).unwrap();
-        let e = env(&[("HOME", &format!("{}/home", root)), ("USERPROFILE", &format!("{}/home", root))]);
-        let reason = opt_out_reason(&e, &sub).expect("the project root's config counts");
-        assert!(reason.contains("\"telemetry\": false in") && reason.contains(".impeccable/config.json"), "{reason}");
-    }
-
-    #[test]
-    fn telemetry_off_and_on_refuse_to_overwrite_a_malformed_user_config() {
-        let cwd = temp_dir("verb-malformed");
-        let home = format!("{}/home", cwd);
-        std::fs::create_dir_all(format!("{}/.impeccable", home)).unwrap();
-        for (body, why) in [("{not json", "is not valid JSON"), ("[1, 2]", "is not a JSON object")] {
-            std::fs::write(format!("{}/.impeccable/config.json", home), body).unwrap();
-            for cmd in ["off", "on"] {
-                let e = env(&[("HOME", home.as_str()), ("USERPROFILE", home.as_str())]);
-                let (mut io, cap) = impeccable_common::Io::captured("", std::path::PathBuf::from(&cwd), e);
-                assert_eq!(run(&[cmd.to_string()], &mut io), 1);
-                let err = String::from_utf8(cap.stderr.borrow().clone()).unwrap();
-                assert!(err.contains(why) && err.contains("Nothing was changed"), "{err}");
-                assert_eq!(std::fs::read_to_string(format!("{}/.impeccable/config.json", home)).unwrap(), body, "untouched");
-            }
-        }
     }
 
     #[test]

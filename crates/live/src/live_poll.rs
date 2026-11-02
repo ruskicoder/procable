@@ -176,7 +176,7 @@ fn parse_reply_args(args: &[String], env: &Env, cwd: &str) -> Result<Option<Repl
 }
 
 fn agent(timeout_ms: u64) -> ureq::Agent {
-    ureq::AgentBuilder::new()
+    impeccable_context::http::agent_builder()
         .timeout_connect(Duration::from_millis(10_000))
         .timeout_read(Duration::from_millis(timeout_ms))
         .timeout_write(Duration::from_millis(30_000))
