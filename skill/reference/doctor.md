@@ -26,7 +26,7 @@ An empty `findings` array is the good outcome. Say so in one line and stop.
 
 The severity says what should happen, not how bad it is.
 
-- **`auto`** carries no decision. Run `{{scripts_path}}/impeccable doctor --fix` once to apply these, then report what it moved in one line. Do not ask permission first, and do not ask about them afterward.
+- **`auto`** carries no decision. Run `{{scripts_path}}/impeccable doctor --fix` once to apply these, then list every file it moved or rewrote in your report. When `doctor` is the task the user asked for, these need no extra permission; when it runs as a side step of another task, report it as a change you made.
 - **`mention`** needs the user to know but not to decide anything now. State each one in a sentence with its offered fix.
 - **`route`** needs a specific command. Name the command and the gap it would close. Run it only if the user asks in this turn; `init` and `document` are conversations, not repairs you perform unattended.
 
