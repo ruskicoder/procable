@@ -1,5 +1,9 @@
 # Impeccable
 
+> **This is procable**, an offline, cleaned fork of [Impeccable](https://github.com/pbakaus/impeccable)
+> maintained by [ruskicoder](https://github.com/ruskicoder) for prompt-orchestrator. See `FORK.md` for
+> what differs. The text below is upstream's README and is being rewritten during the rename stage.
+
 The design vocabulary for your coding agent. Steer with `polish` and `bolder`, review with `critique` and `audit`, and catch AI slop before it ships.
 
 From your project root:

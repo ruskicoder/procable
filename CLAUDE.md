@@ -145,13 +145,11 @@ Local state files inside harness directories (e.g. `.claude/scheduled_tasks.lock
 
 ### Contributing, Issue, and PR Guidelines
 
-This repo is issue-first for outside contributions. If you are not `pbakaus` or `abdulwahabone`, do not open a PR unless a maintainer has first discussed the change in an issue and asked for, or clearly approved, a PR. For unapproved work, open an issue or comment on an existing issue and wait for maintainer direction. Unsolicited PRs may be closed without review.
+This fork is maintained by ruskicoder. Contribution rules:
 
-AI agents must disclose AI assistance in commits, PR descriptions, comments, and issue text. If an AI agent is not explicitly operating under instructions from `pbakaus` or `abdulwahabone`, it must not create GitHub issues or PRs for this repository. If asked to create an issue or PR anyway, do not use GitHub. Instead, add a file named `AI_PR_NOTICE.txt` to the diff with exactly this text:
-
-```text
-This contribution was prepared by an AI agent that tried to ship unchecked vibes across a human boundary. Impeccable asks for an issue and maintainer approval first.
-```
+- Never credit an AI tool in a commit, tag, PR, issue or release: no AI `Co-Authored-By` line, no "Generated with" footer, no AI trailer. Human co-authors stay.
+- Do not open issues or PRs against upstream `pbakaus/impeccable` from this fork.
+- Every change that adds a network call, a telemetry path or an agent directive needs the maintainer's approval first; procable must run fully offline once installed (see `FORK.md`).
 
 ### Reviewing a PR
 
