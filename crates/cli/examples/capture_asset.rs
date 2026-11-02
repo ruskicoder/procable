@@ -1,7 +1,7 @@
 //! Offline diagnostic driver; not a production CLI verb or approval authority.
-//! cargo run -p impeccable --example capture_asset -- request.json new-output-dir
-use impeccable::asset_capture::CdpAssetRenderer;
-use impeccable_comp_verbs::asset_capture::{AssetCaptureRequest, AssetRenderer};
+//! cargo run -p procable --example capture_asset -- request.json new-output-dir
+use procable::asset_capture::CdpAssetRenderer;
+use procable_comp_verbs::asset_capture::{AssetCaptureRequest, AssetRenderer};
 use serde_json::Value;
 use std::{fs, path::Path};
 fn main() -> Result<(), Box<dyn std::error::Error>> {

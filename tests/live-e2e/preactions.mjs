@@ -8,7 +8,7 @@
 
 import { installLiveQueryHelpers, waitForCycling } from './ui.mjs';
 
-const PICK_TOGGLE = '#impeccable-live-pick-toggle';
+const PICK_TOGGLE = '#procable-live-pick-toggle';
 
 /**
  * @param {import('playwright').Page} page
@@ -19,7 +19,7 @@ export async function runPreActions(page, actions) {
 
   await installLiveQueryHelpers(page);
   const wasActive = await page.evaluate((sel) =>
-    window.__impeccableLiveQuery?.(sel)?.dataset.active === 'true',
+    window.__procableLiveQuery?.(sel)?.dataset.active === 'true',
   PICK_TOGGLE).catch(() => false);
   if (wasActive) await clickPickToggle(page, PICK_TOGGLE);
 
@@ -51,7 +51,7 @@ export async function runPreActions(page, actions) {
   } finally {
     if (wasActive) {
       const isActive = await page.evaluate((sel) =>
-        window.__impeccableLiveQuery?.(sel)?.dataset.active === 'true',
+        window.__procableLiveQuery?.(sel)?.dataset.active === 'true',
       PICK_TOGGLE).catch(() => false);
       if (!isActive) await clickPickToggle(page, PICK_TOGGLE);
     }
@@ -65,7 +65,7 @@ async function clickPickToggle(page, selector) {
     return;
   } catch (err) {
     const clicked = await page.evaluate((sel) => {
-      const btn = window.__impeccableLiveQuery(sel);
+      const btn = window.__procableLiveQuery(sel);
       if (!btn) return false;
       btn.click();
       return true;
@@ -94,7 +94,7 @@ export async function waitForCyclingRobust(page, expectedCount, opts = {}) {
       await waitForCycling(page, expectedCount, { timeout: firstPassTimeoutMs });
       return;
     } catch (preErr) {
-      if (preErr?.impeccableNoRetry) throw preErr;
+      if (preErr?.procableNoRetry) throw preErr;
       log(`Cycling not reached in ${firstPassTimeoutMs}ms — retracing preActions`);
       await runPreActions(page, preActions);
     }
@@ -104,10 +104,10 @@ export async function waitForCyclingRobust(page, expectedCount, opts = {}) {
     await waitForCycling(page, expectedCount, { timeout: finalTimeoutMs });
     return;
   } catch (firstErr) {
-    if (process.env.IMPECCABLE_E2E_DEBUG) {
+    if (process.env.PROCABLE_E2E_DEBUG) {
       firstErr.message += '\n\n--- live UI snapshot ---\n' + JSON.stringify(await liveUiSnapshot(page), null, 2);
     }
-    if (agentMode !== 'llm' || firstErr?.impeccableNoRetry) throw firstErr;
+    if (agentMode !== 'llm' || firstErr?.procableNoRetry) throw firstErr;
   }
 
   log('Cycling not reached after LLM generate — reloading to pick up HMR');
@@ -119,23 +119,23 @@ export async function waitForCyclingRobust(page, expectedCount, opts = {}) {
 
 async function liveUiSnapshot(page) {
   return page.evaluate(() => {
-    const query = window.__impeccableLiveQuery || ((sel) => document.querySelector(sel));
-    const root = window.__IMPECCABLE_LIVE_CHROME_CORE__?.root?.() || window.__IMPECCABLE_LIVE_UI_ROOT__ || null;
-    const bar = query('#impeccable-live-bar');
-    const toast = query('#impeccable-live-toast');
-    const wrapper = document.querySelector('[data-impeccable-variants]');
+    const query = window.__procableLiveQuery || ((sel) => document.querySelector(sel));
+    const root = window.__PROCABLE_LIVE_CHROME_CORE__?.root?.() || window.__PROCABLE_LIVE_UI_ROOT__ || null;
+    const bar = query('#procable-live-bar');
+    const toast = query('#procable-live-toast');
+    const wrapper = document.querySelector('[data-procable-variants]');
     return {
       href: location.href,
-      liveInit: window.__IMPECCABLE_LIVE_INIT__,
-      adapter: window.__IMPECCABLE_LIVE_ADAPTER__,
-      hasShadowRoot: Boolean(document.getElementById('impeccable-live-root')?.shadowRoot),
+      liveInit: window.__PROCABLE_LIVE_INIT__,
+      adapter: window.__PROCABLE_LIVE_ADAPTER__,
+      hasShadowRoot: Boolean(document.getElementById('procable-live-root')?.shadowRoot),
       rootText: root?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 500) || null,
       bar: bar ? { display: bar.style.display, text: bar.textContent } : null,
       toast: toast ? toast.textContent : null,
-      wrapper: wrapper ? { preview: wrapper.dataset.impeccablePreview, count: wrapper.dataset.impeccableVariantCount, html: wrapper.outerHTML.slice(0, 800) } : null,
-      debugState: window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
-      storage: localStorage.getItem('impeccable-live-session'),
-      scripts: document.querySelectorAll('script[data-impeccable-live-script]').length,
+      wrapper: wrapper ? { preview: wrapper.dataset.procablePreview, count: wrapper.dataset.procableVariantCount, html: wrapper.outerHTML.slice(0, 800) } : null,
+      debugState: window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
+      storage: localStorage.getItem('procable-live-session'),
+      scripts: document.querySelectorAll('script[data-procable-live-script]').length,
       consoleHint: 'See page console errors captured by the test session.',
     };
   }).catch((err) => ({ error: err.message }));

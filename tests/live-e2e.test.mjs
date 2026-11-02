@@ -95,27 +95,27 @@ function listRuntimeFixtures() {
 const allFixtures = listRuntimeFixtures();
 
 // During development of the full-cycle test, a fixture subset is much faster
-// to iterate on. Set IMPECCABLE_E2E_ONLY=<name>[,<name>...] to scope the run.
-const onlyNames = parseFixtureFilter(process.env.IMPECCABLE_E2E_ONLY);
+// to iterate on. Set PROCABLE_E2E_ONLY=<name>[,<name>...] to scope the run.
+const onlyNames = parseFixtureFilter(process.env.PROCABLE_E2E_ONLY);
 const fixtures = onlyNames.size > 0
   ? allFixtures.filter((f) => onlyNames.has(f.name))
   : allFixtures;
 const missingOnlyNames = [...onlyNames].filter((name) => !allFixtures.some((f) => f.name === name));
 if (missingOnlyNames.length > 0) {
-  throw new Error(`Unknown IMPECCABLE_E2E_ONLY fixture(s): ${missingOnlyNames.join(', ')}`);
+  throw new Error(`Unknown PROCABLE_E2E_ONLY fixture(s): ${missingOnlyNames.join(', ')}`);
 }
 
-const manualOnly = process.env.IMPECCABLE_E2E_MANUAL_ONLY === '1'
-  || process.env.IMPECCABLE_E2E_MANUAL_ONLY === 'true';
-const reloadVariants = process.env.IMPECCABLE_E2E_RELOAD_VARIANTS === '1'
-  || process.env.IMPECCABLE_E2E_RELOAD_VARIANTS === 'true';
-const scenarioNames = parseFixtureFilter(process.env.IMPECCABLE_E2E_SCENARIOS);
-const liveE2eTestTimeoutMs = readPositiveIntEnv('IMPECCABLE_E2E_TEST_TIMEOUT_MS');
+const manualOnly = process.env.PROCABLE_E2E_MANUAL_ONLY === '1'
+  || process.env.PROCABLE_E2E_MANUAL_ONLY === 'true';
+const reloadVariants = process.env.PROCABLE_E2E_RELOAD_VARIANTS === '1'
+  || process.env.PROCABLE_E2E_RELOAD_VARIANTS === 'true';
+const scenarioNames = parseFixtureFilter(process.env.PROCABLE_E2E_SCENARIOS);
+const liveE2eTestTimeoutMs = readPositiveIntEnv('PROCABLE_E2E_TEST_TIMEOUT_MS');
 const liveE2eTestOptions = liveE2eTestTimeoutMs ? { timeout: liveE2eTestTimeoutMs } : {};
 // Widens the window between the server-side preflight scaffold (which triggers
 // a framework HMR reload) and the agent's variant write. Used to reproduce
 // races where the browser observes a wrapper with zero variants mid-generation.
-const atomicDelayMs = readPositiveIntEnv('IMPECCABLE_E2E_ATOMIC_DELAY_MS') || 0;
+const atomicDelayMs = readPositiveIntEnv('PROCABLE_E2E_ATOMIC_DELAY_MS') || 0;
 
 if (fixtures.length === 0) {
   describe('live-e2e (no runtime fixtures registered)', () => {
@@ -149,7 +149,7 @@ function shouldRunScenario(name) {
 // Anything served out of the live preview / runtime tree. A 404 here is never
 // benign: it means the variant preview module or its runtime never loaded, and
 // the flow silently fell back to the untouched original.
-const LIVE_TREE_URL_RE = /\.impeccable-live|impeccable\/live\/preview/i;
+const LIVE_TREE_URL_RE = /\.procable-live|procable\/live\/preview/i;
 
 // The two framework dev-mode notices every React fixture emits.
 const FRAMEWORK_NOISE_RE = /Download the React DevTools|StrictMode/i;
@@ -216,7 +216,7 @@ for (const { name, fixture } of fixtures) {
         t.skip('scenario filter excludes core');
         return;
       }
-      if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+      if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
         t.skip('manual scenario filter is active');
         return;
       }
@@ -227,23 +227,23 @@ for (const { name, fixture } of fixtures) {
       // the limitation is visible in the run output.
       const knownLimitation = fixture.runtime.knownLimitation;
 
-      // Pick the agent. `IMPECCABLE_E2E_AGENT=llm` opts into Claude first,
+      // Pick the agent. `PROCABLE_E2E_AGENT=llm` opts into Claude first,
       // with DeepSeek as the secondary fallback/override; everything else
       // uses the deterministic fake. Skip rather than fail when LLM is
       // requested but the selected provider key is missing so default suite
       // runs in unauthenticated environments still pass.
-      const agentMode = process.env.IMPECCABLE_E2E_AGENT || 'fake';
+      const agentMode = process.env.PROCABLE_E2E_AGENT || 'fake';
       let agent;
       if (agentMode === 'llm') {
         const llmConfig = resolveLlmAgentConfig({
-          model: process.env.IMPECCABLE_E2E_LLM_MODEL,
+          model: process.env.PROCABLE_E2E_LLM_MODEL,
         });
         agent = await createLlmAgent({
           config: llmConfig,
           log: (m) => t.diagnostic('[llm] ' + m),
         });
         if (!agent) {
-          t.skip(`IMPECCABLE_E2E_AGENT=llm with provider=${llmConfig.provider} requires ${llmConfig.requiredEnv}`);
+          t.skip(`PROCABLE_E2E_AGENT=llm with provider=${llmConfig.provider} requires ${llmConfig.requiredEnv}`);
           return;
         }
         t.diagnostic(`Using LLM agent (provider=${llmConfig.provider} model=${llmConfig.model})`);
@@ -281,10 +281,10 @@ for (const { name, fixture } of fixtures) {
       // Component previews mount every variant into the same node, so one
       // selector serves all three; the HTML/JSX paths keep a div per variant.
       const variantContentSelectorFor = (variantNum) => (isInsert
-        ? (usesSvelteComponentPreview ? '.inserted-copy' : `[data-impeccable-variant="${variantNum}"] .inserted-copy`)
+        ? (usesSvelteComponentPreview ? '.inserted-copy' : `[data-procable-variant="${variantNum}"] .inserted-copy`)
         : usesSvelteComponentPreview
         ? pickSelector
-        : `[data-impeccable-variant="${variantNum}"] > :first-child`);
+        : `[data-procable-variant="${variantNum}"] > :first-child`);
       let stateProbeBaseline = null;
       let sourceFile = null;
 
@@ -340,9 +340,9 @@ for (const { name, fixture } of fixtures) {
           t.diagnostic(`Picking ${pickSelector}`);
           await pickElement(page, pickSelector, { position: fixture.runtime.pickPosition });
 
-          if (process.env.IMPECCABLE_E2E_DEBUG) {
+          if (process.env.PROCABLE_E2E_DEBUG) {
             const barText = await page.evaluate(() => {
-              const bar = document.querySelector('#impeccable-live-bar');
+              const bar = document.querySelector('#procable-live-bar');
               return bar ? { display: bar.style.display, text: bar.textContent || '', html: bar.innerHTML.slice(0, 500) } : null;
             });
             t.diagnostic(`Bar after pick: ${JSON.stringify(barText)}`);
@@ -406,16 +406,16 @@ for (const { name, fixture } of fixtures) {
           } else {
             assert.match(variantBody, new RegExp(`<${svelteComponentSession.expectedTag}\\b`), 'component variant contains target element');
           }
-          assert.doesNotMatch(routeBody, /data-impeccable-variants="/, 'route source is not edited during component preview');
+          assert.doesNotMatch(routeBody, /data-procable-variants="/, 'route source is not edited during component preview');
         } else {
-          assert.match(after, /data-impeccable-variants="/, 'wrapper inserted');
+          assert.match(after, /data-procable-variants="/, 'wrapper inserted');
         }
         if (isInsert) {
           if (svelteComponentSession) {
             assert.equal(svelteComponentSession.manifest.mode, 'insert', 'Svelte insert uses component preview mode');
           } else {
-            assert.match(after, /data-impeccable-mode="insert"/, 'insert mode wrapper');
-            assert.doesNotMatch(after, /data-impeccable-variant="original"/, 'insert has no original variant');
+            assert.match(after, /data-procable-mode="insert"/, 'insert mode wrapper');
+            assert.doesNotMatch(after, /data-procable-variant="original"/, 'insert has no original variant');
           }
           if (insertCfg.assertAnchorContains) {
             const anchorSource = svelteComponentSession
@@ -428,18 +428,18 @@ for (const { name, fixture } of fixtures) {
           const componentExtension = svelteComponentSession.manifest.componentExtension || 'svelte';
           assert.match(readFileSync(join(appRoot, svelteComponentSession.manifest.componentDir, `v2.${componentExtension}`), 'utf-8'), /<style\b/, 'component variant has a style block');
         } else if (sourceFile.endsWith('.astro')) {
-          assert.match(after, /<style is:inline data-impeccable-css="/, 'Astro live CSS uses an inline compiler-bypassing style block');
+          assert.match(after, /<style is:inline data-procable-css="/, 'Astro live CSS uses an inline compiler-bypassing style block');
           assert.match(
             after,
-            /\[data-impeccable-variant="1"\]\s*>\s*(?:h1|\.[\w-]+)/,
+            /\[data-procable-variant="1"\]\s*>\s*(?:h1|\.[\w-]+)/,
             'event=live_e2e.astro_css_prefix actor=agent operation=write_variants risk=astro_scopes_preview_css_away expected=variant-prefixed global selector actual=missing suggestion=inspect fake agent styleMode handling',
           );
-          assert.doesNotMatch(after, /@scope \(\[data-impeccable-variant="1"\]\)/, 'Astro live CSS does not use raw @scope');
+          assert.doesNotMatch(after, /@scope \(\[data-procable-variant="1"\]\)/, 'Astro live CSS does not use raw @scope');
         } else {
-          assert.match(after, /<style data-impeccable-css="/, 'colocated <style> block present');
-          assert.match(after, /@scope \(\[data-impeccable-variant="1"\]\)/, 'scoped CSS for variant 1');
-          assert.match(after, /@scope \(\[data-impeccable-variant="2"\]\)/, 'scoped CSS for variant 2');
-          assert.match(after, /@scope \(\[data-impeccable-variant="3"\]\)/, 'scoped CSS for variant 3');
+          assert.match(after, /<style data-procable-css="/, 'colocated <style> block present');
+          assert.match(after, /@scope \(\[data-procable-variant="1"\]\)/, 'scoped CSS for variant 1');
+          assert.match(after, /@scope \(\[data-procable-variant="2"\]\)/, 'scoped CSS for variant 2');
+          assert.match(after, /@scope \(\[data-procable-variant="3"\]\)/, 'scoped CSS for variant 3');
         }
         // Param manifest assertions are scoped to fake-agent mode. The fake
         // agent deterministically emits one param per variant covering all
@@ -449,13 +449,13 @@ for (const { name, fixture } of fixtures) {
           const paramsSource = svelteComponentSession
             ? readFileSync(join(appRoot, svelteComponentSession.manifest.componentDir, 'params.json'), 'utf-8')
             : after;
-          assert.match(paramsSource, svelteComponentSession ? /"1"\s*:/ : /data-impeccable-params=/, 'params manifest emitted');
+          assert.match(paramsSource, svelteComponentSession ? /"1"\s*:/ : /data-procable-params=/, 'params manifest emitted');
           for (const kind of ['range', 'steps', 'toggle']) {
             assert.match(paramsSource, new RegExp(`"kind"\\s*:\\s*"${kind}"`), `param kind ${kind} present`);
           }
           await page.waitForFunction(() => {
-            const root = window.__IMPECCABLE_LIVE_CHROME_CORE__?.root?.()
-              || window.__IMPECCABLE_LIVE_UI_ROOT__
+            const root = window.__PROCABLE_LIVE_CHROME_CORE__?.root?.()
+              || window.__PROCABLE_LIVE_UI_ROOT__
               || document;
             const tune = root.querySelector('[data-iceq-tune="1"]');
             return tune && tune.disabled === false && /Tune/.test(tune.textContent || '');
@@ -484,9 +484,9 @@ for (const { name, fixture } of fixtures) {
             const styleSnapshot = await evaluatePageWithTimeout(
               page,
               (sel) => {
-                const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
+                const query = window.__procableLiveQuery || ((s) => document.querySelector(s));
                 const el = query(sel) || document.querySelector(sel);
-                const styleEl = document.querySelector('style[data-impeccable-css]');
+                const styleEl = document.querySelector('style[data-procable-css]');
                 const rules = [];
                 for (const sheet of [...document.styleSheets]) {
                   if (sheet.ownerNode !== styleEl) continue;
@@ -529,7 +529,7 @@ for (const { name, fixture } of fixtures) {
             const actual = await evaluatePageWithTimeout(
               page,
               ({ sel, attr }) => {
-                const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
+                const query = window.__procableLiveQuery || ((s) => document.querySelector(s));
                 const el = query(sel) || document.querySelector(sel);
                 if (!el) return null;
                 return attr ? el.getAttribute(attr) : (el.textContent || '').trim();
@@ -637,18 +637,18 @@ for (const { name, fixture } of fixtures) {
         const final = await waitForSourceClean(sourceFile, 20_000, { svelteComponentTarget });
         if (svelteComponentTarget) {
           assert.equal(existsSync(svelteComponentTarget.manifestPath), false, 'Svelte temp preview session removed after accept');
-          const snapshotPath = join(appRoot, '.impeccable/live/sessions', `${svelteComponentTarget.manifest.id}.snapshot.json`);
+          const snapshotPath = join(appRoot, '.procable/live/sessions', `${svelteComponentTarget.manifest.id}.snapshot.json`);
           const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf-8'));
           assert.equal(snapshot.phase, 'completed');
           assert.equal(snapshot.sourceFile, svelteComponentTarget.manifest.sourceFile);
-          assert.doesNotMatch(snapshot.sourceFile, /node_modules\/\.impeccable-live|\.impeccable\/live\/previews/);
+          assert.doesNotMatch(snapshot.sourceFile, /node_modules\/\.procable-live|\.procable\/live\/previews/);
         }
-        assert.doesNotMatch(final, /data-impeccable-variants="/,    'variants wrapper removed');
-        assert.doesNotMatch(final, /impeccable-variants-start/,      'variants-start marker removed');
-        assert.doesNotMatch(final, /impeccable-carbonize-start/,     'carbonize-start marker removed');
-        assert.doesNotMatch(final, /impeccable-carbonize-end/,       'carbonize-end marker removed');
-        assert.doesNotMatch(final, /data-impeccable-carbonize=/,     'carbonize wrapper removed');
-        assert.doesNotMatch(final, /data-impeccable-variant="/,      'no leftover variant scaffolding');
+        assert.doesNotMatch(final, /data-procable-variants="/,    'variants wrapper removed');
+        assert.doesNotMatch(final, /procable-variants-start/,      'variants-start marker removed');
+        assert.doesNotMatch(final, /procable-carbonize-start/,     'carbonize-start marker removed');
+        assert.doesNotMatch(final, /procable-carbonize-end/,       'carbonize-end marker removed');
+        assert.doesNotMatch(final, /data-procable-carbonize=/,     'carbonize wrapper removed');
+        assert.doesNotMatch(final, /data-procable-variant="/,      'no leftover variant scaffolding');
         if (isInsert) {
           if (agentMode === 'fake') {
             assert.match(final, /inserted-strip/, 'accepted insert content survives');
@@ -711,7 +711,7 @@ for (const { name, fixture } of fixtures) {
         }
 
         // 9c. Network hygiene — nothing under the live preview/runtime tree
-        //     may 404 or fail. A missing `.impeccable-live` module means the
+        //     may 404 or fail. A missing `.procable-live` module means the
         //     preview never mounted, which the DOM assertions above can miss
         //     when the original element still renders.
         const liveTreeFailures = (session.failedRequests || []).filter((f) => isLiveTreeUrl(f.url));
@@ -866,7 +866,7 @@ for (const { name, fixture } of fixtures) {
           assert.equal(dry.dryRun, true);
           assert.equal(dry.matchCount, 1);
 
-          const noSession = await page.evaluate(() => window.__IMPECCABLE_LIVE_CHROME_CORE__.debugState());
+          const noSession = await page.evaluate(() => window.__PROCABLE_LIVE_CHROME_CORE__.debugState());
           assert.equal(noSession.currentSessionId, null, 'failed and dry-run targets start no session');
           assert.equal(await page.evaluate(() => Math.round(window.scrollY)), 0, 'page has not scrolled yet');
 
@@ -887,7 +887,7 @@ for (const { name, fixture } of fixtures) {
             scrolled >= (scenario.minScrollY || 100),
             `browser scrolled to the target (scrollY=${scrolled})`,
           );
-          const dbg = await page.evaluate(() => window.__IMPECCABLE_LIVE_CHROME_CORE__.debugState());
+          const dbg = await page.evaluate(() => window.__PROCABLE_LIVE_CHROME_CORE__.debugState());
           assert.equal(dbg.currentSessionId, res.sessionId, 'overlay session matches the CLI result');
 
           if (scenario.prompt) {
@@ -927,8 +927,8 @@ for (const { name, fixture } of fixtures) {
           for (const needle of fixture.runtime.assertSourceContains || []) {
             assert.ok(final.includes(needle), `source still contains ${JSON.stringify(needle)} after accept`);
           }
-          assert.doesNotMatch(final, /data-impeccable-variants="/, 'variants wrapper removed');
-          assert.doesNotMatch(final, /impeccable-carbonize-start/, 'carbonize block rewritten');
+          assert.doesNotMatch(final, /data-procable-variants="/, 'variants wrapper removed');
+          assert.doesNotMatch(final, /procable-carbonize-start/, 'carbonize block rewritten');
 
           // The overlay is reusable after accept: a fresh dry-run resolves.
           const post = runLiveGenerate(appRoot, {
@@ -973,7 +973,7 @@ for (const { name, fixture } of fixtures) {
             // compile is the failure an agent actually produces, and it keeps
             // the module resolvable so the recovery is about the content.
             t.diagnostic(`Corrupting published revision file ${relative(appRoot, variantPath)}`);
-            writeFileSync(variantPath, '<div class="impeccable-broken-variant">{ not valid svelte\n', 'utf-8');
+            writeFileSync(variantPath, '<div class="procable-broken-variant">{ not valid svelte\n', 'utf-8');
 
             // One step forward onto the variant whose module is gone. The step
             // deliberately does not settle, so drive the click directly.
@@ -986,7 +986,7 @@ for (const { name, fixture } of fixtures) {
             // The session must survive the failure: the old behaviour wiped
             // local state and orphaned a session the server still tracked.
             const barVisible = await page.evaluate(() => {
-              const bar = window.__impeccableLiveQuery('#impeccable-live-bar');
+              const bar = window.__procableLiveQuery('#procable-live-bar');
               return Boolean(bar) && bar.style.display !== 'none';
             });
             assert.equal(barVisible, true, 'the cycling bar survives a mount failure');
@@ -1087,7 +1087,7 @@ for (const { name, fixture } of fixtures) {
 
     if (shouldRunScenario('missed-done') && fixture.runtime.missedDoneReloadScenario) {
       it('recovers when the preflight reload makes the browser miss the done broadcast', liveE2eTestOptions, async (t) => {
-        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+        if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
           t.skip('manual scenario filter is active');
           return;
         }
@@ -1143,9 +1143,9 @@ for (const { name, fixture } of fixtures) {
 
           // The scaffold write reloads the page into wrapped-but-empty source.
           await page.waitForFunction(() => {
-            const wrapper = document.querySelector('[data-impeccable-variants]');
+            const wrapper = document.querySelector('[data-procable-variants]');
             if (!wrapper) return false;
-            const variants = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])');
+            const variants = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])');
             return variants.length === 0;
           }, { timeout: 15_000 });
           t.diagnostic('Browser reloaded into the scaffold-only wrapper (0 variants)');
@@ -1174,7 +1174,7 @@ for (const { name, fixture } of fixtures) {
           // is deaf to both delivery channels.
           const writeDeadline = Date.now() + 20_000;
           for (;;) {
-            if (/data-impeccable-variant="3"/.test(readFileSync(scaffoldSourceFile, 'utf-8'))) break;
+            if (/data-procable-variant="3"/.test(readFileSync(scaffoldSourceFile, 'utf-8'))) break;
             if (Date.now() > writeDeadline) throw new Error('agent variant write never landed in source');
             await new Promise((resolve) => setTimeout(resolve, 200));
           }
@@ -1196,7 +1196,7 @@ for (const { name, fixture } of fixtures) {
 
     if (shouldRunScenario('orphan') && fixture.runtime.orphanedWrapperScenario) {
       it('self-discards an orphaned session when its wrapper is edited out of source', liveE2eTestOptions, async (t) => {
-        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+        if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
           t.skip('manual scenario filter is active');
           return;
         }
@@ -1244,7 +1244,7 @@ for (const { name, fixture } of fixtures) {
           }
           t.diagnostic('Orphaned session discarded; verifying durable phase + picker rearm');
 
-          const snapshotPath = join(appRoot, '.impeccable/live/sessions', `${saved.id}.snapshot.json`);
+          const snapshotPath = join(appRoot, '.procable/live/sessions', `${saved.id}.snapshot.json`);
           const snapshot = JSON.parse(readFileSync(snapshotPath, 'utf-8'));
           assert.equal(
             snapshot.phase,
@@ -1262,7 +1262,7 @@ for (const { name, fixture } of fixtures) {
 
     if (shouldRunScenario('foreign') && fixture.runtime.foreignSessionScenario) {
       it('clears another project\'s leftover browser session instead of resuming it', liveE2eTestOptions, async (t) => {
-        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+        if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
           t.skip('manual scenario filter is active');
           return;
         }
@@ -1297,8 +1297,8 @@ for (const { name, fixture } of fixtures) {
           for (const foreign of cases) {
             t.diagnostic(`Seeding foreign session ${foreign.id}${foreign.appRoot ? ' (stamped)' : ' (legacy shape)'}`);
             await page.evaluate((saved) => {
-              localStorage.setItem('impeccable-live-session', JSON.stringify(saved));
-              localStorage.removeItem('impeccable-live-session-handled');
+              localStorage.setItem('procable-live-session', JSON.stringify(saved));
+              localStorage.removeItem('procable-live-session-handled');
             }, {
               id: foreign.id,
               state: 'CYCLING',
@@ -1320,7 +1320,7 @@ for (const { name, fixture } of fixtures) {
               if (Date.now() > deadline) throw new Error(`foreign session ${foreign.id} was never cleared`);
               await new Promise((resolve) => setTimeout(resolve, 250));
             }
-            const sessionsDir = join(appRoot, '.impeccable/live/sessions');
+            const sessionsDir = join(appRoot, '.procable/live/sessions');
             assert.equal(
               existsSync(join(sessionsDir, `${foreign.id}.jsonl`)),
               false,
@@ -1337,7 +1337,7 @@ for (const { name, fixture } of fixtures) {
     }
 
     if (shouldRunScenario('manual') && Array.isArray(fixture.runtime.manualEditScenarios) && fixture.runtime.manualEditScenarios.length > 0) {
-      const manualScenarioFilter = process.env.IMPECCABLE_E2E_MANUAL_SCENARIO || '';
+      const manualScenarioFilter = process.env.PROCABLE_E2E_MANUAL_SCENARIO || '';
       for (const scenario of fixture.runtime.manualEditScenarios) {
         if (manualScenarioFilter && !scenario.name.includes(manualScenarioFilter)) continue;
         it(`Edit copy → Save → Apply/commit: ${scenario.name}`, liveE2eTestOptions, async (t) => {
@@ -1379,23 +1379,23 @@ for (const { name, fixture } of fixtures) {
 
     if (shouldRunScenario('annotations') && fixture.runtime.liveChrome?.annotations) {
       it('uploads annotations with generate and still accepts the variant', liveE2eTestOptions, async (t) => {
-        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+        if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
           t.skip('manual scenario filter is active');
           return;
         }
-        const agentMode = process.env.IMPECCABLE_E2E_AGENT || 'fake';
+        const agentMode = process.env.PROCABLE_E2E_AGENT || 'fake';
         const recordedGenerateEvents = [];
         let baseAgent;
         if (agentMode === 'llm') {
           const llmConfig = resolveLlmAgentConfig({
-            model: process.env.IMPECCABLE_E2E_LLM_MODEL,
+            model: process.env.PROCABLE_E2E_LLM_MODEL,
           });
           baseAgent = await createLlmAgent({
             config: llmConfig,
             log: (m) => t.diagnostic('[llm] ' + m),
           });
           if (!baseAgent) {
-            t.skip(`IMPECCABLE_E2E_AGENT=llm with provider=${llmConfig.provider} requires ${llmConfig.requiredEnv}`);
+            t.skip(`PROCABLE_E2E_AGENT=llm with provider=${llmConfig.provider} requires ${llmConfig.requiredEnv}`);
             return;
           }
           t.diagnostic(`Using LLM agent (provider=${llmConfig.provider} model=${llmConfig.model})`);
@@ -1435,7 +1435,7 @@ for (const { name, fixture } of fixtures) {
           const generateEvent = recordedGenerateEvents.at(-1);
           await assertAnnotationUploadEvent(generateEvent);
           assert.ok(existsSync(generateEvent.screenshotPath), 'annotation screenshot file exists');
-          assert.match(generateEvent.screenshotPath, /\.impeccable\/live\/annotations\//, 'annotation screenshot is stored under live annotations');
+          assert.match(generateEvent.screenshotPath, /\.procable\/live\/annotations\//, 'annotation screenshot is stored under live annotations');
 
           const sourceFile = await locateSessionFile(session.appRoot);
           const svelteComponentTarget = svelteComponentTargetFor(sourceFile);
@@ -1452,7 +1452,7 @@ for (const { name, fixture } of fixtures) {
 
     if (shouldRunScenario('exit') && fixture.runtime.liveChrome?.bottomBar) {
       it('Exit removes live chrome cleanly', liveE2eTestOptions, async (t) => {
-        if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+        if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
           t.skip('manual scenario filter is active');
           return;
         }
@@ -1485,11 +1485,11 @@ for (const { name, fixture } of fixtures) {
  * produces neither, so they only run against the fake agent.
  */
 function canRunFakeAgentScenario(t) {
-  if (manualOnly || process.env.IMPECCABLE_E2E_MANUAL_SCENARIO) {
+  if (manualOnly || process.env.PROCABLE_E2E_MANUAL_SCENARIO) {
     t.skip('manual scenario filter is active');
     return false;
   }
-  if ((process.env.IMPECCABLE_E2E_AGENT || 'fake') !== 'fake') {
+  if ((process.env.PROCABLE_E2E_AGENT || 'fake') !== 'fake') {
     t.skip('scenario asserts on deterministic fake-agent output');
     return false;
   }
@@ -1580,7 +1580,7 @@ function revisionVariantPath(appRoot, manifestPath, variantNum) {
 
 /** Poll the session journal for events of a given type. */
 async function waitForJournalEvent(appRoot, sessionId, type, timeoutMs = 15_000) {
-  const journalPath = join(appRoot, '.impeccable', 'live', 'sessions', `${sessionId}.jsonl`);
+  const journalPath = join(appRoot, '.procable', 'live', 'sessions', `${sessionId}.jsonl`);
   const deadline = Date.now() + timeoutMs;
   let seen = [];
   while (Date.now() < deadline) {
@@ -1634,19 +1634,19 @@ function assertNestedAppRoots(session) {
   assert.equal(liveBoot.hasDesign, true, 'DESIGN.md at the repo root is read from the nested app');
 
   assert.ok(
-    existsSync(join(appRoot, '.impeccable/live/roots.json')),
+    existsSync(join(appRoot, '.procable/live/roots.json')),
     'the resolved manifest is persisted under the app',
   );
   assert.ok(
-    existsSync(join(appRoot, '.impeccable/live/server.json')),
+    existsSync(join(appRoot, '.procable/live/server.json')),
     'the live server registers itself under the app',
   );
   assert.ok(
-    existsSync(join(tmp, '.impeccable/live/app-root.json')),
+    existsSync(join(tmp, '.procable/live/app-root.json')),
     'the repo root gets a pointer to the app',
   );
   assert.equal(
-    existsSync(join(tmp, '.impeccable/live/server.json')),
+    existsSync(join(tmp, '.procable/live/server.json')),
     false,
     'no live session state may be written at the repo root',
   );
@@ -1670,7 +1670,7 @@ function recordGenerateEvents(agent, events) {
 }
 
 function countSourceVariants(source) {
-  return (String(source).match(/<div\s+data-impeccable-variant="(?!original")/g) || []).length;
+  return (String(source).match(/<div\s+data-procable-variant="(?!original")/g) || []).length;
 }
 
 function escapeRegExp(value) {
@@ -1678,8 +1678,8 @@ function escapeRegExp(value) {
 }
 
 async function waitForGenerationTimings(tmp, id, { timeoutMs = 5_000, requireAllVariants = true } = {}) {
-  const snapshotPath = join(tmp, '.impeccable', 'live', 'sessions', `${id}.snapshot.json`);
-  const journalPath = join(tmp, '.impeccable', 'live', 'sessions', `${id}.jsonl`);
+  const snapshotPath = join(tmp, '.procable', 'live', 'sessions', `${id}.snapshot.json`);
+  const journalPath = join(tmp, '.procable', 'live', 'sessions', `${id}.jsonl`);
   const deadline = Date.now() + timeoutMs;
   let lastTimings = null;
   while (Date.now() < deadline) {
@@ -1703,7 +1703,7 @@ async function waitForGenerationTimings(tmp, id, { timeoutMs = 5_000, requireAll
 }
 
 async function captureLiveE2eFailure({ name, fixture, session, sourceFile, error, log = () => {} }) {
-  const root = process.env.IMPECCABLE_E2E_ARTIFACT_DIR;
+  const root = process.env.PROCABLE_E2E_ARTIFACT_DIR;
   if (!root || !session?.tmp) return;
 
   try {
@@ -1736,9 +1736,9 @@ async function captureLiveE2eFailure({ name, fixture, session, sourceFile, error
     }
 
     for (const file of walkSources(tmp)) copyFileFromTmp(tmp, file, join(dir, 'sources'));
-    copyDirIfExists(join(tmp, '.impeccable', 'live'), join(dir, 'impeccable-live'));
-    copyDirIfExists(join(tmp, 'node_modules', '.impeccable-live'), join(dir, 'impeccable-live-preview'));
-    copyDirIfExists(join(tmp, '.impeccable', 'live', 'previews'), join(dir, 'impeccable-live-previews'));
+    copyDirIfExists(join(tmp, '.procable', 'live'), join(dir, 'procable-live'));
+    copyDirIfExists(join(tmp, 'node_modules', '.procable-live'), join(dir, 'procable-live-preview'));
+    copyDirIfExists(join(tmp, '.procable', 'live', 'previews'), join(dir, 'procable-live-previews'));
 
     if (session.page) {
       const html = await withCaptureTimeout(session.page.content(), 5_000, 'page content').catch((err) => `capture failed: ${err.message}`);
@@ -1792,7 +1792,7 @@ function withCaptureTimeout(promise, timeoutMs, label) {
 }
 
 async function createManualScenarioAgent(t, scenario = {}) {
-  const requested = (process.env.IMPECCABLE_E2E_MANUAL_AGENT || process.env.IMPECCABLE_E2E_AGENT || 'auto')
+  const requested = (process.env.PROCABLE_E2E_MANUAL_AGENT || process.env.PROCABLE_E2E_AGENT || 'auto')
     .trim()
     .toLowerCase();
   if (requested === 'fake' || requested === 'mock') {
@@ -1810,7 +1810,7 @@ async function createManualScenarioAgent(t, scenario = {}) {
   }
 
   const llmConfig = resolveLlmAgentConfig({
-    model: process.env.IMPECCABLE_E2E_LLM_MODEL,
+    model: process.env.PROCABLE_E2E_LLM_MODEL,
   });
   const agent = await createLlmAgent({
     config: llmConfig,
@@ -1827,7 +1827,7 @@ async function createManualScenarioAgent(t, scenario = {}) {
   }
 
   if (requested === 'llm') {
-    t.skip(`IMPECCABLE_E2E_AGENT=llm with provider=${llmConfig.provider} requires ${llmConfig.requiredEnv}`);
+    t.skip(`PROCABLE_E2E_AGENT=llm with provider=${llmConfig.provider} requires ${llmConfig.requiredEnv}`);
     return null;
   }
 
@@ -1858,7 +1858,7 @@ function maybeWrapMalformedAckProbe(agent, scenario, probeState, t) {
         assert.match(output, /--reply EVENT_ID done|must be the event id|Missing reply status/);
         probeState.malformedAckRejected = true;
       }
-      const buffer = JSON.parse(readFileSync(join(context.tmp, '.impeccable/live/pending-manual-edits.json'), 'utf-8'));
+      const buffer = JSON.parse(readFileSync(join(context.tmp, '.procable/live/pending-manual-edits.json'), 'utf-8'));
       assert.ok(buffer.entries.length > 0, 'malformed ack must not clear staged manual edits');
       t.diagnostic(`Malformed manual Apply ack rejected for ${event.id}; continuing with correct reply`);
       return agent.applyManualEdits(event, context);
@@ -2100,7 +2100,7 @@ async function waitForAcceptedSelectionReady(page, selector, { timeout }) {
       const all = document.querySelectorAll(sel);
       if (all.length < 1) return false;
       for (const el of all) {
-        if (el.closest('[data-impeccable-variants],[data-impeccable-variant]')) return false;
+        if (el.closest('[data-procable-variants],[data-procable-variant]')) return false;
       }
       return true;
     },
@@ -2111,7 +2111,7 @@ async function waitForAcceptedSelectionReady(page, selector, { timeout }) {
 
 async function readLiveSessionStorage(page) {
   return page.evaluate(() => {
-    const raw = localStorage.getItem('impeccable-live-session');
+    const raw = localStorage.getItem('procable-live-session');
     return raw ? JSON.parse(raw) : null;
   });
 }
@@ -2120,8 +2120,8 @@ async function waitForVariantCounter(page, variant, count, { timeout = 15_000 } 
   try {
     await page.waitForFunction(
       ({ variant, count }) => {
-        const query = window.__impeccableLiveQuery || ((sel) => document.querySelector(sel));
-        const bar = query('#impeccable-live-bar');
+        const query = window.__procableLiveQuery || ((sel) => document.querySelector(sel));
+        const bar = query('#procable-live-bar');
         const text = bar?.textContent || '';
         return text.includes(`${variant}/${count}`);
       },
@@ -2130,14 +2130,14 @@ async function waitForVariantCounter(page, variant, count, { timeout = 15_000 } 
     );
   } catch (err) {
     const snapshot = await page.evaluate(() => {
-      const query = window.__impeccableLiveQuery || ((sel) => document.querySelector(sel));
-      const bar = query('#impeccable-live-bar');
-      const wrapper = document.querySelector('[data-impeccable-variants]');
+      const query = window.__procableLiveQuery || ((sel) => document.querySelector(sel));
+      const bar = query('#procable-live-bar');
+      const wrapper = document.querySelector('[data-procable-variants]');
       return {
         barText: bar?.textContent || null,
-        debugState: window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
-        storage: localStorage.getItem('impeccable-live-session'),
-        wrapper: wrapper ? { preview: wrapper.dataset.impeccablePreview, count: wrapper.dataset.impeccableVariantCount, html: wrapper.outerHTML.slice(0, 500) } : null,
+        debugState: window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
+        storage: localStorage.getItem('procable-live-session'),
+        wrapper: wrapper ? { preview: wrapper.dataset.procablePreview, count: wrapper.dataset.procableVariantCount, html: wrapper.outerHTML.slice(0, 500) } : null,
       };
     }).catch((snapErr) => ({ error: snapErr.message }));
     console.error('--- waitForVariantCounter snapshot ---\n' + JSON.stringify(snapshot, null, 2));
@@ -2149,10 +2149,10 @@ async function waitForVariantCounter(page, variant, count, { timeout = 15_000 } 
 async function waitForRecoverableVariantSession(page, variant, count, { timeout = 15_000 } = {}) {
   await page.waitForFunction(
     ({ variant, count }) => {
-      const query = window.__impeccableLiveQuery || ((sel) => document.querySelector(sel));
-      const bar = query('#impeccable-live-bar');
+      const query = window.__procableLiveQuery || ((sel) => document.querySelector(sel));
+      const bar = query('#procable-live-bar');
       const text = bar?.textContent || '';
-      const raw = localStorage.getItem('impeccable-live-session');
+      const raw = localStorage.getItem('procable-live-session');
       let saved = null;
       try { saved = raw ? JSON.parse(raw) : null; } catch {}
       return Boolean(
@@ -2174,9 +2174,9 @@ async function waitForAcceptedDom(page, selector, { allowVariantRoot = false, ti
       const all = document.querySelectorAll(sel);
       if (all.length < 1) return false;
       for (const el of all) {
-        if (el.closest('[data-impeccable-variants]')) return false;
-        if (el.closest('[data-impeccable-carbonize]')) return false;
-        if (!allowVariantRoot && el.closest('[data-impeccable-variant]')) return false;
+        if (el.closest('[data-procable-variants]')) return false;
+        if (el.closest('[data-procable-carbonize]')) return false;
+        if (!allowVariantRoot && el.closest('[data-procable-variant]')) return false;
       }
       return true;
     },
@@ -2388,11 +2388,11 @@ async function waitForSourceClean(filePath, timeoutMs, { svelteComponentTarget: 
     last = readFileSync(filePath, 'utf-8');
     const dirty =
       (svelteTarget && existsSync(svelteTarget.manifestPath)) ||
-      last.includes('data-impeccable-variants=') ||
-      last.includes('impeccable-variants-start') ||
-      last.includes('impeccable-carbonize-start') ||
-      last.includes('data-impeccable-carbonize=') ||
-      last.includes('data-impeccable-variant=');
+      last.includes('data-procable-variants=') ||
+      last.includes('procable-variants-start') ||
+      last.includes('procable-carbonize-start') ||
+      last.includes('data-procable-carbonize=') ||
+      last.includes('data-procable-variant=');
     if (!dirty) return last;
     await new Promise((r) => setTimeout(r, 100));
   }
@@ -2402,11 +2402,11 @@ async function waitForSourceClean(filePath, timeoutMs, { svelteComponentTarget: 
 function sourceShadowTargetFor(filePath) {
   let body;
   try { body = readFileSync(filePath, 'utf-8'); } catch { return null; }
-  if (!body.includes('data-impeccable-preview="source-shadow"')) return null;
-  const match = body.match(/\bdata-impeccable-source-file=(["'])(.*?)\1/);
+  if (!body.includes('data-procable-preview="source-shadow"')) return null;
+  const match = body.match(/\bdata-procable-source-file=(["'])(.*?)\1/);
   if (!match) return null;
-  const root = filePath.includes('/.impeccable/')
-    ? filePath.slice(0, filePath.indexOf('/.impeccable/'))
+  const root = filePath.includes('/.procable/')
+    ? filePath.slice(0, filePath.indexOf('/.procable/'))
     : dirname(filePath);
   return join(root, decodeHtmlAttr(match[2]));
 }
@@ -2418,10 +2418,10 @@ function svelteComponentTargetFor(filePath) {
   if (manifest.previewMode !== 'svelte-component' || !manifest.sourceFile || !manifest.componentDir) return null;
   const sep = pathSepFor(filePath);
   const markers = [
-    `${sep}.impeccable${sep}live${sep}previews${sep}`,
-    `${sep}node_modules${sep}.impeccable-live${sep}`,
-    `${sep}src${sep}lib${sep}impeccable${sep}`,
-    `${sep}app${sep}.impeccable-live${sep}`,
+    `${sep}.procable${sep}live${sep}previews${sep}`,
+    `${sep}node_modules${sep}.procable-live${sep}`,
+    `${sep}src${sep}lib${sep}procable${sep}`,
+    `${sep}app${sep}.procable-live${sep}`,
   ];
   const marker = markers.find((candidate) => filePath.includes(candidate));
   const idx = marker ? filePath.indexOf(marker) : -1;
@@ -2504,9 +2504,9 @@ async function locateSessionFile(tmp) {
   for (const f of candidates) {
     const body = readFileSync(f, 'utf-8');
     if (
-      body.includes('data-impeccable-variants=') ||
-      body.includes('impeccable-carbonize-start') ||
-      body.includes('impeccable-variants-start')
+      body.includes('data-procable-variants=') ||
+      body.includes('procable-carbonize-start') ||
+      body.includes('procable-variants-start')
     ) {
       return f;
     }
@@ -2521,10 +2521,10 @@ async function locateSessionFile(tmp) {
 function walkComponentManifests(root) {
   const results = [];
   const stack = [
-    join(root, '.impeccable/live/previews'),
-    join(root, 'node_modules/.impeccable-live'),
-    join(root, 'src/lib/impeccable'),
-    join(root, 'app/.impeccable-live'),
+    join(root, '.procable/live/previews'),
+    join(root, 'node_modules/.procable-live'),
+    join(root, 'src/lib/procable'),
+    join(root, 'app/.procable-live'),
   ];
   while (stack.length) {
     const dir = stack.pop();

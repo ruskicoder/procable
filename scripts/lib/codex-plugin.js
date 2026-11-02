@@ -20,9 +20,9 @@ export function buildCodexPluginManifest(rootManifest) {
     ],
     skills: './skills/',
     interface: {
-      displayName: 'Impeccable',
+      displayName: 'Procable',
       shortDescription: 'Design and refine interfaces',
-      longDescription: 'Create, critique, and refine frontend interfaces with your coding agent. Impeccable provides 23 focused design commands, live browser iteration for exploring visual directions, and automatic checks that flag common design anti-patterns as you work.',
+      longDescription: 'Create, critique, and refine frontend interfaces with your coding agent. Procable provides 23 focused design commands, live browser iteration for exploring visual directions, and automatic checks that flag common design anti-patterns as you work.',
       developerName: 'Renaissance Geek Inc',
       category: 'Creativity',
       capabilities: ['Interactive', 'Read', 'Write'],
@@ -32,7 +32,7 @@ export function buildCodexPluginManifest(rootManifest) {
       defaultPrompt: [
         'critique this interface and prioritize what to fix.',
         'craft a distinctive landing page, then polish the result.',
-        'start impeccable live so I can explore bolder or more delightful variants.',
+        'start procable live so I can explore bolder or more delightful variants.',
       ],
       brandColor: '#E2AE38',
       composerIcon: './assets/icon.png',

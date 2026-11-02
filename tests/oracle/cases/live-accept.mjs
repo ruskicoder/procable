@@ -42,7 +42,7 @@ export default [
     setup: (ws) => {
       stageWrappedHtml(ws);
       const p = path.join(ws, 'index.html');
-      fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/ {8}<style data-impeccable-css="ab12cd34">[\s\S]*?<\/style>\n/, ''));
+      fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/ {8}<style data-procable-css="ab12cd34">[\s\S]*?<\/style>\n/, ''));
     },
   }),
   // --- A hand-written wrapper without the original slot (#875): discard
@@ -54,7 +54,7 @@ export default [
       setup: (ws) => {
         stageWrappedHtml(ws);
         const p = path.join(ws, 'index.html');
-        fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/ *<!-- Original -->\n *<div data-impeccable-variant="original">\n.*\n *<\/div>\n/, ''));
+        fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace(/ *<!-- Original -->\n *<div data-procable-variant="original">\n.*\n *<\/div>\n/, ''));
       },
     })),
   {
@@ -79,7 +79,7 @@ export default [
   }),
   A('live-accept-source-locked', 'live-html', ['--id', ID, '--variant', '1'], {
     // Lock file names hash the absolute source path, so they are not snapshotted.
-    files: ['index.html', '.impeccable/live/accept-receipts/**'],
+    files: ['index.html', '.procable/live/accept-receipts/**'],
     setup: (ws) => {
       stageWrappedHtml(ws);
       // The recording process itself owns the lock, so it is alive for the whole run.
@@ -87,7 +87,7 @@ export default [
     },
   }),
   A('live-accept-stale-lock-dead-pid', 'live-html', ['--id', ID, '--variant', '1'], {
-    files: ['index.html', '.impeccable/live/accept-receipts/**'],
+    files: ['index.html', '.procable/live/accept-receipts/**'],
     setup: (ws) => {
       stageWrappedHtml(ws);
       write(ws, lockPathFor(ws, 'index.html'), JSON.stringify({ owner: 'oracle', token: 'x', pid: 2147483646, at: 1, file: path.join(ws, 'index.html') }));
@@ -116,7 +116,7 @@ export default [
     setup: (ws) => {
       stageWrappedHtml(ws);
       const p = path.join(ws, 'index.html');
-      fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('data-impeccable-variant-count="3"', 'data-impeccable-variant-count="3" data-impeccable-preview="source-shadow"'));
+      fs.writeFileSync(p, fs.readFileSync(p, 'utf8').replace('data-procable-variant-count="3"', 'data-procable-variant-count="3" data-procable-preview="source-shadow"'));
     },
   }),
 
@@ -143,7 +143,7 @@ export default [
         // The agent's variant: the stub's script/markup kept, a new style block
         // with param hooks, and params.json declaring them.
         setup: (ws) => {
-          const dir = path.join(ws, 'node_modules/.impeccable-live', ID);
+          const dir = path.join(ws, 'node_modules/.procable-live', ID);
           const stub = fs.readFileSync(path.join(dir, 'v2.svelte'), 'utf8');
           const head = stub.slice(0, stub.indexOf('<style>'));
           fs.writeFileSync(path.join(dir, 'v2.svelte'), head + '<style>\n  .hero-title {\n    font-weight: 900;\n    line-height: var(--p-lead, 1.2);\n    letter-spacing: 0.14em;\n  }\n  :global([data-p-density="snug"]) .hero-title { letter-spacing: 0; }\n</style>\n');

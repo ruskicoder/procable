@@ -1,11 +1,11 @@
 //! Unit tests for the cascade helpers without recorded vectors. Expected
 //! values were produced by running the JS `css-cascade.mjs` in Node.
 
-use impeccable_html::cascade::checks_shim::{resolve_length_px, resolve_var_refs, CustomProps};
-use impeccable_html::cascade::rules::{
+use procable_html::cascade::checks_shim::{resolve_length_px, resolve_var_refs, CustomProps};
+use procable_html::cascade::rules::{
     apply_static_declaration, parse_static_style_attribute, DeclMeta, SpecifiedStore,
 };
-use impeccable_html::cascade::values::{normalize_color_for_check, unwrap_css_at_layer};
+use procable_html::cascade::values::{normalize_color_for_check, unwrap_css_at_layer};
 
 #[test]
 fn normalize_color_for_check_matches_node() {
@@ -227,7 +227,7 @@ fn checks_shim_helpers() {
 /// later resolution and the negative side keeps its sign.
 #[test]
 fn stylesheet_margin_shorthand_keeps_negative_and_var_sides() {
-    use impeccable_html::cascade::rules::collect_static_css_rules;
+    use procable_html::cascade::rules::collect_static_css_rules;
     let rules = collect_static_css_rules(".a{margin:0 var(--pull) 0 -8px}.b{margin:0 -8px 0 0}");
     let mut specified: SpecifiedStore<&str> = SpecifiedStore::new();
     for (i, (node, rule)) in ["a", "b"].iter().zip(&rules).enumerate() {

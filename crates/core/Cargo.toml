@@ -1,5 +1,5 @@
 [package]
-name = "impeccable-core"
+name = "procable-core"
 version.workspace = true
 edition = "2021"
 # The rule logic: the check functions and their heuristics.
@@ -10,17 +10,17 @@ publish.workspace = true
 default = []
 # Vector dispatcher used by tests/vectors.rs to replay the recorded JS call
 # vectors through the Rust port.
-vectors = ["impeccable-foundation/vectors"]
+vectors = ["procable-foundation/vectors"]
 # The table-driven fake DOM for browser-rule tests (crates/wasm tests use it).
-fake-dom = ["impeccable-foundation/fake-dom"]
+fake-dom = ["procable-foundation/fake-dom"]
 
 [dependencies]
 cssparser = "0.37"
-impeccable-foundation = { workspace = true }
+procable-foundation = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["float_roundtrip"] }
 regex = { workspace = true }
 once_cell = { workspace = true }
 
 [dev-dependencies]
-impeccable-core = { path = ".", features = ["fake-dom", "vectors"] }
+procable-core = { path = ".", features = ["fake-dom", "vectors"] }

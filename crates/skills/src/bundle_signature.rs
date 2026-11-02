@@ -27,7 +27,7 @@ pub(crate) fn release_version(location: &str) -> Result<String, String> {
         .and_then(|s| s.strip_suffix("/universal.zip"))
         .filter(|v| v.len() <= 128 && VERSION.is_match(v));
     version.map(str::to_string).ok_or_else(|| {
-        "Bundle download must redirect to a versioned Impeccable GitHub release".into()
+        "Bundle download must redirect to a versioned Procable GitHub release".into()
     })
 }
 
@@ -79,12 +79,12 @@ pub(crate) fn verify_reader(
     }
     let public_key = keys
         .get(&envelope.key_id)
-        .ok_or("Unknown bundle signing key; update the Impeccable CLI and retry")?;
+        .ok_or("Unknown bundle signing key; update the Procable CLI and retry")?;
     let public_key = decode_hex(public_key, 32)?;
     let signature = decode_hex(&envelope.signature, 64)?;
     decode_hex(&envelope.sha256, 32)?;
     let payload = format!(
-        "impeccable-skill-bundle-v1\n{}\nskill-v{}\n{}\n{}\n{}\n",
+        "procable-skill-bundle-v1\n{}\nskill-v{}\n{}\n{}\n{}\n",
         envelope.key_id, envelope.version, envelope.artifact, envelope.size, envelope.sha256
     );
     UnparsedPublicKey::new(&ED25519, public_key)
@@ -117,10 +117,10 @@ mod tests {
     use ring::signature::{Ed25519KeyPair, KeyPair};
 
     #[test]
-    #[ignore = "Set IMPECCABLE_VERIFY_BUNDLE and IMPECCABLE_VERIFY_BUNDLE_VERSION to a reviewed release ZIP"]
+    #[ignore = "Set PROCABLE_VERIFY_BUNDLE and PROCABLE_VERIFY_BUNDLE_VERSION to a reviewed release ZIP"]
     fn verifies_reviewed_release_with_production_keyring() {
-        let path = std::env::var("IMPECCABLE_VERIFY_BUNDLE").unwrap();
-        let version = std::env::var("IMPECCABLE_VERIFY_BUNDLE_VERSION").unwrap();
+        let path = std::env::var("PROCABLE_VERIFY_BUNDLE").unwrap();
+        let version = std::env::var("PROCABLE_VERIFY_BUNDLE_VERSION").unwrap();
         let signature = std::fs::read(format!("{path}.sig.json")).unwrap();
         let mut file = std::fs::File::open(path).unwrap();
         verify_reader(&mut file, &signature, &version, &trusted_keys().unwrap()).unwrap();
@@ -144,7 +144,7 @@ mod tests {
         let bundle = b"test bundle".to_vec();
         let digest = format!("{:x}", Sha256::digest(&bundle));
         let payload = format!(
-            "impeccable-skill-bundle-v1\ntest-only\nskill-v4.2.0\nuniversal.zip\n11\n{digest}\n"
+            "procable-skill-bundle-v1\ntest-only\nskill-v4.2.0\nuniversal.zip\n11\n{digest}\n"
         );
         let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
         let envelope = serde_json::json!({
@@ -223,7 +223,7 @@ mod tests {
             format!("{prefix}skill-v4.2.0/universal.zip#x"),
             format!("{prefix}skill-v04.2.0/universal.zip"),
             "http://github.com/pbakaus/impeccable/releases/download/skill-v4.2.0/universal.zip".into(),
-            "https://github.com/attacker/impeccable/releases/download/skill-v4.2.0/universal.zip".into(),
+            "https://github.com/attacker/procable/releases/download/skill-v4.2.0/universal.zip".into(),
             "https://github.com.evil.test/pbakaus/impeccable/releases/download/skill-v4.2.0/universal.zip".into(),
         ] {
             assert!(release_version(&bad).is_err(), "{bad}");

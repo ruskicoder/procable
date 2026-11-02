@@ -7,7 +7,7 @@
 // adapter whose every read is a question back to the content script.
 //
 // Protocol (content script <-> this document, chrome.runtime messages with
-// `target: 'impeccable-offscreen'`; each request is answered exactly once):
+// `target: 'procable-offscreen'`; each request is answered exactly once):
 //
 //   { action: 'scan-start', session, snapshot, config }
 //       -> { ask: { hitTests: [[x, y]] } }         answer: { hits: [...] }
@@ -30,12 +30,12 @@
 // maps ids to Elements through the capture it made.
 
 (function () {
-  const TARGET = 'impeccable-offscreen';
+  const TARGET = 'procable-offscreen';
   const sessions = new Map();
 
   let corePromise = null;
   function coreReady() {
-    if (!corePromise) corePromise = __impeccableLoadCore();
+    if (!corePromise) corePromise = __procableLoadCore();
     return corePromise;
   }
 

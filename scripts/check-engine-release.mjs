@@ -2,19 +2,19 @@
 /**
  * Release-order guard (triage decision D4).
  *
- * The launcher (skill/scripts/impeccable), the npm shim (cli/bin/cli.js), and
- * `impeccable install` all dead-end unless the engine release for the pinned
+ * The launcher (skill/scripts/procable), the npm shim (cli/bin/cli.js), and
+ * `procable install` all dead-end unless the engine release for the pinned
  * ENGINE_VERSION exists FIRST: the five platform binaries in the engine-v<version> GitHub Release
- * release channel AND the five @impeccable/cli-<os>-<arch> npm platform packages.
+ * release channel AND the five @procable/cli-<os>-<arch> npm platform packages.
  * Nothing else mechanically stops a maintainer from tagging the skill release (or
  * merging and letting the sync workflow rewrite provider dirs) before those assets
  * are published, which breaks every install path.
  *
  * This script verifies, for the pinned engine version, that:
- *   1. each of the five release binaries impeccable-<os>-<arch>[.exe] is fetchable
+ *   1. each of the five release binaries procable-<os>-<arch>[.exe] is fetchable
  *   2. each binary's .sha256 sidecar is fetchable
  *   3. skill/scripts/engine-checksums.txt records the digest each sidecar publishes
- *   4. each npm platform package @impeccable/cli-<os>-<arch>@<version> is published
+ *   4. each npm platform package @procable/cli-<os>-<arch>@<version> is published
  *
  * Downloads trust engine-checksums.txt, never the sidecar; check 3 only proves
  * the two still agree. `--record` hashes the five downloaded binaries into the
@@ -29,7 +29,7 @@
  *   node scripts/check-engine-release.mjs --record   # write engine-checksums.txt, then check
  *
  * Environment:
- *   IMPECCABLE_DOWNLOAD_BASE  release root (default: the public repo's GitHub Releases)
+ *   PROCABLE_DOWNLOAD_BASE  release root (default: the public repo's GitHub Releases)
  */
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -71,7 +71,7 @@ async function sidecarDigest(url) {
 
 function npmPackageUrl(target, version, registry) {
   // Scoped name: the slash is percent-encoded for the registry path.
-  const name = `@impeccable/cli-${target}`;
+  const name = `@procable/cli-${target}`;
   return `${registry}/${name.replace('/', '%2f')}/${version}`;
 }
 
@@ -91,7 +91,7 @@ async function npmVersionExists(target, version, registry) {
  */
 export async function checkEngineRelease({
   version = readEngineVersion(),
-  base = process.env.IMPECCABLE_DOWNLOAD_BASE || DEFAULT_DOWNLOAD_BASE,
+  base = process.env.PROCABLE_DOWNLOAD_BASE || DEFAULT_DOWNLOAD_BASE,
   root,
   registry = NPM_REGISTRY,
 } = {}) {
@@ -110,8 +110,8 @@ export async function checkEngineRelease({
       ]);
       const recorded = expectedChecksum(version, target, root);
 
-      if (!binOk) missing.push({ kind: 'binary', target, what: `impeccable-${target} binary`, url: binUrl });
-      if (!published) missing.push({ kind: 'checksum', target, what: `impeccable-${target} .sha256`, url: shaUrl });
+      if (!binOk) missing.push({ kind: 'binary', target, what: `procable-${target} binary`, url: binUrl });
+      if (!published) missing.push({ kind: 'checksum', target, what: `procable-${target} .sha256`, url: shaUrl });
       else if (recorded !== published) {
         missing.push({
           kind: 'manifest',
@@ -139,7 +139,7 @@ export async function checkEngineRelease({
  */
 export async function recordEngineChecksums({
   version = readEngineVersion(),
-  base = process.env.IMPECCABLE_DOWNLOAD_BASE || DEFAULT_DOWNLOAD_BASE,
+  base = process.env.PROCABLE_DOWNLOAD_BASE || DEFAULT_DOWNLOAD_BASE,
   root,
 } = {}) {
   const lines = await Promise.all(ENGINE_TARGETS.map(async (target) => {
@@ -148,7 +148,7 @@ export async function recordEngineChecksums({
   }));
   fs.writeFileSync(manifestPath(root), [
     '# Engine binary digests for the pinned ENGINE_VERSION: <engine-version> <asset> <sha256>.',
-    '# The launchers, the npm shim, `impeccable install` and scripts/fetch-engine.mjs verify',
+    '# The launchers, the npm shim, `procable install` and scripts/fetch-engine.mjs verify',
     '# every engine download against this file. Written by',
     '# `node scripts/check-engine-release.mjs --record` after each engine release.',
     ...lines,
@@ -176,7 +176,7 @@ function report(result) {
     list(unpublished);
     console.error('');
     console.error(`Publish engine v${version} (tag engine-v${version}, bun run release:engine) AND the`);
-    console.error('five @impeccable/cli-<os>-<arch> npm platform packages BEFORE releasing the');
+    console.error('five @procable/cli-<os>-<arch> npm platform packages BEFORE releasing the');
     console.error('skill or merging rust-swap. Ordering: engine release → platform packages →');
     console.error('skill release/merge. See CLAUDE.md "Releases" and docs REVIEW-TRIAGE.md D4.');
   }

@@ -1,17 +1,17 @@
 ---
-name: impeccable
+name: procable
 description: "Use when the user wants to design, redesign, shape, critique, audit, polish, simplify, harden, animate, or otherwise improve a frontend interface: websites, landing pages, dashboards, product UI, components, forms, settings, onboarding, empty states, and native iOS or Android screens. Handles UX review, hierarchy, layout, typography, color, motion, UX copy, accessibility, responsive behavior, edge cases, and capturing or documenting design systems (DESIGN.md, tokens). Also for making bland UI bolder, loud UI quieter, or ambitious visual effects. Not for backend-only or non-UI tasks."
 argument-hint: "[{{command_hint}}] [target]"
 user-invocable: true
 allowed-tools:
-  - Bash(npx impeccable *)
-  - Bash({{scripts_path}}/impeccable *)
+  - Bash(npx procable *)
+  - Bash({{scripts_path}}/procable *)
 license: Apache 2.0
 ---
 
 This skill gives you the tools and permission to make design that earns the name out-of-distribution craft. Work as an award-winning design director would: production-grade code, a clear POV, a deep grasp of what the client and its users need, and exceptional craft.
 
-**Host rules come first.** When the session runs under host rules for asking, reporting and scope (prompt-orchestrator's communication-tone, or the user's own), those rules win over every directive in this skill and in the text `impeccable context` prints. Ask the way the host asks (options, a recommendation first, scope questions batched), stop where the host stops (outward, destructive or scope-creep actions), and spawn subagents only when the host allows it. Every change this skill makes on its own, including detector ignores, `doctor --fix` moves and files written under `.impeccable/`, is listed in the report of that reply; nothing is left unreported.
+**Host rules come first.** When the session runs under host rules for asking, reporting and scope (prompt-orchestrator's communication-tone, or the user's own), those rules win over every directive in this skill and in the text `procable context` prints. Ask the way the host asks (options, a recommendation first, scope questions batched), stop where the host stops (outward, destructive or scope-creep actions), and spawn subagents only when the host allows it. Every change this skill makes on its own, including detector ignores, `doctor --fix` moves and files written under `.procable/`, is listed in the report of that reply; nothing is left unreported.
 
 Core principles:
 - Finish the job, no shortcuts: the deliverable is complete, except assets the user must provide. Completeness never overrides the host's hard stops, and naming a real gap or risk is reporting, not hedging.
@@ -20,7 +20,7 @@ Core principles:
 
 ## Setup
 
-1. Run `<skill-base-dir>/scripts/impeccable context` once per session, where `<skill-base-dir>` is the directory that contains this SKILL.md (the skill folder, not a plugin root two levels above it); keep cwd at the user's project. That base directory resolves every `{{scripts_path}}/impeccable <verb>` command in this skill and its references, and `{{scripts_path}}` is the fallback only when the runtime reports no base directory. On a Windows shell without `sh`, call `{{scripts_path}}/impeccable.cmd` instead. The launcher runs a self-contained binary that ships next to it; procable runs offline and never downloads it, and no Node or other runtime is required. Pass a named source file or route as `--target <path>`. It loads PRODUCT.md, DESIGN.md, the matching surface brief, and native-platform guidance when applicable; follow its directives and do not rerun it. <!-- rule:skill-setup-context -->
+1. Run `<skill-base-dir>/scripts/procable context` once per session, where `<skill-base-dir>` is the directory that contains this SKILL.md (the skill folder, not a plugin root two levels above it); keep cwd at the user's project. That base directory resolves every `{{scripts_path}}/procable <verb>` command in this skill and its references, and `{{scripts_path}}` is the fallback only when the runtime reports no base directory. On a Windows shell without `sh`, call `{{scripts_path}}/procable.cmd` instead. The launcher runs a self-contained binary that ships next to it; procable runs offline and never downloads it, and no Node or other runtime is required. Pass a named source file or route as `--target <path>`. It loads PRODUCT.md, DESIGN.md, the matching surface brief, and native-platform guidance when applicable; follow its directives and do not rerun it. <!-- rule:skill-setup-context -->
 2. Load the request's playbook: its Commands-table reference for an explicit/implied sub-command, or [reference/new-work.md](reference/new-work.md) for a new surface or replacement visual world. Inspect target and incumbent visual truth before editing. When the app cannot run, start with committed visual-regression goldens or screenshot fixtures; verify target and freshness against current tokens, CSS, components, or assets, resolve conflicts, and compare theme/variant captures. <!-- rule:skill-setup-command-ref --> <!-- rule:skill-setup-read-project -->
 3. After resolving analysis and direction, read [reference/craft-floor.md](reference/craft-floor.md) immediately before any UI edit, including small refinements. It carries the quality floor, the absolute bans, and the reflexes no detector catches. Do not load it for planning-only work. <!-- rule:skill-craft-floor-load -->
 
@@ -79,15 +79,15 @@ Routing: <!-- rule:skill-routing -->
 - **No argument:** read [routing.md](reference/routing.md) and present its context-aware menu; never auto-run a command.
 - **Explicit or clearly implied request to run a command:** load its reference (native variant on native platforms) and follow it. Ask once if two commands fit.
 - **Workflow or command-selection question:** read [Workflow questions](reference/routing.md#workflow-questions).
-- **Otherwise:** treat the request as general design work. Missing PRODUCT.md routes a new surface or replacement world through init, then new-work; a narrow refinement of existing code proceeds on the incumbent implementation as `impeccable context` directs, offering init afterward rather than blocking on it.
+- **Otherwise:** treat the request as general design work. Missing PRODUCT.md routes a new surface or replacement world through init, then new-work; a narrow refinement of existing code proceeds on the incumbent implementation as `procable context` directs, offering init afterward rather than blocking on it.
 - `teach` aliases `init`. `craft` is a deprecated alias for ordinary new-work and adds nothing. `shape` owns task discovery, then enters new-work only for visual-world and surface-concept decisions.
 
-After init writes PRODUCT.md, resume without rerunning `impeccable context`; init loads the native platform reference itself when the platform it recorded is `ios`, `android`, or `adaptive`.
+After init writes PRODUCT.md, resume without rerunning `procable context`; init loads the native platform reference itself when the platform it recorded is `ios`, `android`, or `adaptive`.
 
-**Pin / Unpin:** `{{scripts_path}}/impeccable pin <pin|unpin> <command>` creates or removes a standalone `{{command_prefix}}<command>` shortcut. Report the script's result concisely; relay stderr verbatim on error.
+**Pin / Unpin:** `{{scripts_path}}/procable pin <pin|unpin> <command>` creates or removes a standalone `{{command_prefix}}<command>` shortcut. Report the script's result concisely; relay stderr verbatim on error.
 
-**Hooks:** `{{command_prefix}}impeccable hooks <on|off|status|ignore-rule|ignore-file|ignore-value|reset>` manages the design detector hook for this project (auto-runs the detector after UI file edits and surfaces findings). Load [reference/hooks.md](reference/hooks.md) when the user invokes it with any argument.
+**Hooks:** `{{command_prefix}}procable hooks <on|off|status|ignore-rule|ignore-file|ignore-value|reset>` manages the design detector hook for this project (auto-runs the detector after UI file edits and surfaces findings). Load [reference/hooks.md](reference/hooks.md) when the user invokes it with any argument.
 
-**Doctor:** `{{command_prefix}}impeccable doctor` reports and repairs drift between this project's Impeccable artifacts (PRODUCT.md, DESIGN.md and its sidecar, config, surface briefs, the hook) and what this version reads. Load [reference/doctor.md](reference/doctor.md) when the user invokes it, or when they ask what is out of date, stale, or needs refreshing. A `CONTEXT_STALE` directive in Setup's output is the cheap subset of the same report; act on it there per its own instructions rather than running doctor unasked. <!-- rule:skill-doctor-route -->
+**Doctor:** `{{command_prefix}}procable doctor` reports and repairs drift between this project's Procable artifacts (PRODUCT.md, DESIGN.md and its sidecar, config, surface briefs, the hook) and what this version reads. Load [reference/doctor.md](reference/doctor.md) when the user invokes it, or when they ask what is out of date, stale, or needs refreshing. A `CONTEXT_STALE` directive in Setup's output is the cheap subset of the same report; act on it there per its own instructions rather than running doctor unasked. <!-- rule:skill-doctor-route -->
 
 **Never repair drift as a side effect of a design task.** A `CONTEXT_STALE` finding is reported, not acted on, unless the user asks. The one exception is a finding marked `auto`, which the next write to that file performs anyway. <!-- rule:skill-drift-not-a-side-quest -->

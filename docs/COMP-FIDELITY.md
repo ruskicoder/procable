@@ -31,22 +31,22 @@ Calibration on the moto run: comp vs itself 100%; comp shifted 12px 87% (match);
 
 ### 2. `comp-spec.mjs`: the comp becomes a measured spec
 
-`--grid` writes the comp with a labeled 10x10 grid; the model names regions by grid span (`E0:J4`) with a kind (`plate` / `image` / `texture` / `text` / `control` / `chrome`) in a small JSON file; `--regions` measures each region (normalized and pixel box, sampled palette, detail energy, aspect) and writes `.impeccable/build/spec.json`. Raster kinds get a `plate` path under `assets/plates/`. `--crop <id>` extracts the reference crop; `--plate-prompt <id>` prints the regeneration prompt; `--print` is the compact spec the build codes against. The spec is what "anything not in this list does not exist on the page" refers to.
+`--grid` writes the comp with a labeled 10x10 grid; the model names regions by grid span (`E0:J4`) with a kind (`plate` / `image` / `texture` / `text` / `control` / `chrome`) in a small JSON file; `--regions` measures each region (normalized and pixel box, sampled palette, detail energy, aspect) and writes `.procable/build/spec.json`. Raster kinds get a `plate` path under `assets/plates/`. `--crop <id>` extracts the reference crop; `--plate-prompt <id>` prints the regeneration prompt; `--print` is the compact spec the build codes against. The spec is what "anything not in this list does not exist on the page" refers to.
 
 ### 3. `build-phase.mjs`: phases as a state machine on disk
 
-`.impeccable/build/state.json`, phases `spec → plates → hero → sections → motion → responsive → review`, advanced only by the script:
+`.procable/build/state.json`, phases `spec → plates → hero → sections → motion → responsive → review`, advanced only by the script:
 
 - `spec` gate: spec.json exists, measures this comp, has regions.
 - `plates` gate: every raster region's plate exists, decodes, is at least 1.5x the region's pixel width, and scores against the comp crop (`cover` alignment, kind-weighted, min 0.5).
-- `hero` gate: `.impeccable/review/hero-repro.png` exists and comp-diff scores at least 0.72 with no region `missing` and at most a third `contradicted`. Writes `.impeccable/review/diff/hero/`. Attempts and scores are recorded.
+- `hero` gate: `.procable/review/hero-repro.png` exists and comp-diff scores at least 0.72 with no region `missing` and at most a third `contradicted`. Writes `.procable/review/diff/hero/`. Attempts and scores are recorded.
 - later phases record the moment; `--force --reason` is allowed and recorded, never silent.
 
 `status` prints a NEXT line for the current phase, so the prose does not have to.
 
 ### 4. Plates: `generate-image.mjs --plate <id>`
 
-One raster region end to end: crop the comp region, send the crop as the edits-endpoint reference with the spec's plate prompt (remove UI text and chrome, keep everything else), pick the closest supported size to the region's aspect, write to the plate path, embed the prompt, score against the crop, warn under 50%, refuse under `--min`. `IMPECCABLE_IMAGE_GEN_FAKE=1` yields the crop at 2x so offline pipelines walk the plate gate. Harness-native image tools use the crop and prompt the same way.
+One raster region end to end: crop the comp region, send the crop as the edits-endpoint reference with the spec's plate prompt (remove UI text and chrome, keep everything else), pick the closest supported size to the region's aspect, write to the plate path, embed the prompt, score against the crop, warn under 50%, refuse under `--min`. `PROCABLE_IMAGE_GEN_FAKE=1` yields the crop at 2x so offline pipelines walk the plate gate. Harness-native image tools use the crop and prompt the same way.
 
 The asset producer agent's job shrinks to: produce the spec's plates, one line per plate, `blockers`, `assumptions`. No inventory of its own (the spec is the inventory), no strategy taxonomy.
 
@@ -84,7 +84,7 @@ Same niche (07-vintage-moto-forum), same approved comp C, main skill vs this bra
 |---|---|---|---|---|
 | exec cut, packet C, "Continue." | main | 9 / $0.88 | **55%** (contradicted; plate + index `missing`) | one 45 KB write, no plates, generic split hero |
 | exec cut, packet C, "Continue." | branch | 17 / $0.95 | **54%** (contradicted; plate `missing`) | the packet's prefix predates the phase machinery; the model never re-read new-work.md and behaved like main |
-| exec cut, packet C, ask names the phased build | branch | 96 / $5.24 (cost cap) | **66%** (drift; plate region 43%) | walked spec → grid → regions → plates → hero gate (72% fail, fix, 77% pass) → sections → motion → responsive; 12 turns lost hunting a screenshot the harness wrote host-side only (fixed in impeccable-evals); the exploded plate was produced (62% vs crop) but the page drew the region in SVG anyway (fixed: hero gate now refuses unreferenced plates) |
+| exec cut, packet C, ask names the phased build | branch | 96 / $5.24 (cost cap) | **66%** (drift; plate region 43%) | walked spec → grid → regions → plates → hero gate (72% fail, fix, 77% pass) → sections → motion → responsive; 12 turns lost hunting a screenshot the harness wrote host-side only (fixed in procable-evals); the exploded plate was produced (62% vs crop) but the page drew the region in SVG anyway (fixed: hero gate now refuses unreferenced plates) |
 | full journey, comp-led | main | 49 / $3.23 | **56%** (contradicted; two bands `missing`) | dark comp with paper fiche rail; build keeps the section order and flattens the material |
 | full journey, comp-led | branch (before the force/reference fixes) | 61 / $3.04 (turn cap) | **65-66%** (drift) | forced past the plates gate with "single-file delivery" (now refused); hero 44% structure but 83% color, plate placed |
 | full journey, comp-led (after fixes), sample 2 | branch | 60 / $3.00 (30-min wall clock) | **59%** (contradicted; hero gate 61 → 63 → 62%) | three plates produced (paper 52%, carburetor 61%, photo), hero gate failed three times, model asked the simulated user, got "truthful translation", forced with the user's words (recorded), wall clock ended it in sections |
@@ -98,18 +98,18 @@ What it says so far:
 
 - When the phase machinery actually runs, fidelity moves from the mid-50s to the mid-60s on this comp, and the region rows say why the rest is missing (the exploded plate, the parts table, the CTA treatment). Same model, same comp.
 - Execution-cut packets and composed checkpoints carry the old skill's text in their prefix; a resumed session follows the conversation it is in, not the mounted files. Comparisons of Setup-adjacent skill changes need full journeys or a fresh packet cut on the new skill.
-- Two of the three run-time defects the sweep found were harness (screenshot not visible in the sandbox; packet workspace path) and are fixed in impeccable-evals `paul/packet-niche-execution-preflight`. The third (model forcing a gate, model ignoring its plate) is now refused by the script.
+- Two of the three run-time defects the sweep found were harness (screenshot not visible in the sandbox; packet workspace path) and are fixed in procable-evals `paul/packet-niche-execution-preflight`. The third (model forcing a gate, model ignoring its plate) is now refused by the script.
 - Cost: the phased build spends more turns before the first write and more image calls (plates). The 96-turn run is dominated by the screenshot hunt and a font-inlining tangent, not by the gates. The 30-minute wall clock and 60-turn cap in the harness are tuned for the old one-write build; a phased build with three plates and a hero loop needs the execution cut kind's 100-turn budget or a longer wall clock.
 - The hero gate at 72% is reachable (77% on the ask run) but the model's second and third attempts moved the score by one point each: it edits CSS values when the diff says a region is missing. The gate's message now names the region and the failure mode; the next lever is making the region crops the thing the model looks at (it opened the side-by-side once and the crops never).
 - Whether a greenfield session enters comp-led at all is decided in the direction round, before any of this. Two of five full-journey samples (one per skill) skipped the comp round and wrote code; the config default is comp-led and image generation was on. That routing gap is separate from this change and worth its own fix.
 
 ## Second sweep (2026-08-16, sol + opus-5, three niches, n=2-3): the packets, not the skill
 
-37 execution-cut runs on 05-experimental-album, 07-vintage-moto-forum, 11-analytics-dashboard, main vs branch, about $210. Result: 33 of 37 samples never entered the phase machine (`nostate`: no `.impeccable/build/state.json` at the end), so main and branch scored the same (50-60% overall, mostly `contradicted`) and the sweep measured nothing about the change. The four samples that did run the phases (11-opus-branch, 11-opus-branch-b) reached hero 69-72% and 63-66% overall, the highest opus scores in the sweep, at 80-100 turns and $9-12.
+37 execution-cut runs on 05-experimental-album, 07-vintage-moto-forum, 11-analytics-dashboard, main vs branch, about $210. Result: 33 of 37 samples never entered the phase machine (`nostate`: no `.procable/build/state.json` at the end), so main and branch scored the same (50-60% overall, mostly `contradicted`) and the sweep measured nothing about the change. The four samples that did run the phases (11-opus-branch, 11-opus-branch-b) reached hero 69-72% and 63-66% overall, the highest opus scores in the sweep, at 80-100 turns and $9-12.
 
 Why the machinery was skipped, in order of blame:
 
-1. **The packets carried no state.** The 07 packet was cut on 2026-08-12, before `build-phase.mjs start` existed; the 05 and 11 packets were cut on the branch, but the session generated its comps before running `start`, so `pending.json` was written and `state.json` never was. Every gate reads `state.json`; a resume with none has nothing to follow. Two fixes: `generate-image.mjs` refuses to write a comp under `.impeccable/mocks/` while `pending.json` is set and no state exists (the direction pick must be recorded first), and impeccable-evals `factory-validation` fails a `composition-approved` candidate whose workspace lacks a closed comps phase.
+1. **The packets carried no state.** The 07 packet was cut on 2026-08-12, before `build-phase.mjs start` existed; the 05 and 11 packets were cut on the branch, but the session generated its comps before running `start`, so `pending.json` was written and `state.json` never was. Every gate reads `state.json`; a resume with none has nothing to follow. Two fixes: `generate-image.mjs` refuses to write a comp under `.procable/mocks/` while `pending.json` is set and no state exists (the direction pick must be recorded first), and procable-evals `factory-validation` fails a `composition-approved` candidate whose workspace lacks a closed comps phase.
 2. **Prefix inertia.** A resumed model follows the conversation it is in. When the prefix ends on "translating comp C into HTML now", the mounted skill files are not re-read whatever they say. The procedure has to be on disk at the resume point (state.json + the `NEXT` line), which is what (1) restores.
 3. **WebP comps.** gpt-image returned WebP for some cuts; `comp-spec` demanded PNG, so the session rewrote the `.webp` in place with PNG bytes, which broke replay ("a later step rewrites this path beyond the cut"). `loadRaster()` now decodes WebP directly and never touches the source.
 
@@ -117,7 +117,7 @@ Read the earlier "exec cut, packet C, ask names the phased build" row and this s
 
 ## Third sweep (2026-08-17, gpt-5.6-sol, re-cut packets carrying state.json, n=2-3): the phases run, and they win
 
-Packets re-cut with the phase state reconstructed at the pick (replay now re-executes `build-phase.mjs` verbs and the OpenAI worker pulls the sandbox's `.impeccable/build/` before close). Baseline = main skill via `IMPECCABLE_SKILL_DIR`, branch = this branch's dist. About $60.
+Packets re-cut with the phase state reconstructed at the pick (replay now re-executes `build-phase.mjs` verbs and the OpenAI worker pulls the sandbox's `.procable/build/` before close). Baseline = main skill via `PROCABLE_SKILL_DIR`, branch = this branch's dist. About $60.
 
 | Niche | main (n=3) | branch (n=2) | branch hero |
 |---|---|---|---|
@@ -298,4 +298,4 @@ Abdul ran both handoff checks on the rebased branch (full write-ups in PR #599's
 
 The decision that followed, made by Paul on return: **above `HERO_MIN`, the numeric readings advise instead of block.** Hard vetoes stay unconditional at any score (a missing region, a contradicted plate or text block, an inline-SVG illustration, a clipped plate, invented ink); ink colours, letter-spacing, line pitch, strip heights, and box positions print as advisories with the pass and belong to the polish pass before responsive. Under this condition every sweep-10 sample closes its hero, which settles 07 without another paid round.
 
-Two ninth-sweep defects are fixed with it: the spec's escape hatches (`codeDrawn`, `container`, `bleed`) now persist into `spec.json` and announce themselves as WARN lines (an overridden refusal used to vanish from the record), and `font-match` probes `os.tmpdir()` before launching a browser and points `TMPDIR` at `.impeccable/tmp` when the sandbox's `/tmp` is unwritable (every ninth-sweep rank had silently fallen back to the catalog and set headlines at twice the comp's cap).
+Two ninth-sweep defects are fixed with it: the spec's escape hatches (`codeDrawn`, `container`, `bleed`) now persist into `spec.json` and announce themselves as WARN lines (an overridden refusal used to vanish from the record), and `font-match` probes `os.tmpdir()` before launching a browser and points `TMPDIR` at `.procable/tmp` when the sandbox's `/tmp` is unwritable (every ninth-sweep rank had silently fallen back to the catalog and set headlines at twice the comp's cap).

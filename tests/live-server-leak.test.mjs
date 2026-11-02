@@ -68,14 +68,14 @@ import { armLiveServerReaper } from ${JSON.stringify(join(REPO_ROOT, 'tests/lib/
 
 armLiveServerReaper();
 
-// Detached, exactly the shape \`impeccable live-server --background\` uses: the
+// Detached, exactly the shape \`procable live-server --background\` uses: the
 // server is orphaned to pid 1 from birth and nothing but an explicit stop, or
 // the reaper, ever ends it.
 const child = spawn(${JSON.stringify('__BIN__')}, ['live-server', '--port=${PORT}'], {
   detached: true,
   stdio: 'ignore',
   cwd: process.cwd(),
-  env: { ...process.env, IMPECCABLE_SKILL_DIR: ${JSON.stringify(join(REPO_ROOT, 'skill'))}, IMPECCABLE_SELF: ${JSON.stringify('__BIN__')} },
+  env: { ...process.env, PROCABLE_SKILL_DIR: ${JSON.stringify(join(REPO_ROOT, 'skill'))}, PROCABLE_SELF: ${JSON.stringify('__BIN__')} },
 });
 child.unref();
 
@@ -132,7 +132,7 @@ describe('live server leak guard', () => {
       ? 'the reaper is POSIX-only; armLiveServerReaper() does not arm it on win32'
       : NO_ENGINE,
   }, async () => {
-    const cwd = mkdtempSync(join(tmpdir(), 'impeccable-leak-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'procable-leak-'));
     let victim;
     let serverPid;
     try {
@@ -158,9 +158,9 @@ describe('live server leak guard', () => {
     // Node's shutdown() finished with process.exit(0). The engine's did not,
     // and nothing set `shutting_down`, so a stopped server kept the port and
     // kept answering while its server.json was already gone: the next
-    // `impeccable live` booted a second server elsewhere and a tab could
+    // `procable live` booted a second server elsewhere and a tab could
     // reattach to the zombie and never hear another broadcast (issue #719).
-    const cwd = mkdtempSync(join(tmpdir(), 'impeccable-stop-'));
+    const cwd = mkdtempSync(join(tmpdir(), 'procable-stop-'));
     let server;
     try {
       writeFileSync(join(cwd, 'package.json'), '{"name":"stop-fixture"}\n');
@@ -169,8 +169,8 @@ describe('live server leak guard', () => {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: {
           ...process.env,
-          IMPECCABLE_SKILL_DIR: join(REPO_ROOT, 'skill'),
-          IMPECCABLE_SELF: ENGINE_BIN,
+          PROCABLE_SKILL_DIR: join(REPO_ROOT, 'skill'),
+          PROCABLE_SELF: ENGINE_BIN,
         },
       });
       const up = await waitUntil(async () => {
@@ -186,8 +186,8 @@ describe('live server leak guard', () => {
         stdio: ['ignore', 'pipe', 'pipe'],
         env: {
           ...process.env,
-          IMPECCABLE_SKILL_DIR: join(REPO_ROOT, 'skill'),
-          IMPECCABLE_SELF: ENGINE_BIN,
+          PROCABLE_SKILL_DIR: join(REPO_ROOT, 'skill'),
+          PROCABLE_SELF: ENGINE_BIN,
         },
       });
       await new Promise((resolve) => stop.on('exit', resolve));
@@ -218,7 +218,7 @@ describe('envLineHasEntry', () => {
   // checkout so two adjacent checkouts get unrelated values, and the run and
   // process ids are random hex. Nothing a marker can hold contains whitespace,
   // which is the invariant this matcher rests on.
-  const hash = repoMarker('/work/impeccable');
+  const hash = repoMarker('/work/procable');
   const marker = `${REPO_ENV}=${hash}`;
 
   it('matches the entry at the end of the line and between other entries', () => {
@@ -236,17 +236,17 @@ describe('envLineHasEntry', () => {
   });
 
   it('gives adjacent checkouts unrelated markers', () => {
-    // The bug this all exists for: /work/impeccable is a substring of
-    // /work/impeccable-copy. Hashing means the two markers no longer share a
+    // The bug this all exists for: /work/procable is a substring of
+    // /work/procable-copy. Hashing means the two markers no longer share a
     // prefix at all, so a substring can never arise in the first place.
-    const neighbour = repoMarker('/work/impeccable-copy');
+    const neighbour = repoMarker('/work/procable-copy');
     assert.notEqual(neighbour, hash);
     assert.equal(neighbour.startsWith(hash), false);
     assert.equal(envLineHasEntry(`node x ${REPO_ENV}=${neighbour} PATH=/usr/bin`, marker), false);
   });
 
   it('resolves one checkout to one marker through trailing slashes and dot segments', () => {
-    const real = mkdtempSync(join(tmpdir(), 'impeccable-marker-'));
+    const real = mkdtempSync(join(tmpdir(), 'procable-marker-'));
     try {
       const expected = repoMarker(real);
       for (const spelling of [`${real}/`, `${real}/.`, join(real, 'sub', '..')]) {
@@ -258,8 +258,8 @@ describe('envLineHasEntry', () => {
   });
 
   it('resolves a symlinked checkout to the same marker as its target', () => {
-    const real = mkdtempSync(join(tmpdir(), 'impeccable-marker-'));
-    const link = join(mkdtempSync(join(tmpdir(), 'impeccable-link-')), 'checkout');
+    const real = mkdtempSync(join(tmpdir(), 'procable-marker-'));
+    const link = join(mkdtempSync(join(tmpdir(), 'procable-link-')), 'checkout');
     try {
       // Windows refuses a directory symlink without Developer Mode; a junction
       // is the equivalent it does allow. Same call shape as concept-seed's.
@@ -286,7 +286,7 @@ describe('envLineHasEntry', () => {
 
 describe('marker values', () => {
   it('generates run and process ids from a whitespace-free alphabet', () => {
-    for (const value of [makeRunId('/work/impeccable'), makeProcId(), repoMarker('/work/impeccable')]) {
+    for (const value of [makeRunId('/work/procable'), makeProcId(), repoMarker('/work/procable')]) {
       assert.match(value, /^[A-Za-z0-9_-]+$/, `marker value "${value}" must not need quoting`);
     }
   });

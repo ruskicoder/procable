@@ -91,7 +91,7 @@ pub fn project_sessions(root: &Path, project: &Path) -> Result<Vec<PathBuf>, Str
 /// Starting a new build starts a new review journey; later page edits do not.
 /// Hosts pass their own session directories because their project is a snapshot.
 pub fn journey(project: &Path) -> Result<Value, String> {
-    let path = project.join(".impeccable/build/state.json");
+    let path = project.join(".procable/build/state.json");
     if !path.exists() { return Ok(Value::Null); }
     let state = store::read(&path)?;
     let started = string(&state, "startedAt")?;

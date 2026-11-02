@@ -1,6 +1,6 @@
-use impeccable::asset_capture::CdpAssetRenderer;
-use impeccable_comp::{png_io, raster};
-use impeccable_comp_verbs::asset_capture::{AssetCaptureRequest, AssetRenderer, CaptureBox};
+use procable::asset_capture::CdpAssetRenderer;
+use procable_comp::{png_io, raster};
+use procable_comp_verbs::asset_capture::{AssetCaptureRequest, AssetRenderer, CaptureBox};
 use std::{
     io::{Read, Write},
     net::TcpListener,
@@ -10,7 +10,7 @@ use std::{
 #[test]
 fn native_capture_distinguishes_paint_from_file_presence() {
     let env = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no browser installed");
         return;
     }
@@ -99,7 +99,7 @@ fn native_capture_distinguishes_paint_from_file_presence() {
                             "<script>const real=Element.prototype.getBoundingClientRect;Element.prototype.getBoundingClientRect=function(){const r=real.call(this);return this.id==='art'?new DOMRect(r.x+100,r.y,r.width,r.height):r;};</script>"
                         }
                         "state-probe" => {
-                            "<style>body[data-inspector] #art{display:none}</style><script>setInterval(()=>{if(Object.getOwnPropertyNames(window).some(k=>k.startsWith('__impeccable_capture_')))document.body.dataset.inspector='found';},0);</script>"
+                            "<style>body[data-inspector] #art{display:none}</style><script>setInterval(()=>{if(Object.getOwnPropertyNames(window).some(k=>k.startsWith('__procable_capture_')))document.body.dataset.inspector='found';},0);</script>"
                         }
                         "lazy" => {
                             "<img loading=lazy src=/lazy.png style='position:absolute;top:10000px;width:80px;height:80px'>"
@@ -194,7 +194,7 @@ fn native_capture_distinguishes_paint_from_file_presence() {
                 },
             })
             .unwrap();
-        if let Ok(root) = std::env::var("IMPECCABLE_CAPTURE_TEST_OUTPUT") {
+        if let Ok(root) = std::env::var("PROCABLE_CAPTURE_TEST_OUTPUT") {
             let out = std::path::Path::new(&root).join(mode);
             std::fs::create_dir_all(&out).unwrap();
             std::fs::write(

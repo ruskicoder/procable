@@ -3,7 +3,7 @@
  *
  * The ./plugin subtree copies the dist/claude-code output, whose
  * {{scripts_path}} resolves to the project-relative
- * `.claude/skills/impeccable/scripts`. Run from the plugin cache, that path
+ * `.claude/skills/procable/scripts`. Run from the plugin cache, that path
  * points into the user's project: a plugin-only user gets MODULE_NOT_FOUND,
  * and a dual-install user silently runs the project's older skill copy. The
  * rewrite uses `${CLAUDE_SKILL_DIR}` only in SKILL.md; raw references keep
@@ -31,7 +31,7 @@ import {
 
 describe('rewritePluginMarkdown', () => {
   test('rewrites a script instruction to the quoted CLAUDE_SKILL_DIR form', () => {
-    const input = 'Run `node .claude/skills/impeccable/scripts/context.mjs` once per session.';
+    const input = 'Run `node .claude/skills/procable/scripts/context.mjs` once per session.';
     expect(rewritePluginMarkdown(input)).toBe(
       'Run `node "${CLAUDE_SKILL_DIR}/scripts/context.mjs"` once per session.',
     );
@@ -39,8 +39,8 @@ describe('rewritePluginMarkdown', () => {
 
   test('rewrites every occurrence, quoting the script path but not the arguments', () => {
     const input = [
-      'node .claude/skills/impeccable/scripts/live.mjs',
-      'node .claude/skills/impeccable/scripts/live-poll.mjs --reply EVENT_ID done',
+      'node .claude/skills/procable/scripts/live.mjs',
+      'node .claude/skills/procable/scripts/live-poll.mjs --reply EVENT_ID done',
     ].join('\n');
     const output = rewritePluginMarkdown(input);
     expect(output).not.toContain(CLAUDE_PROJECT_SCRIPTS_PATH);
@@ -50,11 +50,11 @@ describe('rewritePluginMarkdown', () => {
 
   test('quotes the engine launcher path and leaves the verb outside the quotes', () => {
     const output = rewritePluginMarkdown(
-      'Run `<skill-base-dir>/scripts/impeccable context` once, then `<skill-base-dir>/scripts/impeccable.cmd doctor --json`; ' +
-      'already quoted: `"<skill-base-dir>/scripts/impeccable" hooks on`.',
+      'Run `<skill-base-dir>/scripts/procable context` once, then `<skill-base-dir>/scripts/procable.cmd doctor --json`; ' +
+      'already quoted: `"<skill-base-dir>/scripts/procable" hooks on`.',
     );
-    expect(output).toContain('`"${CLAUDE_SKILL_DIR}/scripts/impeccable" context`');
-    expect(output).toContain('`& "${CLAUDE_SKILL_DIR}/scripts/impeccable.cmd" doctor --json`');
+    expect(output).toContain('`"${CLAUDE_SKILL_DIR}/scripts/procable" context`');
+    expect(output).toContain('`& "${CLAUDE_SKILL_DIR}/scripts/procable.cmd" doctor --json`');
     expect(output).not.toContain('""${CLAUDE_SKILL_DIR}');
   });
 
@@ -62,15 +62,15 @@ describe('rewritePluginMarkdown', () => {
     // PowerShell parses `"<path>" context` as a string expression and fails
     // with `Unexpected token 'context'`; `& "<path>" context` runs. The sh
     // launcher must never get the `&`: a leading `&` is a syntax error in sh.
-    const input = 'Run `<skill-base-dir>/scripts/impeccable context`; without sh, `<skill-base-dir>/scripts/impeccable.cmd context`.';
+    const input = 'Run `<skill-base-dir>/scripts/procable context`; without sh, `<skill-base-dir>/scripts/procable.cmd context`.';
     const output = rewritePluginMarkdown(input);
     expect(output).toBe(
-      'Run `"${CLAUDE_SKILL_DIR}/scripts/impeccable" context`; without sh, `& "${CLAUDE_SKILL_DIR}/scripts/impeccable.cmd" context`.',
+      'Run `"${CLAUDE_SKILL_DIR}/scripts/procable" context`; without sh, `& "${CLAUDE_SKILL_DIR}/scripts/procable.cmd" context`.',
     );
-    expect(output).not.toMatch(/& "[^"]*\/impeccable"/);
+    expect(output).not.toMatch(/& "[^"]*\/procable"/);
     expect(rewritePluginMarkdown(output)).toBe(output);
-    expect(quoteLauncher('<dir>')).toBe('"<dir>/scripts/impeccable"');
-    expect(quoteLauncher('<dir>', true)).toBe('& "<dir>/scripts/impeccable.cmd"');
+    expect(quoteLauncher('<dir>')).toBe('"<dir>/scripts/procable"');
+    expect(quoteLauncher('<dir>', true)).toBe('& "<dir>/scripts/procable.cmd"');
   });
 
   test('quotes commands already in the skill-base-dir form without double-quoting', () => {
@@ -88,10 +88,10 @@ describe('rewritePluginMarkdown', () => {
   test('removes the entire allowed-tools frontmatter block', () => {
     const input = [
       '---',
-      'name: impeccable',
+      'name: procable',
       'allowed-tools:',
-      '  - Bash(npx impeccable *)',
-      '  - Bash(.claude/skills/impeccable/scripts/impeccable *)',
+      '  - Bash(npx procable *)',
+      '  - Bash(.claude/skills/procable/scripts/procable *)',
       'license: Apache 2.0',
       '---',
       '',
@@ -99,8 +99,8 @@ describe('rewritePluginMarkdown', () => {
     ].join('\n');
     const output = rewritePluginMarkdown(input);
     expect(output).not.toMatch(/^allowed-tools:/m);
-    expect(output).not.toContain('scripts/impeccable *');
-    expect(output).not.toContain('npx impeccable');
+    expect(output).not.toContain('scripts/procable *');
+    expect(output).not.toContain('npx procable');
     expect(output).toContain('license: Apache 2.0');
     expect(output).toContain('Body text.');
   });
@@ -109,12 +109,12 @@ describe('rewritePluginMarkdown', () => {
     const input =
       '1. Run `node <skill-base-dir>/scripts/context.mjs` once per session, where `<skill-base-dir>` is the ' +
       "loaded base directory the runtime reports for this skill; keep cwd at the user's project. " +
-      'That base directory resolves every `.claude/skills/impeccable/scripts/impeccable <verb>` command in this skill ' +
-      'and its references, and `.claude/skills/impeccable/scripts` is the fallback only when the runtime ' +
+      'That base directory resolves every `.claude/skills/procable/scripts/procable <verb>` command in this skill ' +
+      'and its references, and `.claude/skills/procable/scripts` is the fallback only when the runtime ' +
       'reports no base directory. Pass a named source file or route as `--target <path>`.';
     const output = rewritePluginMarkdown(input);
     expect(output).toContain(
-      'Every `"${CLAUDE_SKILL_DIR}/scripts/impeccable" <verb>` command in this skill and its references resolves against that base directory.',
+      'Every `"${CLAUDE_SKILL_DIR}/scripts/procable" <verb>` command in this skill and its references resolves against that base directory.',
     );
     // The naive rewrite would keep the fallback clause and name the token as
     // its own fallback for when there is no base directory to resolve it.
@@ -123,7 +123,7 @@ describe('rewritePluginMarkdown', () => {
   });
 
   test('leaves unrelated project-relative paths alone', () => {
-    const input = 'State lives in `.impeccable/live/roots.json` and `.claude/settings.json`.';
+    const input = 'State lives in `.procable/live/roots.json` and `.claude/settings.json`.';
     expect(rewritePluginMarkdown(input)).toBe(input);
   });
 });
@@ -131,7 +131,7 @@ describe('rewritePluginMarkdown', () => {
 describe('rewritePluginAgentMarkdown', () => {
   // The real source sentence shape: command, purpose clause, next sentence.
   const sourceStep =
-    'after every generation, run `node .claude/skills/impeccable/scripts/embed-prompt.mjs <asset> ' +
+    'after every generation, run `node .claude/skills/procable/scripts/embed-prompt.mjs <asset> ' +
     '--prompt "<the prompt used>"` so the prompt lives inside the image itself. The build thread ' +
     'composes what you made.';
 
@@ -141,7 +141,7 @@ describe('rewritePluginAgentMarkdown', () => {
     // ${CLAUDE_PLUGIN_ROOT} inline in plugin agent content.
     const output = rewritePluginAgentMarkdown(sourceStep);
     expect(output).toContain(
-      'run `node "${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/embed-prompt.mjs" <asset> --prompt "<the prompt used>"`',
+      'run `node "${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/embed-prompt.mjs" <asset> --prompt "<the prompt used>"`',
     );
   });
 
@@ -164,7 +164,7 @@ describe('verifyPluginAgentRewrite', () => {
   let root;
 
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-agent-verify-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-agent-verify-'));
   });
 
   afterEach(() => {
@@ -178,7 +178,7 @@ describe('verifyPluginAgentRewrite', () => {
   };
 
   const sourceStep =
-    'run `node .claude/skills/impeccable/scripts/embed-prompt.mjs <asset> --prompt "<p>"` ' +
+    'run `node .claude/skills/procable/scripts/embed-prompt.mjs <asset> --prompt "<p>"` ' +
     'so the prompt lives inside the image itself. Next sentence.';
 
   test('accepts a correctly rewritten agent file', () => {
@@ -207,7 +207,7 @@ describe('rewritePluginMarkdownTree', () => {
   let root;
 
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-plugin-paths-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-plugin-paths-'));
   });
 
   afterEach(() => {
@@ -220,12 +220,12 @@ describe('rewritePluginMarkdownTree', () => {
       fs.mkdirSync(path.dirname(abs), { recursive: true });
       fs.writeFileSync(abs, contents);
     };
-    write('SKILL.md', 'Run `node .claude/skills/impeccable/scripts/context.mjs`.');
-    write('reference/live.md', 'node .claude/skills/impeccable/scripts/live.mjs');
+    write('SKILL.md', 'Run `node .claude/skills/procable/scripts/context.mjs`.');
+    write('reference/live.md', 'node .claude/skills/procable/scripts/live.mjs');
     // hook-admin.mjs installs project-scoped hooks; its project path is correct.
     write(
       'scripts/hook-admin.mjs',
-      'const cmd = \'node "${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs"\';',
+      'const cmd = \'node "${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs"\';',
     );
 
     rewritePluginMarkdownTree(root);
@@ -237,26 +237,26 @@ describe('rewritePluginMarkdownTree', () => {
       'node "<skill-base-dir>/scripts/live.mjs"',
     );
     expect(fs.readFileSync(path.join(root, 'scripts/hook-admin.mjs'), 'utf-8')).toContain(
-      '${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs',
+      '${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs',
     );
   });
 
   test('raw references retain an explicit base-directory placeholder, including Windows commands', () => {
-    const input = 'Run `.claude/skills/impeccable/scripts/impeccable context` or `<skill-base-dir>/scripts/impeccable.cmd context`.';
+    const input = 'Run `.claude/skills/procable/scripts/procable context` or `<skill-base-dir>/scripts/procable.cmd context`.';
     const output = rewritePluginMarkdown(input, { isSkillEntrypoint: false });
-    expect(output).toBe('Run `"<skill-base-dir>/scripts/impeccable" context` or `& "<skill-base-dir>/scripts/impeccable.cmd" context`.');
+    expect(output).toBe('Run `"<skill-base-dir>/scripts/procable" context` or `& "<skill-base-dir>/scripts/procable.cmd" context`.');
     expect(output).not.toContain('${CLAUDE_SKILL_DIR}');
     expect(rewritePluginMarkdown(output, { isSkillEntrypoint: false })).toBe(output);
   });
 
   test('entrypoint and explicitly resolved reference commands work from a cache path with spaces', () => {
-    const skillDir = path.join(root, 'plugin cache', 'skills', 'impeccable');
+    const skillDir = path.join(root, 'plugin cache', 'skills', 'procable');
     fs.mkdirSync(path.join(skillDir, 'scripts'), { recursive: true });
     fs.writeFileSync(path.join(skillDir, 'scripts/probe.mjs'), 'console.log(process.argv[2]);');
     const env = { ...process.env };
     delete env.CLAUDE_SKILL_DIR;
     for (const isSkillEntrypoint of [true, false]) {
-      const command = rewritePluginMarkdown('node .claude/skills/impeccable/scripts/probe.mjs resolved', { isSkillEntrypoint })
+      const command = rewritePluginMarkdown('node .claude/skills/procable/scripts/probe.mjs resolved', { isSkillEntrypoint })
         .replaceAll(isSkillEntrypoint ? '${CLAUDE_SKILL_DIR}' : '<skill-base-dir>', skillDir);
       expect(execFileSync('sh', ['-c', command], { env, encoding: 'utf8' }).trim()).toBe('resolved');
     }
@@ -266,14 +266,14 @@ describe('rewritePluginMarkdownTree', () => {
     const agentsDir = path.join(root, 'agents');
     fs.mkdirSync(agentsDir, { recursive: true });
     fs.writeFileSync(
-      path.join(agentsDir, 'impeccable-asset-producer.md'),
-      'run `node .claude/skills/impeccable/scripts/embed-prompt.mjs <asset>`',
+      path.join(agentsDir, 'procable-asset-producer.md'),
+      'run `node .claude/skills/procable/scripts/embed-prompt.mjs <asset>`',
     );
 
     rewritePluginMarkdownTree(agentsDir, rewritePluginAgentMarkdown);
 
-    expect(fs.readFileSync(path.join(agentsDir, 'impeccable-asset-producer.md'), 'utf-8')).toBe(
-      'run `node "${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/embed-prompt.mjs" <asset>`',
+    expect(fs.readFileSync(path.join(agentsDir, 'procable-asset-producer.md'), 'utf-8')).toBe(
+      'run `node "${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/embed-prompt.mjs" <asset>`',
     );
   });
 
@@ -286,7 +286,7 @@ describe('verifyPluginSkillRewrite', () => {
   let root;
 
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-plugin-verify-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-plugin-verify-'));
   });
 
   afterEach(() => {
@@ -300,10 +300,10 @@ describe('verifyPluginSkillRewrite', () => {
   };
 
   const goodSkill = [
-    '1. Run `<skill-base-dir>/scripts/impeccable context` once per session, where `<skill-base-dir>` is the ' +
+    '1. Run `<skill-base-dir>/scripts/procable context` once per session, where `<skill-base-dir>` is the ' +
       "loaded base directory the runtime reports for this skill; keep cwd at the user's project. " +
-      'That base directory resolves every `.claude/skills/impeccable/scripts/impeccable <verb>` command in this skill ' +
-      'and its references, and `.claude/skills/impeccable/scripts` is the fallback only when the runtime ' +
+      'That base directory resolves every `.claude/skills/procable/scripts/procable <verb>` command in this skill ' +
+      'and its references, and `.claude/skills/procable/scripts` is the fallback only when the runtime ' +
       'reports no base directory.',
   ].join('\n');
 
@@ -323,18 +323,18 @@ describe('verifyPluginSkillRewrite', () => {
 
   test('fails the build when a quoted .cmd launcher lacks the call operator', () => {
     const p = writeSkill(
-      rewritePluginMarkdown(goodSkill) + '\nOn a Windows shell without `sh`, call `"${CLAUDE_SKILL_DIR}/scripts/impeccable.cmd"` instead.\n',
+      rewritePluginMarkdown(goodSkill) + '\nOn a Windows shell without `sh`, call `"${CLAUDE_SKILL_DIR}/scripts/procable.cmd"` instead.\n',
     );
     expect(() => verifyPluginSkillRewrite(p)).toThrow(/call operator/);
     const fixed = writeSkill(
-      rewritePluginMarkdown(goodSkill + '\nOn a Windows shell without `sh`, call `.claude/skills/impeccable/scripts/impeccable.cmd` instead.\n'),
+      rewritePluginMarkdown(goodSkill + '\nOn a Windows shell without `sh`, call `.claude/skills/procable/scripts/procable.cmd` instead.\n'),
     );
     expect(() => verifyPluginSkillRewrite(fixed)).not.toThrow();
   });
 
   test('fails the build when a launcher pre-approval survives the removal', () => {
     const p = writeSkill(
-      rewritePluginMarkdown(goodSkill) + '\n  - Bash(${CLAUDE_SKILL_DIR}/scripts/impeccable.cmd *)\n',
+      rewritePluginMarkdown(goodSkill) + '\n  - Bash(${CLAUDE_SKILL_DIR}/scripts/procable.cmd *)\n',
     );
     expect(() => verifyPluginSkillRewrite(p)).toThrow(/pre-approves an engine launcher/);
   });
@@ -342,9 +342,9 @@ describe('verifyPluginSkillRewrite', () => {
   test('fails the build when allowed-tools frontmatter survives the removal', () => {
     const p = writeSkill([
       '---',
-      'name: impeccable',
+      'name: procable',
       'allowed-tools:',
-      '  - Bash(npx impeccable *)',
+      '  - Bash(npx procable *)',
       'license: Apache 2.0',
       '---',
       '',
@@ -367,7 +367,7 @@ describe('verifyPluginSkillRewrite', () => {
     // still names the project scripts directory somewhere new.
     const p = writeSkill(
       rewritePluginMarkdown(goodSkill) +
-      '\nState lives next to `.claude/skills/impeccable/scripts` on disk.',
+      '\nState lives next to `.claude/skills/procable/scripts` on disk.',
     );
     expect(() => verifyPluginSkillRewrite(p)).toThrow(/still contains the project-relative scripts path/);
   });

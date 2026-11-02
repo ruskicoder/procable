@@ -1,13 +1,13 @@
 /**
- * Build-pipeline emitters for the Impeccable design hook.
+ * Build-pipeline emitters for the Procable design hook.
  *
  * Two emission targets exist:
  *
- * 1. Project-local install (the `npx impeccable skills install` CLI path):
+ * 1. Project-local install (the `npx procable skills install` CLI path):
  *      - Claude Code: `.claude/settings.json`   (${CLAUDE_PROJECT_DIR}-relative)
  *      - Codex:       `.codex/hooks.json`
  *      - Cursor:      `.cursor/hooks.json`
- *      - Grok Build:  `.grok/hooks/impeccable.json`
+ *      - Grok Build:  `.grok/hooks/procable.json`
  *
  * 2. Claude Code plugin package (the marketplace / `/plugin install` path):
  *      - `plugin/hooks/hooks.json`              (${CLAUDE_PLUGIN_ROOT}-relative)
@@ -18,11 +18,11 @@
  *      - `hooks/hooks.json`                     (${PLUGIN_ROOT}-relative)
  *
  * The plugin variant resolves the hook script relative to the installed plugin
- * root rather than assuming a `.claude/skills/impeccable/` layout, so it stays
+ * root rather than assuming a `.claude/skills/procable/` layout, so it stays
  * correct wherever Claude Code unpacks the plugin.
  */
 
-export const IMPECCABLE_HOOK_COMMAND_MARKER = 'skills/impeccable/scripts/impeccable';
+export const PROCABLE_HOOK_COMMAND_MARKER = 'skills/procable/scripts/procable';
 
 const TIMEOUT_SECONDS = 5;
 const STATUS_MESSAGE = 'Checking UI changes';
@@ -35,13 +35,13 @@ const STATUS_MESSAGE = 'Checking UI changes';
 const STOP_TIMEOUT_SECONDS = 30;
 const STOP_STATUS_MESSAGE = 'Design deep pass';
 
-// The hook is a verb of the impeccable launcher that ships in the skill's
-// scripts dir: `<scripts>/impeccable hook` (per-edit and Stop passes; Cursor's
+// The hook is a verb of the procable launcher that ships in the skill's
+// scripts dir: `<scripts>/procable hook` (per-edit and Stop passes; Cursor's
 // retired preToolUse gate ran `hook-before-edit`, which still works). The launcher
 // runs the platform binary next to it, or downloads it once; no runtime probe
 // is needed and there is no Node on the path to check.
-export const LAUNCHER_NAME = 'impeccable';
-export const LAUNCHER_NAME_WINDOWS = 'impeccable.cmd';
+export const LAUNCHER_NAME = 'procable';
+export const LAUNCHER_NAME_WINDOWS = 'procable.cmd';
 
 // A hook manifest can be copied into a user-level settings file (issue #399:
 // user-level hooks fire in every project, where a project-relative path may
@@ -99,21 +99,21 @@ function stopEntry(command, handlerFields) {
 const launcherIn = (scriptsDir) => `${scriptsDir}/${LAUNCHER_NAME}`;
 const launcherCmdIn = (scriptsDir) => `${scriptsDir}/${LAUNCHER_NAME_WINDOWS}`;
 
-const CLAUDE_PROJECT_SCRIPTS = '${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts';
-const CLAUDE_PLUGIN_SCRIPTS = '${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts';
-const CODEX_PLUGIN_SCRIPTS = '${PLUGIN_ROOT}/skills/impeccable/scripts';
+const CLAUDE_PROJECT_SCRIPTS = '${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts';
+const CLAUDE_PLUGIN_SCRIPTS = '${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts';
+const CODEX_PLUGIN_SCRIPTS = '${PLUGIN_ROOT}/skills/procable/scripts';
 // Codex reads project hooks from `.codex/hooks.json`, but the skill payload the
 // hook invokes lives under the install's own skills dir: a `.codex`-directory
 // install keeps it at `.codex/skills/...`, while a `.agents` (Codex repo-skills)
 // install keeps it at `.agents/skills/...`. Derive the path from the install dir
 // so each generated manifest points at its own payload rather than a hardcoded
 // `.agents`; otherwise the guarded hook silently no-ops on `.codex` installs.
-const codexProjectScripts = (skillDir) => `${skillDir}/skills/impeccable/scripts`;
-const CURSOR_SCRIPTS = '.cursor/skills/impeccable/scripts';
-const GITHUB_PROJECT_SCRIPTS = '$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts';
+const codexProjectScripts = (skillDir) => `${skillDir}/skills/procable/scripts`;
+const CURSOR_SCRIPTS = '.cursor/skills/procable/scripts';
+const GITHUB_PROJECT_SCRIPTS = '$(git rev-parse --show-toplevel)/.github/skills/procable/scripts';
 // Grok project hooks are relative to the git/workspace root. Claude tool names
 // in the matcher (Edit|Write|MultiEdit) alias to Grok's search_replace family.
-const GROK_PROJECT_SCRIPTS = '.grok/skills/impeccable/scripts';
+const GROK_PROJECT_SCRIPTS = '.grok/skills/procable/scripts';
 
 // `windowsKey` names the per-OS field the consuming harness reads its Windows
 // command from (`commandWindows` for Codex, `windows` for VS Code Copilot
@@ -148,7 +148,7 @@ function buildClaudeCompatibleHooks(matcher, scriptsDir, { windowsKey, sessionId
 
 export function buildClaudeSettingsManifest() {
   return {
-    description: 'Impeccable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop.',
+    description: 'Procable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop.',
     hooks: buildClaudeCompatibleHooks('Edit|Write', CLAUDE_PROJECT_SCRIPTS, { sessionIdentity: true }),
   };
 }
@@ -170,7 +170,7 @@ export function buildClaudePluginHooksManifest() {
       sessionIdentity: true,
       windowsKey: 'windows',
       guard: guardedLauncherViaSh,
-      env: { IMPECCABLE_HOOK_HARNESS: 'vscode' },
+      env: { PROCABLE_HOOK_HARNESS: 'vscode' },
     }),
   };
 }
@@ -265,14 +265,14 @@ export function buildGrokHooksManifest() {
 // There is no per-OS command field; a Windows install rewrites this to a
 // PowerShell form (crates/skills hook_manifest.rs).
 export function buildGeminiHooksManifest() {
-  const launcher = '$GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable';
+  const launcher = '$GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable';
   const command = `[ ! -f ${launcher} ] || ${launcher} hook`;
   return { hooks: {
     BeforeTool: [{ matcher: '^run_shell_command$', hooks: [{
-      name: 'impeccable-session', type: 'command', command, timeout: 5000,
+      name: 'procable-session', type: 'command', command, timeout: 5000,
     }] }],
     AfterAgent: [{ hooks: [{
-      name: 'impeccable-completion', type: 'command', command, timeout: 30000,
+      name: 'procable-completion', type: 'command', command, timeout: 30000,
     }] }],
   } };
 }

@@ -1,4 +1,4 @@
-//! GitHub Actions workflow commands for `impeccable detect --github`.
+//! GitHub Actions workflow commands for `procable detect --github`.
 //!
 //! One annotation per finding, on stdout. Encoding follows
 //! https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
@@ -6,8 +6,8 @@
 
 use std::path::{Path, PathBuf};
 
-use impeccable_core::findings::Finding;
-use impeccable_core::js::number_to_string;
+use procable_core::findings::Finding;
+use procable_core::js::number_to_string;
 
 pub const GITHUB_JSON_CONFLICT: &str = "Error: --github cannot be used with --json\n";
 pub const GITHUB_LIST_RULES_CONFLICT: &str =
@@ -132,7 +132,7 @@ pub fn format_github_annotations(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use impeccable_core::findings::finding;
+    use procable_core::findings::finding;
 
     #[test]
     fn data_encodes_percent_and_newlines_but_keeps_colon_comma() {

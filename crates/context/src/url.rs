@@ -223,7 +223,7 @@ mod tests {
 
     #[test]
     fn basics() {
-        let u = parse("https://Impeccable.Style/docs/audit/").unwrap();
+        let u = parse("https://Procable.Style/docs/audit/").unwrap();
         assert_eq!(u.hostname, "impeccable.style");
         assert_eq!(u.pathname, "/docs/audit/");
         let u = parse("http://localhost:3000/pricing?x=1#h").unwrap();

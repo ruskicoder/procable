@@ -55,8 +55,8 @@ fn new_build_does_not_inherit_terminal_review_and_foreign_corruption_is_ignored(
     let state=store::read(&dir.join("current.json")).unwrap();
     store::submit(&dir,&approve(&state)).unwrap();
     assert!(super::lifecycle::final_session(&f.store,&f.project.canonicalize().unwrap()).unwrap().is_some());
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
-    fs::write(f.project.join(".impeccable/build/state.json"),r#"{"startedAt":"new-build","artifact":"index.html"}"#).unwrap();
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
+    fs::write(f.project.join(".procable/build/state.json"),r#"{"startedAt":"new-build","artifact":"index.html"}"#).unwrap();
     assert!(super::lifecycle::final_session(&f.store,&f.project.canonicalize().unwrap()).unwrap().is_none());
     let next=store::prepare(&f.store,&f.project,&hero).unwrap();
     assert_eq!(next,dir);
@@ -94,22 +94,22 @@ fn needs_work_and_unverified_receipts_never_close_review() {
 #[test]
 fn hosted_capture_routes_to_the_review_tool_before_browser_or_store_access() {
     let f = Fixture::new();
-    let (mut io, captured) = impeccable_common::Io::captured("", f.project.clone(),
+    let (mut io, captured) = procable_common::Io::captured("", f.project.clone(),
         std::collections::HashMap::from([
             ("HOME".into(), f.root.to_string_lossy().into_owned()),
-            ("IMPECCABLE_COMPONENT_REVIEW_TOOL".into(), "component_review".into()),
+            ("PROCABLE_COMPONENT_REVIEW_TOOL".into(), "component_review".into()),
         ]));
     let args = vec!["capture".into(), "--manifest".into(), "review.json".into()];
     assert_eq!(super::run_with_capturer(&args, &mut io, None), 1);
     let error = String::from_utf8(captured.stderr.borrow().clone()).unwrap();
     assert!(error.contains("Call component_review with manifest_path=\"review.json\""), "{error}");
-    assert!(!f.root.join(".impeccable").exists());
+    assert!(!f.root.join(".procable").exists());
 }
 #[test]
 fn hosted_lifecycle_owes_no_components_review_for_a_spec_with_nothing_to_decide() {
     let f = Fixture::new();
     let lifecycle = |project: Option<&std::path::Path>| {
-        let (mut io, captured) = impeccable_common::Io::captured("", f.project.clone(),
+        let (mut io, captured) = procable_common::Io::captured("", f.project.clone(),
             std::collections::HashMap::from([("HOME".into(), f.root.to_string_lossy().into_owned())]));
         let mut args: Vec<String> = ["lifecycle", "--hosted", "--require", "components", "--require", "hero"].map(String::from).to_vec();
         if let Some(project) = project { args.extend(["--project".into(), project.to_string_lossy().into_owned()]); }
@@ -119,7 +119,7 @@ fn hosted_lifecycle_owes_no_components_review_for_a_spec_with_nothing_to_decide(
     };
     // No spec yet: the components stage stays owed, with or without the project named.
     assert_eq!(lifecycle(Some(&f.project))["stage"], "components");
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
     // A spec without a regions array is not a measured spec: still owed.
     fs::write(f.project.join(super::plan::SPEC), b"{}").unwrap();
     assert_eq!(lifecycle(Some(&f.project))["stage"], "components");
@@ -140,7 +140,7 @@ struct Fixture {
 impl Fixture {
     fn new() -> Self {
         let root = std::env::temp_dir().join(format!(
-            "impeccable-component-review-{}-{}",
+            "procable-component-review-{}-{}",
             std::process::id(),
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
@@ -341,7 +341,7 @@ fn prepare_cli_reports_an_existing_receipt_instead_of_requesting_review_again() 
     ];
     let invoke = || {
         let (mut io, captured) =
-            impeccable_common::Io::captured("", f.project.clone(), Default::default());
+            procable_common::Io::captured("", f.project.clone(), Default::default());
         assert_eq!(super::run(&args, &mut io), 0);
         let result = serde_json::from_slice::<Value>(&captured.stdout.borrow()).unwrap();
         result
@@ -591,13 +591,13 @@ fn verify_requires_native_approval_and_current_manifest_and_dependencies() {
 #[test]
 fn measured_inventory_is_bound_without_repeated_author_dependencies() {
     let f = Fixture::new();
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
-    let path = f.project.join(".impeccable/build/spec.json");
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
+    let path = f.project.join(".procable/build/spec.json");
     fs::write(&path, br#"{"regions":[{"id":"art","kind":"plate"},{"id":"control","kind":"control"}]}"#).unwrap();
     let mut input = f.manifest(); input["stage"] = json!("components");
     let dir = store::prepare(&f.store, &f.project, &input).unwrap();
     let state = store::read(&dir.join("current.json")).unwrap();
-    assert!(state["sources"][".impeccable/build/spec.json"].is_string());
+    assert!(state["sources"][".procable/build/spec.json"].is_string());
     let mut missing = input.clone(); missing["components"].as_array_mut().unwrap().pop();
     assert!(store::prepare(&f.store, &f.project, &missing).unwrap_err().contains("omitted measured region"));
     let mut flattened = input; flattened["components"][1]["preview"] = json!({"kind":"image","path":"art.png"});
@@ -609,8 +609,8 @@ fn measured_inventory_is_bound_without_repeated_author_dependencies() {
 #[test]
 fn schema_v2_component_manifests_are_retired_but_v2_hero_still_freezes() {
     let f = Fixture::new();
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
-    fs::write(f.project.join(".impeccable/build/spec.json"), br#"{"regions":[{"id":"art","kind":"plate"},{"id":"control","kind":"control"}]}"#).unwrap();
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), br#"{"regions":[{"id":"art","kind":"plate"},{"id":"control","kind":"control"}]}"#).unwrap();
     let mut input = f.manifest();
     input["schemaVersion"] = json!(2);
     input["stage"] = json!("components");
@@ -762,8 +762,8 @@ fn visual_approvals_survive_shared_source_edits_but_not_changed_scope_or_pixels(
 #[test]
 fn review_groups_preserve_instances_and_require_a_shared_code_document() {
     let f = Fixture::new();
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
-    fs::write(f.project.join(".impeccable/build/spec.json"), r#"{"regions":[]}"#).unwrap();
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), r#"{"regions":[]}"#).unwrap();
     let mut input=f.manifest(); input["stage"]=json!("components");
     input["components"][1]["reviewGroup"]=json!("Labels");
     let mut peer=input["components"][1].clone(); peer["id"]=json!("peer");
@@ -794,14 +794,14 @@ fn invalid_component_geometry_names_the_component_and_bounds() {
 #[test]
 fn component_review_refuses_groups_that_mix_measured_roles() {
     let f = Fixture::new();
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
     let mut input = f.manifest();
     input["stage"] = json!("components");
     input["components"][1]["reviewGroup"] = json!("peers");
     let mut peer = input["components"][1].clone(); peer["id"] = json!("peer");
     input["components"].as_array_mut().unwrap().push(peer);
     let mut spec = json!({"regions":[{"id":"control","kind":"control"},{"id":"peer","kind":"text"}]});
-    let path = f.project.join(".impeccable/build/spec.json");
+    let path = f.project.join(".procable/build/spec.json");
     fs::write(&path, spec.to_string()).unwrap();
     assert!(manifest::freeze(&f.project,&input).unwrap_err().contains("mixes region kinds"));
     spec["regions"][1]["kind"] = json!("control");
@@ -812,8 +812,8 @@ fn component_review_refuses_groups_that_mix_measured_roles() {
 #[test]
 fn measured_inventory_reports_all_independent_failures_before_capture() {
     let f = Fixture::new();
-    fs::create_dir_all(f.project.join(".impeccable/build")).unwrap();
-    fs::write(f.project.join(".impeccable/build/spec.json"), br#"{"regions":[{"id":"missing-one","kind":"plate"},{"id":"control","kind":"control"},{"id":"missing-two","kind":"text"}]}"#).unwrap();
+    fs::create_dir_all(f.project.join(".procable/build")).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), br#"{"regions":[{"id":"missing-one","kind":"plate"},{"id":"control","kind":"control"},{"id":"missing-two","kind":"text"}]}"#).unwrap();
     let mut input = f.manifest();
     input["stage"] = json!("components");
     input["components"][1]["preview"] = json!({"kind":"image","path":"art.png"});
@@ -887,7 +887,7 @@ fn serve_in_thread(dir: &std::path::Path, idle_ms: u64) -> std::sync::mpsc::Rece
     let (tx, rx) = std::sync::mpsc::channel();
     let d = dir.to_path_buf();
     std::thread::spawn(move || {
-        let (mut io, _) = impeccable_common::Io::captured("", d.clone(), Default::default());
+        let (mut io, _) = procable_common::Io::captured("", d.clone(), Default::default());
         let limits = server::Limits { idle: std::time::Duration::from_millis(idle_ms), grace: std::time::Duration::from_millis(100) };
         tx.send(server::serve(&d, 0, &mut io, limits, None)).ok();
     });
@@ -935,7 +935,7 @@ fn serve_answers_a_burst_of_connections() {
     let addr: std::net::SocketAddr = host.parse().unwrap();
     let request = format!("GET /review.css HTTP/1.1\r\nHost: {host}\r\n\r\n");
     for _ in 0..3 {
-        assert_eq!(impeccable_common::http::burst_answered(addr, request.as_bytes(), 4, 8), 8, "connections stranded");
+        assert_eq!(procable_common::http::burst_answered(addr, request.as_bytes(), 4, 8), 8, "connections stranded");
     }
     let state = store::read(&dir.join("current.json")).unwrap();
     store::submit(&dir, &approve(&state)).unwrap();
@@ -950,7 +950,7 @@ fn status_hides_dead_servers_and_serve_refuses_sessions_without_a_browser() {
     store::write(&dir.join("service.json"), &json!({"url":"http://127.0.0.1:9/","pid":2147483000i64})).unwrap();
     let run = |cmd: &str, env: &[(&str, &str)]| {
         let env = env.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect();
-        let (mut io, out) = impeccable_common::Io::captured("", f.project.clone(), env);
+        let (mut io, out) = procable_common::Io::captured("", f.project.clone(), env);
         let args: Vec<String> = [cmd, "--session", &id, "--store", f.store.to_str().unwrap()].map(String::from).to_vec();
         let code = super::run(&args, &mut io);
         let stdout = String::from_utf8(out.stdout.borrow().clone()).unwrap();
@@ -959,7 +959,7 @@ fn status_hides_dead_servers_and_serve_refuses_sessions_without_a_browser() {
     let (code, out) = run("status", &[]);
     assert_eq!(code, 0);
     assert_eq!(serde_json::from_str::<Value>(&out).unwrap()["service"], Value::Null);
-    assert_eq!(run("serve", &[("IMPECCABLE_QUESTION_DISABLED", "1")]).0, 2);
+    assert_eq!(run("serve", &[("PROCABLE_QUESTION_DISABLED", "1")]).0, 2);
     assert_eq!(run("serve", &[("CI", "1")]).0, 2);
 }
 
@@ -1011,17 +1011,17 @@ const PLAN_SPEC: &str = r#"{"comp":"comp.png","compSize":{"width":100,"height":1
 
 impl Fixture {
     fn plan_project(&self) {
-        fs::create_dir_all(self.project.join(".impeccable/build")).unwrap();
-        fs::write(self.project.join(".impeccable/build/spec.json"), PLAN_SPEC).unwrap();
-        fs::write(self.project.join(".impeccable/build/state.json"), r#"{"startedAt":"build-1","artifact":"index.html"}"#).unwrap();
+        fs::create_dir_all(self.project.join(".procable/build")).unwrap();
+        fs::write(self.project.join(".procable/build/spec.json"), PLAN_SPEC).unwrap();
+        fs::write(self.project.join(".procable/build/state.json"), r#"{"startedAt":"build-1","artifact":"index.html"}"#).unwrap();
     }
     fn plates(&self) {
         fs::create_dir_all(self.project.join("assets")).unwrap();
         fs::write(self.project.join("assets/art.png"), b"art plate").unwrap();
         fs::write(self.project.join("assets/photo.png"), b"photo plate").unwrap();
     }
-    fn io(&self) -> (impeccable_common::Io, impeccable_common::Captured) {
-        impeccable_common::Io::captured("", self.project.clone(), std::collections::HashMap::from([("HOME".into(), self.root.to_string_lossy().into_owned())]))
+    fn io(&self) -> (procable_common::Io, procable_common::Captured) {
+        procable_common::Io::captured("", self.project.clone(), std::collections::HashMap::from([("HOME".into(), self.root.to_string_lossy().into_owned())]))
     }
     /// `component-review <args> --store <store>` with no native capturer at all.
     fn cli(&self, args: &[&str]) -> (i32, String, String) {
@@ -1034,13 +1034,13 @@ impl Fixture {
     }
     fn plan_round(&self) -> PathBuf {
         assert_eq!(self.cli(&["plan"]).0, 0);
-        let (code, out, err) = self.cli(&["capture", "--manifest", ".impeccable/review/components.json"]);
+        let (code, out, err) = self.cli(&["capture", "--manifest", ".procable/review/components.json"]);
         assert_eq!(code, 0, "{err}");
         let session: Value = serde_json::from_str(&out).unwrap();
         self.store.join(session["session"].as_str().unwrap())
     }
     fn gate(&self) -> Result<(), String> {
-        super::plan::gate(&self.store, &self.project, "impeccable")
+        super::plan::gate(&self.store, &self.project, "procable")
     }
 }
 
@@ -1051,12 +1051,12 @@ fn plan_refuses_listing_every_missing_plate_then_orders_roles_from_the_spec() {
     let (code, _, err) = f.cli(&["plan"]);
     assert_eq!(code, 1);
     assert!(err.contains("2 raster region(s) lack their plate") && err.contains("art (plate): assets/art.png") && err.contains("photo (image): assets/photo.png"), "{err}");
-    assert!(!f.project.join(".impeccable/review/components.json").exists());
+    assert!(!f.project.join(".procable/review/components.json").exists());
     f.plates();
     let (code, out, err) = f.cli(&["plan"]);
     assert_eq!(code, 0, "{err}");
-    assert!(out.contains("2 assets, 3 plan items (2 flagged or code-drawn), 3 code regions") && out.contains("NEXT impeccable component-review capture --manifest .impeccable/review/components.json"), "{out}");
-    let packet = store::read(&f.project.join(".impeccable/review/components.json")).unwrap();
+    assert!(out.contains("2 assets, 3 plan items (2 flagged or code-drawn), 3 code regions") && out.contains("NEXT procable component-review capture --manifest .procable/review/components.json"), "{out}");
+    let packet = store::read(&f.project.join(".procable/review/components.json")).unwrap();
     let ids = |key: &str| packet[key].as_array().unwrap().iter().map(|c| c["id"].as_str().unwrap().to_string()).collect::<Vec<_>>();
     assert_eq!(ids("components"), ["brushed-panel", "table", "art", "photo", "nav"]);
     assert_eq!(ids("codeRegions"), ["headline", "ground", "strip"]);
@@ -1091,7 +1091,7 @@ fn plan_capture_needs_no_browser_and_approval_verifies_against_the_pinned_spec()
     assert!(f.gate().unwrap_err().contains("not accepted"));
     let receipt = store::submit(&dir, &approve(&state)).unwrap();
     assert_eq!((receipt["visualDecision"].as_str(), receipt["captureVerified"].as_bool()), (Some("approved"), Some(true)));
-    assert_eq!(super::verify::approved(&f.store, &f.project, ".impeccable/review/components.json").unwrap(), receipt);
+    assert_eq!(super::verify::approved(&f.store, &f.project, ".procable/review/components.json").unwrap(), receipt);
     assert_eq!(super::lifecycle::inspect(&[dir.clone()], &["components".into()]).unwrap()["status"], "approved");
     f.gate().unwrap();
     // Stored flags are claims: a packet digest that no longer matches the pinned spec fails integrity.
@@ -1110,9 +1110,9 @@ fn plan_capture_needs_no_browser_and_approval_verifies_against_the_pinned_spec()
     // A spec change after acceptance reopens the gate and needs a new round.
     let mut spec: Value = serde_json::from_str(PLAN_SPEC).unwrap();
     spec["regions"][3]["note"] = json!("A little closer to the sea");
-    fs::write(f.project.join(".impeccable/build/spec.json"), spec.to_string()).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), spec.to_string()).unwrap();
     assert!(f.gate().unwrap_err().contains("earlier spec.json"));
-    assert!(super::verify::approved(&f.store, &f.project, ".impeccable/review/components.json").is_err());
+    assert!(super::verify::approved(&f.store, &f.project, ".procable/review/components.json").is_err());
 }
 
 #[test]
@@ -1210,7 +1210,7 @@ fn reclassification_requests_changes_and_carries_unchanged_decisions_into_the_ne
     spec["regions"][4]["kind"] = json!("texture");
     spec["regions"][4]["plate"] = json!("assets/panel.png");
     spec["regions"][4].as_object_mut().unwrap().remove("flags");
-    fs::write(f.project.join(".impeccable/build/spec.json"), spec.to_string()).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), spec.to_string()).unwrap();
     fs::write(f.project.join("assets/headline.png"), b"headline plate").unwrap();
     fs::write(f.project.join("assets/panel.png"), b"panel plate").unwrap();
     let next_dir = f.plan_round();
@@ -1240,7 +1240,7 @@ fn approving_every_component_while_reclassifying_a_code_region_is_not_approval()
     body["reclassify"] = json!([{"id":"headline","kind":"plate"}]);
     let receipt = store::submit(&dir, &body).unwrap();
     assert_eq!(receipt["visualDecision"], "changes-requested");
-    assert!(super::verify::approved(&f.store, &f.project, ".impeccable/review/components.json").is_err());
+    assert!(super::verify::approved(&f.store, &f.project, ".procable/review/components.json").is_err());
     // v1/v2 reviews have no reclassification.
     let legacy = Fixture::new();
     let legacy_dir = legacy.prepare();
@@ -1254,7 +1254,7 @@ fn hosted_gate_requires_an_accepted_intact_review_in_the_named_sessions() {
     let f = Fixture::new();
     f.plan_project();
     f.plates();
-    let hosted = |dirs: &[PathBuf]| super::plan::gate_hosted(dirs, &f.project, "impeccable", "component_review");
+    let hosted = |dirs: &[PathBuf]| super::plan::gate_hosted(dirs, &f.project, "procable", "component_review");
     assert!(hosted(&[]).unwrap_err().contains("not accepted"));
     let dir = f.plan_round();
     let err = hosted(&[dir.clone()]).unwrap_err();
@@ -1276,7 +1276,7 @@ fn hosted_gate_requires_an_accepted_intact_review_in_the_named_sessions() {
     fs::write(dir.join("blobs").join(blob), b"art plate").unwrap();
     hosted(&[dir.clone()]).unwrap();
     // A spec changed since the review, or an unreadable session, refuses.
-    fs::write(f.project.join(".impeccable/build/spec.json"), PLAN_SPEC.replace("Top bar", "Top rail")).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), PLAN_SPEC.replace("Top bar", "Top rail")).unwrap();
     assert!(hosted(&[dir.clone()]).unwrap_err().contains("earlier spec.json"));
     assert!(hosted(&[f.root.join("nowhere")]).is_err());
 }
@@ -1295,7 +1295,7 @@ fn hosted_gate_checks_the_builders_files_not_the_hosts_snapshot() {
     let mut snapshot = store::read(&dir.join("current.json")).unwrap();
     snapshot["project"] = json!(f.root.join("host-snapshot-unreadable").to_string_lossy());
     store::write(&dir.join("current.json"), &snapshot).unwrap();
-    let hosted = || super::plan::gate_hosted(std::slice::from_ref(&dir), &f.project, "impeccable", "component_review");
+    let hosted = || super::plan::gate_hosted(std::slice::from_ref(&dir), &f.project, "procable", "component_review");
     hosted().unwrap();
     fs::write(f.project.join("assets/art.png"), b"a different art plate").unwrap();
     let err = hosted().unwrap_err();
@@ -1339,10 +1339,10 @@ fn plan_leaves_bare_grounds_and_straight_rules_to_code_unless_flagged() {
     regions.push(json!({"id":"rule","kind":"chrome","note":"Brass hairline","box":{"x":0,"y":0.5,"w":1,"h":0.01},"surface":{"flat":false,"rules":true}}));
     regions.push(json!({"id":"mark","kind":"chrome","note":"Wave mark","box":{"x":0.9,"y":0,"w":0.05,"h":0.05},"surface":{"flat":false,"rules":false}}));
     regions.push(json!({"id":"moulding","kind":"chrome","note":"Moulded frieze","box":{"x":0,"y":0.95,"w":1,"h":0.05},"surface":{"flat":false,"rules":true},"flags":[{"id":"painted-pixels","message":"Looks painted"}]}));
-    fs::write(f.project.join(".impeccable/build/spec.json"), serde_json::to_vec(&spec).unwrap()).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), serde_json::to_vec(&spec).unwrap()).unwrap();
     let (code, _, err) = f.cli(&["plan"]);
     assert_eq!(code, 0, "{err}");
-    let packet = store::read(&f.project.join(".impeccable/review/components.json")).unwrap();
+    let packet = store::read(&f.project.join(".procable/review/components.json")).unwrap();
     let ids = |key: &str| packet[key].as_array().unwrap().iter().map(|c| c["id"].as_str().unwrap().to_string()).collect::<Vec<_>>();
     assert_eq!(ids("components"), ["brushed-panel", "table", "moulding", "art", "photo", "mark"]);
     assert_eq!(ids("codeRegions"), ["nav", "headline", "ground", "strip", "rule"]);
@@ -1355,11 +1355,11 @@ fn plan_puts_flagged_assets_first_with_their_flags() {
     f.plates();
     let mut spec: Value = serde_json::from_str(PLAN_SPEC).unwrap();
     spec["regions"][2]["flags"] = json!([{"id":"baked-composite","message":"Frame and view are one image here, so the page can't swap the view on its own."}]);
-    fs::write(f.project.join(".impeccable/build/spec.json"), serde_json::to_vec(&spec).unwrap()).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), serde_json::to_vec(&spec).unwrap()).unwrap();
     let (code, out, err) = f.cli(&["plan"]);
     assert_eq!(code, 0, "{err}");
     assert!(out.contains("2 assets (1 flagged), 3 plan items (2 flagged or code-drawn)"), "{out}");
-    let packet = store::read(&f.project.join(".impeccable/review/components.json")).unwrap();
+    let packet = store::read(&f.project.join(".procable/review/components.json")).unwrap();
     let ids: Vec<&str> = packet["components"].as_array().unwrap().iter().map(|c| c["id"].as_str().unwrap()).collect();
     // Flagged items of either role keep spec order at the front.
     assert_eq!(ids, ["photo", "brushed-panel", "table", "art", "nav"]);
@@ -1396,7 +1396,7 @@ fn plan_accepts_absolute_and_backslashed_spec_paths_inside_the_project() {
     spec["comp"] = json!(f.project.join("comp.png").to_string_lossy());
     spec["regions"][1]["plate"] = json!(f.project.canonicalize().unwrap().join("assets/art.png").to_string_lossy());
     spec["regions"][2]["plate"] = json!(r"assets\photo.png");
-    fs::write(f.project.join(".impeccable/build/spec.json"), spec.to_string()).unwrap();
+    fs::write(f.project.join(".procable/build/spec.json"), spec.to_string()).unwrap();
     let packet = super::plan::build(&f.project).unwrap();
     assert_eq!(packet["comp"]["path"], "comp.png");
     let preview = |id: &str| packet["components"].as_array().unwrap().iter().find(|c| c["id"] == id).unwrap()["preview"]["path"].clone();

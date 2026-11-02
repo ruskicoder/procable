@@ -8,8 +8,8 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 
-use impeccable_browser::BrowserEngine;
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::BrowserEngine;
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 fn serve(body: String) -> u16 {
     let listener = TcpListener::bind("127.0.0.1:0").expect("bind");
@@ -38,7 +38,7 @@ fn handle(mut stream: TcpStream, body: &str) {
 #[test]
 fn a_repeated_id_does_not_send_the_pixel_pass_to_a_collapsed_copy() {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return;
     }
@@ -110,7 +110,7 @@ const RTL_VECTOR_PAGE: &str = r##"<!DOCTYPE html>
 #[test]
 fn a_right_to_left_page_reads_pixels_where_the_text_paints() {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return;
     }

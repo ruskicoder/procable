@@ -24,7 +24,7 @@ const ROLLBACK_EXTENSIONS: [&str; 23] = [
 const ROLLBACK_SKIP_DIRS: [&str; 11] = [
     ".astro",
     ".git",
-    ".impeccable",
+    ".procable",
     ".next",
     ".nuxt",
     ".svelte-kit",
@@ -149,7 +149,7 @@ fn unique_strings(values: &[Value]) -> Vec<String> {
     let mut out = Vec::new();
     for v in values {
         if let Value::String(s) = v {
-            if !impeccable_context::util::js_trim(s).is_empty() && seen.insert(s.clone()) {
+            if !procable_context::util::js_trim(s).is_empty() && seen.insert(s.clone()) {
                 out.push(s.clone());
             }
         }
@@ -316,13 +316,13 @@ fn all_entry_ids(batch: &Value) -> Vec<Value> {
 /// JS: repairAttemptLimit(env)
 fn repair_attempt_limit(env: &Env) -> f64 {
     let raw = env
-        .get("IMPECCABLE_LIVE_MANUAL_EDIT_REPAIR_ATTEMPTS")
+        .get("PROCABLE_LIVE_MANUAL_EDIT_REPAIR_ATTEMPTS")
         .cloned()
         .unwrap_or_default();
     let value = if raw.is_empty() {
         DEFAULT_REPAIR_ATTEMPTS
     } else {
-        impeccable_core::js::string_to_number(&raw)
+        procable_core::js::string_to_number(&raw)
     };
     if !value.is_finite() {
         return DEFAULT_REPAIR_ATTEMPTS;
@@ -619,7 +619,7 @@ fn verification_targets_for_op(
             let key = format!(
                 "{}:{}:{}",
                 t.file,
-                impeccable_context::util::js_number_to_string(t.line),
+                procable_context::util::js_number_to_string(t.line),
                 t.kind
             );
             seen.insert(key)

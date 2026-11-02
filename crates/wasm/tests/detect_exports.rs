@@ -2,10 +2,10 @@
 //! function is a plain Rust function off the wasm target): the JSON shapes,
 //! the options object, and a rule pack installed through `set_rule_pack`.
 
-use impeccable_core::findings::{finding_for, Finding};
-use impeccable_core::registry::Antipattern;
-use impeccable_core::rule_pack::RulePack;
-use impeccable_wasm::exports_detect::{detect_html_source_json, detect_text_json};
+use procable_core::findings::{finding_for, Finding};
+use procable_core::registry::Antipattern;
+use procable_core::rule_pack::RulePack;
+use procable_wasm::exports_detect::{detect_html_source_json, detect_text_json};
 use serde_json::Value;
 
 static ROWS: &[Antipattern] = &[Antipattern {
@@ -89,7 +89,7 @@ fn html_export_shape() {
 #[test]
 fn inline_ignores_option() {
     let waived =
-        ".card { /* impeccable-disable-line side-tab */ border-left: 4px solid #6366f1; border-radius: 10px; }\n";
+        ".card { /* procable-disable-line side-tab */ border-left: 4px solid #6366f1; border-radius: 10px; }\n";
     assert!(ids(&detect_text_json(waived, "a.css", "{}")).is_empty());
     assert!(!ids(&detect_text_json(
         waived,
@@ -146,7 +146,7 @@ fn installed_pack_reaches_the_exports() {
         .iter()
         .any(|id| id.starts_with("testpack/")));
 
-    impeccable_wasm::set_rule_pack(&PACK);
+    procable_wasm::set_rule_pack(&PACK);
     let with_pack = ids(&detect_text_json(&source, "a.css", "{}"));
     assert!(
         with_pack.iter().any(|id| id == "testpack/todo-marker"),
@@ -154,7 +154,7 @@ fn installed_pack_reaches_the_exports() {
     );
 
     // The registry export carries the pack's row after the built-ins.
-    let rows: Vec<Value> = serde_json::from_str(&impeccable_wasm::antipatterns_json()).unwrap();
+    let rows: Vec<Value> = serde_json::from_str(&procable_wasm::antipatterns_json()).unwrap();
     assert_eq!(rows[0]["id"], "side-tab");
     assert_eq!(rows[rows.len() - 1]["id"], "testpack/todo-marker");
 }

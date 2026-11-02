@@ -1,4 +1,4 @@
-use impeccable::capture_snapshot::{HtmlSnapshot, SnapshotSelection};
+use procable::capture_snapshot::{HtmlSnapshot, SnapshotSelection};
 use std::{
     fs,
     path::PathBuf,
@@ -19,13 +19,13 @@ impl Fixture {
                 .as_nanos()
         ));
         fs::create_dir_all(root.join("assets")).unwrap();
-        fs::create_dir_all(root.join(".impeccable")).unwrap();
+        fs::create_dir_all(root.join(".procable")).unwrap();
         for (name, bytes) in [
             ("index.html", "<img src='assets/art.png'>"),
             ("other.html", "other page"),
             ("assets/art.png", "asset bytes"),
-            (".impeccable/spec.json", "{}"),
-            (".impeccable/comp.png", "comp bytes"),
+            (".procable/spec.json", "{}"),
+            (".procable/comp.png", "comp bytes"),
             (".env", "private"),
         ] {
             fs::write(root.join(name), bytes).unwrap();
@@ -38,8 +38,8 @@ impl Fixture {
             entry: "index.html".into(),
             served: vec!["index.html".into(), "assets/art.png".into()],
             bound: vec![
-                ".impeccable/spec.json".into(),
-                ".impeccable/comp.png".into(),
+                ".procable/spec.json".into(),
+                ".procable/comp.png".into(),
             ],
         }
     }
@@ -64,8 +64,8 @@ fn snapshot_freezes_bytes_and_detects_every_changed_input() {
     for name in [
         "index.html",
         "assets/art.png",
-        ".impeccable/spec.json",
-        ".impeccable/comp.png",
+        ".procable/spec.json",
+        ".procable/comp.png",
     ] {
         let before = fs::read(f.0.join(name)).unwrap();
         fs::write(f.0.join(name), b"changed").unwrap();
@@ -92,7 +92,7 @@ fn routes_are_explicit_and_never_expose_bound_private_files() {
         "/",
         "/other.html",
         "/.env",
-        "/.impeccable/comp.png",
+        "/.procable/comp.png",
         "/../index.html",
         "/assets/../index.html",
         "/%2e%2e/index.html",
@@ -135,13 +135,13 @@ fn snapshot_rejects_traversal_symlinks_and_non_html_entries() {
 
 #[test]
 fn fresh_capture_ignores_saved_receipts_and_rejects_stale_or_wrong_documents() {
-    use impeccable_comp_verbs::asset_capture::{
+    use procable_comp_verbs::asset_capture::{
         AssetCapture, AssetCaptureRequest, AssetRenderer, capture_sha256,
     };
     use serde_json::json;
     use std::sync::Arc;
     let f = Fixture::new();
-    fs::write(f.0.join(".impeccable/spec.json"),serde_json::to_vec(&json!({"comp":".impeccable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]})).unwrap()).unwrap();
+    fs::write(f.0.join(".procable/spec.json"),serde_json::to_vec(&json!({"comp":".procable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]})).unwrap()).unwrap();
     struct Fake {
         entry: Vec<u8>,
         mutation: Option<PathBuf>,
@@ -172,22 +172,22 @@ fn fresh_capture_ignores_saved_receipts_and_rejects_stale_or_wrong_documents() {
         calls: 0,
     };
     fs::write(
-        f.0.join(".impeccable/receipt.json"),
+        f.0.join(".procable/receipt.json"),
         br#"{"status":"captured","visible":true}"#,
     )
     .unwrap();
     let capture = s
-        .capture_region(&mut renderer, ".impeccable/spec.json", "art", true)
+        .capture_region(&mut renderer, ".procable/spec.json", "art", true)
         .unwrap();
     assert_eq!(capture.receipt["inputSnapshot"]["digest"], s.digest());
     assert_eq!(renderer.calls, 1);
     renderer.wrong = true;
-    let error = s.capture_region(&mut renderer, ".impeccable/spec.json", "art", true)
+    let error = s.capture_region(&mut renderer, ".procable/spec.json", "art", true)
         .err().unwrap();
     assert!(error.contains("art: resolvedUrl"), "{error}");
     renderer.partial = true;
     assert!(
-        s.capture_region(&mut renderer, ".impeccable/spec.json", "art", true)
+        s.capture_region(&mut renderer, ".procable/spec.json", "art", true)
             .is_err(),
         "partial stable evidence must also bind the document"
     );
@@ -195,18 +195,18 @@ fn fresh_capture_ignores_saved_receipts_and_rejects_stale_or_wrong_documents() {
     renderer.wrong = false;
     renderer.entry = b"different entry".to_vec();
     assert!(
-        s.capture_region(&mut renderer, ".impeccable/spec.json", "art", true)
+        s.capture_region(&mut renderer, ".procable/spec.json", "art", true)
             .is_err()
     );
     renderer.entry = s.bytes("index.html").unwrap().to_vec();
     renderer.mutation = Some(f.0.join("assets/art.png"));
     assert!(
-        s.capture_region(&mut renderer, ".impeccable/spec.json", "art", true)
+        s.capture_region(&mut renderer, ".procable/spec.json", "art", true)
             .is_err()
     );
     let calls = renderer.calls;
     assert!(
-        s.capture_region(&mut renderer, ".impeccable/spec.json", "art", true)
+        s.capture_region(&mut renderer, ".procable/spec.json", "art", true)
             .is_err()
     );
     assert_eq!(
@@ -256,7 +256,7 @@ fn snapshot_server_serves_frozen_bytes_and_checks_host() {
     assert!(String::from_utf8_lossy(&actual).starts_with("HTTP/1.1 200 OK"));
     for (path, h) in [
         ("/.env", host),
-        ("/.impeccable/spec.json", host),
+        ("/.procable/spec.json", host),
         ("/other.html", host),
         ("/index.html", "attacker.example"),
         ("/assets/../index.html", host),
@@ -268,11 +268,11 @@ fn snapshot_server_serves_frozen_bytes_and_checks_host() {
 
 #[test]
 fn native_browser_capture_is_bound_to_frozen_entry_spec_and_asset() {
-    use impeccable::asset_capture::CdpAssetRenderer;
-    use impeccable_comp::{png_io, raster};
+    use procable::asset_capture::CdpAssetRenderer;
+    use procable_comp::{png_io, raster};
     use std::sync::Arc;
     let env = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: browser unavailable");
         return;
     }
@@ -280,13 +280,13 @@ fn native_browser_capture_is_bound_to_frozen_entry_spec_and_asset() {
     fs::write(f.0.join("index.html"),"<!doctype html><style>body{margin:0;background:white}img{position:absolute;left:20px;top:20px;width:80px;height:80px}</style><img src='assets/art.png'>").unwrap();
     let image = png_io::encode_png(&raster::create_image(32, 32, [231, 60, 30, 255]), &[]).unwrap();
     fs::write(f.0.join("assets/art.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/comp.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/spec.json"),br#"{"comp":".impeccable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]}"#).unwrap();
+    fs::write(f.0.join(".procable/comp.png"), &image).unwrap();
+    fs::write(f.0.join(".procable/spec.json"),br#"{"comp":".procable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]}"#).unwrap();
     let snapshot = Arc::new(HtmlSnapshot::freeze(f.selection()).unwrap());
     let capture = snapshot
         .capture_region(
             &mut CdpAssetRenderer::from_process_env(),
-            ".impeccable/spec.json",
+            ".procable/spec.json",
             "art",
             true,
         )
@@ -304,10 +304,10 @@ fn native_browser_capture_is_bound_to_frozen_entry_spec_and_asset() {
 
 #[test]
 fn native_capture_binds_bom_entry_to_its_frozen_bytes() {
-    use impeccable::asset_capture::CdpAssetRenderer;
-    use impeccable_comp::{png_io, raster};
+    use procable::asset_capture::CdpAssetRenderer;
+    use procable_comp::{png_io, raster};
     use std::sync::Arc;
-    if impeccable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
+    if procable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
         eprintln!("skip: browser unavailable");
         return;
     }
@@ -316,11 +316,11 @@ fn native_capture_binds_bom_entry_to_its_frozen_bytes() {
     fs::write(f.0.join("index.html"),b"\xEF\xBB\xBF<!doctype html>\r\n<!-- caf\xC3\xA9 --><style>body{margin:0;background:white}img{position:absolute;left:20px;top:20px;width:80px;height:80px}</style><img src='assets/art.png'>").unwrap();
     let image = png_io::encode_png(&raster::create_image(32, 32, [231, 60, 30, 255]), &[]).unwrap();
     fs::write(f.0.join("assets/art.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/comp.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/spec.json"),br#"{"comp":".impeccable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]}"#).unwrap();
+    fs::write(f.0.join(".procable/comp.png"), &image).unwrap();
+    fs::write(f.0.join(".procable/spec.json"),br#"{"comp":".procable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]}"#).unwrap();
     let snapshot = Arc::new(HtmlSnapshot::freeze(f.selection()).unwrap());
     let capture = snapshot
-        .capture_region(&mut CdpAssetRenderer::from_process_env(), ".impeccable/spec.json", "art", true)
+        .capture_region(&mut CdpAssetRenderer::from_process_env(), ".procable/spec.json", "art", true)
         .unwrap();
     assert_eq!(capture.receipt["status"], "captured", "{}", capture.receipt);
     assert_eq!(capture.receipt["documentResponseText"], true);
@@ -328,12 +328,12 @@ fn native_capture_binds_bom_entry_to_its_frozen_bytes() {
 
 #[test]
 fn batch_uses_one_document_and_rejects_mixed_inputs() {
-    use impeccable::asset_capture::CdpAssetRenderer;
-    use impeccable_comp::{png_io, raster};
-    use impeccable_comp_verbs::asset_capture::{AssetCaptureRequest, AssetRenderer, CaptureBox};
+    use procable::asset_capture::CdpAssetRenderer;
+    use procable_comp::{png_io, raster};
+    use procable_comp_verbs::asset_capture::{AssetCaptureRequest, AssetRenderer, CaptureBox};
     use std::sync::Arc;
     let env = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: browser unavailable");
         return;
     }
@@ -342,8 +342,8 @@ fn batch_uses_one_document_and_rejects_mixed_inputs() {
     fs::write(f.0.join("index.html"),"<!doctype html><style>body{margin:0;background:white}img{position:absolute;width:80px;height:80px}</style><img src='assets/art.png' style='left:20px;top:20px'><img src='assets/art.png' style='left:110px;top:110px'><script>document.body.dataset.visit=crypto.randomUUID()</script>").unwrap();
     let image = png_io::encode_png(&raster::create_image(32, 32, [231, 60, 30, 255]), &[]).unwrap();
     fs::write(f.0.join("assets/art.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/comp.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/spec.json"),br#"{"comp":".impeccable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"first","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}},{"id":"second","plate":"assets/art.png","px":{"x":110,"y":110,"w":80,"h":80}}]}"#).unwrap();
+    fs::write(f.0.join(".procable/comp.png"), &image).unwrap();
+    fs::write(f.0.join(".procable/spec.json"),br#"{"comp":".procable/comp.png","compSize":{"width":200,"height":200},"regions":[{"id":"first","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}},{"id":"second","plate":"assets/art.png","px":{"x":110,"y":110,"w":80,"h":80}}]}"#).unwrap();
     let snapshot = Arc::new(HtmlSnapshot::freeze(f.selection()).unwrap());
     let server = snapshot.serve().unwrap();
     let make = |x| AssetCaptureRequest {
@@ -363,7 +363,7 @@ fn batch_uses_one_document_and_rejects_mixed_inputs() {
     let captures = snapshot
         .capture_regions(
             &mut renderer,
-            ".impeccable/spec.json",
+            ".procable/spec.json",
             &["first", "second"],
             true,
         )
@@ -434,10 +434,10 @@ fn snapshot_server_delivers_large_binary_response_completely() {
 
 #[test]
 fn viewport_capture_does_not_switch_responsive_picture_sources() {
-    use impeccable::asset_capture::CdpAssetRenderer;
-    use impeccable_comp::{png_io, raster};
+    use procable::asset_capture::CdpAssetRenderer;
+    use procable_comp::{png_io, raster};
     use std::sync::Arc;
-    if impeccable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
+    if procable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
         return;
     }
     let f = Fixture::new();
@@ -447,15 +447,15 @@ fn viewport_capture_does_not_switch_responsive_picture_sources() {
         png_io::encode_png(&raster::create_image(32, 32, [30, 60, 231, 255]), &[]).unwrap();
     fs::write(f.0.join("assets/art.png"), &image).unwrap();
     fs::write(f.0.join("assets/mobile.png"), mobile).unwrap();
-    fs::write(f.0.join(".impeccable/comp.png"), &image).unwrap();
-    fs::write(f.0.join(".impeccable/spec.json"), br#"{"comp":".impeccable/comp.png","compSize":{"width":1440,"height":960},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]}"#).unwrap();
+    fs::write(f.0.join(".procable/comp.png"), &image).unwrap();
+    fs::write(f.0.join(".procable/spec.json"), br#"{"comp":".procable/comp.png","compSize":{"width":1440,"height":960},"regions":[{"id":"art","plate":"assets/art.png","px":{"x":20,"y":20,"w":80,"h":80}}]}"#).unwrap();
     let mut selection = f.selection();
     selection.served.push("assets/mobile.png".into());
     let snapshot = Arc::new(HtmlSnapshot::freeze(selection).unwrap());
     let captures = snapshot
         .capture_regions(
             &mut CdpAssetRenderer::from_process_env(),
-            ".impeccable/spec.json",
+            ".procable/spec.json",
             &["art"],
             true,
         )

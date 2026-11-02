@@ -1,6 +1,6 @@
 # Persuade and Experience
 
-`impeccable concept-seed --mode persuade` (or `experience`) prints the two sections below as its MODE RULES block. On these surfaces the design is what the visitor judges, so the world may own and structure the page.
+`procable concept-seed --mode persuade` (or `experience`) prints the two sections below as its MODE RULES block. On these surfaces the design is what the visitor judges, so the world may own and structure the page.
 
 ## Directions
 

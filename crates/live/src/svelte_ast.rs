@@ -242,7 +242,7 @@ pub fn derive_prop_name(expr: &str) -> String {
 fn tail_identifier(expr: &str) -> Option<String> {
     let chars: Vec<char> = expr.chars().collect();
     let mut end = chars.len();
-    while end > 0 && impeccable_core::js::is_js_whitespace(chars[end - 1]) {
+    while end > 0 && procable_core::js::is_js_whitespace(chars[end - 1]) {
         end -= 1;
     }
     // Optional `]`
@@ -995,7 +995,7 @@ fn static_classes_of(el: Option<&Value>) -> Vec<String> {
                 for part in parts {
                     if ty(part) == "Text" {
                         let data = part.get("data").and_then(|v| v.as_str()).unwrap_or("");
-                        for c in data.split(impeccable_core::js::is_js_whitespace) {
+                        for c in data.split(procable_core::js::is_js_whitespace) {
                             if !c.is_empty() {
                                 classes.push(c.to_string());
                             }
@@ -1020,7 +1020,7 @@ fn describe_each_item(node: &Value, source: &[u16]) -> Value {
             match ty(child) {
                 "Text" => {
                     let data = child.get("data").and_then(|v| v.as_str()).unwrap_or("");
-                    let trimmed = impeccable_core::js::trim(data);
+                    let trimmed = procable_core::js::trim(data);
                     if !trimmed.is_empty() {
                         out.push(trimmed.to_string());
                     }

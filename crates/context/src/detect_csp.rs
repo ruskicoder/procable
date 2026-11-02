@@ -1,8 +1,8 @@
-//! JS: detect-csp.mjs -> `impeccable detect-csp`
+//! JS: detect-csp.mjs -> `procable detect-csp`
 
 use crate::jsp;
 use crate::util::{exists, json_pretty, read_dir_entries};
-use impeccable_common::Io;
+use procable_common::Io;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -216,7 +216,7 @@ mod tests {
         fn new() -> Self {
             loop {
                 let root = std::env::temp_dir().join(format!(
-                    "impeccable-csp-761-{}-{}",
+                    "procable-csp-761-{}-{}",
                     std::process::id(), NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed),
                 ));
                 match std::fs::create_dir(&root) {

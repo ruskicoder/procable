@@ -12,11 +12,11 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use impeccable_core::checks::measures::resolve_length_px;
-use impeccable_core::color::{parse_any_color, Rgba};
-use impeccable_core::constants::GENERIC_FONTS;
-use impeccable_core::findings::{finding, Finding};
-use impeccable_core::js::{self, ci, math_round, number_to_string, parse_float, parse_int};
+use procable_core::checks::measures::resolve_length_px;
+use procable_core::color::{parse_any_color, Rgba};
+use procable_core::constants::GENERIC_FONTS;
+use procable_core::findings::{finding, Finding};
+use procable_core::js::{self, ci, math_round, number_to_string, parse_float, parse_int};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -27,7 +27,7 @@ use crate::util::{exists, js_string, re, read_json, read_text, ANY, WS};
 const DESIGN_NAMES: &[&str] = &["DESIGN.md", "Design.md", "design.md"];
 
 const FALLBACK_DIRS: &[&str] = &[".agents/context", "docs"];
-const PROJECT_ROOT_MARKERS: &[&str] = &[".git", "package.json", ".impeccable"];
+const PROJECT_ROOT_MARKERS: &[&str] = &[".git", "package.json", ".procable"];
 const COLOR_CHANNEL_TOLERANCE: f64 = 6.0;
 const SHADOW_ALPHA_TOLERANCE: f64 = 0.02;
 const RADIUS_TOLERANCE_PX: f64 = 0.5;
@@ -119,7 +119,7 @@ re!(
         ci("googleapis"),
         ci("com"),
         ci("css"),
-        impeccable_core::js::WS_CHARS,
+        procable_core::js::WS_CHARS,
         ""
     )
 );
@@ -193,7 +193,7 @@ pub fn resolve_design_md_path(cwd: &str) -> Option<DesignMdPath> {
 /// JS: design-system.mjs#resolveDesignSidecarPath
 pub fn resolve_design_sidecar_path(cwd: &str, context_dir: &str) -> Option<String> {
     let candidates = [
-        jsp::join(&[cwd, ".impeccable", "design.json"]),
+        jsp::join(&[cwd, ".procable", "design.json"]),
         jsp::join(&[cwd, "DESIGN.json"]),
         jsp::join(&[context_dir, "DESIGN.json"]),
     ];
@@ -760,7 +760,7 @@ impl DesignSystem {
     /// or violet, with the label it was declared under (`colors.primary`).
     pub fn declared_purple(&self) -> Option<(&str, &Rgba)> {
         self.allowed_color_keys.iter().find_map(|(_, entry)| {
-            impeccable_core::checks::rules::is_declared_purple(&entry.color)
+            procable_core::checks::rules::is_declared_purple(&entry.color)
                 .then(|| (entry.labels.first().map(String::as_str).unwrap_or(""), &entry.color))
         })
     }
@@ -777,7 +777,7 @@ pub fn drop_declared_purple_findings(findings: &mut Vec<Finding>, ds: Option<&De
         return 0;
     }
     let before = findings.len();
-    findings.retain(|f| !impeccable_core::checks::rules::is_purple_palette_finding(&f.antipattern, &f.snippet));
+    findings.retain(|f| !procable_core::checks::rules::is_purple_palette_finding(&f.antipattern, &f.snippet));
     before - findings.len()
 }
 
@@ -792,7 +792,7 @@ pub fn declared_purple_note(ds: &DesignSystem) -> Option<String> {
         .unwrap_or("DESIGN.md");
     Some(format!(
         "Note: ai-color-palette's purple/violet check is off: {source} declares {label} ({}).",
-        impeccable_core::color::color_to_hex(Some(color))
+        procable_core::color::color_to_hex(Some(color))
     ))
 }
 
@@ -1186,20 +1186,20 @@ pub struct DesignRoot {
     pub has_design: bool,
 }
 
-/// JS: design-system.mjs#readWorkspacePatternGroups — Impeccable projectRoots
+/// JS: design-system.mjs#readWorkspacePatternGroups — Procable projectRoots
 /// govern any path they match (positive or negated); package-manager globs
-/// only apply to paths the Impeccable group does not match.
+/// only apply to paths the Procable group does not match.
 fn read_workspace_pattern_groups(dir: &str) -> (Vec<String>, Vec<String>) {
-    let mut impeccable: Vec<String> = Vec::new();
+    let mut procable: Vec<String> = Vec::new();
     for name in ["config.json", "config.local.json"] {
-        let roots = read_json(&jsp::join(&[dir, ".impeccable", name]))
+        let roots = read_json(&jsp::join(&[dir, ".procable", name]))
             .and_then(|v| v.get("projectRoots").cloned());
         if let Some(Value::Array(roots)) = roots {
             for entry in roots {
                 if let Value::String(s) = entry {
                     let t = js::trim(&s);
                     if !t.is_empty() {
-                        impeccable.push(t.to_string());
+                        procable.push(t.to_string());
                     }
                 }
             }
@@ -1250,7 +1250,7 @@ fn read_workspace_pattern_groups(dir: &str) -> (Vec<String>, Vec<String>) {
             }
         }
     }
-    (impeccable, pkg)
+    (procable, pkg)
 }
 
 /// JS: design-system.mjs#readWorkspacePatterns
@@ -1419,14 +1419,14 @@ fn monorepo_owns_path(root: &str, boundary_dir: &str) -> bool {
         Some(true)
     };
 
-    let (impeccable, pkg) = read_workspace_pattern_groups(root);
-    if let Some(from_impeccable) = group_owns(&impeccable) {
-        return from_impeccable;
+    let (procable, pkg) = read_workspace_pattern_groups(root);
+    if let Some(from_procable) = group_owns(&procable) {
+        return from_procable;
     }
     if let Some(from_pkg) = group_owns(&pkg) {
         return from_pkg;
     }
-    if impeccable
+    if procable
         .iter()
         .chain(pkg.iter())
         .any(|pattern| !normalize_workspace_pattern(pattern).starts_with('!'))
@@ -1685,7 +1685,7 @@ re!(
     STYLE_CONTEXT_RE,
     format!(
         "(?:^|[{{{WS_CHARS};\"'`(,])(?:{color}|{background}(?:-{color}|-{image})?|{border}(?:-(?:{top}|{right}|{bottom}|{left}))?(?:-{color})?|{outline}(?:-{color})?|{box_shadow}|{text_shadow}|{fill}|{stroke}){WS}*:{WS}*[^;{{}}\"'`]*",
-        WS_CHARS = impeccable_core::js::WS_CHARS,
+        WS_CHARS = procable_core::js::WS_CHARS,
         color = ci("color"),
         background = ci("background"),
         image = ci("image"),
@@ -1762,7 +1762,7 @@ static INTERPOLATION_SRC: Lazy<String> = Lazy::new(|| {
 static SHADOW_CSS_CONTEXT_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(&format!(
         "(?:^|[{{{WS_CHARS};\"'`(,])(?:{box_shadow}|{text_shadow}){WS}*:{WS}*(?:{interp}|[^;{{}}\"'`])*$",
-        WS_CHARS = impeccable_core::js::WS_CHARS,
+        WS_CHARS = procable_core::js::WS_CHARS,
         WS = WS,
         box_shadow = ci("box-shadow"),
         text_shadow = ci("text-shadow"),
@@ -2291,7 +2291,7 @@ mod tests {
     impl TempDir {
         fn new(prefix: &str) -> TempDir {
             let d = std::env::temp_dir().join(format!(
-                "impeccable-ds-{}-{}-{:?}",
+                "procable-ds-{}-{}-{:?}",
                 prefix,
                 std::process::id(),
                 std::thread::current().id()
@@ -2423,7 +2423,7 @@ mod tests {
     }
 
     #[test]
-    fn monorepo_lerna_and_impeccable_project_roots() {
+    fn monorepo_lerna_and_procable_project_roots() {
         let d = TempDir::new("lerna");
         d.write("DESIGN.md", DESIGN_MD);
         d.write("lerna.json", "{\"packages\":[\"modules/*\"]}");
@@ -2433,7 +2433,7 @@ mod tests {
 
         let i = TempDir::new("iroots");
         i.write("DESIGN.md", DESIGN_MD);
-        i.write(".impeccable/config.json", "{\"projectRoots\":[\"sites/*\"]}");
+        i.write(".procable/config.json", "{\"projectRoots\":[\"sites/*\"]}");
         i.write("sites/docs/package.json", "{\"name\":\"docs\"}");
         let found = root_of(&i, "sites/docs", &far_home()).unwrap();
         assert_eq!((found.dir, found.has_design), (i.path(), true));
@@ -2569,12 +2569,12 @@ mod tests {
     }
 
     #[test]
-    fn impeccable_project_roots_beat_package_manager_negation() {
+    fn procable_project_roots_beat_package_manager_negation() {
         // 47e41195: projectRoots govern a path they match even when
         // package-manager workspaces exclude it.
         let d = TempDir::new("irootswin");
         d.write("DESIGN.md", DESIGN_MD);
-        d.write(".impeccable/config.json", "{\"projectRoots\":[\"sites/*\"]}");
+        d.write(".procable/config.json", "{\"projectRoots\":[\"sites/*\"]}");
         d.write(
             "package.json",
             "{\"name\":\"mono\",\"workspaces\":[\"sites/*\",\"!sites/docs\"]}",
@@ -2603,7 +2603,7 @@ mod tests {
         real.write("DESIGN.md", DESIGN_MD);
         real.write("pnpm-workspace.yaml", "packages:\n  - 'apps/*'\n");
         real.write("project/package.json", "{\"name\":\"p\"}");
-        let link = std::env::temp_dir().join(format!("impeccable-ds-linkhome-{}", std::process::id()));
+        let link = std::env::temp_dir().join(format!("procable-ds-linkhome-{}", std::process::id()));
         let _ = std::fs::remove_file(&link);
         std::os::unix::fs::symlink(&real.0, &link).unwrap();
         // HOME is the symlink; the target is the physical path, so a

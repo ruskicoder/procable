@@ -9,8 +9,8 @@
 //! and confirms the best offset with the full comp-diff score on that part. A
 //! region found nowhere in the window stays missing.
 
-use impeccable_comp::metrics as m;
-use impeccable_comp::raster::{self as r, Image};
+use procable_comp::metrics as m;
+use procable_comp::raster::{self as r, Image};
 
 use crate::comp_diff::{score_pair, verdict_for, Score};
 

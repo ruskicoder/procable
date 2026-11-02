@@ -156,7 +156,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: impeccable-build-node-${{ matrix.node-version }}
+          name: procable-build-node-${{ matrix.node-version }}
           # Ship the packaged zips, not the unpacked Firefox staging tree.
           path: |
             dist/
@@ -303,11 +303,11 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Build the engine from source
-        run: cargo build --release -p impeccable
+        run: cargo build --release -p procable
 
       - name: Replay oracle goldens
         env:
-          IMPECCABLE_BIN: ${{ github.workspace }}/target/release/impeccable
+          PROCABLE_BIN: ${{ github.workspace }}/target/release/procable
         run: node tests/oracle/run.mjs
 
       - name: Install review test browser
@@ -315,18 +315,18 @@ jobs:
 
       - name: Verify review workflows and system themes
         env:
-          IMPECCABLE_BIN: ${{ github.workspace }}/target/release/impeccable
+          PROCABLE_BIN: ${{ github.workspace }}/target/release/procable
         run: node --test --test-timeout=180000 tests/new-work-e2e.test.mjs tests/review-theme.test.mjs
 
   # Release-order guard (triage decision D4). Verifies that the engine release for
   # the pinned ENGINE_VERSION is fully published — the five dist binaries + .sha256
-  # AND the five @impeccable/cli-<os>-<arch> npm platform packages — before a skill
+  # AND the five @procable/cli-<os>-<arch> npm platform packages — before a skill
   # release/merge that depends on them. The launcher, npm shim, and
-  # `impeccable install` all dead-end without those assets.
+  # `procable install` all dead-end without those assets.
   #
   # A hard gate since engine-v0.1.0 shipped: the assets for the pinned
   # ENGINE_VERSION must exist before a skill/CLI release or a merge that bumps the
-  # pin, or the launcher, the npm shim and `impeccable install` dead-end.
+  # pin, or the launcher, the npm shim and `procable install` dead-end.
   # release.mjs hard-fails `release:skill`/`release:cli` on the same check.
   engine-release-ready:
     runs-on: ubuntu-latest
@@ -347,7 +347,7 @@ jobs:
         # Only when the check itself failed, so a checkout or setup failure keeps its own error.
         if: failure() && steps.check.outcome == 'failure'
         run: |
-          echo "::error title=Engine release not ready::The engine release for v$(cat ENGINE_VERSION) is not fully published (engine-v$(cat ENGINE_VERSION) release assets and/or the @impeccable/cli-<os>-<arch> npm platform packages). Publish the engine (bun run release:engine) and the platform packages (bun run release:platform-packages) before bumping ENGINE_VERSION on main or releasing the skill/CLI. If only engine-checksums.txt is named, run node scripts/check-engine-release.mjs --record and commit it."
+          echo "::error title=Engine release not ready::The engine release for v$(cat ENGINE_VERSION) is not fully published (engine-v$(cat ENGINE_VERSION) release assets and/or the @procable/cli-<os>-<arch> npm platform packages). Publish the engine (bun run release:engine) and the platform packages (bun run release:platform-packages) before bumping ENGINE_VERSION on main or releasing the skill/CLI. If only engine-checksums.txt is named, run node scripts/check-engine-release.mjs --record and commit it."
 
   test:
     runs-on: ubuntu-latest
@@ -391,7 +391,7 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Build the engine
-        run: cargo build --release -p impeccable
+        run: cargo build --release -p procable
 
       - name: Run remote CLI E2E smoke
         run: bun run test:cli-remote-e2e
@@ -456,17 +456,17 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Build the engine
-        run: cargo build --release -p impeccable
+        run: cargo build --release -p procable
 
       - name: Run live E2E tests
         run: bun run test:live-e2e
         env:
-          IMPECCABLE_E2E_ONLY: ${{ matrix.fixtures }}
-          IMPECCABLE_E2E_SCENARIOS: core,agent-target
-          IMPECCABLE_E2E_TEST_TIMEOUT_MS: 180000
-          IMPECCABLE_E2E_INSTALL_TIMEOUT_MS: 120000
-          IMPECCABLE_E2E_DEV_READY_TIMEOUT_MS: 60000
-          IMPECCABLE_E2E_ARTIFACT_DIR: test-results/live-e2e/${{ matrix.group }}
+          PROCABLE_E2E_ONLY: ${{ matrix.fixtures }}
+          PROCABLE_E2E_SCENARIOS: core,agent-target
+          PROCABLE_E2E_TEST_TIMEOUT_MS: 180000
+          PROCABLE_E2E_INSTALL_TIMEOUT_MS: 120000
+          PROCABLE_E2E_DEV_READY_TIMEOUT_MS: 60000
+          PROCABLE_E2E_ARTIFACT_DIR: test-results/live-e2e/${{ matrix.group }}
 
       - name: Upload live E2E failure artifacts
         if: failure()
@@ -542,16 +542,16 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
 
       - name: Build the engine
-        run: cargo build --release -p impeccable
+        run: cargo build --release -p procable
 
       - name: Run live E2E tests
         run: bun run test:live-e2e
         env:
-          IMPECCABLE_E2E_ONLY: ${{ matrix.fixtures }}
-          IMPECCABLE_E2E_TEST_TIMEOUT_MS: 300000
-          IMPECCABLE_E2E_INSTALL_TIMEOUT_MS: 180000
-          IMPECCABLE_E2E_DEV_READY_TIMEOUT_MS: 120000
-          IMPECCABLE_E2E_ARTIFACT_DIR: test-results/live-e2e/${{ matrix.group }}
+          PROCABLE_E2E_ONLY: ${{ matrix.fixtures }}
+          PROCABLE_E2E_TEST_TIMEOUT_MS: 300000
+          PROCABLE_E2E_INSTALL_TIMEOUT_MS: 180000
+          PROCABLE_E2E_DEV_READY_TIMEOUT_MS: 120000
+          PROCABLE_E2E_ARTIFACT_DIR: test-results/live-e2e/${{ matrix.group }}
 
       - name: Upload live E2E failure artifacts
         if: failure()
@@ -627,15 +627,15 @@ jobs:
 
       - name: Build the engine
         if: ${{ env.ANTHROPIC_API_KEY != '' || env.DEEPSEEK_API_KEY != '' }}
-        run: cargo build --release -p impeccable
+        run: cargo build --release -p procable
 
       - name: Run accept cleanup regression
         if: ${{ env.ANTHROPIC_API_KEY != '' || env.DEEPSEEK_API_KEY != '' }}
         run: |
           if [ -n "$DEEPSEEK_API_KEY" ]; then
-            export IMPECCABLE_E2E_LLM_PROVIDER=deepseek
+            export PROCABLE_E2E_LLM_PROVIDER=deepseek
           else
-            export IMPECCABLE_E2E_LLM_PROVIDER=anthropic
+            export PROCABLE_E2E_LLM_PROVIDER=anthropic
           fi
           bun run test:live-e2e-accept-cleanup
 
@@ -704,7 +704,7 @@ jobs:
 
       - name: Build the engine
         if: ${{ env.DEEPSEEK_API_KEY != '' }}
-        run: cargo build --release -p impeccable
+        run: cargo build --release -p procable
 
       - name: Run Svelte adapter DeepSeek sweep
         if: ${{ env.DEEPSEEK_API_KEY != '' }}
@@ -749,7 +749,7 @@ jobs:
     timeout-minutes: 70
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      IMPECCABLE_SKILL_BEHAVIOR_MODELS: claude-sonnet-5
+      PROCABLE_SKILL_BEHAVIOR_MODELS: claude-sonnet-5
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -770,7 +770,7 @@ jobs:
           bunx playwright install --with-deps chromium
       - name: Run completed skill workflows
         env:
-          IMPECCABLE_SKILL_BEHAVIOR_TRACE_DIR: ${{ runner.temp }}/skill-workflow-traces
+          PROCABLE_SKILL_BEHAVIOR_TRACE_DIR: ${{ runner.temp }}/skill-workflow-traces
         run: bun run test:skill-workflow
       - name: Retain diagnostic traces
         if: always()

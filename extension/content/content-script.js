@@ -1,5 +1,5 @@
 /**
- * Impeccable DevTools Extension - Content Script
+ * Procable DevTools Extension - Content Script
  *
  * Runs in the tab's isolated world with two generated companions injected
  * before it (detector/snapshot.js, detector/overlay.js). A scan is:
@@ -22,12 +22,12 @@
  *   - Duplicate event listeners accumulating over time
  */
 (function () {
-  if (window.__IMPECCABLE_CS_LOADED__) return;
-  window.__IMPECCABLE_CS_LOADED__ = true;
+  if (window.__PROCABLE_CS_LOADED__) return;
+  window.__PROCABLE_CS_LOADED__ = true;
 
-  const OFFSCREEN = 'impeccable-offscreen';
-  const snapshot = window.__impeccableSnapshot;
-  const createOverlay = window.__impeccableCreateOverlay;
+  const OFFSCREEN = 'procable-offscreen';
+  const snapshot = window.__procableSnapshot;
+  const createOverlay = window.__procableCreateOverlay;
   // One session id per content-script instance: a re-scan supersedes the
   // previous run of the same tab in the offscreen document.
   const sessionId = `tab-${Math.random().toString(36).slice(2)}`;
@@ -191,7 +191,7 @@
   async function runScan(config) {
     const generation = ++scanGeneration;
     scanConfig = config || null;
-    window.__IMPECCABLE_CONFIG__ = config || {};
+    window.__PROCABLE_CONFIG__ = config || {};
     await ensureUI();
     if (generation !== scanGeneration) return;
     disconnectLazy();

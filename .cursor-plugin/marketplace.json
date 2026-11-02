@@ -1,6 +1,6 @@
 {
-  "name": "impeccable",
+  "name": "procable",
   "owner": { "name": "Renaissance Geek, Inc." },
-  "metadata": { "description": "Impeccable design tools for Cursor" },
-  "plugins": [{ "name": "impeccable", "source": "./cursor-plugin" }]
+  "metadata": { "description": "Procable design tools for Cursor" },
+  "plugins": [{ "name": "procable", "source": "./cursor-plugin" }]
 }

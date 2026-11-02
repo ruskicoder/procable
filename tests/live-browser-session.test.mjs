@@ -17,7 +17,7 @@ function createMemoryStorage() {
 function loadSession(globals = {}) {
   const context = vm.createContext(globals);
   vm.runInContext(readFileSync(SCRIPT, 'utf-8'), context);
-  return context.__IMPECCABLE_LIVE_SESSION__;
+  return context.__PROCABLE_LIVE_SESSION__;
 }
 
 function loadFactory() {
@@ -30,8 +30,8 @@ describe('live-browser-session state helper', () => {
   it('issues a fresh checkpoint revision when storage is ahead of this instance', () => {
     const createState = loadFactory();
     const storage = createMemoryStorage();
-    const first = createState({ prefix: 'impeccable-live', storage });
-    const second = createState({ prefix: 'impeccable-live', storage });
+    const first = createState({ prefix: 'procable-live', storage });
+    const second = createState({ prefix: 'procable-live', storage });
 
     first.saveSession({ id: 'session-a' });
     assert.equal(first.nextCheckpointRevision(), 1);
@@ -44,8 +44,8 @@ describe('live-browser-session state helper', () => {
   it('keeps the stored checkpoint revision when an instance behind storage saves', () => {
     const createState = loadFactory();
     const storage = createMemoryStorage();
-    const first = createState({ prefix: 'impeccable-live', storage });
-    const second = createState({ prefix: 'impeccable-live', storage });
+    const first = createState({ prefix: 'procable-live', storage });
+    const second = createState({ prefix: 'procable-live', storage });
 
     first.saveSession({ id: 'session-a' });
     first.nextCheckpointRevision();
@@ -63,7 +63,7 @@ describe('live-browser-session state helper', () => {
       getRandomValues(bytes) { calls += 1; for (let i = 0; i < bytes.length; i++) bytes[i] = (i * 37 + 11) & 0xff; return bytes; },
     };
     const session = loadSession({ crypto: insecureCrypto });
-    const state = session.createLiveBrowserSessionState({ prefix: 'impeccable-live', storage: createMemoryStorage() });
+    const state = session.createLiveBrowserSessionState({ prefix: 'procable-live', storage: createMemoryStorage() });
     assert.match(state.owner, /^[0-9a-f]{8}$/);
     assert.ok(calls > 0, 'getRandomValues backs the id when randomUUID is missing');
     assert.match(session.randomUUID(), UUID_V4);
@@ -73,7 +73,7 @@ describe('live-browser-session state helper', () => {
     const session = loadSession({});
     assert.match(session.randomUUID(null), UUID_V4);
     assert.match(session.randomId8(null), /^[0-9a-f]{8}$/);
-    const state = session.createLiveBrowserSessionState({ prefix: 'impeccable-live', storage: createMemoryStorage() });
+    const state = session.createLiveBrowserSessionState({ prefix: 'procable-live', storage: createMemoryStorage() });
     assert.match(state.owner, /^[0-9a-f]{8}$/);
   });
 
@@ -95,7 +95,7 @@ describe('live-browser-session state helper', () => {
       context,
     );
     vm.runInContext(readFileSync(SCRIPT, 'utf-8'), context);
-    const state = context.__IMPECCABLE_LIVE_SESSION__.createLiveBrowserSessionState({ prefix: 'impeccable-live' });
+    const state = context.__PROCABLE_LIVE_SESSION__.createLiveBrowserSessionState({ prefix: 'procable-live' });
     state.saveSession({ id: 'session-a' });
     assert.equal(state.loadSession(), null);
     assert.equal(state.nextCheckpointRevision(), 1);

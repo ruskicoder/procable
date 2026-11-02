@@ -1,14 +1,14 @@
 //! Workspace tasks that need no Node.
 //!
 //! `cargo xtask bundle` builds the in-page detector bundle. The bundling
-//! itself lives in `impeccable-bundle` (`crates/bundle`), the library a
+//! itself lives in `procable-bundle` (`crates/bundle`), the library a
 //! downstream rule pack reuses for its own wasm module; this task is the
 //! workspace's caller of it:
 //!   1. `wasm-pack build crates/wasm --target no-modules --release`
 //!      (opt-level z via `CARGO_PROFILE_RELEASE_OPT_LEVEL`, wasm-opt from
 //!      the crate metadata), into `target/wasm-bundle/`;
 //!   2. concatenates the page JS (`browser-bundle/*.js`, embedded in
-//!      `impeccable-bundle`) in a fixed order with the wasm-bindgen glue and
+//!      `procable-bundle`) in a fixed order with the wasm-bindgen glue and
 //!      the .wasm embedded as base64;
 //!   3. writes `dist/detect-antipatterns-browser.js` (deterministic: same
 //!      sources, same bytes) and `dist/antipatterns.json` (the registry
@@ -63,16 +63,16 @@ fn bundle(check: bool, pure: bool) {
     let out_dir = root.join("target/wasm-bundle");
     let cargo_args: &[&str] = if pure { &["--features", "pure-exports"] } else { &[] };
     let (glue, wasm) =
-        impeccable_bundle::wasm_pack_build(&root.join("crates/wasm"), &out_dir, cargo_args)
+        procable_bundle::wasm_pack_build(&root.join("crates/wasm"), &out_dir, cargo_args)
             .unwrap_or_else(|e| die(e));
 
-    if let Err(mismatch) = impeccable_bundle::check_capture_contract() {
+    if let Err(mismatch) = procable_bundle::check_capture_contract() {
         die(mismatch);
     }
 
-    let out = impeccable_bundle::in_page_bundle(&glue, &wasm);
-    let registry = impeccable_bundle::registry_json();
-    let ext = impeccable_bundle::extension_pieces(&glue, &wasm, &registry);
+    let out = procable_bundle::in_page_bundle(&glue, &wasm);
+    let registry = procable_bundle::registry_json();
+    let ext = procable_bundle::extension_pieces(&glue, &wasm, &registry);
 
     let dist = root.join("dist");
     // The two tracked generated files. live mode embeds the bundle

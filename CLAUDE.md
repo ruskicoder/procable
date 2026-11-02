@@ -2,24 +2,24 @@
 
 ## Architecture (v3.0+)
 
-There is **one** user-invocable skill, `impeccable`, with **25 commands** underneath it. Users type `/impeccable polish`, `/impeccable audit`, etc. The skill is defined in `skill/`:
+There is **one** user-invocable skill, `procable`, with **25 commands** underneath it. Users type `/procable polish`, `/procable audit`, etc. The skill is defined in `skill/`:
 
 - `SKILL.src.md` — frontmatter (with the auto-trigger-optimized description and the `allowed-tools` list), shared design laws, and the **Commands** router table. Provider `SKILL.md` files are generated from this source.
 - `reference/` — one `<command>.md` per command (`audit.md`, `polish.md`, `critique.md`, etc.), the shared playbooks the router loads outside the command table (`new-work.md`, `craft-floor.md`, `operate.md`, `routing.md`), and the native platform references (`ios.md`, `android.md`). When a sub-command is matched, the router loads its reference file.
 - `scripts/command-metadata.json` — single source of truth for each command's description, argument hint, and (eventually) category. Both the build and the engine's `pin` verb read from this.
-- `scripts/impeccable` (+ `impeccable.cmd`, `VERSION`): the launcher every skill verb goes through. See **Engine binary** below.
-- `impeccable pin` — an engine verb that creates/removes lightweight redirect shims so users can have `/audit` as a standalone shortcut that delegates to `/impeccable audit`.
+- `scripts/procable` (+ `procable.cmd`, `VERSION`): the launcher every skill verb goes through. See **Engine binary** below.
+- `procable pin` — an engine verb that creates/removes lightweight redirect shims so users can have `/audit` as a standalone shortcut that delegates to `/procable audit`.
 
 ### Engine binary (the runtime behind every verb)
 
-The skill has no runtime of its own. Every command the skill text runs is `{{scripts_path}}/impeccable <verb>` (Setup step 1 says `impeccable context`; `impeccable.cmd` is the Windows twin for shells without `sh`). `skill/scripts/impeccable` is a POSIX `sh` launcher: it execs `$IMPECCABLE_BIN` if set, else the sibling `scripts/bin/<os>-<arch>/impeccable[.exe]` (skipped with a warning when its `engine-probe` version differs from `VERSION`), else `~/.impeccable/bin/impeccable`, else the version-pinned user cache `~/.impeccable/bin/<VERSION>/`, else `impeccable` on PATH, and as a last resort downloads the pinned version into that cache. It exports `IMPECCABLE_SKILL_DIR` (the skill dir, for `reference/*.md` and `command-metadata.json`) and `IMPECCABLE_SELF` (how the binary spells itself in the commands it prints).
+The skill has no runtime of its own. Every command the skill text runs is `{{scripts_path}}/procable <verb>` (Setup step 1 says `procable context`; `procable.cmd` is the Windows twin for shells without `sh`). `skill/scripts/procable` is a POSIX `sh` launcher: it execs `$PROCABLE_BIN` if set, else the sibling `scripts/bin/<os>-<arch>/procable[.exe]` (skipped with a warning when its `engine-probe` version differs from `VERSION`), else `~/.procable/bin/procable`, else the version-pinned user cache `~/.procable/bin/<VERSION>/`, else `procable` on PATH, and as a last resort downloads the pinned version into that cache. It exports `PROCABLE_SKILL_DIR` (the skill dir, for `reference/*.md` and `command-metadata.json`) and `PROCABLE_SELF` (how the binary spells itself in the commands it prints).
 
-The binary is built from **this repo's Cargo workspace** (`Cargo.toml` at the root, `crates/*`; `cargo build --release -p impeccable`). Its verbs are the old script basenames (`context`, `doctor`, `pin`, `hook`, `hook-before-edit`, `live*`, `detect`, ...) with two aliases: `signals` for context-signals and `hooks` for hook-admin. Its observable behavior is specified in `docs/CLI-CONTRACT.md` and pinned by `tests/oracle/`. **Read `docs/ENGINE.md` before touching `crates/`**: it maps the crates and the browser-bundle flow.
+The binary is built from **this repo's Cargo workspace** (`Cargo.toml` at the root, `crates/*`; `cargo build --release -p procable`). Its verbs are the old script basenames (`context`, `doctor`, `pin`, `hook`, `hook-before-edit`, `live*`, `detect`, ...) with two aliases: `signals` for context-signals and `hooks` for hook-admin. Its observable behavior is specified in `docs/CLI-CONTRACT.md` and pinned by `tests/oracle/`. **Read `docs/ENGINE.md` before touching `crates/`**: it maps the crates and the browser-bundle flow.
 
-- **The rule engine is in the workspace.** Every `check_*` / `scan_*`, the browser rule adapters and the visual-contrast decisions live in `crates/core`, Apache-2.0 like everything else; `crates/foundation` holds what they are written against (JS semantics, color, the registry, the `Dom` trait, the plain-data input and output types) and `crates/core` re-exports it, so consumers name one crate. `crates/wasm` compiles the same source to WebAssembly for the extension, the live overlay and the site, and `cargo xtask bundle` builds those artifacts. There is no build-time download and no exact toolchain pin: `cargo build --release -p impeccable` works offline on stable.
+- **The rule engine is in the workspace.** Every `check_*` / `scan_*`, the browser rule adapters and the visual-contrast decisions live in `crates/core`, Apache-2.0 like everything else; `crates/foundation` holds what they are written against (JS semantics, color, the registry, the `Dom` trait, the plain-data input and output types) and `crates/core` re-exports it, so consumers name one crate. `crates/wasm` compiles the same source to WebAssembly for the extension, the live overlay and the site, and `cargo xtask bundle` builds those artifacts. There is no build-time download and no exact toolchain pin: `cargo build --release -p procable` works offline on stable.
 - **`ENGINE_VERSION`** (repo root) pins the engine release (`engine-v<X>` on this repo's GitHub Releases, built by `.github/workflows/release-engine.yml` when `bun run release:engine` pushes the tag). The build copies it to `skill/scripts/VERSION`, which the launcher reads to name the download and the cache dir; `cli/bin/cli.js` reads the same version from `package.json`'s `optionalDependencies`. Bumping it is a release-time decision, like the other manifest versions.
-- **Binaries are never tracked.** `skill/scripts/bin/` and `**/skills/impeccable/scripts/bin/` are gitignored, so the tracked provider dirs and `plugin/` ship launcher-only and users get the binary on first run. `bun run build:release` produces launcher-only zips by default; `IMPECCABLE_BUNDLE_ENGINE=1 bun run build:release` fetches every target (`scripts/fetch-engine.mjs --all --lenient`) and stages `bin/<os-arch>/` into the dist skill copies **after** the root harness dirs and `plugin/` were synced, so `dist/universal.zip` is self-contained for offline installs while git stays clean. Bundling is opt-in because five targets in every provider copy put `universal.zip` near 340 MB, past the 25 MB Cloudflare Pages file cap that `impeccable install` downloads through.
-- **Tests get a binary** from `IMPECCABLE_BIN`, then `skill/scripts/bin/<os-arch>/` (`bun run fetch:engine`; `IMPECCABLE_BIN=<local build> bun run fetch:engine` copies a local build there), then `target/release/impeccable` from a plain `cargo build --release -p impeccable`. `tests/lib/engine-bin.mjs` is the one resolver; suites that need the binary skip cleanly without it.
+- **Binaries are never tracked.** `skill/scripts/bin/` and `**/skills/procable/scripts/bin/` are gitignored, so the tracked provider dirs and `plugin/` ship launcher-only and users get the binary on first run. `bun run build:release` produces launcher-only zips by default; `PROCABLE_BUNDLE_ENGINE=1 bun run build:release` fetches every target (`scripts/fetch-engine.mjs --all --lenient`) and stages `bin/<os-arch>/` into the dist skill copies **after** the root harness dirs and `plugin/` were synced, so `dist/universal.zip` is self-contained for offline installs while git stays clean. Bundling is opt-in because five targets in every provider copy put `universal.zip` near 340 MB, past the 25 MB Cloudflare Pages file cap that `procable install` downloads through.
+- **Tests get a binary** from `PROCABLE_BIN`, then `skill/scripts/bin/<os-arch>/` (`bun run fetch:engine`; `PROCABLE_BIN=<local build> bun run fetch:engine` copies a local build there), then `target/release/procable` from a plain `cargo build --release -p procable`. `tests/lib/engine-bin.mjs` is the one resolver; suites that need the binary skip cleanly without it.
 - **The oracle is the behavior gate.** `tests/oracle/` holds goldens recorded from the JS scripts before they left the tree, plus reviewed deltas in `DELTAS.md`; `tests/oracle.test.mjs` replays them against the binary in `bun run test`. New cases are recorded from the binary (`record.mjs --bin`) and reviewed by hand. `tests/oracle/vectors/calls/` is the frozen function-level snapshot; it cannot be regenerated.
 - **What stays JavaScript here:** the in-page live-mode JS (`skill/scripts/live-browser*.js`, `modern-screenshot.umd.js`), the build and test tooling, the extension shell, and the npm shim.
 
@@ -39,9 +39,9 @@ v4 replaced the old brand/product **register** axis with four modes, named in SK
 Differences from register that matter when editing skill text:
 
 1. **Mode is per surface, not per project.** A tool's landing page is Persuade even though the product is Operate; a fashion house's documentation is Read. Choose from the requested surface.
-2. **Mode is not stored in PRODUCT.md.** It persists only in that surface's brief under `.impeccable/surfaces/`. There is no `## Register` field and no `extractRegister()`; PRODUCT.md's only bare-value field is `## Platform`. A `## Register` section left over from v3 is reported at boot as deprecated (see `lib/staleness.mjs`) and read by nothing.
+2. **Mode is not stored in PRODUCT.md.** It persists only in that surface's brief under `.procable/surfaces/`. There is no `## Register` field and no `extractRegister()`; PRODUCT.md's only bare-value field is `## Platform`. A `## Register` section left over from v3 is reported at boot as deprecated (see `lib/staleness.mjs`) and read by nothing.
 3. **There are no register reference files.** `reference/brand.md` and `reference/product.md` are gone. `reference/operate.md` carries the deeper Operate and Read guidance; `reference/new-work.md` owns new surfaces.
-4. **Mode rules for directions and comps live in `reference/mode-persuade.md` (Persuade and Experience), `mode-operate.md`, and `mode-read.md`**, each with exactly two sections, `## Directions` and `## Comps`. The router never sends the agent to them: `impeccable concept-seed --mode <mode>` prints the mode's file as a MODE RULES block, because a printed engine line is followed where an extra file read gets skipped. `new-work.md` and `visualize.md` keep only the shared procedure and point at the block. Persuade's hill-climbed comp rules live in `mode-persuade.md`; do not reintroduce mode clauses into the shared files.
+4. **Mode rules for directions and comps live in `reference/mode-persuade.md` (Persuade and Experience), `mode-operate.md`, and `mode-read.md`**, each with exactly two sections, `## Directions` and `## Comps`. The router never sends the agent to them: `procable concept-seed --mode <mode>` prints the mode's file as a MODE RULES block, because a printed engine line is followed where an extra file read gets skipped. `new-work.md` and `visualize.md` keep only the shared procedure and point at the block. Persuade's hill-climbed comp rules live in `mode-persuade.md`; do not reintroduce mode clauses into the shared files.
 5. **Mode also decides the build path.** Operate and Read surfaces are code-led whatever `buildPath` the project records; the recorded default (and the comp default when nothing is recorded) governs Persuade and Experience only. `concept-seed --mode` prints the resolved path in its PRESENTATION block (`code_led_mode` in `crates/context/src/concept_seed.rs`), and the decision page keeps its toggle so one round can still be flipped to comp. In blind ratings, comps of working screens and documents scored 2.0 to 2.9 across five rule changes while code-led builds of the same briefs scored 3 to 3.5 and were always complete.
 
 **a11y lives in `audit.md`**, not in SKILL.md or the mode guidance. Models over-cautious themselves into safe, underdesigned output when reminded about accessibility at design time. The audit command is the dedicated place for that check.
@@ -55,56 +55,56 @@ A second axis, **orthogonal to mode**. Mode answers "what does the visitor come 
 - **android** — a native Android app. Loads `reference/android.md` (Material Design 3 distilled).
 - **adaptive** — a cross-platform app shipping both iOS and Android from one codebase (Flutter, React Native, KMP) that adapts per OS. Loads **both** `reference/ios.md` and `reference/android.md`. A Flutter/RN app that uses one look on both platforms (Material-everywhere is the Flutter default) is not adaptive; it takes that single platform's value.
 
-PRODUCT.md carries a `## Platform` section with a bare value (`web` / `ios` / `android` / `adaptive`). The `context` verb parses it; a **missing field defaults to `web`** so legacy projects are unaffected. A line that names both native targets (e.g. `ios, android`) is also read as `adaptive`; any other unrecognized value falls back to web **and** `impeccable context` prints a WARNING directive naming the bad value, so a toolchain name or typo never silently gets web guidance. `impeccable context` inlines the native reference(s) directly into its output when the value is `ios`, `android`, or `adaptive` (both), so native conventions land in context without a second model-directed read. `init` (Step 3) confirms an ambiguous platform as part of the product-truth interview, and Step 4 records it as the bare value.
+PRODUCT.md carries a `## Platform` section with a bare value (`web` / `ios` / `android` / `adaptive`). The `context` verb parses it; a **missing field defaults to `web`** so legacy projects are unaffected. A line that names both native targets (e.g. `ios, android`) is also read as `adaptive`; any other unrecognized value falls back to web **and** `procable context` prints a WARNING directive naming the bad value, so a toolchain name or typo never silently gets web guidance. `procable context` inlines the native reference(s) directly into its output when the value is `ios`, `android`, or `adaptive` (both), so native conventions land in context without a second model-directed read. `init` (Step 3) confirms an ambiguous platform as part of the product-truth interview, and Step 4 records it as the bare value.
 
 `ios.md` and `android.md` are distilled from the MIT-licensed [ehmo/platform-design-skills](https://github.com/ehmo/platform-design-skills); attribution is in `NOTICE.md`.
 
 Where a command's native guidance diverges too much to share a file, it gets a **native variant**: `reference/<command>.native.md`, listed in SKILL.md's Commands table and routed **instead of** the web file when `setup.platform` is native (Setup step 2). One variant covers ios, android, and adaptive; per-OS specifics stay in the platform refs, which Setup loads regardless. Variants today: `audit.native.md`, `adapt.native.md` (their web files carry a one-line web-only guard that redirects stray native readers). `audit.native.md` mirrors `audit.md`'s report skeleton; change the skeleton in both together. Commands whose divergence the platform refs already cover (`animate`, `layout`) carry nothing extra; don't add in-file translation notes, they make native runs pay for web content.
 
-**Live mode, `impeccable detect`, and the design hook are web-only.** They operate on a browser / HTML rules, so SKILL.md's routing skips live and `impeccable detect` for any native (`ios` / `android` / `adaptive`) project, and the `hook` and `hook-before-edit` verbs skip their scan when PRODUCT.md declares a native platform — a React Native project is made of exactly the `.tsx` / `.ts` / `.js` files the hook watches.
+**Live mode, `procable detect`, and the design hook are web-only.** They operate on a browser / HTML rules, so SKILL.md's routing skips live and `procable detect` for any native (`ios` / `android` / `adaptive`) project, and the `hook` and `hook-before-edit` verbs skip their scan when PRODUCT.md declares a native platform — a React Native project is made of exactly the `.tsx` / `.ts` / `.js` files the hook watches.
 
 ### Artifact staleness and the doctor pass
 
-Impeccable writes files into user projects, so a released version has to cope with artifacts an older one wrote. Three kinds of drift travel under "out of date" and they are handled separately:
+Procable writes files into user projects, so a released version has to cope with artifacts an older one wrote. Three kinds of drift travel under "out of date" and they are handled separately:
 
-1. **Tool version drift** (installed skill older than published). Emitted by `impeccable context` as `UPDATE_AVAILABLE`. Predates this system, unchanged.
+1. **Tool version drift** (installed skill older than published). Emitted by `procable context` as `UPDATE_AVAILABLE`. Predates this system, unchanged.
 2. **Schema drift** (an artifact carries fields nothing reads, is missing fields now expected, or sits in a retired location). Deterministic; the engine's staleness module.
 3. **Truth drift** (the code moved on and the document no longer describes it). Not mechanical. `document` and `init` own the rewrite; the deep pass measures a proxy and is required to say it is a proxy.
 
 **Two tiers, and the split is a performance contract, not a preference.**
 
-- **Tier 1** runs inside `impeccable context` at boot. It may only spend what a boot already spends: markdown already in memory, a bounded set of stats, and the small JSON files the boot reads regardless. **No directory walks, no git, no cross-workspace sweep.** The one walk it uses is the target-candidate discovery the boot has already paid for. Adding an expensive check here taxes every session in every project.
-- **Tier 2** is the deep pass behind `impeccable doctor`, run on demand. Git log, per-workspace sweep, ignore-list validation against the live rule registry, hook launcher resolution.
+- **Tier 1** runs inside `procable context` at boot. It may only spend what a boot already spends: markdown already in memory, a bounded set of stats, and the small JSON files the boot reads regardless. **No directory walks, no git, no cross-workspace sweep.** The one walk it uses is the target-candidate discovery the boot has already paid for. Adding an expensive check here taxes every session in every project.
+- **Tier 2** is the deep pass behind `procable doctor`, run on demand. Git log, per-workspace sweep, ignore-list validation against the live rule registry, hook launcher resolution.
 
 **Findings are data.** `{ id, artifact, path, severity, summary, fix }`, so the boot directive, the text report, and `--json` all render one set. Severity says what should happen, not how bad it is: `auto` (fix silently on the next write to that file), `mention` (state once, carry on), `route` (name the command that owns the repair). `doctor --fix` applies only `auto`, and only where no judgment is involved.
 
-**Emission discipline.** Boot output is already heavy, so Tier 1 emits **one** `CONTEXT_STALE` directive for the whole set, and `mention` and `route` findings are throttled to once a week per project (cached in `~/.impeccable/staleness-check.json`, alongside the update cache, so no gitignore entry is owed). `auto` findings are never throttled and never shown to the user. Opt out with `"stalenessCheck": false` or `IMPECCABLE_NO_STALENESS_CHECK=1`. **An oracle case that asserts on other boot directives should pin that env var.**
+**Emission discipline.** Boot output is already heavy, so Tier 1 emits **one** `CONTEXT_STALE` directive for the whole set, and `mention` and `route` findings are throttled to once a week per project (cached in `~/.procable/staleness-check.json`, alongside the update cache, so no gitignore entry is owed). `auto` findings are never throttled and never shown to the user. Opt out with `"stalenessCheck": false` or `PROCABLE_NO_STALENESS_CHECK=1`. **An oracle case that asserts on other boot directives should pin that env var.**
 
-**Provenance stamps.** PRODUCT.md carries `<!-- impeccable:product-schema N -->` (schema constants live in the engine; template in `init.md`). Without it, every check is a heuristic reconstruction of what era a file came from. **Stamps are schema versions, not release versions**: a PRODUCT.md written by v4.0.0 is not stale under v4.0.1, and a schema version changes only when the shape does. **DESIGN.md deliberately carries no stamp** because it follows the external design.md spec that Stitch's linter validates, and every DESIGN.md signal (sidecar `schemaVersion`, sidecar mtime, section coverage, git drift) is measurable without one.
+**Provenance stamps.** PRODUCT.md carries `<!-- procable:product-schema N -->` (schema constants live in the engine; template in `init.md`). Without it, every check is a heuristic reconstruction of what era a file came from. **Stamps are schema versions, not release versions**: a PRODUCT.md written by v4.0.0 is not stale under v4.0.1, and a schema version changes only when the shape does. **DESIGN.md deliberately carries no stamp** because it follows the external design.md spec that Stitch's linter validates, and every DESIGN.md signal (sidecar `schemaVersion`, sidecar mtime, section coverage, git drift) is measurable without one.
 
 **When you retire a PRODUCT.md field, add it to the engine's deprecated-sections list** with the reason (and record the new boot output as an oracle case). The reason is not decoration: told only that a field is deprecated, models preserve it "just in case", which is how a retired axis keeps steering current output.
 
-**`doctor` is a utility command, not a design command.** It follows the `hooks` and `pin` pattern (a line in SKILL.src.md plus `reference/doctor.md`), not the Commands-table pattern. It is deliberately **not** in `IMPECCABLE_SUB_COMMANDS`, `command-metadata.json`, `SKILL_CATEGORIES`, or the `pin` verb's valid-command list, and it does not count toward the 23. Keep maintenance tooling out of the design menu.
+**`doctor` is a utility command, not a design command.** It follows the `hooks` and `pin` pattern (a line in SKILL.src.md plus `reference/doctor.md`), not the Commands-table pattern. It is deliberately **not** in `PROCABLE_SUB_COMMANDS`, `command-metadata.json`, `SKILL_CATEGORIES`, or the `pin` verb's valid-command list, and it does not count toward the 23. Keep maintenance tooling out of the design menu.
 
-## Repo split: public product vs private service (impeccable-site)
+## Repo split: public product vs private service (procable-site)
 
-As of v4 the repo holds only the open-source product layer: the skill, CLI, extension, their tests, and the build that generates provider outputs. Everything service-side lives in the private repo `pbakaus/impeccable-site` (checked out at `~/code/impeccable-site`): the impeccable.style site, the review labs, the concept/composition catalogs and reviews, the world-card image pipeline and R2 publish, the Cloudflare Pages Functions (including `/api/roll` and `/api/chosen`), and `docs/WORLD-CATALOG-AUTHORING.md`.
+As of v4 the repo holds only the open-source product layer: the skill, CLI, extension, their tests, and the build that generates provider outputs. Everything service-side lives in the private repo `pbakaus/impeccable-site` (checked out at `~/code/procable-site`): the impeccable.style site, the review labs, the concept/composition catalogs and reviews, the world-card image pipeline and R2 publish, the Cloudflare Pages Functions (including `/api/roll` and `/api/chosen`), and `docs/WORLD-CATALOG-AUTHORING.md`.
 
 Consequences here:
 
-- `impeccable concept-seed` has no local catalog. It resolves data via `IMPECCABLE_CATALOG_DIR` (private repo, evals, tests), then the roll API at impeccable.style, then a degraded promotion-only seed. Oracle cases run against `tests/fixtures/concept-catalog/`.
-- The choice-ping telemetry (`--chosen`) honors `DO_NOT_TRACK` and `IMPECCABLE_NO_TELEMETRY` and only fires for API-dealt rolls. Every roll and choice request carries `X-Impeccable-Client: impeccable/<version>[ <channel>]`; tests and CI set `IMPECCABLE_TELEMETRY_CHANNEL=test` so their traffic is tagged (keep it that way for anything new that can reach the API). Decision-page cards declare `kind` (and `catalogId` on challengers), which `serve-question --start/--update` enforce; the page sends the ping itself (`source: "picker"`, `kindSource: explicit|inferred`) for every resolved round, re-rolls included (`kind: "reroll"`), and marks the round in `.impeccable/questions/seeds/` so the agent's `--kind` rerun prints `choice already recorded`; `crates/context/src/telemetry.rs` holds the rules. Everything under `.impeccable/questions/` is runtime state that must never be committed (a committed roll record ties telemetry to a repository): every write there keeps a self-ignoring `.impeccable/questions/.gitignore` in place (`impeccable_common::git::ensure_dir_ignored`); use the same helper for any new runtime file that holds the seed key or a dealt hand. Committed files never hold the raw seed key: concept-seed prints a `SEED REFERENCE` (`seed:` + 16 hex of SHA-256 of `impeccable-seed:` + a per-user salt from `~/.impeccable/seed-salt` + key; `impeccable_common::seed`) for the surface brief, and `--from` resolves it through the local ledger; new keys are 128 CSPRNG bits. A `.gitignore` cannot untrack files users already committed, so rolls warn once (`tracked_runtime_notice`) and write the roll record to `roll.local.json` while `roll.json` is tracked. Ledger updates go through `telemetry::Ledger`, which locks per file; the page claims a round as `pending` and the agent's rerun waits for it, both sending the round's `pingId`. Tests that touch references pin `IMPECCABLE_SEED_SALT`. Opt-out (`DO_NOT_TRACK` / `IMPECCABLE_NO_TELEMETRY` non-empty and not `0`/`false`, or `"telemetry": false` from `impeccable telemetry off` in `~/.impeccable/config.json` or a project config) still rolls, sends `X-Impeccable-Telemetry: off`, and sends and stores nothing telemetry-only.
-- Site copy, changelog, theme, and count validation for site pages happen in impeccable-site; this repo's `validateProse` scans only the READMEs.
-- The release script reads the changelog from `../impeccable-site/site/pages/changelog.astro` when releasing from here.
+- `procable concept-seed` has no local catalog. It resolves data via `PROCABLE_CATALOG_DIR` (private repo, evals, tests), then the roll API at impeccable.style, then a degraded promotion-only seed. Oracle cases run against `tests/fixtures/concept-catalog/`.
+- The choice-ping telemetry (`--chosen`) honors `DO_NOT_TRACK` and `PROCABLE_NO_TELEMETRY` and only fires for API-dealt rolls. Every roll and choice request carries `X-Procable-Client: procable/<version>[ <channel>]`; tests and CI set `PROCABLE_TELEMETRY_CHANNEL=test` so their traffic is tagged (keep it that way for anything new that can reach the API). Decision-page cards declare `kind` (and `catalogId` on challengers), which `serve-question --start/--update` enforce; the page sends the ping itself (`source: "picker"`, `kindSource: explicit|inferred`) for every resolved round, re-rolls included (`kind: "reroll"`), and marks the round in `.procable/questions/seeds/` so the agent's `--kind` rerun prints `choice already recorded`; `crates/context/src/telemetry.rs` holds the rules. Everything under `.procable/questions/` is runtime state that must never be committed (a committed roll record ties telemetry to a repository): every write there keeps a self-ignoring `.procable/questions/.gitignore` in place (`procable_common::git::ensure_dir_ignored`); use the same helper for any new runtime file that holds the seed key or a dealt hand. Committed files never hold the raw seed key: concept-seed prints a `SEED REFERENCE` (`seed:` + 16 hex of SHA-256 of `procable-seed:` + a per-user salt from `~/.procable/seed-salt` + key; `procable_common::seed`) for the surface brief, and `--from` resolves it through the local ledger; new keys are 128 CSPRNG bits. A `.gitignore` cannot untrack files users already committed, so rolls warn once (`tracked_runtime_notice`) and write the roll record to `roll.local.json` while `roll.json` is tracked. Ledger updates go through `telemetry::Ledger`, which locks per file; the page claims a round as `pending` and the agent's rerun waits for it, both sending the round's `pingId`. Tests that touch references pin `PROCABLE_SEED_SALT`. Opt-out (`DO_NOT_TRACK` / `PROCABLE_NO_TELEMETRY` non-empty and not `0`/`false`, or `"telemetry": false` from `procable telemetry off` in `~/.procable/config.json` or a project config) still rolls, sends `X-Procable-Telemetry: off`, and sends and stores nothing telemetry-only.
+- Site copy, changelog, theme, and count validation for site pages happen in procable-site; this repo's `validateProse` scans only the READMEs.
+- The release script reads the changelog from `../procable-site/site/pages/changelog.astro` when releasing from here.
 - Never add catalog data files back to this repo; the catalog is the paid-service moat.
 
 ## Prose: read docs/STYLE.md before writing user-facing copy
 
-Editorial brief is at `docs/STYLE.md`. Read it before editing the READMEs or any user-facing copy. The rules exist because the project has been called out for AI prose before; site copy applies them in impeccable-site.
+Editorial brief is at `docs/STYLE.md`. Read it before editing the READMEs or any user-facing copy. The rules exist because the project has been called out for AI prose before; site copy applies them in procable-site.
 
 The build's `validateProse` step (in `scripts/build.js`) enforces a denylist: em dashes (`—` and HTML entities), the `--` em-dash substitute, `load-bearing`, `highest-leverage`, `biggest unlock`, `seamless`, `robust`, `delve`, `elevate`, `empower`, `underscore`, `pivotal`, `tapestry`, `data-driven`, `reflex defaults`, `collapses into monoculture`, `in today's`, `gone are the days`, `whether you're`, `let's dive in`, `in summary`, `in conclusion`, `moreover`, `furthermore`. Each rule prints a rationale and a suggested replacement when it fires. **Do not silently work around the regex.** If a banned word has earned a real meaning here, raise it as a `docs/STYLE.md` amendment.
 
-`validateProse` scans `README.md` and `README.npm.md`; site copy is validated in impeccable-site.
+`validateProse` scans `README.md` and `README.npm.md`; site copy is validated in procable-site.
 
 **`skill/` is checked too, by a second gate.** `validateProse` skips it because the full ruleset does not fit LLM-facing reference instructions. `validateSkillProse` then scans `skill/**/*.md` (markdown only, not the launcher or page JS under `skill/scripts/`) and fails the build on em dashes plus the subset of phrases with no technical reading: `load-bearing`, `highest-leverage`, `biggest unlock`, `reflex defaults`, `collapses into monoculture`, `data-driven`, `delve`, `tapestry`, `in today's`, `gone are the days`, `let's dive in`, `in summary`, `in conclusion`. The words it does *not* enforce in `skill/` (`seamless`, `robust`, `elevate`, and friends) are the ones with legitimate technical uses. Net effect: an em dash in `skill/reference/*.md` fails `bun run build`; an em dash in a `scripts/*.js` code comment does not.
 
@@ -112,7 +112,7 @@ The deeper structural issues (negation pivot, triadic auto-pilot, uniform paragr
 
 ## Build System
 
-The build system compiles the impeccable skill from `skill/` to provider-specific formats in `dist/`. The default build is source-first and does not sync tracked root harness folders; the release build performs the tracked distribution sync:
+The build system compiles the procable skill from `skill/` to provider-specific formats in `dist/`. The default build is source-first and does not sync tracked root harness folders; the release build performs the tracked distribution sync:
 
 ```bash
 bun run build            # Build dist/ provider output without syncing root harness dirs
@@ -122,14 +122,14 @@ bun run rebuild:release  # Clean and rebuild with root harness sync
 bun run fetch:engine     # Download the pinned engine binary for this machine into skill/scripts/bin/
 ```
 
-The skill's `scripts/` payload is copied verbatim to every provider (launcher with its executable bit, `impeccable.cmd`, `VERSION`, `command-metadata.json`, page JS); nothing under `skill/scripts/bin/` is read as source. The in-page detector bundle and the extension's detector pieces are produced by `cargo xtask bundle`, which `bun run build:extension` runs; the page JS and the bundling itself live in the `impeccable-bundle` library crate (`crates/bundle`) so a downstream rule pack can build the same artifacts for its own wasm module.
+The skill's `scripts/` payload is copied verbatim to every provider (launcher with its executable bit, `procable.cmd`, `VERSION`, `command-metadata.json`, page JS); nothing under `skill/scripts/bin/` is read as source. The in-page detector bundle and the extension's detector pieces are produced by `cargo xtask bundle`, which `bun run build:extension` runs; the page JS and the bundling itself live in the `procable-bundle` library crate (`crates/bundle`) so a downstream rule pack can build the same artifacts for its own wasm module.
 
 Source files use placeholders that get replaced per-provider:
 - `{{model}}` — Model name (Claude, Gemini, GPT, etc.)
 - `{{config_file}}` — Config file name (CLAUDE.md, .cursorrules, etc.)
 - `{{ask_instruction}}` — How to ask user questions
 - `{{command_prefix}}` — `/` or `$` depending on provider
-- `{{available_commands}}` — auto-populated list of commands (from `IMPECCABLE_SUB_COMMANDS` in `scripts/lib/utils.js`)
+- `{{available_commands}}` — auto-populated list of commands (from `PROCABLE_SUB_COMMANDS` in `scripts/lib/utils.js`)
 - `{{scripts_path}}` — provider-aware path to the skill's scripts directory
 - `{{reference_path}}` — agent bodies only (`skill/agents/*.md`): the skill's `reference/` directory, relative to each emitted copy
 
@@ -165,22 +165,22 @@ bun run test:plugin-e2e       # Just the plugin loader E2E (also part of the def
 bun run test:cleanup          # Kill live servers a previous run of THIS checkout left behind
 ```
 
-Unit tests (build orchestration, transformers, validators) run via `bun test`. Everything that spawns the engine binary (`tests/oracle.test.mjs`, `tests/framework-fixtures.test.mjs`) runs via `node --test`; both skip cleanly when no binary is found (`bun run fetch:engine` or `IMPECCABLE_BIN`). The `test` script handles this split automatically. Runtime unit and integration tests live under `crates/` and run with `cargo test --workspace` (about 10 minutes, mostly the Chrome-driven `impeccable-browser` tests; `bun run test:rust-changed` runs only the crates a change reaches, see AGENTS.md); the oracle goldens pin observable verb behavior across the same workspace.
+Unit tests (build orchestration, transformers, validators) run via `bun test`. Everything that spawns the engine binary (`tests/oracle.test.mjs`, `tests/framework-fixtures.test.mjs`) runs via `node --test`; both skip cleanly when no binary is found (`bun run fetch:engine` or `PROCABLE_BIN`). The `test` script handles this split automatically. Runtime unit and integration tests live under `crates/` and run with `cargo test --workspace` (about 10 minutes, mostly the Chrome-driven `procable-browser` tests; `bun run test:rust-changed` runs only the crates a change reaches, see AGENTS.md); the oracle goldens pin observable verb behavior across the same workspace.
 
 ### Live servers must not outlive their test process
 
-A live server does not die with the process that started it: a direct child survives its parent, and `impeccable live-server --background` is orphaned to pid 1 by design (`spawn_detached_with_args` in `crates/live/src/server.rs`). Teardown in an `after()` hook or a `finally` covers only the exits JavaScript can observe, so a `SIGKILL`, a Ctrl-C, or a wedged runner used to leave servers squatting the live suite's fixed ports for days (issue #717).
+A live server does not die with the process that started it: a direct child survives its parent, and `procable live-server --background` is orphaned to pid 1 by design (`spawn_detached_with_args` in `crates/live/src/server.rs`). Teardown in an `after()` hook or a `finally` covers only the exits JavaScript can observe, so a `SIGKILL`, a Ctrl-C, or a wedged runner used to leave servers squatting the live suite's fixed ports for days (issue #717).
 
 Three pieces keep that from recurring, and a new test that starts a server owes the first one:
 
 - **`armLiveServerReaper()`** (`tests/lib/live-servers.mjs`), called once at module scope by any test file that starts a live server. It stamps the process environment with a unique marker, installs exit and signal handlers, and spawns a detached reaper holding a pipe to the process. When the process dies for any reason at all, the pipe closes and the reaper kills the servers carrying that marker. Wrap direct children in `trackServerChild()` so the common case is a cheap `child.kill()`. On this branch the two places that start one are `tests/live-e2e/session.mjs` and the oracle's daemon steps (`runDaemonStep` in `tests/oracle/lib.mjs`); both already arm it.
 
   The mechanism is deliberately implementation-agnostic, which is what let it survive the Node-to-Rust swap unchanged: it keys on the environment rather than on anything the server implements. That works because the daemon spawn does `env_clear().envs(env)` against `Io::stdio()`'s `env`, which is `std::env::vars()`, so the detached Rust process carries the parent's environment and the markers reach it. If a future change scrubs or narrows that env, the guard goes silently blind, so keep the daemon inheriting it.
-- **The runner guard.** `scripts/run-tests.mjs` runs each suite command as its own process-group leader, ends that group on `SIGINT` / `SIGTERM` / `SIGHUP` and on the wall-clock cap, and after every suite checks whether any live server carrying that suite's run id is still alive. If one is, it kills it and fails the run. Bypass with `IMPECCABLE_SKIP_LEAK_CHECK=1`. The same group is what `IMPECCABLE_TEST_WALL_CLOCK_MS` (or a suite's `wallClockMs`) SIGKILLs when a command wedges, so a suite blocked in a synchronous call still ends and still gets swept.
+- **The runner guard.** `scripts/run-tests.mjs` runs each suite command as its own process-group leader, ends that group on `SIGINT` / `SIGTERM` / `SIGHUP` and on the wall-clock cap, and after every suite checks whether any live server carrying that suite's run id is still alive. If one is, it kills it and fails the run. Bypass with `PROCABLE_SKIP_LEAK_CHECK=1`. The same group is what `PROCABLE_TEST_WALL_CLOCK_MS` (or a suite's `wallClockMs`) SIGKILLs when a command wedges, so a suite blocked in a synchronous call still ends and still gets swept.
 - **`bun run test:cleanup`.** A one-shot sweep for leftovers from earlier runs.
-- **`tests/live-server-leak.test.mjs`** pins the guarantee against the real engine binary (resolved through `tests/lib/engine-bin.mjs`, skipped when there is none): it boots `impeccable live-server`, SIGKILLs the process that started it, and fails if the server outlives it.
+- **`tests/live-server-leak.test.mjs`** pins the guarantee against the real engine binary (resolved through `tests/lib/engine-bin.mjs`, skipped when there is none): it boots `procable live-server`, SIGKILLs the process that started it, and fails if the server outlives it.
 
-**Everything that kills is scoped by an environment marker this repo's harness exported**, never by process name, port, or path. A sweep can never touch a live server that another checkout, or the user's own session, is running. Keep it that way, and keep marker values opaque: every one is a random token or a hash of the checkout path (`repoMarker()`), drawn from `[A-Za-z0-9_-]` so it can never contain whitespace. `ps -E` flattens the environment into one whitespace-separated line, so a value free to hold a space could hide the end of its own entry and let one checkout's cleanup reach another's servers. `assertMarkerValue` refuses such a value; the readable path travels separately as `IMPECCABLE_TEST_REPO_PATH`, which nothing matches on.
+**Everything that kills is scoped by an environment marker this repo's harness exported**, never by process name, port, or path. A sweep can never touch a live server that another checkout, or the user's own session, is running. Keep it that way, and keep marker values opaque: every one is a random token or a hash of the checkout path (`repoMarker()`), drawn from `[A-Za-z0-9_-]` so it can never contain whitespace. `ps -E` flattens the environment into one whitespace-separated line, so a value free to hold a space could hide the end of its own entry and let one checkout's cleanup reach another's servers. `assertMarkerValue` refuses such a value; the readable path travels separately as `PROCABLE_TEST_REPO_PATH`, which nothing matches on.
 
 ### Which opt-in suite a change owes
 
@@ -196,7 +196,7 @@ The default suite does not cover everything. When a change touches one of these 
 | `ENGINE_VERSION` bump | `bun run test:new-work-e2e` | Playwright, offline, no API cost |
 | `plugin/`, `skill/agents/`, `scripts/build.js`, plugin manifest validator | `bun run test:plugin-e2e` | ~1 s; already in the default suite, needs the `claude` CLI |
 
-For verb-level behavior changes in `crates/`, run focused crate tests and `bun run test:rust-changed` (CI runs the whole workspace), then `cargo build --release -p impeccable`. Start long cargo runs as background commands and wait for the exit notification instead of polling with `sleep` or `pgrep`. An agent that creates a worktree or its own `CARGO_TARGET_DIR` deletes that target dir when it finishes and `git worktree remove`s the worktree: a stale target dir holds 10 to 25 GB, and 330 of them once filled a 2 TB disk. Run `IMPECCABLE_BIN="$PWD/target/release/impeccable" bun run test` to exercise the changed source rather than an older downloaded release. Add a new oracle case when the contract grows and review golden changes by hand. See `docs/ENGINE.md` for browser-bundle checks and generated assets.
+For verb-level behavior changes in `crates/`, run focused crate tests and `bun run test:rust-changed` (CI runs the whole workspace), then `cargo build --release -p procable`. Start long cargo runs as background commands and wait for the exit notification instead of polling with `sleep` or `pgrep`. An agent that creates a worktree or its own `CARGO_TARGET_DIR` deletes that target dir when it finishes and `git worktree remove`s the worktree: a stale target dir holds 10 to 25 GB, and 330 of them once filled a 2 TB disk. Run `PROCABLE_BIN="$PWD/target/release/procable" bun run test` to exercise the changed source rather than an older downloaded release. Add a new oracle case when the contract grows and review golden changes by hand. See `docs/ENGINE.md` for browser-bundle checks and generated assets.
 
 **Plugin loader E2E** (`tests/plugin-e2e.test.mjs`, in the default suite): installs the committed `./plugin` subtree into a real Claude Code, sandboxed via `CLAUDE_CONFIG_DIR` in a temp dir, and asserts the component inventory from `claude plugin details`: the skill parses, every `plugin/agents/*.md` is visible, hooks are discovered. This is the only check that catches loader-contract surprises the unit guards can't know about (PR #494 shipped an `agents` manifest key that silently loaded zero agents; `claude plugin validate` never flags plugin-manifest problems). Runs in about a second; skips cleanly when the `claude` CLI is not on PATH. The known contract itself (allowed manifest keys, no `agents` key, trailing-slash `skills` path, source agents shipped) is pinned deterministically by `scripts/lib/validate-plugin-manifest.js`, unit-tested in `tests/validate-plugin-manifest.test.js` and enforced as a `bun run build` gate. Never add a key to the generated plugin manifest without verifying it against a real install and extending `KNOWN_LOADER_KEYS`.
 
@@ -208,8 +208,8 @@ For verb-level behavior changes in `crates/`, run focused crate tests and `bun r
 
 ```bash
 bun run test:live-e2e                                       # full suite, ~2 min, 19 fixtures
-IMPECCABLE_E2E_ONLY=vite8-react-modal bun run test:live-e2e # scope to one fixture
-IMPECCABLE_E2E_DEBUG=1 bun run test:live-e2e                # dump page DOM + dev-server tail on failure
+PROCABLE_E2E_ONLY=vite8-react-modal bun run test:live-e2e # scope to one fixture
+PROCABLE_E2E_DEBUG=1 bun run test:live-e2e                # dump page DOM + dev-server tail on failure
 ```
 
 **One-time setup**: `npx playwright install chromium` (the suite uses a specific Chromium build keyed to the bundled Playwright version).
@@ -218,13 +218,13 @@ IMPECCABLE_E2E_DEBUG=1 bun run test:live-e2e                # dump page DOM + de
 
 Three live-mode invariants worth knowing before editing (established by the 2026-07 rewrite, full rationale in `docs/LIVE-REWRITE-PLAN.md`; the implementation is the engine's `live` crate now, the contract is unchanged):
 
-- **Roots.** `impeccable live` resolves appRoot/repoRoot/contextRoot once at boot and persists `.impeccable/live/roots.json`; every live verb re-anchors on that manifest and chdirs onto its appRoot. Never derive a live path from ambient cwd; go through the manifest.
-- **Svelte preview modules must live under `node_modules/.impeccable-live`.** SvelteKit restricts vite `server.fs.allow` to src/lib, src/routes, .svelte-kit, and node_modules; a preview tree under `.impeccable/` 403s. Staleness is handled by per-publish revision dirs (`r<N>/`, bumped by the server on every done-reply), not by file watching.
+- **Roots.** `procable live` resolves appRoot/repoRoot/contextRoot once at boot and persists `.procable/live/roots.json`; every live verb re-anchors on that manifest and chdirs onto its appRoot. Never derive a live path from ambient cwd; go through the manifest.
+- **Svelte preview modules must live under `node_modules/.procable-live`.** SvelteKit restricts vite `server.fs.allow` to src/lib, src/routes, .svelte-kit, and node_modules; a preview tree under `.procable/` 403s. Staleness is handled by per-publish revision dirs (`r<N>/`, bumped by the server on every done-reply), not by file watching.
 - **`svelte` is a devDependency for tests only.** The Svelte scaffolder and accept pipeline resolve the compiler from the USER app's node_modules at runtime; the fixture sweep and oracle cases symlink this repo's copy into staged fixtures.
 
 The agent is pluggable via a one-method interface in `tests/live-e2e/agent.mjs`: `generateVariants(event, context) → { scopedCss, variants[] }`. The default fake agent emits canned variants that exercise all three param kinds (`range`, `steps`, `toggle`). The orchestrator (wrap, write, accept, carbonize) is agent-agnostic.
 
-**LLM agent (opt-in)**: set `IMPECCABLE_E2E_AGENT=llm` to swap the fake agent for `tests/live-e2e/agents/llm-agent.mjs`. Default provider/model: OpenAI `gpt-5.6-terra` at medium reasoning effort (a frontier tier, matching what drives real live sessions); Anthropic and DeepSeek remain selectable via `IMPECCABLE_E2E_LLM_PROVIDER`. Requires the selected provider's key in env (`OPENAI_API_KEY` by default); the test runner skips with a clear message when it's unset. Override the model with `IMPECCABLE_E2E_LLM_MODEL` and the effort with `IMPECCABLE_E2E_LLM_EFFORT`. Caching is on — live.md is the cacheable prefix, and after the first call subsequent fixtures pay only the cache-read rate. Pass rate on a typical sweep is 18/19; the modal fixture's intrinsic state-loss flake is amplified by LLM latency and may need a re-run. **This path hits the API and costs money** — keep it out of CI unless you really want it there.
+**LLM agent (opt-in)**: set `PROCABLE_E2E_AGENT=llm` to swap the fake agent for `tests/live-e2e/agents/llm-agent.mjs`. Default provider/model: OpenAI `gpt-5.6-terra` at medium reasoning effort (a frontier tier, matching what drives real live sessions); Anthropic and DeepSeek remain selectable via `PROCABLE_E2E_LLM_PROVIDER`. Requires the selected provider's key in env (`OPENAI_API_KEY` by default); the test runner skips with a clear message when it's unset. Override the model with `PROCABLE_E2E_LLM_MODEL` and the effort with `PROCABLE_E2E_LLM_EFFORT`. Caching is on — live.md is the cacheable prefix, and after the first call subsequent fixtures pay only the cache-read rate. Pass rate on a typical sweep is 18/19; the modal fixture's intrinsic state-loss flake is amplified by LLM latency and may need a re-run. **This path hits the API and costs money** — keep it out of CI unless you really want it there.
 
 Adding a new fixture is a matter of cloning a directory under `tests/framework-fixtures/`, swapping the source files, and writing a `fixture.json`. See `tests/framework-fixtures/README.md` for the full schema.
 
@@ -234,13 +234,13 @@ Adding a new fixture is a matter of cloning a directory under `tests/framework-f
 
 ```bash
 bun run test:skill-behavior                                        # full suite, ~5 min, ~$0.50-1.50 across providers
-IMPECCABLE_SKILL_BEHAVIOR_MODELS=gemini-3.5-flash bun run test:skill-behavior   # scope to one provider
-IMPECCABLE_SKILL_BEHAVIOR_VERBOSE=1 bun run test:skill-behavior    # dump per-scenario trace JSON to stderr (use when iterating)
+PROCABLE_SKILL_BEHAVIOR_MODELS=gemini-3.5-flash bun run test:skill-behavior   # scope to one provider
+PROCABLE_SKILL_BEHAVIOR_VERBOSE=1 bun run test:skill-behavior    # dump per-scenario trace JSON to stderr (use when iterating)
 ```
 
-**Frontier tiers, more than one family.** The lineup is `DEFAULT_MODELS` in `tests/skill-behavior/providers.mjs`, currently `claude-sonnet-5` and `gemini-3.6-flash`. `gpt-5.6-luna` and `deepseek-v4-flash` were dropped in 2026-08: below the frontier tier they fail scenarios for model-floor reasons rather than skill-text defects, and a suite that is always red is a suite nobody reads. **Don't substitute Claude alone**: many of the most useful findings come from divergence between families, so keep at least two. The dropped models stay selectable via `IMPECCABLE_SKILL_BEHAVIOR_MODELS` when a Setup or routing change warrants a wider sweep.
+**Frontier tiers, more than one family.** The lineup is `DEFAULT_MODELS` in `tests/skill-behavior/providers.mjs`, currently `claude-sonnet-5` and `gemini-3.6-flash`. `gpt-5.6-luna` and `deepseek-v4-flash` were dropped in 2026-08: below the frontier tier they fail scenarios for model-floor reasons rather than skill-text defects, and a suite that is always red is a suite nobody reads. **Don't substitute Claude alone**: many of the most useful findings come from divergence between families, so keep at least two. The dropped models stay selectable via `PROCABLE_SKILL_BEHAVIOR_MODELS` when a Setup or routing change warrants a wider sweep.
 
-**Auth** lives in repo-root `.env` (copied from `~/code/impeccable-evals/.env`, gitignored). Providers skip cleanly when their key is unset; they don't fail.
+**Auth** lives in repo-root `.env` (copied from `~/code/procable-evals/.env`, gitignored). Providers skip cleanly when their key is unset; they don't fail.
 
 **The scenario list and the baseline live in `tests/skill-behavior/README.md`**, not here. Read that table before changing Setup or routing text, and update it in the same change. Duplicating it in this file is how it went stale before.
 
@@ -252,13 +252,13 @@ IMPECCABLE_SKILL_BEHAVIOR_VERBOSE=1 bun run test:skill-behavior    # dump per-sc
 
 ## CLI
 
-`cli/` is the npm package `impeccable`, now a thin shim: `cli/bin/cli.js` locates the engine binary (`IMPECCABLE_BIN`, then the `@impeccable/cli-<os>-<arch>` optional dependency pinned at `ENGINE_VERSION`, then `~/.impeccable/bin/<version>/`, then a checksum-verified download into that cache) and execs it with argv. The verbs users see (`detect`, `ignores`, `install`, `update`, `check`, `link`, `help`, the legacy `skills` namespace) are the binary's. `cli/platform-packages/<os>-<arch>/package.json` are the templates the engine release publishes; the version pinned in `package.json` `optionalDependencies` must equal `ENGINE_VERSION`.
+`cli/` is the npm package `procable`, now a thin shim: `cli/bin/cli.js` locates the engine binary (`PROCABLE_BIN`, then the `@procable/cli-<os>-<arch>` optional dependency pinned at `ENGINE_VERSION`, then `~/.procable/bin/<version>/`, then a checksum-verified download into that cache) and execs it with argv. The verbs users see (`detect`, `ignores`, `install`, `update`, `check`, `link`, `help`, the legacy `skills` namespace) are the binary's. `cli/platform-packages/<os>-<arch>/package.json` are the templates the engine release publishes; the version pinned in `package.json` `optionalDependencies` must equal `ENGINE_VERSION`.
 
 ```bash
-npx impeccable detect [file-or-dir-or-url...]   # detect anti-patterns
-npx impeccable detect --json src/               # JSON output
-npx impeccable install                          # install skills
-npx impeccable --help                           # show help
+npx procable detect [file-or-dir-or-url...]   # detect anti-patterns
+npx procable detect --json src/               # JSON output
+npx procable install                          # install skills
+npx procable --help                           # show help
 ```
 
 The package no longer exports a JS detector API (`main` / `exports` are gone); the in-page bundle for the extension and site is built from this workspace by `cargo xtask bundle`.
@@ -281,16 +281,16 @@ The skill and the npm CLI share one version; the Chrome extension and the engine
 - `.claude-plugin/marketplace.json` → `plugins[0].version`
 - `package.json` → `version` (the npm CLI, same number)
 - Bump when: skill content changes (`skill/`, reference files, command metadata, etc.)
-- After bumping, run `bun run build:release` so the committed `./plugin` subtree (`plugin/.claude-plugin/plugin.json` + `plugin/skills/impeccable/SKILL.md`) is regenerated to the new version. The build validator (`validatePluginVersions` in `scripts/build.js`) fails if `marketplace.json`, the `./plugin` manifest, or the bundled `SKILL.md` frontmatter disagree with `plugin.json` — this guards the marketplace install path against version drift (issue #274).
+- After bumping, run `bun run build:release` so the committed `./plugin` subtree (`plugin/.claude-plugin/plugin.json` + `plugin/skills/procable/SKILL.md`) is regenerated to the new version. The build validator (`validatePluginVersions` in `scripts/build.js`) fails if `marketplace.json`, the `./plugin` manifest, or the bundled `SKILL.md` frontmatter disagree with `plugin.json` — this guards the marketplace install path against version drift (issue #274).
 
 **Chrome extension**:
 - `extension/manifest.json` → `version`
 - Bump when: extension code changes (`extension/`), or a rule change alters what the shipped bundle detects. The extension runs the rules as WebAssembly in an offscreen document; `extension/detector/` is built at package time by `cargo xtask bundle` and is not tracked, so an extension release always needs `bun run build:extension` (and therefore a Rust toolchain plus `wasm-pack`) before the zip is attached.
 
-**Website changelog** (`site/pages/changelog.astro` in the private impeccable-site repo):
+**Website changelog** (`site/pages/changelog.astro` in the private procable-site repo):
 - Add a new `<article>` entry at the top of the relevant component's group, and move the `cf-entry--current` class + `Current` badge onto it (off the previous newest skill entry). The component is derived from the entry `id` prefix: `cli-*`, `ext-*`, else skill.
 - Keep it concise and sell the release: a short `cf-entry-lead` that frames what shipped, then a handful of tight `<li>` items. Lead with the most compelling feature.
-- User-facing only. Every item must be something an impeccable user would notice or act on (a new command behavior, rule, or fix). Leave out internal build/tooling/refactor details, dependency bumps, and generated-output syncs.
+- User-facing only. Every item must be something an procable user would notice or act on (a new command behavior, rule, or fix). Leave out internal build/tooling/refactor details, dependency bumps, and generated-output syncs.
 - Prose rules in `docs/STYLE.md` apply (the validator scans this file): no em dashes, no banned words, no AI-tell cadence.
 
 After bumping, see **Releases** below for how to tag and publish.
@@ -305,7 +305,7 @@ Workflow for any component:
 2. Add a changelog entry to `site/pages/changelog.astro` (see **Website changelog** above for placement and tone). Skill entries use a bare `vX.Y.Z` label; CLI and extension entries use the prefixed forms `CLI vX.Y.Z` and `Extension vX.Y.Z`. The release script extracts notes by matching this label, so the prefix matters.
 3. Commit and push to `main`.
 4. Run `bun run release:<skill|cli|ext>`. Preview first with `node scripts/release.mjs <component> --dry-run`. A skill release is always followed by the CLI release at the same version (its changelog entry uses the `CLI vX.Y.Z` label) and `npm publish`.
-5. Skill only: `npx impeccable install` / `update` serve the version in impeccable-site's `published-skill.json`, a signed pointer that does not follow the release by itself (site `docs/PUBLISHED-SKILL.md`). On a branch from site main, run `bun run skill:publish-pointer <version>` (it verifies the release signature and checksum), commit the pointer, and merge; the main deploy then serves it. Redeploying without moving the pointer republishes the old version. The release script warns when `impeccable.style/api/version` still lags.
+5. Skill only: `npx procable install` / `update` serve the version in procable-site's `published-skill.json`, a signed pointer that does not follow the release by itself (site `docs/PUBLISHED-SKILL.md`). On a branch from site main, run `bun run skill:publish-pointer <version>` (it verifies the release signature and checksum), commit the pointer, and merge; the main deploy then serves it. Redeploying without moving the pointer republishes the old version. The release script warns when `impeccable.style/api/version` still lags.
 
 The script refuses to run if: the working tree is dirty, HEAD is ahead of origin, the tag already exists, the matching changelog entry is missing, or (for skill/extension) `bun run build:release` / `bun run build:extension` produces uncommitted changes — meaning the harness output dirs or `extension/detector/` files weren't refreshed before the bump was committed.
 
@@ -315,33 +315,33 @@ If you need to fix release notes after the fact (typo, missing thank-you, format
 
 ### Release order is mechanically enforced (triage decision D4)
 
-The skill launcher, the npm shim (`cli/bin/cli.js`), and `impeccable install` all resolve the engine binary for the pinned `ENGINE_VERSION`. Nothing they do works until the engine release exists first. **The order is: publish the engine release, then the platform packages, then release/merge the skill (or CLI):**
+The skill launcher, the npm shim (`cli/bin/cli.js`), and `procable install` all resolve the engine binary for the pinned `ENGINE_VERSION`. Nothing they do works until the engine release exists first. **The order is: publish the engine release, then the platform packages, then release/merge the skill (or CLI):**
 
-1. Publish engine `engine-v<ENGINE_VERSION>`: `bun run release:engine` tags and pushes; `release-engine.yml` builds the five `impeccable-<os>-<arch>[.exe]` binaries plus a `.sha256` beside each and publishes the release on this repo. The whole workspace builds from source, so nothing has to ship ahead of it.
-2. Publish the five `@impeccable/cli-<os>-<arch>@<ENGINE_VERSION>` npm platform packages.
+1. Publish engine `engine-v<ENGINE_VERSION>`: `bun run release:engine` tags and pushes; `release-engine.yml` builds the five `procable-<os>-<arch>[.exe]` binaries plus a `.sha256` beside each and publishes the release on this repo. The whole workspace builds from source, so nothing has to ship ahead of it.
+2. Publish the five `@procable/cli-<os>-<arch>@<ENGINE_VERSION>` npm platform packages.
 3. Only then tag/publish the skill or CLI release, and only then merge a branch that bumps `ENGINE_VERSION` (the `sync-generated-output.yml` workflow rewrites provider dirs on merge to `main`).
 
-`scripts/check-engine-release.mjs` verifies step 1 and 2 for the pinned version (ranged-GET each release asset, registry-probe each npm package, compare `skill/scripts/engine-checksums.txt` with each published `.sha256`; honors `IMPECCABLE_DOWNLOAD_BASE`). It exits non-zero and names exactly which assets are missing. `scripts/release.mjs` runs it as a hard gate before tagging the **skill** and **CLI** components and refuses to proceed when any asset is absent; the **extension** release is exempt because it ships a vendored WASM detector and never execs the engine. `IMPECCABLE_SKIP_ENGINE_CHECK=1` bypasses the gate only for the case where the assets exist but the registry probe is unreachable. CI's `engine-release-ready` job runs the same script as a hard gate, so missing release assets fail CI.
+`scripts/check-engine-release.mjs` verifies step 1 and 2 for the pinned version (ranged-GET each release asset, registry-probe each npm package, compare `skill/scripts/engine-checksums.txt` with each published `.sha256`; honors `PROCABLE_DOWNLOAD_BASE`). It exits non-zero and names exactly which assets are missing. `scripts/release.mjs` runs it as a hard gate before tagging the **skill** and **CLI** components and refuses to proceed when any asset is absent; the **extension** release is exempt because it ships a vendored WASM detector and never execs the engine. `PROCABLE_SKIP_ENGINE_CHECK=1` bypasses the gate only for the case where the assets exist but the registry probe is unreachable. CI's `engine-release-ready` job runs the same script as a hard gate, so missing release assets fail CI.
 
-`scripts/release.mjs` also refuses a **skill** or **CLI** tag when anything under `crates/`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml` or a file the crates compile in from outside the workspace (its `ENGINE_SOURCE_PATHS` list) differs from the `engine-v<ENGINE_VERSION>` tag, because the binary users download is built from that tag: bump `ENGINE_VERSION` and release the engine first. `IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK=1` bypasses it only for changes that cannot reach the binary, such as test-only edits.
+`scripts/release.mjs` also refuses a **skill** or **CLI** tag when anything under `crates/`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml` or a file the crates compile in from outside the workspace (its `ENGINE_SOURCE_PATHS` list) differs from the `engine-v<ENGINE_VERSION>` tag, because the binary users download is built from that tag: bump `ENGINE_VERSION` and release the engine first. `PROCABLE_SKIP_ENGINE_SOURCE_CHECK=1` bypasses it only for changes that cannot reach the binary, such as test-only edits.
 
 ## Adding New Commands
 
-All commands live under `/impeccable`. To add a new one:
+All commands live under `/procable`. To add a new one:
 
 1. Create `skill/reference/<command>.md` with the command's instructions (this is what the LLM loads when the command is invoked)
 2. Add a row to the **Sub-command reference table** in `skill/SKILL.src.md`
 3. Add an entry to the **Command menu** section in the same file
-4. Add the command name to `IMPECCABLE_SUB_COMMANDS` in `scripts/lib/utils.js`
+4. Add the command name to `PROCABLE_SUB_COMMANDS` in `scripts/lib/utils.js`
 5. Add it to the `pin` verb's valid-command list (`crates/context`) and record the pin/unpin oracle case
 6. Add its metadata (description + argumentHint) to `skill/scripts/command-metadata.json`
 7. Add its category to `SKILL_CATEGORIES` in `scripts/lib/skill-categories.js`
-8. Add its relationships to `COMMAND_RELATIONSHIPS` in impeccable-site's `sub-pages-data.js`
-9. In the private impeccable-site repo: add the category to `site/scripts/data.js`, the symbol/number to `framework-viz.js`, and optionally an editorial wrapper under `site/content/skills/`
+8. Add its relationships to `COMMAND_RELATIONSHIPS` in procable-site's `sub-pages-data.js`
+9. In the private procable-site repo: add the category to `site/scripts/data.js`, the symbol/number to `framework-viz.js`, and optionally an editorial wrapper under `site/content/skills/`
 
 The build system counts commands from the router table automatically. Update the command count in **all** of these locations when the total changes:
 
-- impeccable-site: `site/pages/index.astro` meta descriptions and hero box
+- procable-site: `site/pages/index.astro` meta descriptions and hero box
 - `README.md` — intro, command count, commands table
 - `AGENTS.md` — intro command count
 - `.claude-plugin/plugin.json` — description
@@ -355,13 +355,13 @@ The rule logic lives in `crates/core`: every check, the browser rule adapters ov
 
 | Where | What it is |
 |---|---|
-| `docs/CLI-CONTRACT.md` | Hand-edited: the observable contract of `impeccable detect` and every other verb |
+| `docs/CLI-CONTRACT.md` | Hand-edited: the observable contract of `procable detect` and every other verb |
 | `crates/foundation` | What checks are written against: the rule registry (`registry.rs`, also published as `antipatterns.json`), findings, color, the `Dom` trait, `SnapshotDom`, and the plain-data input and output types |
 | `crates/core` | The checks themselves, plus the re-exports that let consumers name one crate |
-| `crates/html`, `crates/browser`, `crates/detect` | The engines: parsing, cascade, CDP, snapshots, file walking, output. They call the checks through `impeccable_core::checks::*` and `impeccable_core::browser::*` |
+| `crates/html`, `crates/browser`, `crates/detect` | The engines: parsing, cascade, CDP, snapshots, file walking, output. They call the checks through `procable_core::checks::*` and `procable_core::browser::*` |
 | `tests/fixtures/antipatterns/{rule-id}.html` | Hand-edited fixture (two columns, should-flag / should-pass, unique headings, explicit pixel dimensions) |
 | `tests/oracle/golden/*` | Recorded from the binary with `node tests/oracle/record.mjs --bin detect-`, reviewed by hand |
-| `tests/oracle/vectors/calls/` | Frozen function-level vectors; replayed by `crates/core/tests/vectors.rs` through `impeccable_core::vectors::call` |
+| `tests/oracle/vectors/calls/` | Frozen function-level vectors; replayed by `crates/core/tests/vectors.rs` through `procable_core::vectors::call` |
 | `crates/live/assets/detect-antipatterns-browser.js` | The in-page bundle, a tracked generated file. `cargo xtask bundle` rewrites it; the binary embeds it and serves it as `/detect.js` |
 | `crates/live/assets/antipatterns.json` | The registry as `[{ id, name, category, description }]`, the second tracked generated file. Same writer and the same `cargo xtask bundle --check` staleness gate. It exists because `extension/detector/` is gitignored: this is how a consumer without a Rust toolchain (impeccable.style, working from a tarball of this repo) reads the rule list. Adding or renaming a rule means committing this file too |
 | `extension/detector/` | The five generated pieces (`core.js`, `core_bg.wasm`, `snapshot.js`, `overlay.js`, `antipatterns.json`) written by `cargo xtask bundle`, which `bun run build:extension` runs. Gitignored, never tracked |
@@ -372,27 +372,27 @@ Order for a new rule: fixture here first, registry row in `crates/foundation/src
 **Hook cost is part of a rule.** The edit hook is a new process on every Edit or Write in millions of agent sessions, and it runs the whole text engine (or, for `.html`, the whole static HTML engine) cold: `IMMEDIATE_TIER_RULES` only filters which findings are shown per edit, it does not skip rules. So every text or static-HTML rule is paid on every edit, regex compilation and lazy tables included, and a millisecond matters. Before landing a new or changed check in those engines, measure it on main and on the branch and put both numbers in the PR:
 
 ```bash
-cargo run --release -p impeccable-html --example rule_cost -- --runs 9 tests/fixtures/antipatterns <real project source>
+cargo run --release -p procable-html --example rule_cost -- --runs 9 tests/fixtures/antipatterns <real project source>
 ```
 
 It writes `rule-cost.json`: per edit, cold, per engine, the shared parse and cascade work, and every profiled unit with the rules it emitted (mean, p50, p95 ms). A rule inside a shared pass (`color-rules`, `html-patterns`, ...) moves that pass's number. Prefer the detection that touches less: one regex over many, a tag- or property-gated check over a per-element walk, work that rides an existing pass over a new one. A check that needs layout or pixels belongs in the browser engine, not the hook. The Detector Lab's Rules page charts these numbers per rule.
 
 ### Rule packs (downstream crates adding rules)
 
-A crate that depends on this workspace can add rules without forking it: implement `impeccable_core::rule_pack::RulePack` (text plus the two browser DOM hooks) and, for the static engine, `impeccable_html::StaticRulePack`, call `impeccable_core::rule_pack::install(&PACK)` at startup, and hand the pack to the engine through `TextOptions` / `ScanOptions`, `DetectHtmlOptions`, `StaticHtmlEngine`, or `BrowserConfig`. Every hook runs after the built-ins and before inline ignores, so built-in output with no pack installed is byte-identical, which the oracle enforces. The registry keeps `ANTIPATTERNS` as the built-in list and `registry::extend` appends a pack's rows, panicking on an id collision. `crates/wasm --features detect` exposes the two file engines as JSON exports (`detect_text_json`, `detect_html_source_json`) for hosts that cannot exec the binary; Pristine consumes that path. Full contract in `docs/ENGINE.md` ("Rule packs"). The shipped `impeccable` binary installs no pack, and nothing in this repo should start doing so.
+A crate that depends on this workspace can add rules without forking it: implement `procable_core::rule_pack::RulePack` (text plus the two browser DOM hooks) and, for the static engine, `procable_html::StaticRulePack`, call `procable_core::rule_pack::install(&PACK)` at startup, and hand the pack to the engine through `TextOptions` / `ScanOptions`, `DetectHtmlOptions`, `StaticHtmlEngine`, or `BrowserConfig`. Every hook runs after the built-ins and before inline ignores, so built-in output with no pack installed is byte-identical, which the oracle enforces. The registry keeps `ANTIPATTERNS` as the built-in list and `registry::extend` appends a pack's rows, panicking on an id collision. `crates/wasm --features detect` exposes the two file engines as JSON exports (`detect_text_json`, `detect_html_source_json`) for hosts that cannot exec the binary; Pristine consumes that path. Full contract in `docs/ENGINE.md` ("Rule packs"). The shipped `procable` binary installs no pack, and nothing in this repo should start doing so.
 
 ## Evals Framework (separate private repo)
 
-The eval framework lives in a separate private repo at `~/code/impeccable-evals/`. It measures whether the `/impeccable` skill improves or harms AI-generated frontend design by running the same brief through a model with and without the skill loaded.
+The eval framework lives in a separate private repo at `~/code/procable-evals/`. It measures whether the `/procable` skill improves or harms AI-generated frontend design by running the same brief through a model with and without the skill loaded.
 
 **If you're picking up eval work, switch to that repo and read its `AGENT.md` first.** It captures model choices, sample size policy, lessons learned, common workflows, and gotchas.
 
 ```bash
-cd ~/code/impeccable-evals
+cd ~/code/procable-evals
 bun run serve            # dashboard on http://localhost:8723
 ```
 
-The eval runners read this repo's skill from `../impeccable/skill/` and staged provider skills from `../impeccable/build/_data/dist/*`. Run `bun run build` in this repo before an eval sweep if you want the Claude/Gemini staged skills to reflect your latest edits.
+The eval runners read this repo's skill from `../procable/skill/` and staged provider skills from `../procable/build/_data/dist/*`. Run `bun run build` in this repo before an eval sweep if you want the Claude/Gemini staged skills to reflect your latest edits.
 
 ### After structural skill changes, update `inline-skill.ts` in the evals repo
 

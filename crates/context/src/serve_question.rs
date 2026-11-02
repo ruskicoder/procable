@@ -1,4 +1,4 @@
-//! JS: serve-question.mjs -> `impeccable serve-question`
+//! JS: serve-question.mjs -> `procable serve-question`
 //!
 //! Modes: --schema, --wait, --stop, --update, --start (spawns this binary
 //! detached with --detached-serve), and the blocking/detached server itself.
@@ -6,9 +6,9 @@
 use crate::jsp;
 use crate::question_page::PAGE;
 use crate::util::{exists, is_dir, iso_now, json_compact, json_pretty, mtime_ms, now_ms, safe_read, utf16_len, Env};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
-use impeccable_common::http::{Response, SerialServer};
+use procable_common::http::{Response, SerialServer};
 use std::sync::{Arc, Mutex};
 
 /// Ceiling on a POST body (`/answer`, `/build-path`, `/heartbeat`). The page
@@ -67,7 +67,7 @@ fn render_check_file(qdir: &str, key: &str) -> String {
 
 /// `process.kill(pid, 0)`: Ok(()) alive, Err(true) EPERM (alive but unsignalable), Err(false) dead.
 fn pid_probe(pid: i64) -> Result<(), bool> {
-    match impeccable_common::proc::kill0(pid) {
+    match procable_common::proc::kill0(pid) {
         Ok(()) => Ok(()),
         Err("EPERM") => Err(true),
         Err(_) => Err(false),
@@ -76,7 +76,7 @@ fn pid_probe(pid: i64) -> Result<(), bool> {
 
 /// `process.kill(pid)` (SIGTERM; TerminateProcess on Windows), errors ignored.
 fn kill_pid(pid: i64) {
-    impeccable_common::proc::terminate(pid);
+    procable_common::proc::terminate(pid);
 }
 
 fn read_state(qdir: &str, key: &str) -> Option<Map<String, Value>> {
@@ -102,11 +102,11 @@ fn num_field(m: &Map<String, Value>, key: &str) -> Option<f64> {
     m.get(key).and_then(|v| v.as_f64())
 }
 
-/// `~/.impeccable/questions/<key>.root.json`, `{"root": <cwd of --start>}`:
+/// `~/.procable/questions/<key>.root.json`, `{"root": <cwd of --start>}`:
 /// how `--wait`, `--update` and `--stop` find a round from any cwd, since
 /// agent shells reset their cwd between calls.
 fn key_root_file(env: &Env, key: &str) -> String {
-    jsp::join(&[&crate::util::homedir(env), ".impeccable", "questions", &format!("{}.root.json", key)])
+    jsp::join(&[&crate::util::homedir(env), ".procable", "questions", &format!("{}.root.json", key)])
 }
 
 fn record_key_root(env: &Env, key: &str, root: &str) -> std::io::Result<()> {
@@ -134,7 +134,7 @@ fn forget_key_root(env: &Env, key: &str, root: &str) {
 /// The directory a keyed verb works in: its own cwd when the key's state is
 /// there, else the root `--start` recorded for the key when the state is there.
 fn key_root(env: &Env, cwd: &str, key: &str) -> String {
-    let has_state = |root: &str| exists(&state_file(&jsp::join(&[root, ".impeccable", "questions"]), key));
+    let has_state = |root: &str| exists(&state_file(&jsp::join(&[root, ".procable", "questions"]), key));
     if has_state(cwd) {
         return cwd.to_string();
     }
@@ -163,27 +163,27 @@ fn is_alive(qdir: &str, key: &str) -> bool {
     }
 }
 
-/// A comp-round comp sits directly in `.impeccable/mocks/` (build-phase's
+/// A comp-round comp sits directly in `.procable/mocks/` (build-phase's
 /// comps gate lists that directory); decision comps live one level down in
-/// `.impeccable/mocks/decision/`. Anything else keeps the decision wording.
+/// `.procable/mocks/decision/`. Anything else keeps the decision wording.
 fn is_comp_round_comp(path: &str) -> bool {
     let p = path.replace('\\', "/");
     let dir = p.rsplit_once('/').map(|(d, _)| d).unwrap_or("");
     let dir = dir.strip_prefix("./").unwrap_or(dir);
-    dir == ".impeccable/mocks" || dir.ends_with("/.impeccable/mocks")
+    dir == ".procable/mocks" || dir.ends_with("/.procable/mocks")
 }
 
 /// The comp round's option one: the decision comp `build-phase start
 /// --decision-comp` recorded, while that build's comps phase is open, served
 /// on a page that is the comp round (it also serves a comp directly in
-/// `.impeccable/mocks/`). A pick of it there is the approval, not a new
+/// `.procable/mocks/`). A pick of it there is the approval, not a new
 /// option one; on any other page the same path is an ordinary decision slot.
 fn is_comp_rounds_option_one(cwd: &str, path: &str, served: &[String]) -> bool {
     served.iter().any(|c| is_comp_round_comp(c)) && is_open_rounds_decision_comp(cwd, path)
 }
 
 fn is_open_rounds_decision_comp(cwd: &str, path: &str) -> bool {
-    let Some(state) = safe_read(&jsp::resolve(cwd, &[".impeccable/build/state.json"])).and_then(|raw| serde_json::from_str::<Value>(&raw).ok()) else { return false };
+    let Some(state) = safe_read(&jsp::resolve(cwd, &[".procable/build/state.json"])).and_then(|raw| serde_json::from_str::<Value>(&raw).ok()) else { return false };
     let Some(chosen) = state.get("decisionComp").and_then(Value::as_str) else { return false };
     state.get("phase").and_then(Value::as_str) == Some("comps") && same_path(&jsp::resolve(cwd, &[chosen]), &jsp::resolve(cwd, &[path]))
 }
@@ -218,7 +218,7 @@ fn print_answer(io: &mut Io, cwd: &str, raw: &str, served: &[String]) {
     let bp = a.get("buildPath").and_then(|v| v.as_str());
     if bp == Some("comp") || bp == Some("code") {
         let origin = if truthy("buildPathFlipped") {
-            "flipped on the page, so it binds this session only, and the page never writes it back; the sole exception is new-work’s one-time offer, on a project that had no recorded default at all, which asks after the round closes and writes the answer to .impeccable/config.json"
+            "flipped on the page, so it binds this session only, and the page never writes it back; the sole exception is new-work’s one-time offer, on a project that had no recorded default at all, which asks after the round closes and writes the answer to .procable/config.json"
         } else {
             "the round’s recorded default"
         };
@@ -382,7 +382,7 @@ fn missing_comps_message(round: CompRound, missing: &[String], rerun: &str, outc
         ),
     };
     format!(
-        "serve-question: {}; {}. Missing a \"comp\": {}. Give each of those cards \"comp\": \".impeccable/mocks/decision/<card id>.png\"{}, then {}; the comps are generated after the page serves, as its NEXT line says.\n",
+        "serve-question: {}; {}. Missing a \"comp\": {}. Give each of those cards \"comp\": \".procable/mocks/decision/<card id>.png\"{}, then {}; the comps are generated after the page serves, as its NEXT line says.\n",
         owed,
         outcome,
         missing.join(", "),
@@ -436,7 +436,7 @@ fn card_identity_problems(roll: Option<&str>, payload: &Value) -> (Vec<String>, 
 fn card_identity_message(problems: &[String], dealt: &[String], rerun: &str, outcome: &str) -> String {
     let dealt_note = if dealt.is_empty() { String::new() } else { format!(" (dealt this roll: {})", dealt.join(", ")) };
     format!(
-        "serve-question: every card on a direction or surface page declares its identity, and these do not: {}. Set \"kind\" on every option: \"assigned\" on the assigned direction (a surface round's dealt lead), \"pick\" on the IMPECCABLE’S PICK card, \"challenger\" on each dealt challenger, \"grounded\" on any other direction of your own (a safer round's lineup), or \"dealt\" on a surface round's other dealt structures; and on every challenger set \"catalogId\" to the SOURCE ID concept-seed printed for it{}, never the card's own id. Fix the payload and {}; {}.\n",
+        "serve-question: every card on a direction or surface page declares its identity, and these do not: {}. Set \"kind\" on every option: \"assigned\" on the assigned direction (a surface round's dealt lead), \"pick\" on the PROCABLE’S PICK card, \"challenger\" on each dealt challenger, \"grounded\" on any other direction of your own (a safer round's lineup), or \"dealt\" on a surface round's other dealt structures; and on every challenger set \"catalogId\" to the SOURCE ID concept-seed printed for it{}, never the card's own id. Fix the payload and {}; {}.\n",
         problems.join("; "),
         dealt_note,
         rerun,
@@ -444,14 +444,14 @@ fn card_identity_message(problems: &[String], dealt: &[String], rerun: &str, out
     )
 }
 
-/// Everything under `.impeccable/questions/` is local runtime state: roll
+/// Everything under `.procable/questions/` is local runtime state: roll
 /// records, hands, answers, server state, the seed ledger. A roll record
 /// holds the seed key and dealt hand the roll API saw, so a committed one
 /// ties telemetry to a repository. Every write here keeps a self-ignoring
-/// `.impeccable/questions/.gitignore` (`*`) in place, which also covers
+/// `.procable/questions/.gitignore` (`*`) in place, which also covers
 /// projects that predate it.
 pub fn ignore_questions_dir(qdir: &str) {
-    impeccable_common::git::ensure_dir_ignored(qdir, &["*"]);
+    procable_common::git::ensure_dir_ignored(qdir, &["*"]);
 }
 
 
@@ -459,7 +459,7 @@ pub fn ignore_questions_dir(qdir: &str) {
 /// presented within minutes; an older record belongs to work long gone.
 const ROLL_WINDOW_MS: f64 = 60.0 * 60.0 * 1000.0;
 
-/// `.impeccable/questions/roll.json`: concept-seed's latest roll in this
+/// `.procable/questions/roll.json`: concept-seed's latest roll in this
 /// project, `{"scope", "seed", "reroll"}` (`seed` is the roll's seed
 /// reference, never its key) plus `"worlds"`, the catalog worlds it printed
 /// as challengers, when it printed any. The file holds no time: its age is
@@ -494,7 +494,7 @@ pub fn git_tracked(cwd: &str, paths: &[&str]) -> Vec<String> {
 
 /// The runtime paths whose tracked files hold a seed key, a dealt hand, or
 /// a choice: a `.gitignore` covers new files only.
-const RUNTIME_PATHS: [&str; 3] = [".impeccable/questions", ".impeccable/mocks/worlds", ".impeccable/build/state.json"];
+const RUNTIME_PATHS: [&str; 3] = [".procable/questions", ".procable/mocks/worlds", ".procable/build/state.json"];
 
 /// A one-time notice when git already tracks runtime files: printed once
 /// per distinct tracked set (a marker in the ignored questions directory
@@ -506,7 +506,7 @@ pub fn tracked_runtime_notice(cwd: &str) -> Option<String> {
     }
     use sha2::{Digest, Sha256};
     let digest: String = Sha256::digest(tracked.join("\n").as_bytes()).iter().take(8).map(|b| format!("{:02x}", b)).collect();
-    let qdir = jsp::join(&[cwd, ".impeccable", "questions"]);
+    let qdir = jsp::join(&[cwd, ".procable", "questions"]);
     let marker = jsp::join(&[&qdir, ".tracked-notice"]);
     if safe_read(&marker).is_some_and(|m| m.trim() == digest) {
         return None;
@@ -517,7 +517,7 @@ pub fn tracked_runtime_notice(cwd: &str) -> Option<String> {
     let roots: Vec<&str> = RUNTIME_PATHS.iter().copied().filter(|r| tracked.iter().any(|t| t == r || t.starts_with(&format!("{}/", r)))).collect();
     let shown: Vec<&str> = tracked.iter().take(5).map(String::as_str).collect();
     Some(format!(
-        "TRACKED RUNTIME FILES: git already tracks {} file(s) under .impeccable/ that hold local runtime state (seed keys, dealt hands, choices): {}{}. A .gitignore does not untrack files already committed, so the next commit can still publish them. Tell the user once, and suggest they run `git rm -r --cached {}` and commit; it keeps the files on disk. Until then the engine writes the roll record to .impeccable/questions/roll.local.json instead.\n",
+        "TRACKED RUNTIME FILES: git already tracks {} file(s) under .procable/ that hold local runtime state (seed keys, dealt hands, choices): {}{}. A .gitignore does not untrack files already committed, so the next commit can still publish them. Tell the user once, and suggest they run `git rm -r --cached {}` and commit; it keeps the files on disk. Until then the engine writes the roll record to .procable/questions/roll.local.json instead.\n",
         tracked.len(),
         shown.join(", "),
         if tracked.len() > shown.len() { ", ..." } else { "" },
@@ -542,7 +542,7 @@ pub struct ApiRoll<'a> {
 /// choice ping itself. The questions directory ignores itself before the
 /// record is written.
 pub fn record_roll(cwd: &str, scope: &str, reference: Option<&str>, reroll: usize, worlds: &[Value], api: Option<&ApiRoll>) {
-    let qdir = jsp::join(&[cwd, ".impeccable", "questions"]);
+    let qdir = jsp::join(&[cwd, ".procable", "questions"]);
     // No reference (no salt on this machine): the record names no seed, and
     // the page sends no ping, since it could not name the key.
     let mut record = json!({ "scope": scope, "reroll": reroll });
@@ -571,7 +571,7 @@ pub fn record_roll(cwd: &str, scope: &str, reference: Option<&str>, reroll: usiz
         return;
     }
     ignore_questions_dir(&qdir);
-    let tracked = !git_tracked(cwd, &[".impeccable/questions/roll.json"]).is_empty();
+    let tracked = !git_tracked(cwd, &[".procable/questions/roll.json"]).is_empty();
     let (target, other) = if tracked { (roll_local_file(&qdir), None) } else { (roll_file(&qdir), Some(roll_local_file(&qdir))) };
     if write_atomic(&target, &json_compact(&record)).is_ok() {
         if let Some(o) = other {
@@ -638,7 +638,7 @@ fn world_card(w: &Value) -> Option<Value> {
 
 /// Where a dealt world's card images are kept in the workspace, relative to
 /// the project: reference images a harness image tool can take as files.
-const WORLD_CARDS_DIR: &str = ".impeccable/mocks/worlds";
+const WORLD_CARDS_DIR: &str = ".procable/mocks/worlds";
 
 /// One card download may take this long, so a slow or blocked network never
 /// holds `--start` for more than a few seconds (they run in parallel).
@@ -657,7 +657,7 @@ fn kept_world_card(cwd: &str, id: &str, kind: &str) -> Option<String> {
 /// the roll record, a project file an API response fed, and `--start` fetches
 /// them unasked, so a crafted record must not turn it into a probe of
 /// loopback, link-local, or private services: a URL is fetched only when it
-/// sits under the configured card base (`IMPECCABLE_CARD_BASE`, else
+/// sits under the configured card base (`PROCABLE_CARD_BASE`, else
 /// impeccable.style's), or is `https` to a named public-looking host (no IP
 /// address in any spelling, no userinfo, no single-label, `localhost`,
 /// `.local` or `.internal` name). Card fetches follow no redirect either. A URL that
@@ -689,7 +689,7 @@ fn card_fetch_allowed(env: &Env, url: &str) -> bool {
 /// under `WORLD_CARD_TIMEOUT`, and are best effort: a failure only leaves
 /// that image named by URL. A fetched file takes its extension from the
 /// image's own type, so a later `--ref` of the path sends the right one.
-/// `IMPECCABLE_IMAGE_GEN_FAKE` makes no request.
+/// `PROCABLE_IMAGE_GEN_FAKE` makes no request.
 fn fetch_world_cards(env: &Env, cwd: &str, worlds: &[Value]) -> Vec<(String, String, String)> {
     let s = |w: &Value, k: &str| w.get(k).and_then(Value::as_str).unwrap_or_default().to_string();
     // procable runs offline: card images are never downloaded; kept files are
@@ -716,7 +716,7 @@ fn fetch_world_cards(env: &Env, cwd: &str, worlds: &[Value]) -> Vec<(String, Str
         let temp = format!("{}.tmp-{}", abs, std::process::id());
         // The kept cards name the dealt hand in their file names: runtime
         // reference copies, so the directory ignores itself like questions/.
-        impeccable_common::git::ensure_dir_ignored(&jsp::resolve(cwd, &[WORLD_CARDS_DIR]), &["*"]);
+        procable_common::git::ensure_dir_ignored(&jsp::resolve(cwd, &[WORLD_CARDS_DIR]), &["*"]);
         let written = std::fs::create_dir_all(jsp::resolve(cwd, &[WORLD_CARDS_DIR])).and_then(|_| std::fs::write(&temp, &bytes)).and_then(|_| std::fs::rename(&temp, &abs));
         if written.is_err() {
             let _ = std::fs::remove_file(&temp);
@@ -823,7 +823,7 @@ fn file_fingerprint(abs: &str) -> Option<String> {
     Some(Sha256::digest(&bytes).iter().map(|b| format!("{:02x}", b)).collect())
 }
 
-/// `<key>.generated/`: one marker per slot `impeccable generate-image` wrote
+/// `<key>.generated/`: one marker per slot `procable generate-image` wrote
 /// during the hand, `<sha16 of slot>-<hand tag>.json` = `{"slot", "hand"}`.
 /// A marker file per slot rather than a list inside the hand file, because
 /// parallel generators (one subagent per card) would race a shared
@@ -919,13 +919,13 @@ fn same_path(a: &str, b: &str) -> bool {
     norm(a) == norm(b)
 }
 
-/// Called by `impeccable generate-image` after it writes `out`: when `out` is
+/// Called by `procable generate-image` after it writes `out`: when `out` is
 /// a declared slot of a recorded hand in this project, mark it generated
 /// during that hand. A deterministic generator returns the same bytes for
 /// the same prompt, which the fingerprint rule alone would read as stale.
 /// Returns the keys whose hand was marked, or the first write error.
 pub fn record_generated(cwd: &str, out: &str) -> Result<Vec<String>, String> {
-    let qdir = jsp::join(&[cwd, ".impeccable", "questions"]);
+    let qdir = jsp::join(&[cwd, ".procable", "questions"]);
     let out_abs = jsp::resolve(cwd, &[out]);
     let Ok(entries) = std::fs::read_dir(&qdir) else { return Ok(vec![]) };
     let mut keys: Vec<String> = entries
@@ -1057,7 +1057,7 @@ fn round_comps(hand: Option<&Map<String, Value>>, state: Option<&Map<String, Val
 
 /// A declared comp is this hand's when its file exists and differs from the
 /// file that sat at the slot when the hand began (or none sat there). The comp
-/// round generates its comps directly in `.impeccable/mocks/` before it serves
+/// round generates its comps directly in `.procable/mocks/` before it serves
 /// them, so those always count, as does its option one, the decision comp an
 /// open build recorded; with no hand recorded, existence decides.
 fn comp_is_this_hands(cwd: &str, comp: &str, hand: Option<&Map<String, Value>>) -> bool {
@@ -1237,20 +1237,20 @@ fn schema_json() -> Value {
       "title": "Choose the visual world",
       "question": "The roll assigned Fillmore Handbill. Keep it, take an alternate, or re-roll.",
       "options": [
-        { "id": "assigned", "kind": "assigned", "label": "Fillmore Handbill", "kicker": "THE ROLL", "lineage": "1966-71 Fillmore psychedelic handbills", "thesis": "The gig poster that treats every release like a one-night stand.", "palette": ["#e8452c", "#f5d64c", "#1b2a52", "#f3ead8"], "materials": ["letterpress", "split-fountain ink"], "viewport": "A full-bleed dated bill with the product name in warped display type.", "risk": "Reads nostalgic when the type is set timidly.", "raised": [{ "from": "challenger-microfiche", "raise": "The bill now owns its whole viewport as one continuous printed sheet." }], "comp": ".impeccable/mocks/decision/assigned.webp", "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-fillmore-handbill-hero.webp", "board": "https://impeccable.style/worlds/cards/posters-covers-sleeves-fillmore-handbill.webp" },
-        { "id": "model-pick", "kind": "pick", "label": "The Broadside Ballad", "kicker": "IMPECCABLE’S PICK", "lineage": "street-sold ballad sheets", "thesis": "Every release printed as the day’s ballad sheet.", "palette": ["#1f1c18", "#efe5d0", "#a33327"], "materials": ["woodcut", "rag paper"], "viewport": "One tall sheet, the newest release as today’s ballad.", "risk": "Also the direction most runs in this category land on.", "comp": ".impeccable/mocks/decision/model-pick.webp" },
-        { "id": "challenger-teletext", "kind": "challenger", "catalogId": "broadcast-programming-teletext-service", "label": "Teletext Service", "verdict": "competitive", "lineage": "broadcast teletext magazines", "thesis": "The catalog as a broadcast index: pages, not sections.", "palette": ["#0000c0", "#ffff00", "#00c000", "#ffffff"], "materials": ["block mosaic", "phosphor glow"], "viewport": "P100 index page, releases as numbered rows.", "case": "Fuses cleanly: releases map to numbered pages; loses narrowly on clarity.", "risk": "Reads retro-novelty when the grid is not strict.", "comp": ".impeccable/mocks/decision/challenger-teletext.webp", "hero": "https://impeccable.style/worlds/cards/broadcast-programming-teletext-service-hero.webp" },
+        { "id": "assigned", "kind": "assigned", "label": "Fillmore Handbill", "kicker": "THE ROLL", "lineage": "1966-71 Fillmore psychedelic handbills", "thesis": "The gig poster that treats every release like a one-night stand.", "palette": ["#e8452c", "#f5d64c", "#1b2a52", "#f3ead8"], "materials": ["letterpress", "split-fountain ink"], "viewport": "A full-bleed dated bill with the product name in warped display type.", "risk": "Reads nostalgic when the type is set timidly.", "raised": [{ "from": "challenger-microfiche", "raise": "The bill now owns its whole viewport as one continuous printed sheet." }], "comp": ".procable/mocks/decision/assigned.webp", "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-fillmore-handbill-hero.webp", "board": "https://impeccable.style/worlds/cards/posters-covers-sleeves-fillmore-handbill.webp" },
+        { "id": "model-pick", "kind": "pick", "label": "The Broadside Ballad", "kicker": "PROCABLE’S PICK", "lineage": "street-sold ballad sheets", "thesis": "Every release printed as the day’s ballad sheet.", "palette": ["#1f1c18", "#efe5d0", "#a33327"], "materials": ["woodcut", "rag paper"], "viewport": "One tall sheet, the newest release as today’s ballad.", "risk": "Also the direction most runs in this category land on.", "comp": ".procable/mocks/decision/model-pick.webp" },
+        { "id": "challenger-teletext", "kind": "challenger", "catalogId": "broadcast-programming-teletext-service", "label": "Teletext Service", "verdict": "competitive", "lineage": "broadcast teletext magazines", "thesis": "The catalog as a broadcast index: pages, not sections.", "palette": ["#0000c0", "#ffff00", "#00c000", "#ffffff"], "materials": ["block mosaic", "phosphor glow"], "viewport": "P100 index page, releases as numbered rows.", "case": "Fuses cleanly: releases map to numbered pages; loses narrowly on clarity.", "risk": "Reads retro-novelty when the grid is not strict.", "comp": ".procable/mocks/decision/challenger-teletext.webp", "hero": "https://impeccable.style/worlds/cards/broadcast-programming-teletext-service-hero.webp" },
         { "id": "challenger-microfiche", "kind": "challenger", "catalogId": "archives-microfiche-reader", "label": "Microfiche Reader", "verdict": "declined", "lineage": "library microfiche stations", "palette": ["#101418", "#9fb4c0"], "materials": ["film grain", "backlit glass"], "case": "Fuses poorly: listeners do not identify with archival retrieval.", "kept": "Total environmental commitment.", "hero": "https://impeccable.style/worlds/cards/archives-microfiche-reader-hero.webp" }
       ],
       "reroll": { "registers": ["safer", "bolder"] },
       "buildPath": { "value": "comp", "toggle": true },
       "canon": true,
-      "canonCard": { "kind": "canon", "label": "The category standard", "thesis": "What this category ships, executed impeccably.", "palette": ["#ffffff", "#111827", "#2563eb"], "materials": ["clean grid", "product photography"], "viewport": "The arrangement a visitor expects, at full craft.", "risk": "Indistinguishable from the competition by design.", "comp": ".impeccable/mocks/decision/canon.webp" },
+      "canonCard": { "kind": "canon", "label": "The category standard", "thesis": "What this category ships, executed impeccably.", "palette": ["#ffffff", "#111827", "#2563eb"], "materials": ["clean grid", "product photography"], "viewport": "The arrangement a visitor expects, at full craft.", "risk": "Indistinguishable from the competition by design.", "comp": ".procable/mocks/decision/canon.webp" },
       "steer": true
     })
 }
 
-const SCHEMA_NOTE: &str = "\nOption ids return verbatim in ANSWER; \"reroll\" and \"canon\" are reserved. On a direction or surface round (a payload carrying buildPath) every option declares kind, and --start and --update refuse the payload until it does: \"assigned\" on the assigned direction or a surface round\u{2019}s dealt lead, \"pick\" on the IMPECCABLE\u{2019}S PICK card, \"challenger\" on each dealt challenger, \"grounded\" on any other direction of your own (a safer round\u{2019}s lineup, any number), \"dealt\" on a surface round\u{2019}s other dealt structures; every challenger also carries catalogId, the SOURCE ID concept-seed printed for that world (never the card\u{2019}s own id), checked against the worlds the roll dealt; canonCard may carry kind \"canon\". The page sends the choice ping from these fields. hero/board/comp accept URLs or local paths; comp slots may point at files that do not exist yet (serve first, generate after; the page polls until they land, so never block serving on generation). hero on a challenger is the inspiration it draws from and renders picture-in-picture beside the comp, never as the promise of the build. verdict routes rendering: \"wins\" and \"competitive\" challengers keep full cards, \"declined\" ones render demoted after them (narrow, quiet, art as a labeled thumb, \"Adopt anyway\"), with their kept line on the front; the page reorders declined cards to the end on its own. raised on the assigned card renders each donation as a named raise line. Salience parity: when the assigned card declares no comp (no image generation this round), catalog art on every card demotes to a labeled thumb, so what looks important is the verdict’s call, never rendering luck. canonCard renders the standing exit as a subordinate card with the same anatomy; without it, canon stays a quiet footer action. Include canon only for visual-direction rounds; never present it as your own recommendation. The pick card is a kicker convention, not a field: kicker \"IMPECCABLE’S PICK\" on your top-ranked grounded candidate, one at most, never in the lead slot. Every card gets the full anatomy, challengers, canon, and declined included: thesis, palette, materials, viewport, risk; the seed already hands you each challenger’s system rules, so a card with no palette chips is an authoring gap, not a data gap. Keep thesis and each fact to one short sentence: the card front shows thesis, identity, and a two-line risk, while first viewport and the case read on the card back behind the Details chip, so long facts cost the reader a flip, not the page its scanability. A card with no imagery at all has no back; its full read renders on the front, so a text-only round loses nothing. A card may declare \"html\", a local path to one self-contained HTML file of the first viewport (1440 x 900 by default; \"htmlFrame\": \"390x844\" names a phone or native surface's first screen): the page draws it in the media slot as a skeleton (text under 22px becomes bars, so composition, palette and display type read and the copy does not) once the file lands, polling until it does, counts only a file written after the round was served, and opens the file as written from the expand chip; code-led and image-less rounds use it, a comp face wins over it, and ANSWER carries the picked card's html. A card with neither may declare \"wireframe\" ({\"cols\":12,\"rows\":10,\"regions\":[{\"label\":\"nav rail\",\"x\":0,\"y\":0,\"w\":3,\"h\":10,\"accent\":true}]}): the page draws it as a layout schematic in the media slot; surface-scope rounds use it on code-led builds, it never counts toward salience, and the card keeps its full read on the front. The comp slot carries the card’s full-fidelity direction comp (the legacy key \"sketch\" is accepted as an alias). Comp aspect follows the surface: portrait at device viewport for native or mobile-first surfaces, landscape otherwise; the page adapts its cards to either. reroll accepts true or { \"registers\": [\"safer\", \"bolder\"] }: the register buttons steer the next hand along the familiar-to-bold axis, the answer carries \"register\", and you re-run concept-seed with --register <value> for the next round; offer the registers on direction rounds, and never pre-select one. buildPath rides the payload as { \"value\": \"comp\"|\"code\", \"toggle\": true }: the value is the recorded default (.impeccable/config.json buildPath, or .impeccable/config.local.json where one machine differs) and the toggle renders a footer switch whose flip binds that session only; the ANSWER then carries buildPath plus buildPathFlipped. On a code-led round each card still declares its comp path as a flip reserve: wireframes render, and a flip to comp makes --wait return once with BUILD PATH FLIPPED so you generate the comps into the declared slots while the round stays open; a flip back to code is free, and a comp that already landed stays as the critique reference. The toggle may only be offered when image generation exists: a harness with no image tool and no API key never sets toggle: true, so the choice never renders where comps cannot be made, and code-led simply rides as the untoggleable value. followup: true keeps the table open after a pick for a second round via --update; send the next payload immediately, the page is waiting on it.";
+const SCHEMA_NOTE: &str = "\nOption ids return verbatim in ANSWER; \"reroll\" and \"canon\" are reserved. On a direction or surface round (a payload carrying buildPath) every option declares kind, and --start and --update refuse the payload until it does: \"assigned\" on the assigned direction or a surface round\u{2019}s dealt lead, \"pick\" on the PROCABLE\u{2019}S PICK card, \"challenger\" on each dealt challenger, \"grounded\" on any other direction of your own (a safer round\u{2019}s lineup, any number), \"dealt\" on a surface round\u{2019}s other dealt structures; every challenger also carries catalogId, the SOURCE ID concept-seed printed for that world (never the card\u{2019}s own id), checked against the worlds the roll dealt; canonCard may carry kind \"canon\". The page sends the choice ping from these fields. hero/board/comp accept URLs or local paths; comp slots may point at files that do not exist yet (serve first, generate after; the page polls until they land, so never block serving on generation). hero on a challenger is the inspiration it draws from and renders picture-in-picture beside the comp, never as the promise of the build. verdict routes rendering: \"wins\" and \"competitive\" challengers keep full cards, \"declined\" ones render demoted after them (narrow, quiet, art as a labeled thumb, \"Adopt anyway\"), with their kept line on the front; the page reorders declined cards to the end on its own. raised on the assigned card renders each donation as a named raise line. Salience parity: when the assigned card declares no comp (no image generation this round), catalog art on every card demotes to a labeled thumb, so what looks important is the verdict’s call, never rendering luck. canonCard renders the standing exit as a subordinate card with the same anatomy; without it, canon stays a quiet footer action. Include canon only for visual-direction rounds; never present it as your own recommendation. The pick card is a kicker convention, not a field: kicker \"PROCABLE’S PICK\" on your top-ranked grounded candidate, one at most, never in the lead slot. Every card gets the full anatomy, challengers, canon, and declined included: thesis, palette, materials, viewport, risk; the seed already hands you each challenger’s system rules, so a card with no palette chips is an authoring gap, not a data gap. Keep thesis and each fact to one short sentence: the card front shows thesis, identity, and a two-line risk, while first viewport and the case read on the card back behind the Details chip, so long facts cost the reader a flip, not the page its scanability. A card with no imagery at all has no back; its full read renders on the front, so a text-only round loses nothing. A card may declare \"html\", a local path to one self-contained HTML file of the first viewport (1440 x 900 by default; \"htmlFrame\": \"390x844\" names a phone or native surface's first screen): the page draws it in the media slot as a skeleton (text under 22px becomes bars, so composition, palette and display type read and the copy does not) once the file lands, polling until it does, counts only a file written after the round was served, and opens the file as written from the expand chip; code-led and image-less rounds use it, a comp face wins over it, and ANSWER carries the picked card's html. A card with neither may declare \"wireframe\" ({\"cols\":12,\"rows\":10,\"regions\":[{\"label\":\"nav rail\",\"x\":0,\"y\":0,\"w\":3,\"h\":10,\"accent\":true}]}): the page draws it as a layout schematic in the media slot; surface-scope rounds use it on code-led builds, it never counts toward salience, and the card keeps its full read on the front. The comp slot carries the card’s full-fidelity direction comp (the legacy key \"sketch\" is accepted as an alias). Comp aspect follows the surface: portrait at device viewport for native or mobile-first surfaces, landscape otherwise; the page adapts its cards to either. reroll accepts true or { \"registers\": [\"safer\", \"bolder\"] }: the register buttons steer the next hand along the familiar-to-bold axis, the answer carries \"register\", and you re-run concept-seed with --register <value> for the next round; offer the registers on direction rounds, and never pre-select one. buildPath rides the payload as { \"value\": \"comp\"|\"code\", \"toggle\": true }: the value is the recorded default (.procable/config.json buildPath, or .procable/config.local.json where one machine differs) and the toggle renders a footer switch whose flip binds that session only; the ANSWER then carries buildPath plus buildPathFlipped. On a code-led round each card still declares its comp path as a flip reserve: wireframes render, and a flip to comp makes --wait return once with BUILD PATH FLIPPED so you generate the comps into the declared slots while the round stays open; a flip back to code is free, and a comp that already landed stays as the critique reference. The toggle may only be offered when image generation exists: a harness with no image tool and no API key never sets toggle: true, so the choice never renders where comps cannot be made, and code-led simply rides as the untoggleable value. followup: true keeps the table open after a pick for a second round via --update; send the next payload immediately, the page is waiting on it.";
 
 /// JS: Number(arg('timeout','900')) etc.
 fn js_number_arg(a: &Args, name: &str, fallback: &str) -> f64 {
@@ -1277,17 +1277,17 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
     let a = Args { argv };
     let env = io.env.clone();
     let cwd = io.cwd.to_string_lossy().into_owned();
-    if env_set(&env, "IMPECCABLE_QUESTION_DISABLED") {
+    if env_set(&env, "PROCABLE_QUESTION_DISABLED") {
         io.out("serve-question: disabled in this session (no browser); use the structured question tool instead.\n");
         return 2;
     }
     let wants_browser = !a.has("no-open") && !a.has("wait") && !a.has("stop") && !a.has("schema") && !a.has("update");
-    if wants_browser && !env_set(&env, "IMPECCABLE_QUESTION_FORCE") {
+    if wants_browser && !env_set(&env, "PROCABLE_QUESTION_FORCE") {
         let headless = env_set(&env, "CI")
             || (env_set(&env, "SSH_CONNECTION") && !env_set(&env, "DISPLAY"))
             || (cfg!(target_os = "linux") && !env_set(&env, "DISPLAY") && !env_set(&env, "WAYLAND_DISPLAY"));
         if headless {
-            io.out("serve-question: no browser detected in this environment (CI/headless/remote); use the structured question tool instead. Set IMPECCABLE_QUESTION_FORCE=1 to serve anyway.\n");
+            io.out("serve-question: no browser detected in this environment (CI/headless/remote); use the structured question tool instead. Set PROCABLE_QUESTION_FORCE=1 to serve anyway.\n");
             return 2;
         }
     }
@@ -1302,7 +1302,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         Some(key) if a.has("wait") || a.has("update") || a.has("stop") => key_root(&env, &invoked_cwd, &key),
         _ => invoked_cwd.clone(),
     };
-    let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
+    let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
 
     if a.has("schema") {
         io.out(&format!("{}\n", json_pretty(&schema_json())));
@@ -1468,7 +1468,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         // untouched, so nothing is served without its provenance.
         let hand = new_hand_dealt(&cwd, &next_round, &dealt_worlds(roll.as_deref(), &next_round), seed_with_key(roll_seed(roll.as_deref(), &next_round), &env, &cwd));
         if let Err(e) = write_hand(&qdir, &key, &hand) {
-            io.err(&format!("serve-question: could not record the hand ({}); nothing was delivered. Make .impeccable/questions/ writable and rerun --update on the same key.\n", e));
+            io.err(&format!("serve-question: could not record the hand ({}); nothing was delivered. Make .procable/questions/ writable and rerun --update on the same key.\n", e));
             return 1;
         }
         take_roll(&qdir, roll.as_deref(), &next_round);
@@ -1510,7 +1510,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         let hand = match start_hand(&qdir, &key, &cwd, &start_payload, &dealt_worlds(roll.as_deref(), &start_payload), seed_with_key(roll_seed(roll.as_deref(), &start_payload), &env, &cwd)) {
             Ok(h) => h,
             Err(e) => {
-                io.err(&format!("serve-question: could not record the hand ({}); the page was not served. Make .impeccable/questions/ writable and rerun --start.\n", e));
+                io.err(&format!("serve-question: could not record the hand ({}); the page was not served. Make .procable/questions/ writable and rerun --start.\n", e));
                 return 1;
             }
         };
@@ -1521,7 +1521,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         let _ = std::fs::remove_file(state_file(&qdir, &key));
         let log_file = jsp::join(&[&qdir, &format!("{}.log", key)]);
         let log = std::fs::OpenOptions::new().append(true).create(true).open(&log_file);
-        let exe = std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| "impeccable".to_string());
+        let exe = std::env::current_exe().map(|p| p.to_string_lossy().into_owned()).unwrap_or_else(|_| "procable".to_string());
         let mut child_args: Vec<String> = vec![
             "serve-question".into(),
             "--payload".into(),
@@ -1555,7 +1555,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
                 }
             }
             // JS: spawn(..., { detached: true }) + child.unref()
-            impeccable_common::proc::detach(&mut cmd);
+            procable_common::proc::detach(&mut cmd);
             cmd.spawn()
         };
         let _ = spawned; // detached: never waited on
@@ -1627,7 +1627,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         if !comps.is_empty() {
             st["comps"] = json!(comps);
         }
-        let _ = impeccable_common::fsx::write_atomic(state_file(&qdir, &key), json_compact(&st).as_bytes());
+        let _ = procable_common::fsx::write_atomic(state_file(&qdir, &key), json_compact(&st).as_bytes());
     } else {
         io.out(&format!("QUESTION URL: {}\n", url));
         io.out("Waiting for the user to choose in the browser (Ctrl-C aborts)...\n");
@@ -1695,7 +1695,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
                             } else {
                                 s.insert("comps".into(), json!(comps));
                             }
-                            let _ = impeccable_common::fsx::write_atomic(state_file(&st.qdir, &k), json_compact(&Value::Object(s)).as_bytes());
+                            let _ = procable_common::fsx::write_atomic(state_file(&st.qdir, &k), json_compact(&Value::Object(s)).as_bytes());
                         }
                     }
                 }
@@ -1717,7 +1717,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
                     st.last_beat_write = Some(now);
                     if let Some(mut s) = read_state(&st.qdir, &k) {
                         s.insert("lastBeat".into(), Value::from(now as i64));
-                        let _ = impeccable_common::fsx::write_atomic(state_file(&st.qdir, &k), json_compact(&Value::Object(s)).as_bytes());
+                        let _ = procable_common::fsx::write_atomic(state_file(&st.qdir, &k), json_compact(&Value::Object(s)).as_bytes());
                     }
                 }
             }
@@ -2036,7 +2036,7 @@ pub fn open_system_browser(url: &str, env: &Env) -> bool {
     // built, so cmd metacharacters are not a concern there.
     let mut c = std::process::Command::new(cmd);
     c.args(args).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null());
-    impeccable_common::proc::detach(&mut c);
+    procable_common::proc::detach(&mut c);
     c.spawn().is_ok()
 }
 
@@ -2065,7 +2065,7 @@ struct ServerState {
 /// layout settle, text under 22px becomes a bar of its own width and colour,
 /// so the composition, palette, display type and headline numbers read and the
 /// copy does not invite proofreading. `?raw=1` serves the file as written.
-const SKETCH_SKELETON: &str = "<script>(()=>{const run=()=>{const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode()){const n=w.currentNode;if(n.textContent.trim()&&!n.parentElement.closest('script,style,svg,title'))ns.push(n);}for(const n of ns){const el=n.parentElement;const cs=getComputedStyle(el);const fs=parseFloat(cs.fontSize)||14;if(fs>=22)continue;const r=document.createRange();r.selectNodeContents(n);const rects=[...r.getClientRects()].filter(x=>x.width>0);if(!rects.length)continue;const f=document.createDocumentFragment();for(const x of rects){const s=document.createElement('span');s.style.cssText='display:inline-block;vertical-align:middle;width:'+Math.max(6,x.width*.92)+'px;height:'+Math.max(4,fs*.5)+'px;border-radius:99px;background:currentColor;opacity:.32;margin-right:'+(x.width*.08)+'px';f.appendChild(s);}n.replaceWith(f);}parent.postMessage({impeccableSketch:'ready'},'*');};const go=()=>Promise.race([document.fonts?document.fonts.ready:null,new Promise(r=>setTimeout(r,2500))].filter(Boolean)).then(run,run);if(document.readyState==='complete')go();else addEventListener('load',go,{once:true});})();</script>";
+const SKETCH_SKELETON: &str = "<script>(()=>{const run=()=>{const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const ns=[];while(w.nextNode()){const n=w.currentNode;if(n.textContent.trim()&&!n.parentElement.closest('script,style,svg,title'))ns.push(n);}for(const n of ns){const el=n.parentElement;const cs=getComputedStyle(el);const fs=parseFloat(cs.fontSize)||14;if(fs>=22)continue;const r=document.createRange();r.selectNodeContents(n);const rects=[...r.getClientRects()].filter(x=>x.width>0);if(!rects.length)continue;const f=document.createDocumentFragment();for(const x of rects){const s=document.createElement('span');s.style.cssText='display:inline-block;vertical-align:middle;width:'+Math.max(6,x.width*.92)+'px;height:'+Math.max(4,fs*.5)+'px;border-radius:99px;background:currentColor;opacity:.32;margin-right:'+(x.width*.08)+'px';f.appendChild(s);}n.replaceWith(f);}parent.postMessage({procableSketch:'ready'},'*');};const go=()=>Promise.race([document.fonts?document.fonts.ready:null,new Promise(r=>setTimeout(r,2500))].filter(Boolean)).then(run,run);if(document.readyState==='complete')go();else addEventListener('load',go,{once:true});})();</script>";
 
 /// A sketch's frame from its card's `htmlFrame` ("390x844" or [390, 844]):
 /// the device's first screen for a phone or native surface; 1440 x 900, a
@@ -2289,13 +2289,13 @@ impl ServerState {
                     .collect();
                 let raises_head = |count: usize| -> String {
                     format!(
-                        "<div class=\"raises-head\"><span class=\"fact-label\">Improved by Impeccable's worlds</span>{}</div>",
+                        "<div class=\"raises-head\"><span class=\"fact-label\">Improved by Procable's worlds</span>{}</div>",
                         if count > 1 { format!("<span class=\"raises-count\" data-raises-count>1/{}</span>", count) } else { String::new() }
                     )
                 };
                 if raise_lines.len() > 1 {
                     rows.push(format!(
-                        "<div class=\"raises raises-cycle\" role=\"button\" tabindex=\"0\" title=\"Click or press Enter for the next improvement\" aria-label=\"How Impeccable's worlds improved this direction; activate to see the next improvement\">\n              {}\n              {}\n              <span class=\"sr-live\" aria-live=\"polite\"></span>\n            </div>",
+                        "<div class=\"raises raises-cycle\" role=\"button\" tabindex=\"0\" title=\"Click or press Enter for the next improvement\" aria-label=\"How Procable's worlds improved this direction; activate to see the next improvement\">\n              {}\n              {}\n              <span class=\"sr-live\" aria-live=\"polite\"></span>\n            </div>",
                         raises_head(raise_lines.len()),
                         raise_lines.join("")
                     ));
@@ -2533,7 +2533,7 @@ impl ServerState {
         // JS: const KEY = ${JSON.stringify(detachedKey || '')};
         let key_json = serde_json::to_string(self.detached_key.as_deref().unwrap_or("")).unwrap_or_else(|_| "\"\"".into());
         let subs: [(&str, String); 15] = [
-            ("@@1@@", title_default("impeccable · decision")),
+            ("@@1@@", title_default("procable · decision")),
             ("@@2@@", expand_chip.to_string()),
             ("@@3@@", bp_confirm),
             ("@@4@@", title_default("Choose a direction")),
@@ -2570,7 +2570,7 @@ mod tests {
         assert!(!PAGE.contains("@font-face"));
         assert!(!PAGE.contains("/fonts/"));
         assert!(PAGE.contains("--ks-font: system-ui,"));
-        assert!(PAGE.contains("aria-label=\"Impeccable\""));
+        assert!(PAGE.contains("aria-label=\"Procable\""));
         assert!(PAGE.contains("color-scheme: light"));
     }
 
@@ -2602,10 +2602,10 @@ mod tests {
     }
 
     fn temp_project(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("impeccable-sq-{}-{}", name, std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-sq-{}-{}", name, std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join(".impeccable/questions")).unwrap();
-        std::fs::create_dir_all(dir.join(".impeccable/mocks/decision")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/questions")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/mocks/decision")).unwrap();
         dir
     }
 
@@ -2615,7 +2615,7 @@ mod tests {
     #[test]
     fn start_waits_for_a_state_file_that_records_the_url() {
         let dir = temp_project("state-not-ready");
-        let qdir = dir.join(".impeccable/questions").to_string_lossy().into_owned();
+        let qdir = dir.join(".procable/questions").to_string_lossy().into_owned();
         let state = state_file(&qdir, "k1");
         std::fs::write(&state, "").unwrap();
         assert_eq!(wait_for_daemon_url(&qdir, "k1", now_ms() + 250.0), None);
@@ -2625,7 +2625,7 @@ mod tests {
             let state = state.clone();
             std::thread::spawn(move || {
                 std::thread::sleep(std::time::Duration::from_millis(300));
-                impeccable_common::fsx::write_atomic(&state, json_compact(&json!({ "pid": 1, "url": "http://127.0.0.1:9/" })).as_bytes()).unwrap();
+                procable_common::fsx::write_atomic(&state, json_compact(&json!({ "pid": 1, "url": "http://127.0.0.1:9/" })).as_bytes()).unwrap();
             })
         };
         assert_eq!(wait_for_daemon_url(&qdir, "k1", now_ms() + 5000.0).as_deref(), Some("http://127.0.0.1:9/"));
@@ -2634,7 +2634,7 @@ mod tests {
     }
 
     fn run_captured(dir: &std::path::Path, args: &[&str]) -> (i32, String) {
-        let env = Env::from([("IMPECCABLE_SKILL_DIR".into(), "/skill".into())]);
+        let env = Env::from([("PROCABLE_SKILL_DIR".into(), "/skill".into())]);
         let (mut io, cap) = Io::captured("", dir.to_path_buf(), env);
         let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
         let code = run(&argv, &mut io);
@@ -2646,17 +2646,17 @@ mod tests {
     fn declared_comps_reads_options_sketch_alias_and_canon_in_card_order() {
         let payload = json!({
             "options": [
-                { "id": "a", "comp": ".impeccable/mocks/decision/a.png" },
-                { "id": "b", "sketch": ".impeccable/mocks/decision/b.png" },
+                { "id": "a", "comp": ".procable/mocks/decision/a.png" },
+                { "id": "b", "sketch": ".procable/mocks/decision/b.png" },
                 { "id": "c", "comp": "https://x/c.png" },
                 { "id": "d" },
-                { "id": "e", "comp": ".impeccable/mocks/decision/a.png" }
+                { "id": "e", "comp": ".procable/mocks/decision/a.png" }
             ],
-            "canonCard": { "label": "canon", "comp": ".impeccable/mocks/decision/canon.png" }
+            "canonCard": { "label": "canon", "comp": ".procable/mocks/decision/canon.png" }
         });
         assert_eq!(
             declared_comps(&payload),
-            vec![".impeccable/mocks/decision/a.png", ".impeccable/mocks/decision/b.png", ".impeccable/mocks/decision/canon.png"]
+            vec![".procable/mocks/decision/a.png", ".procable/mocks/decision/b.png", ".procable/mocks/decision/canon.png"]
         );
     }
 
@@ -2665,7 +2665,7 @@ mod tests {
     }
 
     fn write_state(dir: &std::path::Path, state: &Value) {
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
     }
 
     #[test]
@@ -2685,13 +2685,13 @@ mod tests {
         assert!(!comps_expected(&urls_only, &cwd, None));
         // The comp round generates before it serves: its comps are on disk when
         // the hand begins and are still its own.
-        write_file(&dir.join(".impeccable/mocks/comp-a.png"), b"a");
-        write_file(&dir.join(".impeccable/mocks/comp-b.png"), b"b");
-        let comp_round = json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/comp-a.png" }, { "id": "b", "comp": ".impeccable/mocks/comp-b.png" }] });
+        write_file(&dir.join(".procable/mocks/comp-a.png"), b"a");
+        write_file(&dir.join(".procable/mocks/comp-b.png"), b"b");
+        let comp_round = json!({ "options": [{ "id": "a", "comp": ".procable/mocks/comp-a.png" }, { "id": "b", "comp": ".procable/mocks/comp-b.png" }] });
         let hand = new_hand(&cwd, &comp_round);
         assert!(!comps_expected(&comp_round, &cwd, Some(&hand)));
         // One slot still empty is enough.
-        let partial = json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/comp-a.png" }, { "id": "c", "comp": ".impeccable/mocks/comp-c.png" }] });
+        let partial = json!({ "options": [{ "id": "a", "comp": ".procable/mocks/comp-a.png" }, { "id": "c", "comp": ".procable/mocks/comp-c.png" }] });
         let hand = new_hand(&cwd, &partial);
         assert!(comps_expected(&partial, &cwd, Some(&hand)));
         let _ = std::fs::remove_dir_all(&dir);
@@ -2701,14 +2701,14 @@ mod tests {
     fn declared_html_reads_options_and_canon_and_leaves_urls_and_repeats_out() {
         let payload = json!({
             "options": [
-                { "id": "a", "html": ".impeccable/mocks/decision/a.html" },
+                { "id": "a", "html": ".procable/mocks/decision/a.html" },
                 { "id": "b", "html": "https://example.com/b.html" },
-                { "id": "c", "html": ".impeccable/mocks/decision/a.html" },
+                { "id": "c", "html": ".procable/mocks/decision/a.html" },
                 { "id": "d" }
             ],
-            "canonCard": { "html": ".impeccable/mocks/decision/canon.html" }
+            "canonCard": { "html": ".procable/mocks/decision/canon.html" }
         });
-        assert_eq!(declared_html(&payload), vec![".impeccable/mocks/decision/a.html".to_string(), ".impeccable/mocks/decision/canon.html".to_string()]);
+        assert_eq!(declared_html(&payload), vec![".procable/mocks/decision/a.html".to_string(), ".procable/mocks/decision/canon.html".to_string()]);
         // A sketch is no comp: it never makes a round owe one.
         assert!(declared_comps(&payload).is_empty());
     }
@@ -2717,7 +2717,7 @@ mod tests {
     fn a_sketch_left_by_an_earlier_hand_is_not_served_until_rewritten() {
         let dir = temp_project("sketch-provenance");
         let cwd = dir.to_string_lossy().into_owned();
-        let slot = ".impeccable/mocks/decision/assigned.html";
+        let slot = ".procable/mocks/decision/assigned.html";
         let payload = json!({ "options": [{ "id": "assigned", "html": slot }] });
         write_file(&dir.join(slot), b"<p>last round</p>");
         let hand = new_hand(&cwd, &payload);
@@ -2762,7 +2762,7 @@ mod tests {
     fn a_comp_counts_for_the_hand_only_when_its_bytes_changed_since_the_hand_began() {
         let dir = temp_project("provenance");
         let cwd = dir.to_string_lossy().into_owned();
-        let slot = ".impeccable/mocks/decision/assigned.webp";
+        let slot = ".procable/mocks/decision/assigned.webp";
         let payload = json!({ "options": [{ "id": "assigned", "comp": slot }] });
         write_file(&dir.join(slot), b"old");
         let hand = new_hand(&cwd, &payload);
@@ -2778,7 +2778,7 @@ mod tests {
         assert!(comp_is_this_hands(&cwd, slot, Some(&hand)));
         assert!(!comps_expected(&payload, &cwd, Some(&hand)));
         // No file at the slot when the hand began: whatever lands is this hand's.
-        let fresh = ".impeccable/mocks/decision/pick.webp";
+        let fresh = ".procable/mocks/decision/pick.webp";
         let payload2 = json!({ "options": [{ "id": "pick", "comp": fresh }] });
         let hand2 = new_hand(&cwd, &payload2);
         write_file(&dir.join(fresh), b"pick");
@@ -2793,8 +2793,8 @@ mod tests {
     fn start_restarts_the_same_hand_and_starts_a_new_one_otherwise() {
         let dir = temp_project("start-hand");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let slot = ".impeccable/mocks/decision/a.png";
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let slot = ".procable/mocks/decision/a.png";
         let hand1 = json!({ "title": "Pick", "options": [{ "id": "a", "comp": slot }] });
         let hand2 = json!({ "title": "Pick again", "options": [{ "id": "a", "comp": slot }] });
 
@@ -2822,8 +2822,8 @@ mod tests {
     fn reroll_reusing_slots_owes_comps_until_they_land_even_across_a_restart() {
         let dir = temp_project("reroll-hand");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let slot = ".impeccable/mocks/decision/a.png";
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let slot = ".procable/mocks/decision/a.png";
         // The first hand's comp landed at the slot the re-roll reuses.
         write_file(&dir.join(slot), b"first hand");
         write_state(&dir, &json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/" }));
@@ -2848,8 +2848,8 @@ mod tests {
     fn server_state_writes_after_update_do_not_lose_the_hand() {
         let dir = temp_project("hand-race");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let slot = ".impeccable/mocks/decision/a.png";
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let slot = ".procable/mocks/decision/a.png";
         write_file(&dir.join(slot), b"first hand");
         write_state(&dir, &json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": [slot] }));
         std::fs::write(dir.join("reroll.json"), json!({ "options": [{ "id": "a", "comp": slot }] }).to_string()).unwrap();
@@ -2875,10 +2875,10 @@ mod tests {
     fn deterministic_regeneration_into_a_reused_slot_counts_via_generated() {
         let dir = temp_project("regen");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let slot = ".impeccable/mocks/decision/a.png";
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let slot = ".procable/mocks/decision/a.png";
         let gen = |out: &str| {
-            let env = Env::from([("IMPECCABLE_IMAGE_GEN_FAKE".into(), "1".into())]);
+            let env = Env::from([("PROCABLE_IMAGE_GEN_FAKE".into(), "1".into())]);
             let (mut io, cap) = Io::captured("", dir.clone(), env);
             let args: Vec<String> = ["--prompt", "Same prompt, same bytes.", "--out", out, "--size", "64x40"].iter().map(|s| s.to_string()).collect();
             let code = crate::generate_image::run(&args, &mut io);
@@ -2914,13 +2914,13 @@ mod tests {
     #[test]
     fn a_failed_hand_write_fails_start_and_update() {
         let dir = temp_project("hand-fail");
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
+        let qdir = jsp::join(&[&dir.to_string_lossy(), ".procable", "questions"]);
         // A directory where the hand file belongs: the rename cannot land, on
         // every platform.
         std::fs::create_dir_all(hand_file(&qdir, "k1")).unwrap();
-        std::fs::write(dir.join("p.json"), json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/decision/a.png" }] }).to_string()).unwrap();
+        std::fs::write(dir.join("p.json"), json!({ "options": [{ "id": "a", "comp": ".procable/mocks/decision/a.png" }] }).to_string()).unwrap();
         let err_of = |args: &[&str]| {
-            let env = Env::from([("IMPECCABLE_SKILL_DIR".into(), "/skill".into())]);
+            let env = Env::from([("PROCABLE_SKILL_DIR".into(), "/skill".into())]);
             let (mut io, cap) = Io::captured("", dir.clone(), env);
             let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
             let code = run(&argv, &mut io);
@@ -2946,12 +2946,12 @@ mod tests {
     /// A comp-led direction round: the assigned card, the pick, a competitive
     /// and a declined challenger, and the canon card.
     fn direction_round(comps: bool) -> Value {
-        let comp = |id: &str| if comps { json!(format!(".impeccable/mocks/decision/{id}.png")) } else { Value::Null };
+        let comp = |id: &str| if comps { json!(format!(".procable/mocks/decision/{id}.png")) } else { Value::Null };
         let mut p = json!({
             "title": "Choose the visual world",
             "options": [
                 { "id": "assigned", "kind": "assigned", "kicker": "THE ROLL", "thesis": "One." },
-                { "id": "model-pick", "kind": "pick", "kicker": "IMPECCABLE’S PICK", "thesis": "Two." },
+                { "id": "model-pick", "kind": "pick", "kicker": "PROCABLE’S PICK", "thesis": "Two." },
                 { "id": "challenger-a", "kind": "challenger", "catalogId": "print-fillmore-handbill", "verdict": "competitive", "thesis": "Three.", "hero": "https://x/a-hero.webp" },
                 { "id": "challenger-b", "kind": "challenger", "catalogId": "broadcast-teletext", "verdict": "declined", "thesis": "Four.", "hero": "https://x/b-hero.webp" }
             ],
@@ -3019,10 +3019,10 @@ mod tests {
     #[test]
     fn start_and_update_refuse_a_comp_led_direction_round_without_comps() {
         let dir = temp_project("missing-comps");
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
+        let qdir = jsp::join(&[&dir.to_string_lossy(), ".procable", "questions"]);
         std::fs::write(dir.join("p.json"), direction_round(false).to_string()).unwrap();
         let run_err = |args: &[&str]| {
-            let env = Env::from([("IMPECCABLE_SKILL_DIR".into(), "/skill".into())]);
+            let env = Env::from([("PROCABLE_SKILL_DIR".into(), "/skill".into())]);
             let (mut io, cap) = Io::captured("", dir.clone(), env);
             let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
             let code = run(&argv, &mut io);
@@ -3035,7 +3035,7 @@ mod tests {
         assert!(out.is_empty(), "{out}");
         assert!(err.contains("the page was not served"), "{err}");
         assert!(err.contains("Missing a \"comp\": assigned, model-pick, challenger-a, canonCard."), "{err}");
-        assert!(err.contains(".impeccable/mocks/decision/<card id>.png") && err.contains("then rerun --start;"), "{err}");
+        assert!(err.contains(".procable/mocks/decision/<card id>.png") && err.contains("then rerun --start;"), "{err}");
         // Refused before anything was recorded or spawned.
         assert!(!std::path::Path::new(&hand_file(&qdir, "k1")).exists());
         assert!(!std::path::Path::new(&state_file(&qdir, "k1")).exists());
@@ -3072,14 +3072,14 @@ mod tests {
         });
         if comps {
             for (i, id) in ["ledger", "rail", "field"].iter().enumerate() {
-                p["options"][i]["comp"] = json!(format!(".impeccable/mocks/decision/{id}.png"));
+                p["options"][i]["comp"] = json!(format!(".procable/mocks/decision/{id}.png"));
             }
         }
         p
     }
 
     fn write_roll(dir: &std::path::Path, scope: &str, at: f64) {
-        std::fs::write(dir.join(".impeccable/questions/roll.json"), json!({ "scope": scope, "key": "k", "reroll": 0, "at": at as u64 }).to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/roll.json"), json!({ "scope": scope, "key": "k", "reroll": 0, "at": at as u64 }).to_string()).unwrap();
     }
 
     #[test]
@@ -3114,7 +3114,7 @@ mod tests {
     #[test]
     fn surface_gate_applies_only_while_a_fresh_surface_roll_is_pending() {
         let dir = temp_project("surface-roll");
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
+        let qdir = jsp::join(&[&dir.to_string_lossy(), ".procable", "questions"]);
         let bare = surface_round(false);
         let gate = |p: &Value| missing_comps(read_roll(&qdir).as_deref(), p);
         let pending = || surface_roll_pending(read_roll(&qdir).as_deref());
@@ -3130,7 +3130,7 @@ mod tests {
         write_roll(&dir, "surface", now_ms() - ROLL_WINDOW_MS - 1000.0);
         assert_eq!(gate(&bare), None);
         // An unreadable record gates nothing.
-        std::fs::write(dir.join(".impeccable/questions/roll.json"), "{not json").unwrap();
+        std::fs::write(dir.join(".procable/questions/roll.json"), "{not json").unwrap();
         assert_eq!(gate(&bare), None);
         // A direction round is still the direction gate's, roll or not.
         write_roll(&dir, "surface", now_ms());
@@ -3156,14 +3156,14 @@ mod tests {
     #[test]
     fn start_and_update_refuse_a_comp_led_surface_round_after_a_surface_roll() {
         let dir = temp_project("surface-missing-comps");
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
-        let roll = dir.join(".impeccable/questions/roll.json");
+        let qdir = jsp::join(&[&dir.to_string_lossy(), ".procable", "questions"]);
+        let roll = dir.join(".procable/questions/roll.json");
         // Recorded the way concept-seed records a roll.
         record_roll(&dir.to_string_lossy(), "surface", Some("seed-1"), 0, &[], None);
         assert!(surface_roll_pending(read_roll(&qdir).as_deref()));
         std::fs::write(dir.join("p.json"), surface_round(false).to_string()).unwrap();
         let run_err = |args: &[&str]| {
-            let env = Env::from([("IMPECCABLE_SKILL_DIR".into(), "/skill".into())]);
+            let env = Env::from([("PROCABLE_SKILL_DIR".into(), "/skill".into())]);
             let (mut io, cap) = Io::captured("", dir.clone(), env);
             let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
             let code = run(&argv, &mut io);
@@ -3177,7 +3177,7 @@ mod tests {
         assert!(err.starts_with("serve-question: this surface round (concept-seed's latest roll here was --scope surface) is comp-led with image generation"), "{err}");
         assert!(err.contains("so every dealt card declares a decision comp; the page was not served."), "{err}");
         assert!(err.contains("Missing a \"comp\": ledger, rail, field."), "{err}");
-        assert!(err.contains("\".impeccable/mocks/decision/<card id>.png\", then rerun --start;") && !err.contains("canonCard"), "{err}");
+        assert!(err.contains("\".procable/mocks/decision/<card id>.png\", then rerun --start;") && !err.contains("canonCard"), "{err}");
         // Refused before anything was recorded or spawned; the roll stays bound.
         assert!(!std::path::Path::new(&hand_file(&qdir, "k1")).exists());
         assert!(!std::path::Path::new(&state_file(&qdir, "k1")).exists());
@@ -3209,13 +3209,13 @@ mod tests {
     fn markers_survive_a_failed_hand_write_and_leave_with_the_question() {
         let dir = temp_project("markers");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let payload = json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/decision/a.png" }] });
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let payload = json!({ "options": [{ "id": "a", "comp": ".procable/mocks/decision/a.png" }] });
         let live = new_hand(&cwd, &payload);
         write_hand(&qdir, "k1", &live).unwrap();
-        std::fs::create_dir_all(dir.join(".impeccable/mocks/decision")).unwrap();
-        std::fs::write(dir.join(".impeccable/mocks/decision/a.png"), b"png").unwrap();
-        assert_eq!(record_generated(&cwd, ".impeccable/mocks/decision/a.png").unwrap(), vec!["k1".to_string()]);
+        std::fs::create_dir_all(dir.join(".procable/mocks/decision")).unwrap();
+        std::fs::write(dir.join(".procable/mocks/decision/a.png"), b"png").unwrap();
+        assert_eq!(record_generated(&cwd, ".procable/mocks/decision/a.png").unwrap(), vec!["k1".to_string()]);
 
         // A failed write of the next hand keeps the live hand's marker.
         let hand_path = hand_file(&qdir, "k1");
@@ -3224,14 +3224,14 @@ mod tests {
         assert!(write_hand(&qdir, "k1", &new_hand(&cwd, &payload)).is_err());
         std::fs::remove_dir_all(&hand_path).unwrap();
         write_atomic(&hand_path, &json_compact(&Value::Object(live.clone()))).unwrap();
-        assert_eq!(read_hand(&qdir, "k1").unwrap().get("generated"), Some(&json!([".impeccable/mocks/decision/a.png"])));
+        assert_eq!(read_hand(&qdir, "k1").unwrap().get("generated"), Some(&json!([".procable/mocks/decision/a.png"])));
 
         // A new hand with the same payload does not inherit the old marker.
         write_hand(&qdir, "k1", &new_hand(&cwd, &payload)).unwrap();
         assert!(read_hand(&qdir, "k1").unwrap().get("generated").is_none());
 
         // --stop takes the marker folder with the hand file.
-        record_generated(&cwd, ".impeccable/mocks/decision/a.png").unwrap();
+        record_generated(&cwd, ".procable/mocks/decision/a.png").unwrap();
         write_state(&dir, &json!({ "pid": 0, "port": 1, "url": "http://127.0.0.1:1/" }));
         let _ = run_captured(&dir, &["--stop", "--key", "k1"]);
         assert!(!std::path::Path::new(&hand_file(&qdir, "k1")).exists());
@@ -3241,7 +3241,7 @@ mod tests {
 
     #[test]
     fn marker_names_carry_the_hand_tag() {
-        let slot = ".impeccable/mocks/decision/a.png";
+        let slot = ".procable/mocks/decision/a.png";
         let name = marker_name(slot, "abc123");
         assert_eq!(name, format!("{}-abc123.json", hand_digest(&Value::String(slot.into()))));
         assert_eq!(marker_name_tag(&name), Some("abc123"));
@@ -3273,10 +3273,10 @@ mod tests {
     fn prune_spares_a_parallel_marker_for_the_new_hand_in_a_reused_slot() {
         let dir = temp_project("marker-race");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let slot = ".impeccable/mocks/decision/a.png";
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let slot = ".procable/mocks/decision/a.png";
         let payload = json!({ "options": [{ "id": "a", "comp": slot }] });
-        std::fs::create_dir_all(dir.join(".impeccable/mocks/decision")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/mocks/decision")).unwrap();
         std::fs::write(dir.join(slot), b"png").unwrap();
 
         // The old hand generated into the slot.
@@ -3311,8 +3311,8 @@ mod tests {
     fn legacy_untagged_markers_are_judged_by_content() {
         let dir = temp_project("marker-legacy");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let (a, b) = (".impeccable/mocks/decision/a.png", ".impeccable/mocks/decision/b.png");
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let (a, b) = (".procable/mocks/decision/a.png", ".procable/mocks/decision/b.png");
         let mut hand = new_hand(&cwd, &json!({ "options": [{ "id": "a", "comp": a }, { "id": "b", "comp": b }] }));
         hand.insert("id".into(), json!("0011223344556677"));
         write_hand(&qdir, "k1", &hand).unwrap();
@@ -3340,10 +3340,10 @@ mod tests {
 
     #[test]
     fn comp_round_comps_sit_directly_in_mocks() {
-        assert!(is_comp_round_comp(".impeccable/mocks/comp-b-open-book.png"));
-        assert!(is_comp_round_comp("./.impeccable/mocks/comp-b.png"));
-        assert!(is_comp_round_comp("/abs/proj/.impeccable/mocks/comp-b.png"));
-        assert!(!is_comp_round_comp(".impeccable/mocks/decision/a.png"));
+        assert!(is_comp_round_comp(".procable/mocks/comp-b-open-book.png"));
+        assert!(is_comp_round_comp("./.procable/mocks/comp-b.png"));
+        assert!(is_comp_round_comp("/abs/proj/.procable/mocks/comp-b.png"));
+        assert!(!is_comp_round_comp(".procable/mocks/decision/a.png"));
         assert!(!is_comp_round_comp("https://x/a.png"));
         assert!(!is_comp_round_comp("elsewhere/a.png"));
     }
@@ -3357,12 +3357,12 @@ mod tests {
 
     #[test]
     fn comp_round_pick_is_the_approved_comp_not_option_one() {
-        let out = answer_lines(r#"{"optionId":"b","steer":"","comp":".impeccable/mocks/comp-b-open-book.png"}"#);
+        let out = answer_lines(r#"{"optionId":"b","steer":"","comp":".procable/mocks/comp-b-open-book.png"}"#);
         assert!(out.contains("APPROVED COMP: the user picked this composition in the comp round"), "{out}");
         assert!(out.contains("\"approved\": true"), "{out}");
         assert!(!out.contains("CHOSEN COMP") && !out.contains("option one") && !out.contains("two variations"), "{out}");
 
-        let out = answer_lines(r#"{"optionId":"a","steer":"","comp":".impeccable/mocks/decision/a.png"}"#);
+        let out = answer_lines(r#"{"optionId":"a","steer":"","comp":".procable/mocks/decision/a.png"}"#);
         assert!(out.contains("CHOSEN COMP: the decision comp at that path is compositional option one."), "{out}");
         assert!(out.contains("--decision-comp <that path>"), "{out}");
         assert!(!out.contains("APPROVED COMP"), "{out}");
@@ -3370,11 +3370,11 @@ mod tests {
 
     #[test]
     fn comp_round_pick_of_the_recorded_decision_comp_is_the_approval() {
-        let dir = std::env::temp_dir().join(format!("impeccable-sq-decision-{}-{}", std::process::id(), now_ms() as u64));
-        std::fs::create_dir_all(dir.join(".impeccable/build")).unwrap();
-        let slot = ".impeccable/mocks/decision/a.png";
-        let round: Vec<String> = vec![slot.into(), ".impeccable/mocks/comp-2.png".into(), ".impeccable/mocks/comp-3.png".into()];
-        let decision_page: Vec<String> = vec![slot.into(), ".impeccable/mocks/decision/b.png".into()];
+        let dir = std::env::temp_dir().join(format!("procable-sq-decision-{}-{}", std::process::id(), now_ms() as u64));
+        std::fs::create_dir_all(dir.join(".procable/build")).unwrap();
+        let slot = ".procable/mocks/decision/a.png";
+        let round: Vec<String> = vec![slot.into(), ".procable/mocks/comp-2.png".into(), ".procable/mocks/comp-3.png".into()];
+        let decision_page: Vec<String> = vec![slot.into(), ".procable/mocks/decision/b.png".into()];
         let answer = |raw: &str, served: &[String]| {
             let (mut io, cap) = Io::captured("", dir.clone(), Env::new());
             print_answer(&mut io, &dir.to_string_lossy(), raw, served);
@@ -3382,11 +3382,11 @@ mod tests {
             out
         };
         let state = |phase: &str| json!({ "phase": phase, "decisionComp": slot }).to_string();
-        std::fs::write(dir.join(".impeccable/build/state.json"), state("comps")).unwrap();
-        let out = answer(r#"{"optionId":"one","comp":"./.impeccable/mocks/decision/a.png"}"#, &round);
+        std::fs::write(dir.join(".procable/build/state.json"), state("comps")).unwrap();
+        let out = answer(r#"{"optionId":"one","comp":"./.procable/mocks/decision/a.png"}"#, &round);
         assert!(out.contains("APPROVED COMP") && !out.contains("CHOSEN COMP"), "{out}");
         // Served again in the comp round, option one is this hand's comp, never stale.
-        std::fs::create_dir_all(dir.join(".impeccable/mocks/decision")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/mocks/decision")).unwrap();
         std::fs::write(dir.join(slot), b"png").unwrap();
         let cwd = dir.to_string_lossy().to_string();
         let options: Vec<Value> = round.iter().map(|c| json!({ "id": c, "comp": c })).collect();
@@ -3401,13 +3401,13 @@ mod tests {
         let hand = new_hand(&cwd, &json!({ "options": options }));
         assert!(!comp_is_this_hands(&cwd, slot, Some(&hand)));
         assert_eq!(stale_comps(&cwd, &[slot.to_string()], Some(&hand)), vec![slot.to_string()]);
-        let out = answer(r#"{"optionId":"one","comp":".impeccable/mocks/decision/a.png"}"#, &decision_page);
+        let out = answer(r#"{"optionId":"one","comp":".procable/mocks/decision/a.png"}"#, &decision_page);
         assert!(out.contains("CHOSEN COMP") && !out.contains("APPROVED COMP"), "{out}");
         // Another decision comp, or the same one once the round closed, stays a decision pick.
-        let out = answer(r#"{"optionId":"b","comp":".impeccable/mocks/decision/b.png"}"#, &round);
+        let out = answer(r#"{"optionId":"b","comp":".procable/mocks/decision/b.png"}"#, &round);
         assert!(out.contains("CHOSEN COMP") && !out.contains("APPROVED COMP"), "{out}");
-        std::fs::write(dir.join(".impeccable/build/state.json"), state("spec")).unwrap();
-        let out = answer(r#"{"optionId":"one","comp":".impeccable/mocks/decision/a.png"}"#, &round);
+        std::fs::write(dir.join(".procable/build/state.json"), state("spec")).unwrap();
+        let out = answer(r#"{"optionId":"one","comp":".procable/mocks/decision/a.png"}"#, &round);
         assert!(out.contains("CHOSEN COMP") && !out.contains("APPROVED COMP"), "{out}");
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -3415,7 +3415,7 @@ mod tests {
 
     /// A roll record as concept-seed writes it for a roll that dealt worlds.
     fn write_dealt_roll(dir: &std::path::Path, scope: &str, at: f64, worlds: &Value) {
-        std::fs::write(dir.join(".impeccable/questions/roll.json"), json!({ "scope": scope, "key": "k", "reroll": 0, "at": at as u64, "worlds": worlds }).to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/roll.json"), json!({ "scope": scope, "key": "k", "reroll": 0, "at": at as u64, "worlds": worlds }).to_string()).unwrap();
     }
 
     fn two_worlds(base: &str) -> Value {
@@ -3428,7 +3428,7 @@ mod tests {
     const NEXT_TODAY: &str = "NEXT read /skill/reference/visualize.md now, before writing any decision comp prompt; it and the MODE RULES block concept-seed printed for this surface govern every card's image. Then generate each declared comp into its slot, lead first, and record the exact prompt in its sidecar, the image's full file name plus .json (a.png gets a.png.json).\n";
 
     fn run_env(dir: &std::path::Path, extra: &[(&str, &str)], args: &[&str]) -> (i32, String) {
-        let mut env = Env::from([("IMPECCABLE_SKILL_DIR".into(), "/skill".into()), ("IMPECCABLE_SELF".into(), "impeccable".into())]);
+        let mut env = Env::from([("PROCABLE_SKILL_DIR".into(), "/skill".into()), ("PROCABLE_SELF".into(), "procable".into())]);
         for (k, v) in extra {
             env.insert(k.to_string(), v.to_string());
         }
@@ -3527,7 +3527,7 @@ mod tests {
         ] {
             assert!(!card_fetch_allowed(&env, no), "{no}");
         }
-        let local = Env::from([("IMPECCABLE_CARD_BASE".into(), "http://127.0.0.1:4000/cards".into())]);
+        let local = Env::from([("PROCABLE_CARD_BASE".into(), "http://127.0.0.1:4000/cards".into())]);
         assert!(card_fetch_allowed(&local, "http://127.0.0.1:4000/cards/a.webp"));
         assert!(!card_fetch_allowed(&local, "http://127.0.0.1:4000/cardsx/a.webp") && !card_fetch_allowed(&local, "http://127.0.0.1:4001/cards/a.webp"));
     }
@@ -3540,14 +3540,14 @@ mod tests {
         write_state(&dir, &json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/" }));
         std::fs::write(dir.join("p.json"), direction_round(true).to_string()).unwrap();
         // One card image an earlier round already fetched.
-        std::fs::create_dir_all(dir.join(".impeccable/mocks/worlds")).unwrap();
-        write_file(&dir.join(".impeccable/mocks/worlds/broadcast-teletext-hero.webp"), b"kept");
+        std::fs::create_dir_all(dir.join(".procable/mocks/worlds")).unwrap();
+        write_file(&dir.join(".procable/mocks/worlds/broadcast-teletext-hero.webp"), b"kept");
         write_dealt_roll(&dir, "direction", now_ms(), &two_worlds(&base));
-        let (code, out) = run_env(&dir, &[("IMPECCABLE_IMAGE_GEN_FAKE", "1")], &["--update", "--key", "k1", "--payload", "p.json"]);
+        let (code, out) = run_env(&dir, &[("PROCABLE_IMAGE_GEN_FAKE", "1")], &["--update", "--key", "k1", "--payload", "p.json"]);
         assert_eq!(code, 0);
-        assert!(next_line(&out).ends_with(&format!("WORLD CARDS: print-fillmore-handbill board {base}/cards/print-fillmore-handbill.webp hero {base}/cards/print-fillmore-handbill-hero.webp | broadcast-teletext board {base}/cards/broadcast-teletext.png?v=3 hero .impeccable/mocks/worlds/broadcast-teletext-hero.webp\n")), "{out}");
+        assert!(next_line(&out).ends_with(&format!("WORLD CARDS: print-fillmore-handbill board {base}/cards/print-fillmore-handbill.webp hero {base}/cards/print-fillmore-handbill-hero.webp | broadcast-teletext board {base}/cards/broadcast-teletext.png?v=3 hero .procable/mocks/worlds/broadcast-teletext-hero.webp\n")), "{out}");
         assert!(server.recv_timeout(std::time::Duration::from_millis(300)).unwrap().is_none());
-        assert_eq!(std::fs::read(dir.join(".impeccable/mocks/worlds/broadcast-teletext-hero.webp")).unwrap(), b"kept");
+        assert_eq!(std::fs::read(dir.join(".procable/mocks/worlds/broadcast-teletext-hero.webp")).unwrap(), b"kept");
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -3555,8 +3555,8 @@ mod tests {
     fn a_restart_and_a_flip_keep_the_worlds_the_hand_was_dealt() {
         let dir = temp_project("world-cards-hand");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let fake = [("IMPECCABLE_IMAGE_GEN_FAKE", "1")];
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let fake = [("PROCABLE_IMAGE_GEN_FAKE", "1")];
         let worlds = two_worlds("https://cards.test");
         let mut code_led = direction_round(true);
         code_led["buildPath"]["value"] = json!("code");
@@ -3581,7 +3581,7 @@ mod tests {
 
     #[test]
     fn visualize_next_line_names_the_skill_reference() {
-        let env = Env::from([("IMPECCABLE_SKILL_DIR".into(), "/skill".into())]);
+        let env = Env::from([("PROCABLE_SKILL_DIR".into(), "/skill".into())]);
         let line = visualize_next_line(&env, "/proj", None).replace('\\', "/");
         assert!(line.starts_with("NEXT read /skill/reference/visualize.md now, before writing any decision comp prompt; it and the MODE RULES block concept-seed printed for this surface govern every card's image."), "{line}");
         assert!(line.ends_with("the image's full file name plus .json (a.png gets a.png.json).\n"));
@@ -3590,9 +3590,9 @@ mod tests {
     #[test]
     fn wait_names_landed_comps_without_a_prompt_sidecar() {
         let dir = temp_project("wait-sidecar");
-        let comps = [".impeccable/mocks/decision/a.png", ".impeccable/mocks/decision/b.png", ".impeccable/mocks/decision/c.png"];
+        let comps = [".procable/mocks/decision/a.png", ".procable/mocks/decision/b.png", ".procable/mocks/decision/c.png"];
         let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": comps });
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
         // a landed without a sidecar, b landed with one, c has not landed yet.
         std::fs::write(dir.join(comps[0]), b"png").unwrap();
         std::fs::write(dir.join(comps[1]), b"png").unwrap();
@@ -3602,28 +3602,28 @@ mod tests {
         let out = out.replace('\\', "/");
         assert_eq!(code, 3);
         assert!(out.starts_with("WAITING: "), "{out}");
-        assert!(out.contains("COMP SIDECAR MISSING: .impeccable/mocks/decision/a.png landed with no prompt sidecar."), "{out}");
+        assert!(out.contains("COMP SIDECAR MISSING: .procable/mocks/decision/a.png landed with no prompt sidecar."), "{out}");
         assert!(out.contains("/skill/reference/visualize.md"), "{out}");
         assert!(!out.contains("decision/b.png") && !out.contains("decision/c.png"), "{out}");
 
-        std::fs::write(dir.join(".impeccable/questions/k1.answer.json"), r#"{"optionId":"a","comp":".impeccable/mocks/decision/a.png"}"#).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.answer.json"), r#"{"optionId":"a","comp":".procable/mocks/decision/a.png"}"#).unwrap();
         let (code, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "2"]);
         let out = out.replace('\\', "/");
         assert_eq!(code, 0);
         let answer_at = out.find("ANSWER: ").unwrap();
-        let missing_at = out.find("COMP SIDECAR MISSING: .impeccable/mocks/decision/a.png").unwrap();
+        let missing_at = out.find("COMP SIDECAR MISSING: .procable/mocks/decision/a.png").unwrap();
         assert!(answer_at < missing_at, "{out}");
 
         // Once every landed comp has its sidecar, the backstop stays quiet.
         std::fs::write(dir.join(format!("{}.json", comps[0])), r#"{"prompt":"p"}"#).unwrap();
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "0"]);
         assert!(!out.contains("COMP SIDECAR MISSING"), "{out}");
 
         // A file an earlier round left at a slot is named stale while the user
         // decides, never as a missing sidecar, and not after the pick.
         std::fs::remove_file(dir.join(format!("{}.json", comps[0]))).unwrap();
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
+        let qdir = jsp::join(&[&dir.to_string_lossy(), ".procable", "questions"]);
         let payload = json!({ "options": comps.iter().map(|c| json!({ "comp": c })).collect::<Vec<_>>() });
         write_hand(&qdir, "k1", &new_hand(&dir.to_string_lossy(), &payload)).unwrap();
         std::fs::remove_file(dir.join(format!("{}.json", comps[1]))).unwrap();
@@ -3631,8 +3631,8 @@ mod tests {
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "0"]);
         let out = out.replace('\\', "/");
         assert!(!out.contains("COMP SIDECAR MISSING"), "{out}");
-        assert!(out.contains("COMP STALE: files left from an earlier round sit at this hand's slots, and the page is showing them: .impeccable/mocks/decision/a.png."), "{out}");
-        std::fs::write(dir.join(".impeccable/questions/k1.answer.json"), r#"{"optionId":"a"}"#).unwrap();
+        assert!(out.contains("COMP STALE: files left from an earlier round sit at this hand's slots, and the page is showing them: .procable/mocks/decision/a.png."), "{out}");
+        std::fs::write(dir.join(".procable/questions/k1.answer.json"), r#"{"optionId":"a"}"#).unwrap();
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "2"]);
         assert!(!out.contains("COMP STALE") && !out.contains("COMP SIDECAR MISSING"), "{out}");
         let _ = std::fs::remove_dir_all(&dir);
@@ -3643,11 +3643,11 @@ mod tests {
         const LINE: &str = "NEXT open each decision comp once and run ";
         let dir = temp_project("wait-render-check");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
-        let comps = [".impeccable/mocks/decision/a.png", ".impeccable/mocks/decision/b.png"];
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
+        let comps = [".procable/mocks/decision/a.png", ".procable/mocks/decision/b.png"];
         let payload = json!({ "options": comps.iter().map(|c| json!({ "comp": c })).collect::<Vec<_>>() });
         let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": comps });
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
         write_hand(&qdir, "k1", &new_hand(&cwd, &payload)).unwrap();
         let wait = || {
             let (code, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "0"]);
@@ -3685,11 +3685,11 @@ mod tests {
         // Never after the pick: the answer is the user's, not a poll.
         write_hand(&qdir, "k1", &new_hand(&cwd, &payload)).unwrap();
         std::fs::write(dir.join(comps[0]), b"png3").unwrap();
-        std::fs::write(dir.join(".impeccable/questions/k1.answer.json"), r#"{"optionId":"a"}"#).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.answer.json"), r#"{"optionId":"a"}"#).unwrap();
         let (code, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "2"]);
         assert_eq!(code, 0);
         assert!(!out.contains(LINE), "{out}");
-        assert!(!dir.join(".impeccable/questions/k1.render-check").exists());
+        assert!(!dir.join(".procable/questions/k1.render-check").exists());
         let _ = std::fs::remove_dir_all(&dir);
     }
 
@@ -3698,25 +3698,25 @@ mod tests {
         const LINE: &str = "NEXT open each decision comp once and run ";
         let dir = temp_project("wait-render-check-skip");
         let cwd = dir.to_string_lossy().into_owned();
-        let qdir = jsp::join(&[&cwd, ".impeccable", "questions"]);
+        let qdir = jsp::join(&[&cwd, ".procable", "questions"]);
         // Code-led: the slots are a flip reserve. A file there predates the
         // hand (an earlier round's), so it is not this hand's comp.
-        let slot = ".impeccable/mocks/decision/a.png";
+        let slot = ".procable/mocks/decision/a.png";
         std::fs::write(dir.join(slot), b"old").unwrap();
         std::fs::write(dir.join(format!("{}.json", slot)), r#"{"prompt":"p"}"#).unwrap();
         let payload = json!({ "options": [{ "comp": slot }], "buildPath": { "value": "code", "toggle": true } });
         let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": [slot] });
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
         write_hand(&qdir, "k1", &new_hand(&cwd, &payload)).unwrap();
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "0"]);
         assert!(!out.contains(LINE), "{out}");
 
         // The comp round's own comps are not decision comps.
-        let comp = ".impeccable/mocks/comp-b.png";
+        let comp = ".procable/mocks/comp-b.png";
         std::fs::write(dir.join(comp), b"png").unwrap();
         std::fs::write(dir.join(format!("{}.json", comp)), r#"{"prompt":"p"}"#).unwrap();
         let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": [comp] });
-        std::fs::write(dir.join(".impeccable/questions/k2.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k2.state.json"), state.to_string()).unwrap();
         write_hand(&qdir, "k2", &new_hand(&cwd, &json!({ "options": [{ "comp": comp }] }))).unwrap();
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k2", "--poll", "0"]);
         assert!(!out.contains(LINE), "{out}");
@@ -3727,8 +3727,8 @@ mod tests {
     fn update_prints_the_visualize_directive_only_when_comps_are_due() {
         let dir = temp_project("update-next");
         let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/" });
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
-        std::fs::write(dir.join("comp.json"), json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/decision/a.png" }] }).to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join("comp.json"), json!({ "options": [{ "id": "a", "comp": ".procable/mocks/decision/a.png" }] }).to_string()).unwrap();
         let (code, out) = run_captured(&dir, &["--update", "--key", "k1", "--payload", "comp.json"]);
         let out = out.replace('\\', "/");
         assert_eq!(code, 0);
@@ -3736,18 +3736,18 @@ mod tests {
         let next = out.lines().nth(1).unwrap();
         assert!(next.starts_with("NEXT read ") && next.contains("/skill/reference/visualize.md now"), "{out}");
 
-        std::fs::write(dir.join("code.json"), json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/decision/a.png" }], "buildPath": { "value": "code", "toggle": true } }).to_string()).unwrap();
+        std::fs::write(dir.join("code.json"), json!({ "options": [{ "id": "a", "comp": ".procable/mocks/decision/a.png" }], "buildPath": { "value": "code", "toggle": true } }).to_string()).unwrap();
         let (_, out) = run_captured(&dir, &["--update", "--key", "k1", "--payload", "code.json"]);
         assert!(!out.contains("NEXT"), "{out}");
 
         // A re-roll into the same decision slot still owes a new comp.
-        write_file(&dir.join(".impeccable/mocks/decision/a.png"), b"earlier");
+        write_file(&dir.join(".procable/mocks/decision/a.png"), b"earlier");
         let (_, out) = run_captured(&dir, &["--update", "--key", "k1", "--payload", "comp.json"]);
         assert!(out.contains("NEXT read "), "{out}");
 
         // A comp round serves comps already on disk directly in mocks/: no NEXT line.
-        write_file(&dir.join(".impeccable/mocks/comp-a.png"), b"comp");
-        std::fs::write(dir.join("round.json"), json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/comp-a.png" }] }).to_string()).unwrap();
+        write_file(&dir.join(".procable/mocks/comp-a.png"), b"comp");
+        std::fs::write(dir.join("round.json"), json!({ "options": [{ "id": "a", "comp": ".procable/mocks/comp-a.png" }] }).to_string()).unwrap();
         let (_, out) = run_captured(&dir, &["--update", "--key", "k1", "--payload", "round.json"]);
         assert_eq!(out, "next round delivered; the page reloads itself\n");
         let _ = std::fs::remove_dir_all(&dir);
@@ -3757,8 +3757,8 @@ mod tests {
     fn flip_to_comp_puts_visualize_in_front_of_the_comps() {
         let dir = temp_project("flip-next");
         let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/" });
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
-        std::fs::write(dir.join(".impeccable/questions/k1.flip.json"), r#"{"buildPath":"comp"}"#).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.flip.json"), r#"{"buildPath":"comp"}"#).unwrap();
         let (code, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "2"]);
         let out = out.replace('\\', "/");
         assert_eq!(code, 0);
@@ -3767,19 +3767,19 @@ mod tests {
         assert!(lines[1].starts_with("NEXT read ") && lines[1].contains("/skill/reference/visualize.md now"), "{out}");
 
         // A flip whose recorded comps all landed owes no new prompt.
-        std::fs::write(dir.join(".impeccable/mocks/decision/a.png"), b"png").unwrap();
-        let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": [".impeccable/mocks/decision/a.png"] });
-        std::fs::write(dir.join(".impeccable/questions/k1.state.json"), state.to_string()).unwrap();
-        std::fs::write(dir.join(".impeccable/questions/k1.flip.json"), r#"{"buildPath":"comp"}"#).unwrap();
+        std::fs::write(dir.join(".procable/mocks/decision/a.png"), b"png").unwrap();
+        let state = json!({ "pid": std::process::id(), "port": 1, "url": "http://127.0.0.1:1/", "comps": [".procable/mocks/decision/a.png"] });
+        std::fs::write(dir.join(".procable/questions/k1.state.json"), state.to_string()).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.flip.json"), r#"{"buildPath":"comp"}"#).unwrap();
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "2"]);
         assert!(out.starts_with("BUILD PATH FLIPPED: comp") && !out.contains("NEXT"), "{out}");
 
         // The file that sat at the slot when the hand began is not this hand's
         // comp: still owed.
-        let qdir = jsp::join(&[&dir.to_string_lossy(), ".impeccable", "questions"]);
-        let payload = json!({ "options": [{ "id": "a", "comp": ".impeccable/mocks/decision/a.png" }] });
+        let qdir = jsp::join(&[&dir.to_string_lossy(), ".procable", "questions"]);
+        let payload = json!({ "options": [{ "id": "a", "comp": ".procable/mocks/decision/a.png" }] });
         write_hand(&qdir, "k1", &new_hand(&dir.to_string_lossy(), &payload)).unwrap();
-        std::fs::write(dir.join(".impeccable/questions/k1.flip.json"), r#"{"buildPath":"comp"}"#).unwrap();
+        std::fs::write(dir.join(".procable/questions/k1.flip.json"), r#"{"buildPath":"comp"}"#).unwrap();
         let (_, out) = run_captured(&dir, &["--wait", "--key", "k1", "--poll", "2"]);
         assert!(out.contains("\nNEXT read "), "{out}");
         let _ = std::fs::remove_dir_all(&dir);
@@ -3856,7 +3856,7 @@ mod tests {
         let log = seen.clone();
         std::thread::spawn(move || {
             for mut req in server.incoming_requests() {
-                let header = req.headers().iter().find(|h| h.field.equiv("X-Impeccable-Client")).map(|h| h.value.as_str().to_string()).unwrap_or_default();
+                let header = req.headers().iter().find(|h| h.field.equiv("X-Procable-Client")).map(|h| h.value.as_str().to_string()).unwrap_or_default();
                 let mut body = String::new();
                 let _ = std::io::Read::read_to_string(req.as_reader(), &mut body);
                 log.lock().unwrap().push((header, body));
@@ -3872,11 +3872,11 @@ mod tests {
     /// running (`--timeout 0`, no heartbeat: it never exits the test process)
     /// and this returns 0 once the answer is accepted.
     fn answer_on_page(dir: &std::path::Path, payload: &Value, option: &str, extra_env: &[(&str, &str)]) -> i32 {
-        let qdir = dir.join(".impeccable/questions");
+        let qdir = dir.join(".procable/questions");
         let _ = std::fs::remove_file(qdir.join("pk.state.json"));
         std::fs::write(dir.join("payload.json"), payload.to_string()).unwrap();
         let home = dir.join("home").to_string_lossy().into_owned();
-        let mut env = Env::from([("IMPECCABLE_SELF".to_string(), "impeccable".to_string()), ("IMPECCABLE_SEED_SALT".to_string(), "test-salt".to_string()), ("HOME".to_string(), home.clone()), ("USERPROFILE".to_string(), home)]);
+        let mut env = Env::from([("PROCABLE_SELF".to_string(), "procable".to_string()), ("PROCABLE_SEED_SALT".to_string(), "test-salt".to_string()), ("HOME".to_string(), home.clone()), ("USERPROFILE".to_string(), home)]);
         for (k, v) in extra_env {
             env.insert(k.to_string(), v.to_string());
         }
@@ -3908,12 +3908,12 @@ mod tests {
     #[test]
     fn a_burst_of_connections_is_fully_served() {
         let dir = temp_project("burst");
-        let qdir = dir.join(".impeccable/questions");
+        let qdir = dir.join(".procable/questions");
         let payload = json!({ "options": [{ "id": "a", "label": "A" }, { "id": "b", "label": "B" }] });
         std::fs::write(dir.join("payload.json"), payload.to_string()).unwrap();
         let cwd = dir.clone();
         let server = std::thread::spawn(move || {
-            let (mut io, _cap) = Io::captured("", cwd, Env::from([("IMPECCABLE_SELF".to_string(), "impeccable".to_string()), ("IMPECCABLE_NO_TELEMETRY".to_string(), "1".to_string())]));
+            let (mut io, _cap) = Io::captured("", cwd, Env::from([("PROCABLE_SELF".to_string(), "procable".to_string()), ("PROCABLE_NO_TELEMETRY".to_string(), "1".to_string())]));
             let argv: Vec<String> = ["--payload", "payload.json", "--detached-serve", "--key", "pk", "--timeout", "0", "--no-open"].iter().map(|s| s.to_string()).collect();
             run(&argv, &mut io)
         });
@@ -3928,7 +3928,7 @@ mod tests {
         let addr: std::net::SocketAddr = ([127, 0, 0, 1], port).into();
         let request = format!("GET /img/0 HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\n\r\n");
         for _ in 0..3 {
-            assert_eq!(impeccable_common::http::burst_answered(addr, request.as_bytes(), 4, 8), 8, "connections stranded");
+            assert_eq!(procable_common::http::burst_answered(addr, request.as_bytes(), 4, 8), 8, "connections stranded");
         }
         ureq::post(&format!("http://127.0.0.1:{}/answer?key=pk", port)).send_string(&json!({ "optionId": "a" }).to_string()).unwrap();
         assert_eq!(server.join().unwrap(), 0);
@@ -3961,7 +3961,7 @@ mod tests {
             std::fs::write(dir.join("p.json"), p.to_string()).unwrap();
             run_captured(&dir, &["--start", "--payload", "p.json", "--no-open"]).0
         };
-        let problems = |p: &Value| card_identity_problems(read_roll(&dir.join(".impeccable/questions").to_string_lossy()).as_deref(), p).0;
+        let problems = |p: &Value| card_identity_problems(read_roll(&dir.join(".procable/questions").to_string_lossy()).as_deref(), p).0;
         assert!(problems(&round).is_empty(), "{:?}", problems(&round));
         let mut bad = round.clone();
         bad["options"][0].as_object_mut().unwrap().remove("kind");
@@ -3984,7 +3984,7 @@ mod tests {
         assert_eq!(problems(&twice), vec!["model-pick is a second assigned card"]);
         // Refused before anything is served, the roll record left in place for the rerun.
         assert_eq!(start(&bad), 1);
-        assert!(dir.join(".impeccable/questions/roll.json").exists());
+        assert!(dir.join(".procable/questions/roll.json").exists());
         let msg = card_identity_message(&problems(&bad), &["print-fillmore-handbill".into(), "broadcast-teletext".into()], "rerun --start", "the page was not served");
         assert!(msg.contains("(dealt this roll: print-fillmore-handbill, broadcast-teletext), never the card's own id. Fix the payload and rerun --start; the page was not served.\n"), "{msg}");
         // Pages that are not direction or surface rounds declare nothing.
@@ -3992,7 +3992,7 @@ mod tests {
         plain.as_object_mut().unwrap().remove("buildPath");
         assert!(problems(&plain).is_empty());
         // With no fresh roll record, any catalogId stands: there is nothing to check it against.
-        std::fs::remove_file(dir.join(".impeccable/questions/roll.json")).unwrap();
+        std::fs::remove_file(dir.join(".procable/questions/roll.json")).unwrap();
         let mut other = round.clone();
         other["options"][2]["catalogId"] = json!("anything");
         assert!(problems(&other).is_empty());
@@ -4003,9 +4003,9 @@ mod tests {
     fn the_questions_directory_ignores_itself_on_every_write() {
         let dir = temp_project("questions-ignored");
         let cwd = dir.to_string_lossy().to_string();
-        let qdir = dir.join(".impeccable/questions");
+        let qdir = dir.join(".procable/questions");
         let ignore = qdir.join(".gitignore");
-        let expected = format!("{}\n*\n", impeccable_common::git::RUNTIME_IGNORE_HEADER);
+        let expected = format!("{}\n*\n", procable_common::git::RUNTIME_IGNORE_HEADER);
         // A project from before the ignore file: the next roll record writes it.
         std::fs::write(qdir.join("roll.json"), "{}").unwrap();
         assert!(!ignore.exists());
@@ -4025,7 +4025,7 @@ mod tests {
         if git(&["init", "-q"]).is_ok_and(|o| o.status.success()) {
             let out = git(&["status", "--porcelain", "--untracked-files=all"]).unwrap();
             let listed = String::from_utf8_lossy(&out.stdout).to_string();
-            assert!(!listed.contains(".impeccable/questions"), "{listed}");
+            assert!(!listed.contains(".procable/questions"), "{listed}");
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -4038,14 +4038,14 @@ mod tests {
         if !git(&["init", "-q"]).is_ok_and(|o| o.status.success()) {
             return; // no git on this machine: nothing to check
         }
-        let qdir = dir.join(".impeccable/questions");
+        let qdir = dir.join(".procable/questions");
         // Outside any tracked runtime file there is no notice.
         assert_eq!(tracked_runtime_notice(&cwd), None);
         // A project that committed roll.json before the directory ignored itself.
         std::fs::write(qdir.join("roll.json"), r#"{"scope":"direction","key":"old"}"#).unwrap();
-        git(&["add", "-f", ".impeccable/questions/roll.json"]).unwrap();
+        git(&["add", "-f", ".procable/questions/roll.json"]).unwrap();
         let notice = tracked_runtime_notice(&cwd).expect("a notice");
-        assert!(notice.starts_with("TRACKED RUNTIME FILES: git already tracks 1 file(s)") && notice.contains("`git rm -r --cached .impeccable/questions`"), "{notice}");
+        assert!(notice.starts_with("TRACKED RUNTIME FILES: git already tracks 1 file(s)") && notice.contains("`git rm -r --cached .procable/questions`"), "{notice}");
         assert_eq!(tracked_runtime_notice(&cwd), None, "once per tracked set");
         // The roll record goes to an untracked name, and the tracked file is left as it was.
         record_roll(&cwd, "direction", Some("seed:0123456789abcdef"), 0, &[], None);
@@ -4056,7 +4056,7 @@ mod tests {
         let status = git(&["status", "--porcelain", "--untracked-files=all"]).unwrap();
         assert!(!String::from_utf8_lossy(&status.stdout).contains("roll.local.json"));
         // Untracked again: the record returns to roll.json and the aside file goes.
-        git(&["rm", "-q", "--cached", ".impeccable/questions/roll.json"]).unwrap();
+        git(&["rm", "-q", "--cached", ".procable/questions/roll.json"]).unwrap();
         record_roll(&cwd, "direction", Some("seed:fedcba9876543210"), 0, &[], None);
         assert!(std::fs::read_to_string(qdir.join("roll.json")).unwrap().contains("seed:fedcba9876543210"));
         assert!(!qdir.join("roll.local.json").exists());

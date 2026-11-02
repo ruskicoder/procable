@@ -2,7 +2,7 @@
 //! Host adapters must independently audit retained evidence before accepting a run.
 use crate::reviewed_entry::ReviewedEntryRenderer;
 use base64::Engine;
-use impeccable_comp_verbs::entry_capture::{
+use procable_comp_verbs::entry_capture::{
     ApprovedReference, CapturedEntry, EntryEvidence, EntryRenderer, EntryRequest, EntryStage,
     FrameEvidence,
 };
@@ -109,14 +109,14 @@ pub fn serve(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         return Err("expected registered-root ready-file".into());
     }
     let root = std::fs::canonicalize(&args[0])?;
-    let key = std::env::var("IMPECCABLE_CAPTURE_CAPABILITY")?;
+    let key = std::env::var("PROCABLE_CAPTURE_CAPABILITY")?;
     if key.len() < 32 {
         return Err("capability too short".into());
     }
-    let renderer=ReviewedEntryRenderer{session:std::env::var_os("IMPECCABLE_CAPTURE_REVIEW_SESSION").map(PathBuf::from)};
+    let renderer=ReviewedEntryRenderer{session:std::env::var_os("PROCABLE_CAPTURE_REVIEW_SESSION").map(PathBuf::from)};
     // Read host policy once. Requests cannot assert or manufacture approval.
-    let component_review_pending = std::env::var("IMPECCABLE_COMPONENT_REVIEW_PENDING").as_deref() == Ok("1");
-    let review_tool = std::env::var("IMPECCABLE_COMPONENT_REVIEW_TOOL").unwrap_or_else(|_| "component_review".into());
+    let component_review_pending = std::env::var("PROCABLE_COMPONENT_REVIEW_PENDING").as_deref() == Ok("1");
+    let review_tool = std::env::var("PROCABLE_COMPONENT_REVIEW_TOOL").unwrap_or_else(|_| "component_review".into());
     let listener = TcpListener::bind("127.0.0.1:0")?;
     listener.set_nonblocking(true)?;
     write_ready(
@@ -129,7 +129,7 @@ pub fn serve(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
     let mut captures: HashMap<String, (Instant, Box<dyn CapturedEntry>)> = HashMap::new();
     let mut latest: HashMap<String, String> = HashMap::new();
     let mut active = std::collections::HashSet::new();
-    let session = &impeccable_comp_verbs::asset_capture::capture_sha256(key.as_bytes())[..16];
+    let session = &procable_comp_verbs::asset_capture::capture_sha256(key.as_bytes())[..16];
     while started.elapsed() < Duration::from_secs(10800) {
         active.retain(|id| {
             captures
@@ -244,11 +244,11 @@ pub fn serve(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
 
 struct ServiceEntry {
     source: Box<dyn CapturedEntry>,
-    evidence: impeccable_comp_verbs::entry_capture::EntryEvidence,
+    evidence: procable_comp_verbs::entry_capture::EntryEvidence,
 }
 impl ServiceEntry {
     fn new(source: Box<dyn CapturedEntry>, id: String, root: &std::path::Path) -> Self {
-        use impeccable_comp_verbs::{
+        use procable_comp_verbs::{
             asset_capture::AssetCapture,
             entry_capture::{EntryEvidence, FrameEvidence},
         };
@@ -279,8 +279,8 @@ impl ServiceEntry {
     }
 }
 impl CapturedEntry for ServiceEntry {
-    fn approved_reference(&self)->Option<&impeccable_comp_verbs::entry_capture::ApprovedReference>{self.source.approved_reference()}
-    fn evidence(&self) -> &impeccable_comp_verbs::entry_capture::EntryEvidence {
+    fn approved_reference(&self)->Option<&procable_comp_verbs::entry_capture::ApprovedReference>{self.source.approved_reference()}
+    fn evidence(&self) -> &procable_comp_verbs::entry_capture::EntryEvidence {
         &self.evidence
     }
     fn verify_current(&self) -> Result<(), String> {
@@ -322,13 +322,13 @@ fn audit_saved(
     capture: &dyn CapturedEntry,
 ) -> Result<Vec<Value>, String> {
     capture.verify_current()?;
-    let base = format!(".impeccable/review/native/{stage}");
+    let base = format!(".procable/review/native/{stage}");
     let evidence = capture.evidence();
     let mut files = Vec::new();
     let mut read = |name: &str| -> Result<Vec<u8>, String> {
         let path = format!("{base}/{name}");
         let bytes = saved(root, &path)?;
-        files.push(json!({"path":path,"bytes":bytes.len(),"sha256":impeccable_comp_verbs::asset_capture::capture_sha256(&bytes)}));
+        files.push(json!({"path":path,"bytes":bytes.len(),"sha256":procable_comp_verbs::asset_capture::capture_sha256(&bytes)}));
         Ok(bytes)
     };
     let report: Value = serde_json::from_slice(&read("inputs.json")?).map_err(|e| e.to_string())?;
@@ -362,7 +362,7 @@ pub struct RemoteEntryRenderer {
 /// nothing to decide never produces a kit to approve. The requested spec, not the
 /// default path, so a capture cannot borrow another file's exemption.
 fn capture_owes_review(root: &Path, spec: &str) -> bool {
-    impeccable_context::component_review::plan::spec_file_needs_review(&root.join(spec))
+    procable_context::component_review::plan::spec_file_needs_review(&root.join(spec))
 }
 fn require_component_review(pending: bool, tool: &str) -> Result<(), String> {
     if pending {
@@ -373,8 +373,8 @@ fn require_component_review(pending: bool, tool: &str) -> Result<(), String> {
 impl RemoteEntryRenderer {
     pub fn from_env(env: &HashMap<String, String>) -> Result<Option<Self>, String> {
         match (
-            env.get("IMPECCABLE_CAPTURE_PORT"),
-            env.get("IMPECCABLE_CAPTURE_CAPABILITY"),
+            env.get("PROCABLE_CAPTURE_PORT"),
+            env.get("PROCABLE_CAPTURE_CAPABILITY"),
         ) {
             (None, None) => Ok(None),
             (Some(port), Some(key))
@@ -433,13 +433,13 @@ impl RemoteEntryRenderer {
 }
 struct RemoteEntry {
     renderer: RemoteEntryRenderer,
-    approved: Option<impeccable_comp_verbs::entry_capture::ApprovedReference>,
+    approved: Option<procable_comp_verbs::entry_capture::ApprovedReference>,
     id: String,
-    evidence: impeccable_comp_verbs::entry_capture::EntryEvidence,
+    evidence: procable_comp_verbs::entry_capture::EntryEvidence,
 }
 impl CapturedEntry for RemoteEntry {
-    fn approved_reference(&self)->Option<&impeccable_comp_verbs::entry_capture::ApprovedReference>{self.approved.as_ref()}
-    fn evidence(&self) -> &impeccable_comp_verbs::entry_capture::EntryEvidence {
+    fn approved_reference(&self)->Option<&procable_comp_verbs::entry_capture::ApprovedReference>{self.approved.as_ref()}
+    fn evidence(&self) -> &procable_comp_verbs::entry_capture::EntryEvidence {
         &self.evidence
     }
     fn verify_current(&self) -> Result<(), String> {
@@ -494,7 +494,7 @@ fn bound_raster_ids(report: &Value, r: &EntryRequest) -> Result<Vec<String>, Str
         .flatten()
         .find(|f| f["path"] == r.spec.as_str())
         .ok_or("native capture did not freeze the bound spec")?;
-    if frozen["sha256"] != impeccable_comp_verbs::asset_capture::capture_sha256(&bytes) {
+    if frozen["sha256"] != procable_comp_verbs::asset_capture::capture_sha256(&bytes) {
         return Err("native capture binding mismatch: spec changed".into());
     }
     let spec: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
@@ -520,7 +520,7 @@ fn parse_capture(
     id: &str,
 ) -> Result<(EntryEvidence, Option<ApprovedReference>), String> {
     use crate::{capture_snapshot::MAX_CAPTURE_REGIONS, entry_capture::TEXT_ONLY_RASTER_SHARE_MAX};
-    use impeccable_comp_verbs::asset_capture::AssetCapture;
+    use procable_comp_verbs::asset_capture::AssetCapture;
     let report = &result["report"];
     let root = std::fs::canonicalize(&r.root).map_err(|e| e.to_string())?;
     if report["captureService"]["registeredRoot"] != json!(root)
@@ -617,7 +617,7 @@ fn parse_capture(
             .decode(a["png"].as_str().ok_or("missing reviewed PNG")?)
             .map_err(|e| e.to_string())?;
         if a["proof"]["schema"] != "human-assembled-reference-v1"
-            || a["proof"]["sha256"] != impeccable_comp_verbs::asset_capture::capture_sha256(&png)
+            || a["proof"]["sha256"] != procable_comp_verbs::asset_capture::capture_sha256(&png)
             || a["proof"] != report["humanTextReview"]
         {
             return Err("invalid human reference proof".into());
@@ -683,7 +683,7 @@ mod tests {
     fn capability_compare_and_ready_file_are_exact() {
         assert!(same_key(b"abcd", b"abcd"));
         assert!(!same_key(b"abcd", b"abce") && !same_key(b"abc", b"abcd") && !same_key(b"", b"a"));
-        let dir = std::env::temp_dir().join(format!("impeccable-ready-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-ready-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let ready = dir.join("ready.json");
         write_ready(&ready, b"{\"port\":1}").unwrap();
@@ -699,12 +699,12 @@ mod tests {
                 .unwrap()
                 .is_none()
         );
-        let mut env = HashMap::from([("IMPECCABLE_CAPTURE_PORT".into(), "12345".into())]);
+        let mut env = HashMap::from([("PROCABLE_CAPTURE_PORT".into(), "12345".into())]);
         assert!(RemoteEntryRenderer::from_env(&env).is_err());
-        env.insert("IMPECCABLE_CAPTURE_CAPABILITY".into(), "a".repeat(64));
+        env.insert("PROCABLE_CAPTURE_CAPABILITY".into(), "a".repeat(64));
         assert!(RemoteEntryRenderer::from_env(&env).unwrap().is_some());
         env.insert(
-            "IMPECCABLE_CAPTURE_PORT".into(),
+            "PROCABLE_CAPTURE_PORT".into(),
             "http://example.com".into(),
         );
         assert!(RemoteEntryRenderer::from_env(&env).is_err());
@@ -723,7 +723,7 @@ mod component_boundary_tests {
     }
     #[test]
     fn pending_binds_only_while_the_captured_spec_owes_a_review() {
-        let root = std::env::temp_dir().join(format!("impeccable-capture-owed-{}", std::process::id()));
+        let root = std::env::temp_dir().join(format!("procable-capture-owed-{}", std::process::id()));
         std::fs::create_dir_all(root.join("specs")).unwrap();
         let write = |name: &str, body: &str| std::fs::write(root.join("specs").join(name), body).unwrap();
         write("text.json", r#"{"regions":[{"id":"copy","kind":"text","box":{"x":0,"y":0,"w":1,"h":1}}]}"#);
@@ -742,8 +742,8 @@ mod component_boundary_tests {
 #[cfg(test)]
 mod parse_tests {
     use super::*;
-    use impeccable_comp_verbs::asset_capture::capture_sha256;
-    const SPEC: &str = ".impeccable/build/spec.json";
+    use procable_comp_verbs::asset_capture::capture_sha256;
+    const SPEC: &str = ".procable/build/spec.json";
     struct Root(PathBuf);
     impl Drop for Root {
         fn drop(&mut self) {
@@ -753,7 +753,7 @@ mod parse_tests {
     fn root(name: &str, raster: usize) -> (Root, EntryRequest, Value) {
         let dir = std::env::temp_dir().join(format!("capsvc-parse-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join(".impeccable/build")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/build")).unwrap();
         let mut regions = vec![json!({"id":"headline","kind":"text","medium":"semantic"})];
         regions.extend((0..raster).map(|i| json!({"id":format!("art-{i}"),"kind":"plate","medium":"raster"})));
         let spec = serde_json::to_vec(&json!({"comp":"comp.png","regions":regions})).unwrap();

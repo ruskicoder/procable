@@ -56,7 +56,7 @@ pub mod live_status;
 pub mod live_target;
 pub mod live_wrap;
 
-use impeccable_common::Io;
+use procable_common::Io;
 
 /// Verb dispatcher for every `live*` verb. Unknown live verbs (parts 2/3
 /// until they land) report `not implemented` with exit 70.
@@ -82,7 +82,7 @@ pub fn run(verb: &str, args: &[String], io: &mut Io) -> i32 {
         }
         other => {
             io.err(&format!(
-                "impeccable: verb '{}' is not implemented yet\n",
+                "procable: verb '{}' is not implemented yet\n",
                 other
             ));
             70

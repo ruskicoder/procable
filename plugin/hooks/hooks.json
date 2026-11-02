@@ -5,10 +5,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \"${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" ] || sh \"${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" hook",
-            "windows": "cmd /c if exist ${CLAUDE_PLUGIN_ROOT}\\skills\\impeccable\\scripts\\impeccable.cmd ${CLAUDE_PLUGIN_ROOT}\\skills\\impeccable\\scripts\\impeccable.cmd hook",
+            "command": "[ ! -f \"${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/procable\" ] || sh \"${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/procable\" hook",
+            "windows": "cmd /c if exist ${CLAUDE_PLUGIN_ROOT}\\skills\\procable\\scripts\\procable.cmd ${CLAUDE_PLUGIN_ROOT}\\skills\\procable\\scripts\\procable.cmd hook",
             "env": {
-              "IMPECCABLE_HOOK_HARNESS": "vscode"
+              "PROCABLE_HOOK_HARNESS": "vscode"
             },
             "timeout": 5,
             "statusMessage": "Preparing build session"
@@ -22,10 +22,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \"${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" ] || sh \"${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" hook",
-            "windows": "cmd /c if exist ${CLAUDE_PLUGIN_ROOT}\\skills\\impeccable\\scripts\\impeccable.cmd ${CLAUDE_PLUGIN_ROOT}\\skills\\impeccable\\scripts\\impeccable.cmd hook",
+            "command": "[ ! -f \"${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/procable\" ] || sh \"${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/procable\" hook",
+            "windows": "cmd /c if exist ${CLAUDE_PLUGIN_ROOT}\\skills\\procable\\scripts\\procable.cmd ${CLAUDE_PLUGIN_ROOT}\\skills\\procable\\scripts\\procable.cmd hook",
             "env": {
-              "IMPECCABLE_HOOK_HARNESS": "vscode"
+              "PROCABLE_HOOK_HARNESS": "vscode"
             },
             "timeout": 5,
             "statusMessage": "Checking UI changes"
@@ -38,10 +38,10 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \"${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" ] || sh \"${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" hook",
-            "windows": "cmd /c if exist ${CLAUDE_PLUGIN_ROOT}\\skills\\impeccable\\scripts\\impeccable.cmd ${CLAUDE_PLUGIN_ROOT}\\skills\\impeccable\\scripts\\impeccable.cmd hook",
+            "command": "[ ! -f \"${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/procable\" ] || sh \"${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/procable\" hook",
+            "windows": "cmd /c if exist ${CLAUDE_PLUGIN_ROOT}\\skills\\procable\\scripts\\procable.cmd ${CLAUDE_PLUGIN_ROOT}\\skills\\procable\\scripts\\procable.cmd hook",
             "env": {
-              "IMPECCABLE_HOOK_HARNESS": "vscode"
+              "PROCABLE_HOOK_HARNESS": "vscode"
             },
             "timeout": 30,
             "statusMessage": "Design deep pass"

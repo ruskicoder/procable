@@ -7,8 +7,8 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use impeccable_browser::BrowserEngine;
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::BrowserEngine;
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/antipatterns")
@@ -51,19 +51,19 @@ fn handle(mut stream: TcpStream) {
 
 fn engine() -> Option<BrowserEngine> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }
     Some(BrowserEngine::new(env))
 }
 
-fn scan(engine: &BrowserEngine, port: u16, fixture: &str) -> Vec<impeccable_core::findings::Finding> {
+fn scan(engine: &BrowserEngine, port: u16, fixture: &str) -> Vec<procable_core::findings::Finding> {
     let url = format!("http://127.0.0.1:{port}/{fixture}");
     engine.detect_url(&url, &ScanOptions::default()).expect("scan")
 }
 
-fn selector(f: &impeccable_core::findings::Finding) -> &str {
+fn selector(f: &procable_core::findings::Finding) -> &str {
     f.extras.get("selector").and_then(|v| v.as_str()).unwrap_or("")
 }
 

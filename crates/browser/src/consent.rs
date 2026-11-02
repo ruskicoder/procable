@@ -310,7 +310,7 @@ pub const CONSENT_MANAGERS: &[ConsentManager] = &[
 ];
 
 /// The id of the style element the hide step injects.
-pub const HIDE_STYLE_ID: &str = "impeccable-consent-hide";
+pub const HIDE_STYLE_ID: &str = "procable-consent-hide";
 
 /// Page JS: `el => bool`, whether an element marked with
 /// [`INLINE_HIDE_MARK`] still carries the inline hide a pass stamped on it,
@@ -326,7 +326,7 @@ pub const STAMP_IS_OURS_JS: &str = "(el => el.style.getPropertyValue('display') 
 /// `display: none !important` (a manager whose own inline `!important`
 /// outranks the rule), holding the inline `display` it replaced as
 /// `[value, priority]`.
-pub const INLINE_HIDE_MARK: &str = "data-impeccable-consent-display";
+pub const INLINE_HIDE_MARK: &str = "data-procable-consent-display";
 
 fn managers_json() -> Value {
     Value::Array(
@@ -578,7 +578,7 @@ pub const COOKIE_NOTICE: &str = "cookie notice";
 /// The attribute the hide step puts on a site's own cookie notice it hid
 /// (and on the empty full-screen layer beside it), naming the element, so a
 /// later pass reports it again without looking for it twice.
-pub const COOKIE_NOTICE_MARK: &str = "data-impeccable-cookie-notice";
+pub const COOKIE_NOTICE_MARK: &str = "data-procable-cookie-notice";
 /// Most visible characters a cookie notice may carry, its preference text
 /// included.
 pub const COOKIE_NOTICE_MAX_TEXT: usize = 1500;

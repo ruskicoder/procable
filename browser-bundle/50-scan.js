@@ -2,7 +2,7 @@
 // The in-page scan/detect API, the WASM core bridge (group-map
 // marshalling), and the extension-mode message loop of the standalone
 // bundle. Ported from cli/engine/browser/injected/index.mjs Section 7; every
-// rule decision is a call into the WASM core (`__impeccable.*`), the DOM
+// rule decision is a call into the WASM core (`__procable.*`), the DOM
 // reads it needs go through the probe, the overlay UI is 40-overlay.js and
 // the visual-contrast sampling 35-visual.js.
 
@@ -10,52 +10,52 @@ const IS_BROWSER = typeof window !== 'undefined';
 
 // ─── Section 7: Browser UI (IS_BROWSER only) ────────────────────────────────
 
-if (IS_BROWSER && !__impeccable) {
+if (IS_BROWSER && !__procable) {
   // The core could not start (in practice: a Content-Security-Policy whose
   // script-src lacks 'wasm-unsafe-eval'). Keep the API surface so callers get
-  // one clear error instead of "impeccableDetect is not a function".
-  const reason = __impeccableInitError && __impeccableInitError.message
-    ? __impeccableInitError.message
-    : String(__impeccableInitError);
-  const message = `[impeccable] detector core unavailable: ${reason} (a Content-Security-Policy without 'wasm-unsafe-eval' blocks WebAssembly)`;
+  // one clear error instead of "procableDetect is not a function".
+  const reason = __procableInitError && __procableInitError.message
+    ? __procableInitError.message
+    : String(__procableInitError);
+  const message = `[procable] detector core unavailable: ${reason} (a Content-Security-Policy without 'wasm-unsafe-eval' blocks WebAssembly)`;
   const fail = () => { throw new Error(message); };
   const _myScript = document.currentScript;
-  const EXTENSION_MODE = (_myScript && _myScript.dataset.impeccableExtension === 'true')
-    || document.documentElement.dataset.impeccableExtension === 'true';
+  const EXTENSION_MODE = (_myScript && _myScript.dataset.procableExtension === 'true')
+    || document.documentElement.dataset.procableExtension === 'true';
   console.warn(message);
-  window.impeccableDetect = fail;
-  window.impeccableDetectAsync = async () => fail();
-  window.impeccableScan = fail;
-  window.impeccableScanAsync = async () => fail();
-  window.impeccableMeasureHiddenText = fail;
-  window.impeccableCollectVisualContrastCandidates = fail;
-  window.impeccableAnalyzeVisualContrast = async () => fail();
-  window.impeccableGetLastVisualContrastAnalyses = () => [];
-  window.__impeccableCoreError = message;
+  window.procableDetect = fail;
+  window.procableDetectAsync = async () => fail();
+  window.procableScan = fail;
+  window.procableScanAsync = async () => fail();
+  window.procableMeasureHiddenText = fail;
+  window.procableCollectVisualContrastCandidates = fail;
+  window.procableAnalyzeVisualContrast = async () => fail();
+  window.procableGetLastVisualContrastAnalyses = () => [];
+  window.__procableCoreError = message;
   if (EXTENSION_MODE) {
     window.addEventListener('message', (e) => {
-      if (e.source !== window || !e.data || e.data.source !== 'impeccable-command') return;
-      if (e.data.action === 'scan') window.postMessage({ source: 'impeccable-error', message }, '*');
+      if (e.source !== window || !e.data || e.data.source !== 'procable-command') return;
+      if (e.data.action === 'scan') window.postMessage({ source: 'procable-error', message }, '*');
     });
-    window.postMessage({ source: 'impeccable-ready' }, '*');
+    window.postMessage({ source: 'procable-ready' }, '*');
   }
 } else if (IS_BROWSER) {
   // Detect extension mode via the script tag's data attribute or the document element fallback.
   // currentScript is reliable for synchronously-executing scripts (which our IIFE is).
   const _myScript = document.currentScript;
-  const EXTENSION_MODE = (_myScript && _myScript.dataset.impeccableExtension === 'true')
-    || document.documentElement.dataset.impeccableExtension === 'true';
+  const EXTENSION_MODE = (_myScript && _myScript.dataset.procableExtension === 'true')
+    || document.documentElement.dataset.procableExtension === 'true';
 
-  const ui = createImpeccableOverlay({
+  const ui = createProcableOverlay({
     extensionMode: EXTENSION_MODE,
-    antipatterns: JSON.parse(__impeccable.antipatterns_json()),
+    antipatterns: JSON.parse(__procable.antipatterns_json()),
   });
   const {
     collectVisualContrastCandidates,
     analyzeVisualContrastCandidate,
     analyzeVisualContrast,
     waitForVisualPaint,
-  } = createVisualContrast(createInPageVisualIO(__impeccable));
+  } = createVisualContrast(createInPageVisualIO(__procable));
 
   // ── WASM core bridge ──────────────────────────────────────────────────────
   // The rule core runs collectBrowserFindings in WASM and hands back element
@@ -64,7 +64,7 @@ if (IS_BROWSER && !__impeccable) {
   // core so selectors/labels/severities come from one place.
 
   function collectConfigJson() {
-    const config = window.__IMPECCABLE_CONFIG__ || {};
+    const config = window.__PROCABLE_CONFIG__ || {};
     return JSON.stringify({
       extensionMode: EXTENSION_MODE,
       disabledRules: Array.isArray(config.disabledRules) ? config.disabledRules : [],
@@ -81,26 +81,26 @@ if (IS_BROWSER && !__impeccable) {
 
   // A page matched by detector.ignoreFiles is waived wholesale: every scan
   // stage answers empty so the badge and toast read zero. Mirrors
-  // shouldIgnoreDetectionFile in cli/lib/impeccable-config.mjs; the live
+  // shouldIgnoreDetectionFile in cli/lib/procable-config.mjs; the live
   // overlay resolves the globs per page (live-browser-ignores.js) and
   // forwards the verdict as config.skipScan. The core repeats this guard on
   // the parsed config so the snapshot route answers empty too.
   function skipScanActive() {
-    return EXTENSION_MODE && window.__IMPECCABLE_CONFIG__?.skipScan === true;
+    return EXTENSION_MODE && window.__PROCABLE_CONFIG__?.skipScan === true;
   }
 
   function serializeFindings(allFindings) {
     const groups = allFindings.map(({ el, findings }) => ({ el: __intern(el), findings }));
-    return JSON.parse(__impeccable.serialize_findings(JSON.stringify(groups)));
+    return JSON.parse(__procable.serialize_findings(JSON.stringify(groups)));
   }
 
   const printSummary = function(allFindings) {
     if (allFindings.length === 0) {
-      console.log('%c[impeccable] No anti-patterns found.', 'color: #22c55e; font-weight: bold');
+      console.log('%c[procable] No anti-patterns found.', 'color: #22c55e; font-weight: bold');
       return;
     }
     console.group(
-      `%c[impeccable] ${allFindings.length} anti-pattern${allFindings.length === 1 ? '' : 's'} found`,
+      `%c[procable] ${allFindings.length} anti-pattern${allFindings.length === 1 ? '' : 's'} found`,
       'color: oklch(84% 0.19 80.46); font-weight: bold'
     );
     for (const { el, findings } of allFindings) {
@@ -121,7 +121,7 @@ if (IS_BROWSER && !__impeccable) {
       return { groupMap: new Map(), allFindings: [], pageLevelFindings: [] };
     }
     __resetRegistry();
-    const collected = JSON.parse(__impeccable.collect_browser_findings(collectConfigJson()));
+    const collected = JSON.parse(__procable.collect_browser_findings(collectConfigJson()));
     const groupMap = new Map();
     for (const g of collected.groups) {
       // Handle 0 is the JS `document.body` null key (a bare document).
@@ -138,8 +138,8 @@ if (IS_BROWSER && !__impeccable) {
   }
 
   // Config plumbing shared with the extension's offscreen document lives in
-  // 30-scan-common.js; here the config is the page's __IMPECCABLE_CONFIG__.
-  const pageConfig = () => window.__IMPECCABLE_CONFIG__ || {};
+  // 30-scan-common.js; here the config is the page's __PROCABLE_CONFIG__.
+  const pageConfig = () => window.__PROCABLE_CONFIG__ || {};
   const visualContrastMode = (options = {}) => __visualContrastMode(options, pageConfig());
   const shouldRunVisualContrast = (options = {}) => visualContrastMode(options) !== false;
   const visualContrastOptions = (options = {}) => __visualContrastOptions(options, pageConfig());
@@ -170,12 +170,12 @@ if (IS_BROWSER && !__impeccable) {
   }
 
   function addVisualContrastResult(groupMap, result, options = {}) {
-    const elId = __impeccable.visual_contrast_result_el(JSON.stringify(result));
+    const elId = __procable.visual_contrast_result_el(JSON.stringify(result));
     const el = __el(elId);
     if (!el) return false;
     if (groupMap.collapsed && groupMap.collapsed.has(el)) return false;
     const existing = groupMap.get(el) || [];
-    const finding = JSON.parse(__impeccable.visual_contrast_result_finding(elId, JSON.stringify(existing), JSON.stringify(result)));
+    const finding = JSON.parse(__procable.visual_contrast_result_finding(elId, JSON.stringify(existing), JSON.stringify(result)));
     if (!finding) return false;
     if (groupMap.has(el)) groupMap.get(el).push(finding);
     else groupMap.set(el, [finding]);
@@ -190,7 +190,7 @@ if (IS_BROWSER && !__impeccable) {
     if (!EXTENSION_MODE) return;
     const allFindings = browserFindingsFromMap(groupMap);
     window.postMessage({
-      source: 'impeccable-results',
+      source: 'procable-results',
       findings: serializeFindings(allFindings),
       count: allFindings.length,
       ...scanResultMeta(options),
@@ -200,13 +200,13 @@ if (IS_BROWSER && !__impeccable) {
   function postExtensionError(err) {
     if (!EXTENSION_MODE) return;
     window.postMessage({
-      source: 'impeccable-error',
+      source: 'procable-error',
       message: err?.message || String(err),
     }, '*');
   }
 
   function reportVisualContrastError(err, detail = {}) {
-    window.dispatchEvent(new CustomEvent('impeccable-visual-contrast-error', {
+    window.dispatchEvent(new CustomEvent('procable-visual-contrast-error', {
       detail: {
         ...detail,
         message: err?.message || String(err),
@@ -215,7 +215,7 @@ if (IS_BROWSER && !__impeccable) {
     if (EXTENSION_MODE) {
       postExtensionError(err);
     } else {
-      console.warn('[impeccable] visual contrast scan failed', err);
+      console.warn('[procable] visual contrast scan failed', err);
     }
   }
 
@@ -244,7 +244,7 @@ if (IS_BROWSER && !__impeccable) {
             const added = addVisualContrastResult(groupMap, result, { decorate: true });
             if (added) {
               postSerializedFindings(groupMap, options);
-              window.dispatchEvent(new CustomEvent('impeccable-visual-contrast-resolved', {
+              window.dispatchEvent(new CustomEvent('procable-visual-contrast-resolved', {
                 detail: {
                   selector: result.selector,
                   status: result.status,
@@ -332,7 +332,7 @@ if (IS_BROWSER && !__impeccable) {
     // In extension mode, post serialized results for the DevTools panel
     if (EXTENSION_MODE) {
       window.postMessage({
-        source: 'impeccable-results',
+        source: 'procable-results',
         findings: serializeFindings(allFindings),
         count: allFindings.length,
         ...scanResultMeta(options),
@@ -393,9 +393,9 @@ if (IS_BROWSER && !__impeccable) {
   if (EXTENSION_MODE) {
     // Extension mode: listen for commands, don't auto-scan
     window.addEventListener('message', (e) => {
-      if (e.source !== window || !e.data || e.data.source !== 'impeccable-command') return;
+      if (e.source !== window || !e.data || e.data.source !== 'procable-command') return;
       if (e.data.action === 'scan') {
-        if (e.data.config) window.__IMPECCABLE_CONFIG__ = e.data.config;
+        if (e.data.config) window.__PROCABLE_CONFIG__ = e.data.config;
         try {
           scan(e.data.config || {});
         } catch (err) {
@@ -404,7 +404,7 @@ if (IS_BROWSER && !__impeccable) {
       }
       if (e.data.action === 'toggle-overlays') {
         const visible = ui.toggleOverlays();
-        window.postMessage({ source: 'impeccable-overlays-toggled', visible }, '*');
+        window.postMessage({ source: 'procable-overlays-toggled', visible }, '*');
       }
       if (e.data.action === 'remove') {
         clearOverlays();
@@ -417,14 +417,14 @@ if (IS_BROWSER && !__impeccable) {
         ui.unspotlight();
       }
     });
-    window.postMessage({ source: 'impeccable-ready' }, '*');
+    window.postMessage({ source: 'procable-ready' }, '*');
   } else {
-    if (window.__IMPECCABLE_CONFIG__?.autoScan !== false) {
+    if (window.__PROCABLE_CONFIG__?.autoScan !== false) {
       const runAutoScan = () => {
         try {
           scan();
         } catch (err) {
-          console.warn('[impeccable] scan failed', err);
+          console.warn('[procable] scan failed', err);
         }
       };
       if (document.readyState === 'loading') {
@@ -435,16 +435,16 @@ if (IS_BROWSER && !__impeccable) {
     }
   }
 
-  window.impeccableDetect = detect;
-  window.impeccableDetectAsync = detectAsync;
-  window.impeccableScan = scan;
-  window.impeccableScanAsync = scanAsync;
+  window.procableDetect = detect;
+  window.procableDetectAsync = detectAsync;
+  window.procableScan = scan;
+  window.procableScanAsync = scanAsync;
   // Raw measurement for the URL engine's content-hidden-at-rest pass: it
   // drives a reveal sweep from Node and thresholds the result itself.
-  window.impeccableMeasureHiddenText = () => JSON.parse(__impeccable.measure_hidden_text());
-  window.impeccableCollectVisualContrastCandidates = collectVisualContrastCandidates;
-  window.impeccableAnalyzeVisualContrast = analyzeVisualContrast;
-  window.impeccableGetLastVisualContrastAnalyses = () => lastVisualContrastAnalyses.slice();
+  window.procableMeasureHiddenText = () => JSON.parse(__procable.measure_hidden_text());
+  window.procableCollectVisualContrastCandidates = collectVisualContrastCandidates;
+  window.procableAnalyzeVisualContrast = analyzeVisualContrast;
+  window.procableGetLastVisualContrastAnalyses = () => lastVisualContrastAnalyses.slice();
 
   // The snapshot route (what the extension runs when the page's CSP keeps
   // WebAssembly out of every world it can reach), exposed here so the two
@@ -452,23 +452,23 @@ if (IS_BROWSER && !__impeccable) {
   // the snapshot (answering its hit-test needs from the live page), and
   // serialize through it. Deterministic findings only; the visual-contrast
   // pass over a snapshot is the extension's (see 60-offscreen.js).
-  window.impeccableSnapshotCapture = (options) => __impeccableSnapshot.capture(options);
-  window.impeccableDetectFromSnapshot = function (options = {}) {
+  window.procableSnapshotCapture = (options) => __procableSnapshot.capture(options);
+  window.procableDetectFromSnapshot = function (options = {}) {
     const t0 = performance.now();
-    const cap = __impeccableSnapshot.capture(options);
+    const cap = __procableSnapshot.capture(options);
     if (cap.error) throw new Error(cap.error);
     const t1 = performance.now();
-    let out = JSON.parse(__impeccable.collect_findings_from_snapshot(cap.json, collectConfigJson()));
+    let out = JSON.parse(__procable.collect_findings_from_snapshot(cap.json, collectConfigJson()));
     let rounds = 1;
     while (out.needs) {
-      __impeccable.snapshot_add_facts(JSON.stringify(__impeccableSnapshot.answer(out.needs, cap)));
-      out = JSON.parse(__impeccable.collect_browser_findings(collectConfigJson()));
-      if (__impeccable.snapshot_has_needs()) out = { needs: JSON.parse(__impeccable.snapshot_take_needs()) };
+      __procable.snapshot_add_facts(JSON.stringify(__procableSnapshot.answer(out.needs, cap)));
+      out = JSON.parse(__procable.collect_browser_findings(collectConfigJson()));
+      if (__procable.snapshot_has_needs()) out = { needs: JSON.parse(__procable.snapshot_take_needs()) };
       rounds++;
     }
-    const serialized = JSON.parse(__impeccable.serialize_findings(JSON.stringify(out.groups)));
-    const unknownStyleProps = JSON.parse(__impeccable.snapshot_unknown_style_props());
-    __impeccable.snapshot_clear();
+    const serialized = JSON.parse(__procable.serialize_findings(JSON.stringify(out.groups)));
+    const unknownStyleProps = JSON.parse(__procable.snapshot_unknown_style_props());
+    __procable.snapshot_clear();
     return {
       findings: serialized,
       pageLevel: out.pageLevel,

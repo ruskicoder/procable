@@ -1,8 +1,8 @@
 //! Offline prototype: one registered root, shared native capture/verify/release.
 //! Not a shipped CLI verb or an eval approval endpoint.
 use base64::Engine;
-use impeccable::entry_capture::CdpEntryRenderer;
-use impeccable_comp_verbs::entry_capture::{CapturedEntry, EntryRenderer, EntryRequest, EntryStage};
+use procable::entry_capture::CdpEntryRenderer;
+use procable_comp_verbs::entry_capture::{CapturedEntry, EntryRenderer, EntryRequest, EntryStage};
 use serde_json::{json, Value};
 use std::{collections::HashMap, io::{BufRead, BufReader, Read, Write}, net::{TcpListener, TcpStream}, path::PathBuf, time::{Duration, Instant}};
 
@@ -34,7 +34,7 @@ fn request(stream: &TcpStream, key: &str) -> Result<(String, Value), String> {
 }
 fn main()->Result<(),Box<dyn std::error::Error>> {
     let args:Vec<_>=std::env::args().collect();if args.len()!=3{return Err("expected registered-root ready-file".into());}
-    let root=std::fs::canonicalize(&args[1])?;let key=std::env::var("IMPECCABLE_CAPTURE_CAPABILITY")?;
+    let root=std::fs::canonicalize(&args[1])?;let key=std::env::var("PROCABLE_CAPTURE_CAPABILITY")?;
     if key.len()<32{return Err("capability too short".into());}
     let listener=TcpListener::bind("127.0.0.1:0")?;listener.set_nonblocking(true)?;
     std::fs::write(&args[2],serde_json::to_vec(&json!({"port":listener.local_addr()?.port(),"root":root}))?)?;

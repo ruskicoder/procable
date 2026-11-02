@@ -42,7 +42,7 @@ pub fn linked_worktree_checkout(dir: &str) -> Option<String> {
 
 /// The header line of every `.gitignore` the engine writes into a runtime
 /// directory of the user's project.
-pub const RUNTIME_IGNORE_HEADER: &str = "# Written by Impeccable: local runtime state, never committed.";
+pub const RUNTIME_IGNORE_HEADER: &str = "# Written by Procable: local runtime state, never committed.";
 
 /// Makes sure `<dir>/.gitignore` ignores each of `patterns`, creating the
 /// directory and the file when missing and appending only the patterns it
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn info_exclude_follows_a_linked_worktrees_commondir() {
-        let base = std::env::temp_dir().join(format!("impeccable-common-git-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("procable-common-git-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         let tmp = base.to_string_lossy().into_owned();
 
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn linked_worktree_checkout_needs_a_git_file_whose_gitdir_has_commondir() {
-        let base = std::env::temp_dir().join(format!("impeccable-common-wt-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("procable-common-wt-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         let tmp = base.to_string_lossy().into_owned();
         let at = |parts: &[&str]| jsp::join(&[&[tmp.as_str()], parts].concat());
@@ -147,7 +147,7 @@ mod tests {
 
     #[test]
     fn ensure_dir_ignored_writes_once_and_keeps_user_lines() {
-        let dir = std::env::temp_dir().join(format!("impeccable-ignore-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-ignore-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         let d = dir.join("q").to_string_lossy().into_owned();
         ensure_dir_ignored(&d, &["*"]);

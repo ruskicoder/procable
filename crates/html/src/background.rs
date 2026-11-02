@@ -7,17 +7,17 @@
 use crate::cascade::StyleValues;
 use crate::dom::StaticElement;
 use ego_tree::NodeId;
-use impeccable_core::checks::gradient_geometry as geo;
-use impeccable_core::checks::measures::{
+use procable_core::checks::gradient_geometry as geo;
+use procable_core::checks::measures::{
     parse_color_resolved, parse_radius_corner_px_em, parse_radius_corners_em, parse_radius_to_px,
     parse_radius_token_px, CustomProps, ROOT_FONT_SIZE_PX,
 };
-use impeccable_core::checks::rules::Corners;
-use impeccable_core::color::{
+use procable_core::checks::rules::Corners;
+use procable_core::color::{
     composite_color_over, is_no_paint_color_value, parse_any_color, parse_gradient_colors,
     parse_rgb, split_top_level_commas, Rgba,
 };
-use impeccable_core::js;
+use procable_core::js;
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -532,7 +532,7 @@ pub fn resolve_border_radius_px(style: &StyleValues, width_px: f64) -> f64 {
 
 /// The element's font size in px, what an `em` radius resolves against.
 fn em_px(style: &StyleValues) -> f64 {
-    let size = impeccable_core::js::parse_float(sv(style, "fontSize"));
+    let size = procable_core::js::parse_float(sv(style, "fontSize"));
     if size.is_finite() && size > 0.0 {
         size
     } else {
@@ -611,7 +611,7 @@ pub fn resolve_side_accent_corners(
         return None;
     }
     if !el.radius_declared() {
-        let classes = impeccable_core::checks::rules::tailwind_declared_corners(el.class_name());
+        let classes = procable_core::checks::rules::tailwind_declared_corners(el.class_name());
         if classes.declared() {
             return classes.to_corners();
         }

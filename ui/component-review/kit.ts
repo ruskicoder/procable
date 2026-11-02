@@ -1,4 +1,4 @@
-/** The Impeccable design-system kit, vendored verbatim from impeccable-site (see vendor/ and
+/** The Procable design-system kit, vendored verbatim from procable-site (see vendor/ and
  * scripts/sync-kinpaku-kit.mjs; the site is the source of truth). Shadow roots have no :root,
  * so the token blocks also apply to :host. Class names are the kit's own. */
 import { tokens, kit, rail } from './vendor/kit-css';

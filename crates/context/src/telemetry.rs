@@ -7,9 +7,9 @@
 //!
 //! What remains:
 //! - the seed reference and the seed ledger. The reference,
-//!   `seed:<16 hex of sha256("impeccable-seed:" + key)>`, is what committed
+//!   `seed:<16 hex of sha256("procable-seed:" + key)>`, is what committed
 //!   files (the surface brief's FORM line) record instead of the key. The
-//!   ledger, `.impeccable/questions/seeds/<those 16 hex>.json`, is the local,
+//!   ledger, `.procable/questions/seeds/<those 16 hex>.json`, is the local,
 //!   self-ignored record that resolves a reference back to its key on this
 //!   machine (`{"key"}`, written for every roll), plus, only while telemetry
 //!   is on, one entry per API-dealt round (`poolRevision`, the dealt catalog
@@ -41,10 +41,10 @@ pub const MAX_REROLL: usize = 8;
 /// The highest zero-based card position the choice ping reports.
 pub const MAX_OPTION: usize = 15;
 
-/// `IMPECCABLE_API_TIMEOUT` in ms (default 4000): one budget for the API
+/// `PROCABLE_API_TIMEOUT` in ms (default 4000): one budget for the API
 /// calls a run makes.
 pub fn api_timeout(env: &Env) -> Duration {
-    let ms = env.get("IMPECCABLE_API_TIMEOUT").filter(|v| !v.is_empty()).map(|v| crate::critique_storage::js_number(v)).unwrap_or(4000.0);
+    let ms = env.get("PROCABLE_API_TIMEOUT").filter(|v| !v.is_empty()).map(|v| crate::critique_storage::js_number(v)).unwrap_or(4000.0);
     let ms = if ms.is_nan() { 0.0 } else { ms.max(0.0) };
     Duration::from_millis(ms as u64)
 }
@@ -98,20 +98,20 @@ impl SeedRound {
     }
 }
 
-/// The salt seed references are computed under (`impeccable_common::seed`).
+/// The salt seed references are computed under (`procable_common::seed`).
 /// `None` when no valid salt can be persisted on this machine: then there
 /// is no seed reference at all, never an unsalted one.
 pub fn seed_salt(env: &Env, cwd: &str) -> Option<String> {
-    impeccable_common::seed::salt(&crate::util::homedir(env), Some(cwd), env.get("IMPECCABLE_SEED_SALT").map(String::as_str))
+    procable_common::seed::salt(&crate::util::homedir(env), Some(cwd), env.get("PROCABLE_SEED_SALT").map(String::as_str))
 }
 
 /// Every valid salt this machine keeps (home and project): a reference made
 /// under any of them resolves.
 pub fn seed_salts(env: &Env, cwd: &str) -> Vec<String> {
-    impeccable_common::seed::existing_salts(&crate::util::homedir(env), Some(cwd), env.get("IMPECCABLE_SEED_SALT").map(String::as_str))
+    procable_common::seed::existing_salts(&crate::util::homedir(env), Some(cwd), env.get("PROCABLE_SEED_SALT").map(String::as_str))
 }
 
-/// The seed ledger of one project directory: `.impeccable/questions/seeds/
+/// The seed ledger of one project directory: `.procable/questions/seeds/
 /// <reference hex>.json`, `{"key", "rounds"?: {"<reroll>": {...}}}`. The key
 /// entry is what lets a reference stand for its key on this machine and is
 /// never pruned; rounds exist only while telemetry is on and are pruned after
@@ -211,21 +211,21 @@ impl Ledger {
     }
 
     fn dir(&self) -> String {
-        jsp::join(&[&self.cwd, ".impeccable", "questions", "seeds"])
+        jsp::join(&[&self.cwd, ".procable", "questions", "seeds"])
     }
 
     /// The key's ledger, located once by the shared rule
-    /// (`impeccable_common::seed::locate`): every operation, the printed
+    /// (`procable_common::seed::locate`): every operation, the printed
     /// reference and resolution all derive from this one answer.
-    fn locate(&self, key: &str) -> impeccable_common::seed::Located {
+    fn locate(&self, key: &str) -> procable_common::seed::Located {
         if self.fresh.as_deref() == Some(key) {
-            return impeccable_common::seed::locate_fresh(&self.cwd, self.salt.as_deref(), key);
+            return procable_common::seed::locate_fresh(&self.cwd, self.salt.as_deref(), key);
         }
-        impeccable_common::seed::locate(&self.cwd, self.salt.as_deref(), &self.salts, key)
+        procable_common::seed::locate(&self.cwd, self.salt.as_deref(), &self.salts, key)
     }
 
     /// Marks `key` as one this run just generated (no `--from`, no
-    /// `IMPECCABLE_CONCEPT_SEED`): 128 random bits have no ledger, so no
+    /// `PROCABLE_CONCEPT_SEED`): 128 random bits have no ledger, so no
     /// name check or folder scan is spent on it.
     pub fn for_fresh_key(mut self, key: &str, fresh: bool) -> Ledger {
         if fresh {
@@ -275,7 +275,7 @@ impl Ledger {
         if std::fs::create_dir_all(self.dir()).is_err() {
             return None;
         }
-        crate::serve_question::ignore_questions_dir(&jsp::join(&[&self.cwd, ".impeccable", "questions"]));
+        crate::serve_question::ignore_questions_dir(&jsp::join(&[&self.cwd, ".procable", "questions"]));
         let located = self.locate(key);
         let path = located.path.to_string_lossy().into_owned();
         let _guard = lock(&path)?;
@@ -296,11 +296,11 @@ impl Ledger {
     /// reference resolves to the key this machine recorded for it. `Err`
     /// names a reference this machine has no record of.
     pub fn resolve(&self, v: &str) -> Result<String, String> {
-        if impeccable_common::seed::parse_reference(v).is_none() {
+        if procable_common::seed::parse_reference(v).is_none() {
             return Ok(v.to_string());
         }
         // The ledger is named by the reference itself, whatever salt made it.
-        impeccable_common::seed::resolve(&self.cwd, v).ok_or_else(|| v.to_string())
+        procable_common::seed::resolve(&self.cwd, v).ok_or_else(|| v.to_string())
     }
 
     /// Records the key behind a reference, for every roll whatever the
@@ -316,7 +316,7 @@ impl Ledger {
     /// round (a reproduced roll is a new presentation, so it gets a fresh
     /// `pingId` and no sent state). Telemetry only.
     pub fn record_round(&self, key: &str, round: &SeedRound) {
-        let ping_id = impeccable_common::seed::random_hex32();
+        let ping_id = procable_common::seed::random_hex32();
         self.update(key, |l| {
             l.insert("key".into(), Value::String(key.to_string()));
             let rounds = l.entry("rounds").or_insert_with(|| Value::Object(Map::new()));
@@ -510,7 +510,7 @@ fn card_text<'a>(card: &'a Value, k: &str) -> Option<&'a str> {
 
 fn is_pick_kicker(kicker: &str) -> bool {
     let k = kicker.to_uppercase().replace('\u{2019}', "'");
-    k == "IMPECCABLE'S PICK"
+    k == "PROCABLE'S PICK"
 }
 
 /// The single dealt catalog world a challenger card draws from, matched by
@@ -553,7 +553,7 @@ fn matched_world(card: &Value, dealt: &[Value]) -> Option<String> {
 /// - A card with no valid `kind` (a payload from older skill text) falls
 ///   back to the old conventions (`kindSource: inferred`): a `verdict` card
 ///   is a challenger, its `chosenId` the one dealt world its card images
-///   match; kicker `IMPECCABLE'S PICK` is the pick on a plain direction
+///   match; kicker `PROCABLE'S PICK` is the pick on a plain direction
 ///   round; kicker `THE ROLL`, or the lead card, is the assigned card on a
 ///   plain direction round and the dealt lead on a surface round. Anything
 ///   else sends no kind.
@@ -619,13 +619,13 @@ pub fn picker_choice(seed: &Value, payload: &Value, option_id: &str, steer: Opti
     Some(ChoicePing { kind: kind.map(str::to_string), chosen_id, option, kind_source: Some("inferred"), ..base })
 }
 
-// ---- `impeccable telemetry off|on|status` -------------------------------------
+// ---- `procable telemetry off|on|status` -------------------------------------
 
 /// What `procable telemetry` prints.
 pub const OFFLINE_STATUS: &str = "telemetry: none. procable runs offline and sends nothing anywhere.\n";
 
 /// `procable telemetry [status]`: there is no telemetry to turn on or off.
-pub fn run(args: &[String], io: &mut impeccable_common::Io) -> i32 {
+pub fn run(args: &[String], io: &mut procable_common::Io) -> i32 {
     match args.first().map(String::as_str) {
         None | Some("status" | "off" | "on") => {
             io.out(OFFLINE_STATUS);
@@ -647,14 +647,14 @@ mod tests {
         let env = Env::from([("DO_NOT_TRACK".into(), "0".into())]);
         assert!(telemetry_disabled(&env, "."));
         for args in [vec![], vec!["status".to_string()], vec!["on".to_string()]] {
-            let (mut io, captured) = impeccable_common::Io::captured("", std::env::temp_dir(), Env::new());
+            let (mut io, captured) = procable_common::Io::captured("", std::env::temp_dir(), Env::new());
             assert_eq!(run(&args, &mut io), 0);
             assert_eq!(String::from_utf8(captured.stdout.borrow().clone()).unwrap(), OFFLINE_STATUS);
         }
     }
 
     fn temp_dir(name: &str) -> String {
-        let dir = std::env::temp_dir().join(format!("impeccable-telemetry-{}-{}", name, std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-telemetry-{}-{}", name, std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir.to_string_lossy().into_owned()
@@ -665,7 +665,7 @@ mod tests {
     }
 
     pub(crate) fn test_ledger(cwd: &str) -> Ledger {
-        Ledger::new(&env(&[("IMPECCABLE_SEED_SALT", "test-salt")]), cwd)
+        Ledger::new(&env(&[("PROCABLE_SEED_SALT", "test-salt")]), cwd)
     }
 
     fn round(n: usize, dealt: &[&str]) -> SeedRound {
@@ -719,13 +719,13 @@ mod tests {
         assert_eq!((back.pool_revision, back.hand_id), (None, None));
         // Files are named by the reference's hex and hold no time but a pending send's.
         l.record_round("../Evil Key", &round(0, &["x"]));
-        for e in std::fs::read_dir(format!("{}/.impeccable/questions/seeds", cwd)).unwrap().flatten() {
+        for e in std::fs::read_dir(format!("{}/.procable/questions/seeds", cwd)).unwrap().flatten() {
             let name = e.file_name().to_string_lossy().into_owned();
             assert!(name.len() == 21 && name.ends_with(".json") && !name.contains("k1") && !name.contains("Evil"), "{name}");
             assert!(!std::fs::read_to_string(e.path()).unwrap().contains("\"at\""));
         }
         assert_eq!(l.resolve(&l.reference("../Evil Key").unwrap()).unwrap(), "../Evil Key");
-        assert_eq!(std::fs::read_to_string(format!("{}/.impeccable/questions/.gitignore", cwd)).unwrap(), format!("{}\n*\n", impeccable_common::git::RUNTIME_IGNORE_HEADER));
+        assert_eq!(std::fs::read_to_string(format!("{}/.procable/questions/.gitignore", cwd)).unwrap(), format!("{}\n*\n", procable_common::git::RUNTIME_IGNORE_HEADER));
     }
 
     #[test]
@@ -753,11 +753,11 @@ mod tests {
     fn no_salt_means_no_reference_never_an_unsalted_one() {
         let cwd = temp_dir("no-salt");
         let home = format!("{}/home", cwd);
-        std::fs::create_dir_all(format!("{}/.impeccable", home)).unwrap();
-        std::fs::write(format!("{}/.impeccable/seed-salt", home), "corrupt").unwrap();
+        std::fs::create_dir_all(format!("{}/.procable", home)).unwrap();
+        std::fs::write(format!("{}/.procable/seed-salt", home), "corrupt").unwrap();
         let l = Ledger::new(&env(&[("HOME", home.as_str()), ("USERPROFILE", home.as_str())]), &cwd);
         assert_eq!(l.reference("k1"), None);
-        assert_eq!(l.resolve(&impeccable_common::seed::reference("", "k1")), Err(impeccable_common::seed::reference("", "k1")), "an unsalted hash resolves to nothing");
+        assert_eq!(l.resolve(&procable_common::seed::reference("", "k1")), Err(procable_common::seed::reference("", "k1")), "an unsalted hash resolves to nothing");
         // Telemetry rounds still work by key.
         l.record_round("k1", &round(0, &["a"]));
         assert!(l.round("k1", Some(0)).is_some());
@@ -788,7 +788,7 @@ mod tests {
         for n in 0..8 {
             assert!(l.round("k1", Some(n)).unwrap().confirmed(), "round {n}");
         }
-        let leftovers: Vec<String> = std::fs::read_dir(format!("{}/.impeccable/questions/seeds", cwd)).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.contains(".tmp-") || n.ends_with(".lock")).collect();
+        let leftovers: Vec<String> = std::fs::read_dir(format!("{}/.procable/questions/seeds", cwd)).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.contains(".tmp-") || n.ends_with(".lock")).collect();
         assert!(leftovers.is_empty(), "{leftovers:?}");
     }
 
@@ -870,9 +870,9 @@ mod tests {
     fn legacy_page() -> Value {
         json!({ "options": [
             { "id": "assigned", "label": "Fillmore", "hero": "https://cards.test/teletext-service-hero.webp" },
-            { "id": "model-pick", "label": "Broadside", "kicker": "IMPECCABLE’S PICK" },
+            { "id": "model-pick", "label": "Broadside", "kicker": "PROCABLE’S PICK" },
             { "id": "challenger-teletext", "verdict": "competitive", "hero": "https://cards.test/teletext-service-hero.webp" },
-            { "id": "challenger-microfiche", "verdict": "declined", "hero": ".impeccable/mocks/worlds/microfiche-reader-hero.webp" },
+            { "id": "challenger-microfiche", "verdict": "declined", "hero": ".procable/mocks/worlds/microfiche-reader-hero.webp" },
             { "id": "challenger-own", "verdict": "wins", "hero": "https://elsewhere.test/x.webp" },
             { "id": "grounded-2", "label": "Another" }
         ], "canon": true })
@@ -881,7 +881,7 @@ mod tests {
     fn explicit_page() -> Value {
         json!({ "options": [
             { "id": "a", "kind": "assigned" },
-            { "id": "p", "kind": "pick", "kicker": "IMPECCABLE’S PICK" },
+            { "id": "p", "kind": "pick", "kicker": "PROCABLE’S PICK" },
             { "id": "c1", "kind": "challenger", "catalogId": "teletext-service", "verdict": "competitive" },
             { "id": "c2", "kind": "challenger", "catalogId": "challenger-teletext", "verdict": "wins" },
             { "id": "d", "kind": "dealt" },
@@ -981,9 +981,9 @@ mod tests {
         let cwd = temp_dir("reference");
         let l = test_ledger(&cwd);
         let r = l.reference("3f9a1c2e").unwrap();
-        assert!(impeccable_common::seed::parse_reference(&r).is_some() && r.len() == 21 && !r.contains("3f9a1c2e"), "{r}");
+        assert!(procable_common::seed::parse_reference(&r).is_some() && r.len() == 21 && !r.contains("3f9a1c2e"), "{r}");
         assert_eq!(l.reference("3f9a1c2e").unwrap(), r, "stable");
-        assert_ne!(Ledger::new(&env(&[("IMPECCABLE_SEED_SALT", "another")]), &cwd).reference("3f9a1c2e").unwrap(), r, "salted");
+        assert_ne!(Ledger::new(&env(&[("PROCABLE_SEED_SALT", "another")]), &cwd).reference("3f9a1c2e").unwrap(), r, "salted");
         // A key resolves to itself; a reference only once this machine recorded its key.
         assert_eq!(l.resolve("k1").unwrap(), "k1");
         assert_eq!(l.resolve(&r), Err(r.clone()));
@@ -1006,11 +1006,11 @@ mod tests {
         let old = sandboxed.reference("k1").unwrap();
         sandboxed.record_key("k1");
         // A stray home salt appears later (another tool, a restored backup).
-        std::fs::create_dir_all(format!("{}/.impeccable", home)).unwrap();
-        std::fs::write(format!("{}/.impeccable/seed-salt", home), "0123456789abcdef0123456789abcdef\n").unwrap();
+        std::fs::create_dir_all(format!("{}/.procable", home)).unwrap();
+        std::fs::write(format!("{}/.procable/seed-salt", home), "0123456789abcdef0123456789abcdef\n").unwrap();
         let l = Ledger::new(&e, &cwd);
         let new = l.reference("k2").unwrap();
-        assert_ne!(impeccable_common::seed::parse_reference(&new), None);
+        assert_ne!(procable_common::seed::parse_reference(&new), None);
         l.record_key("k2");
         assert_eq!(l.resolve(&old).unwrap(), "k1", "the project salt's reference still resolves");
         assert_eq!(l.resolve(&new).unwrap(), "k2");

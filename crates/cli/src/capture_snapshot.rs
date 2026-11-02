@@ -1,7 +1,7 @@
 //! Immutable, explicit static-HTML inputs for native capture. Not a framework server.
 //! The native caller owns the selection; private bound inputs are never HTTP routes.
-use impeccable_browser::html_snapshot::Connections;
-use impeccable_comp_verbs::asset_capture::capture_sha256 as hash;
+use procable_browser::html_snapshot::Connections;
+use procable_comp_verbs::asset_capture::capture_sha256 as hash;
 use serde_json::{Value, json};
 /// Most raster regions one native capture measures in a frame. The browser
 /// adapter batches a frame's regions into one document and refuses a larger
@@ -113,11 +113,11 @@ impl HtmlSnapshot {
     /// Fresh in-process diagnostic evidence. Persisted receipts are deliberately not inputs.
     pub fn capture_region(
         self: &Arc<Self>,
-        renderer: &mut dyn impeccable_comp_verbs::asset_capture::AssetRenderer,
+        renderer: &mut dyn procable_comp_verbs::asset_capture::AssetRenderer,
         spec_path: &str,
         region_id: &str,
         reduced_motion: bool,
-    ) -> Result<impeccable_comp_verbs::asset_capture::AssetCapture, String> {
+    ) -> Result<procable_comp_verbs::asset_capture::AssetCapture, String> {
         self.capture_regions(renderer, spec_path, &[region_id], reduced_motion)?
             .into_iter()
             .next()
@@ -126,24 +126,24 @@ impl HtmlSnapshot {
     /// Every requested region shares one frozen snapshot, server and browser document.
     pub fn capture_regions(
         self: &Arc<Self>,
-        renderer: &mut dyn impeccable_comp_verbs::asset_capture::AssetRenderer,
+        renderer: &mut dyn procable_comp_verbs::asset_capture::AssetRenderer,
         spec_path: &str,
         region_ids: &[&str],
         reduced_motion: bool,
-    ) -> Result<Vec<impeccable_comp_verbs::asset_capture::AssetCapture>, String> {
+    ) -> Result<Vec<procable_comp_verbs::asset_capture::AssetCapture>, String> {
         self.capture_regions_at_viewport(renderer, spec_path, region_ids, reduced_motion, None)
     }
     /// Desktop/mobile captures retain the comp-owned region coordinates scaled
     /// to the requested width. Reflow fidelity remains a separate gate concern.
     pub fn capture_regions_at_viewport(
         self: &Arc<Self>,
-        renderer: &mut dyn impeccable_comp_verbs::asset_capture::AssetRenderer,
+        renderer: &mut dyn procable_comp_verbs::asset_capture::AssetRenderer,
         spec_path: &str,
         region_ids: &[&str],
         reduced_motion: bool,
         viewport: Option<[u32; 2]>,
-    ) -> Result<Vec<impeccable_comp_verbs::asset_capture::AssetCapture>, String> {
-        use impeccable_comp_verbs::asset_capture::AssetCaptureRequest;
+    ) -> Result<Vec<procable_comp_verbs::asset_capture::AssetCapture>, String> {
+        use procable_comp_verbs::asset_capture::AssetCaptureRequest;
         self.verify_current()?;
         if region_ids.is_empty()
             || region_ids.len() > MAX_CAPTURE_REGIONS
@@ -193,7 +193,7 @@ impl HtmlSnapshot {
                 viewport: [width, height],
                 reduced_motion,
                 expected_box: {
-                    let mut b: impeccable_comp_verbs::asset_capture::CaptureBox =
+                    let mut b: procable_comp_verbs::asset_capture::CaptureBox =
                         serde_json::from_value(region["px"].clone()).map_err(|e| e.to_string())?;
                     b.x *= scale;
                     b.y *= scale;
@@ -228,7 +228,7 @@ impl HtmlSnapshot {
                 let entry = self.bytes(&self.entry).unwrap();
                 // Text responses arrive decoded; bind them to the text these bytes decode to.
                 let document = if receipt["documentResponseText"] == true {
-                    hash(&impeccable_browser::response_capture::decoded_text(entry))
+                    hash(&procable_browser::response_capture::decoded_text(entry))
                 } else {
                     hash(entry)
                 };
@@ -486,7 +486,7 @@ fn respond(
     // stop at EWOULDBLOCK and appear as valid-header/truncated-image responses.
     stream.set_nonblocking(false)?;
     // Chrome can connect and then write its request seconds later (see
-    // impeccable_browser::html_snapshot); closing the socket early stalls the
+    // procable_browser::html_snapshot); closing the socket early stalls the
     // navigation past its timeout. The connection has its own thread, so
     // waiting longer than any navigation timeout blocks no other request.
     stream.set_read_timeout(Some(Duration::from_secs(60)))?;

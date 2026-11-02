@@ -1,17 +1,17 @@
 //! Port of `cli/engine/shared/inline-ignores.mjs`: eslint-disable-style
-//! waivers that live in the scanned file (`impeccable-disable`,
-//! `impeccable-disable-line`, `impeccable-disable-next-line`).
+//! waivers that live in the scanned file (`procable-disable`,
+//! `procable-disable-line`, `procable-disable-next-line`).
 
 use crate::js::{self, ci, WS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
 /// JS `DIRECTIVE_RE` =
-/// `/impeccable-(disable-next-line|disable-line|disable)\b[ \t]*([^\n\r]*)/gi`.
+/// `/procable-(disable-next-line|disable-line|disable)\b[ \t]*([^\n\r]*)/gi`.
 static DIRECTIVE_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(&format!(
         r"{imp}-({dnl}|{dl}|{d})(?-u:\b)[ \t]*([^\n\r]*)",
-        imp = ci("impeccable"),
+        imp = ci("procable"),
         dnl = ci("disable-next-line"),
         dl = ci("disable-line"),
         d = ci("disable")
@@ -35,8 +35,8 @@ static REASON_SEP_RE: Lazy<Regex> =
 static TOKEN_SPLIT_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(&format!(r"[{},]+", js::WS_CHARS)).unwrap());
 
-/// Cheap bail-out `/impeccable-disable/i`.
-static HAS_DIRECTIVE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(&ci("impeccable-disable")).unwrap());
+/// Cheap bail-out `/procable-disable/i`.
+static HAS_DIRECTIVE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(&ci("procable-disable")).unwrap());
 
 /// An insertion-ordered set of rule ids (JS `Set<string>`).
 pub type RuleSet = Vec<String>;
@@ -197,12 +197,12 @@ mod tests {
 
     #[test]
     fn parses_directives() {
-        let src = "<!-- impeccable-disable low-contrast -- exported -->\nx /* impeccable-disable-line design-system-font */\n// impeccable-disable-next-line bounce-easing: reason\nfoo\n";
+        let src = "<!-- procable-disable low-contrast -- exported -->\nx /* procable-disable-line design-system-font */\n// procable-disable-next-line bounce-easing: reason\nfoo\n";
         let d = parse_inline_ignores(Some(src));
         assert_eq!(d.file, vec!["low-contrast"]);
         assert_eq!(d.line, vec![(2, vec!["design-system-font".to_string()])]);
         assert_eq!(d.next_line, vec![(4, vec!["bounce-easing".to_string()])]);
-        let bare = parse_inline_ignores(Some("<!-- impeccable-disable -->"));
+        let bare = parse_inline_ignores(Some("<!-- procable-disable -->"));
         assert_eq!(bare.file, vec!["*"]);
     }
 
@@ -212,7 +212,7 @@ mod tests {
     /// older release keeps working instead of failing the scan.
     #[test]
     fn retired_rule_id_still_parses() {
-        let d = parse_inline_ignores(Some("<!-- impeccable-disable image-hover-transform -->"));
+        let d = parse_inline_ignores(Some("<!-- procable-disable image-hover-transform -->"));
         assert_eq!(d.file, vec!["image-hover-transform"]);
 
         struct Hit(&'static str);
@@ -229,7 +229,7 @@ mod tests {
 
         // `layout-transition`, retired on 2026-10-07, named beside a live rule.
         let d = parse_inline_ignores(Some(
-            "<!-- impeccable-disable layout-transition, bounce-easing -->",
+            "<!-- procable-disable layout-transition, bounce-easing -->",
         ));
         assert_eq!(d.file, vec!["layout-transition", "bounce-easing"]);
         assert!(is_inline_ignored(&Hit("layout-transition"), &d));

@@ -38,7 +38,7 @@ pub fn finding(id: &str, artifact: &str, path: Option<String>, severity: &'stati
 const KNOWN_CONFIG_KEYS: [&str; 10] =
     ["hook", "detector", "updateCheck", "stalenessCheck", "projectRoots", "buildPath", "browser", "telemetry", "$schema", "version"];
 const BUILD_PATH_VALUES: [&str; 2] = ["comp", "code"];
-const DIRECTION_WORK_PATHS: [&str; 2] = [".impeccable/surfaces", ".impeccable/mocks/decision"];
+const DIRECTION_WORK_PATHS: [&str; 2] = [".procable/surfaces", ".procable/mocks/decision"];
 const KNOWN_DETECTOR_KEYS: [&str; 5] = ["ignoreRules", "ignoreFiles", "ignoreValues", "designSystem", "extensions"];
 
 struct NativeEvidence {
@@ -60,7 +60,7 @@ const NATIVE_EVIDENCE_DEPENDENCIES: [(&str, &str, &str); 3] = [
 
 /// JS: designSidecarCandidatesFor(projectRoot, contextDir)
 pub fn design_sidecar_candidates_for(project_root: &str, context_dir: Option<&str>) -> Vec<String> {
-    let mut c = vec![jsp::join(&[project_root, ".impeccable", "design.json"]), jsp::join(&[project_root, "DESIGN.json"])];
+    let mut c = vec![jsp::join(&[project_root, ".procable", "design.json"]), jsp::join(&[project_root, "DESIGN.json"])];
     let ctx_legacy = jsp::join(&[context_dir.unwrap_or(project_root), "DESIGN.json"]);
     if !c.contains(&ctx_legacy) {
         c.push(ctx_legacy);
@@ -306,7 +306,7 @@ pub fn check_config(project_root: &str, repo_root: Option<&str>) -> Vec<Finding>
     let mut out = Vec::new();
     for root in unique_roots(project_root, repo_root) {
         for name in ["config.json", "config.local.json"] {
-            let fp = jsp::join(&[&root, ".impeccable", name]);
+            let fp = jsp::join(&[&root, ".procable", name]);
             let Some(raw) = read_json(&fp) else { continue };
             let Some(obj) = raw.as_object() else { continue };
             let rel = to_relative(Some(&fp), if project_root.is_empty() { &root } else { project_root }).unwrap();
@@ -379,7 +379,7 @@ pub fn check_build_path_unset(project_root: &str, repo_root: Option<&str>, produ
     }
     for root in unique_roots(project_root, repo_root) {
         for name in ["config.json", "config.local.json"] {
-            if let Some(raw) = read_json(&jsp::join(&[&root, ".impeccable", name])) {
+            if let Some(raw) = read_json(&jsp::join(&[&root, ".procable", name])) {
                 if js_truthy(&raw) && raw.as_object().map(|o| o.contains_key("buildPath")).unwrap_or(false) {
                     return vec![];
                 }
@@ -393,10 +393,10 @@ pub fn check_build_path_unset(project_root: &str, repo_root: Option<&str>, produ
     vec![finding(
         "config-build-path-unset",
         "config.json",
-        Some(".impeccable/config.json".to_string()),
+        Some(".procable/config.json".to_string()),
         "mention",
         "This project has run visual direction work but records no `buildPath`, so Persuade and Experience rounds take the comp-first default without anyone having chosen it.".to_string(),
-        "Only when image generation exists in your tool surface, offer the choice once, saying it covers landing pages and showcase surfaces (app screens and documents build code-first either way): **comp-first** (an image sets the bar before any code; bolder composition, slower) or **code-first** (build directly; ambition carried by the direction contract; leaner, faster). Write the answer to `.impeccable/config.json` as `\"buildPath\": \"comp\"` or `\"buildPath\": \"code\"`, merging with the keys already there. Without image generation there is no choice to record: stay silent.".to_string(),
+        "Only when image generation exists in your tool surface, offer the choice once, saying it covers landing pages and showcase surfaces (app screens and documents build code-first either way): **comp-first** (an image sets the bar before any code; bolder composition, slower) or **code-first** (build directly; ambition carried by the direction contract; leaner, faster). Write the answer to `.procable/config.json` as `\"buildPath\": \"comp\"` or `\"buildPath\": \"code\"`, merging with the keys already there. Without image generation there is no choice to record: stay silent.".to_string(),
     )]
 }
 
@@ -450,7 +450,7 @@ pub fn check_project_roots(patterns: &[String], candidates_len: usize) -> Vec<Fi
     vec![finding(
         "config-project-roots-match-nothing",
         "config.json",
-        Some(".impeccable/config.json".to_string()),
+        Some(".procable/config.json".to_string()),
         "mention",
         format!(
             "`projectRoots` declares {}, but no directory matches any of them, so the repo root is being treated as the active project.",

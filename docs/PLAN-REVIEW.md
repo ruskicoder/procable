@@ -6,11 +6,11 @@ Comp-led builds fail most expensively when the agent decides a painted region (a
 
 `comps → spec → plates → [plan and asset review] → hero → [first-viewport review] → sections → motion → responsive → review`
 
-The review opens once every raster region has its plate. Nothing in the page is written before it. `build-phase advance` from plates or hero (and `record hero`) refuses until the review for the current build journey is accepted, its reviewed spec digest equals the current `.impeccable/build/spec.json`, and the plates it pinned are unchanged. A later spec change (for example a reclassified region) or a replaced plate needs a new round; unchanged decisions carry over. Score the plates before opening the review, so a plate fixed for the gate does not reopen it.
+The review opens once every raster region has its plate. Nothing in the page is written before it. `build-phase advance` from plates or hero (and `record hero`) refuses until the review for the current build journey is accepted, its reviewed spec digest equals the current `.procable/build/spec.json`, and the plates it pinned are unchanged. A later spec change (for example a reclassified region) or a replaced plate needs a new round; unchanged decisions carry over. Score the plates before opening the review, so a plate fixed for the gate does not reopen it.
 
 ## Packet: schemaVersion 3, stage `components`
 
-The stage keeps its name so hosts and `lifecycle --require components hero` keep working. The model does not author this packet. `impeccable component-review plan` writes `.impeccable/review/components.json` from the spec, the comp and the plate files, and refuses (listing every missing plate) while any raster region lacks its plate.
+The stage keeps its name so hosts and `lifecycle --require components hero` keep working. The model does not author this packet. `procable component-review plan` writes `.procable/review/components.json` from the spec, the comp and the plate files, and refuses (listing every missing plate) while any raster region lacks its plate.
 
 ```json
 {
@@ -19,7 +19,7 @@ The stage keeps its name so hosts and `lifecycle --require components hero` keep
   "id": "<from spec/build journey>",
   "title": "<surface title>",
   "comp": {"path": "<approved comp>", "width": 1440, "height": 900},
-  "specSha256": "<sha256 of .impeccable/build/spec.json>",
+  "specSha256": "<sha256 of .procable/build/spec.json>",
   "components": [
     {
       "id": "hero-figure", "name": "Hero figure", "kind": "plate", "role": "asset",
@@ -114,5 +114,5 @@ Details the engine settles that the sections above leave open (full wording in `
 - v3 capture evidence has its own schema, `plan-review-proof-v1`, so a browser capture can never stand in for it or the reverse. Plan items carry no `context` or `thumbnail`; assets get `thumbnail` equal to their preview.
 - Decisions keep today's required `feedback` string (empty allowed) for every action; `feedback` is optional only in `submission.reclassify` entries.
 - A spec with no raster region and no plan item has nothing to review: `plan` refuses to write an empty packet, and the build-phase gate does not wait.
-- Hosted sessions (`IMPECCABLE_COMPONENT_REVIEW_TOOL` set) keep their review in the host's store. The host names its trusted session directories in `IMPECCABLE_COMPONENT_REVIEW_SESSIONS` (an OS path list, the same directories `lifecycle --hosted --session-dir` takes), and the gate applies the local rules to them: an accepted first viewport, or an accepted, capture-intact v3 review whose `specSha256` matches the current spec. Without that variable a hosted session is refused (fail closed). `IMPECCABLE_COMPONENT_REVIEW_PENDING` plays no part in this gate; only the hosted capture service reads it.
+- Hosted sessions (`PROCABLE_COMPONENT_REVIEW_TOOL` set) keep their review in the host's store. The host names its trusted session directories in `PROCABLE_COMPONENT_REVIEW_SESSIONS` (an OS path list, the same directories `lifecycle --hosted --session-dir` takes), and the gate applies the local rules to them: an accepted first viewport, or an accepted, capture-intact v3 review whose `specSha256` matches the current spec. Without that variable a hosted session is refused (fail closed). `PROCABLE_COMPONENT_REVIEW_PENDING` plays no part in this gate; only the hosted capture service reads it.
 - The plates `--force` rule is unchanged and not widened: a reason that passes it (a quoted user downgrade of the comp) waives the review reason along with the plate readings, and is recorded. `record hero` has no force.

@@ -25,7 +25,7 @@ fn env_number(env: &Env, key: &str, default: f64) -> f64 {
     // JS: Number(process.env.X || default)
     match env.get(key).filter(|v| !v.is_empty()) {
         Some(v) => {
-            let n = impeccable_core::js::string_to_number(v);
+            let n = procable_core::js::string_to_number(v);
             if n.is_nan() {
                 f64::NAN
             } else {
@@ -39,7 +39,7 @@ fn env_number(env: &Env, key: &str, default: f64) -> f64 {
 pub fn apply_event_hard_timeout_ms(env: &Env) -> f64 {
     env_number(
         env,
-        "IMPECCABLE_LIVE_APPLY_EVENT_HARD_TIMEOUT_MS",
+        "PROCABLE_LIVE_APPLY_EVENT_HARD_TIMEOUT_MS",
         150_000.0,
     )
 }
@@ -47,7 +47,7 @@ pub fn apply_event_hard_timeout_ms(env: &Env) -> f64 {
 pub fn apply_event_soft_deadline_ms(env: &Env) -> Value {
     let n = env_number(
         env,
-        "IMPECCABLE_LIVE_APPLY_EVENT_SOFT_DEADLINE_MS",
+        "PROCABLE_LIVE_APPLY_EVENT_SOFT_DEADLINE_MS",
         120_000.0,
     );
     if n.is_nan() {
@@ -59,8 +59,8 @@ pub fn apply_event_soft_deadline_ms(env: &Env) -> Value {
 
 /// JS: manualEditApplyChunkSize(env)
 pub fn manual_edit_apply_chunk_size(env: &Env) -> i64 {
-    let raw = match env.get("IMPECCABLE_LIVE_MANUAL_EDIT_CHUNK_SIZE") {
-        Some(v) => impeccable_core::js::string_to_number(v),
+    let raw = match env.get("PROCABLE_LIVE_MANUAL_EDIT_CHUNK_SIZE") {
+        Some(v) => procable_core::js::string_to_number(v),
         None => f64::NAN,
     };
     if !raw.is_finite() {

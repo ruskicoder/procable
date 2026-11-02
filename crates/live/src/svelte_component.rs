@@ -1,6 +1,6 @@
 //! JS: live/svelte-component.mjs. Svelte live-mode component injection:
 //! variants are real `.svelte` components under
-//! `node_modules/.impeccable-live/<id>/`, scaffolded from the app's own
+//! `node_modules/.procable-live/<id>/`, scaffolded from the app's own
 //! compiler (through `svelte_bridge`), and accept inlines the chosen variant
 //! back into the route with CSS reconciled into the component style block.
 
@@ -14,16 +14,16 @@ use crate::svelte_ast::{analyze_svelte_markup, build_props_script_v2, restore_sv
 use crate::svelte_bridge::{load_svelte_compiler, SharedBridge};
 use crate::util::{exists, is_dir, json_pretty, jsp, safe_read, write_file, Env};
 use crate::wrap_common::leading_ws;
-use impeccable_core::js::{trim, WS};
+use procable_core::js::{trim, WS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Map, Value};
 use std::collections::BTreeSet;
 
-pub const SVELTE_COMPONENT_ROOT: &str = "node_modules/.impeccable-live";
-pub const LEGACY_SVELTE_COMPONENT_ROOT: &str = ".impeccable/live/previews";
-pub const SVELTE_RUNTIME_FILE: &str = "node_modules/.impeccable-live/__runtime.js";
-pub const SVELTE_PROBE_FILE: &str = "node_modules/.impeccable-live/__probe.js";
+pub const SVELTE_COMPONENT_ROOT: &str = "node_modules/.procable-live";
+pub const LEGACY_SVELTE_COMPONENT_ROOT: &str = ".procable/live/previews";
+pub const SVELTE_RUNTIME_FILE: &str = "node_modules/.procable-live/__runtime.js";
+pub const SVELTE_PROBE_FILE: &str = "node_modules/.procable-live/__probe.js";
 
 /// JS: `p.split(path.sep).join('/')`
 fn fwd(p: &str) -> String {
@@ -33,7 +33,7 @@ fn fwd(p: &str) -> String {
 /// JS: shouldUseSvelteComponentInjection(filePath)
 pub fn should_use_svelte_component_injection(file_path: &str, env: &Env) -> bool {
     let flag = env
-        .get("IMPECCABLE_LIVE_SVELTE_COMPONENT")
+        .get("PROCABLE_LIVE_SVELTE_COMPONENT")
         .map(|s| s.to_lowercase())
         .unwrap_or_default();
     if flag == "0" || flag == "false" || flag == "no" {
@@ -63,7 +63,7 @@ pub fn ensure_runtime_helper(cwd: &str) -> String {
     }
     let probe = jsp::join(&[cwd, SVELTE_PROBE_FILE]);
     if !exists(&probe) {
-        let _ = std::fs::write(&probe, "export const impeccableLivePreviewProbe = true;\n");
+        let _ = std::fs::write(&probe, "export const procableLivePreviewProbe = true;\n");
     }
     file
 }
@@ -116,13 +116,13 @@ pub fn parse_svelte_component_file(content: &str) -> (String, Vec<String>) {
 }
 
 fn trim_end_js(s: &str) -> &str {
-    s.trim_end_matches(impeccable_core::js::is_js_whitespace)
+    s.trim_end_matches(procable_core::js::is_js_whitespace)
 }
 
 /// JS: buildInsertVariantStub(variantNum)
 fn build_insert_variant_stub(n: i64) -> String {
     format!(
-        "{}<div class=\"impeccable-insert-preview\">Insert variant {}</div>\n\n<style>\n  .impeccable-insert-preview {{ display: block; }}\n</style>\n",
+        "{}<div class=\"procable-insert-preview\">Insert variant {}</div>\n\n<style>\n  .procable-insert-preview {{ display: block; }}\n</style>\n",
         build_props_script_v2(&[]),
         n
     )
@@ -339,12 +339,12 @@ pub fn class_attr_values(text: &str) -> Vec<String> {
     while i + needle.len() <= chars.len() {
         if chars[i..i + needle.len()] == needle[..] {
             let mut j = i + needle.len();
-            while j < chars.len() && impeccable_core::js::is_js_whitespace(chars[j]) {
+            while j < chars.len() && procable_core::js::is_js_whitespace(chars[j]) {
                 j += 1;
             }
             if j < chars.len() && chars[j] == '=' {
                 j += 1;
-                while j < chars.len() && impeccable_core::js::is_js_whitespace(chars[j]) {
+                while j < chars.len() && procable_core::js::is_js_whitespace(chars[j]) {
                     j += 1;
                 }
                 if let Some((content, end)) = quoted_lazy(&chars, j, &|_, _| true) {
@@ -360,7 +360,7 @@ pub fn class_attr_values(text: &str) -> Vec<String> {
 }
 
 fn split_ws(s: &str) -> Vec<String> {
-    s.split(impeccable_core::js::is_js_whitespace)
+    s.split(procable_core::js::is_js_whitespace)
         .filter(|c| !c.is_empty())
         .map(String::from)
         .collect()
@@ -398,7 +398,7 @@ fn tag_token_in(selector: &str, tag: &str) -> bool {
         if chars[i..i + needle.len()] == needle[..] {
             let before_ok = i == 0 || {
                 let b = chars[i - 1];
-                impeccable_core::js::is_js_whitespace(b) || matches!(b, '>' | '+' | '~' | ',' | '(')
+                procable_core::js::is_js_whitespace(b) || matches!(b, '>' | '+' | '~' | ',' | '(')
             };
             let after = i + needle.len();
             let after_ok = after >= chars.len() || !is_selector_word_char(chars[after]);
@@ -648,7 +648,7 @@ fn parse_css_rules(css: &str) -> Vec<RawRule> {
     let mut rules = Vec::new();
     let mut i = 0;
     while i < text.len() {
-        while i < text.len() && impeccable_core::js::is_js_whitespace(text[i]) {
+        while i < text.len() && procable_core::js::is_js_whitespace(text[i]) {
             i += 1;
         }
         let prelude_start = i;
@@ -714,7 +714,7 @@ fn parse_css_rules(css: &str) -> Vec<RawRule> {
 }
 
 static READY_DECL_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!(r"--impeccable-variant-ready{}*:", WS)).unwrap());
+    Lazy::new(|| Regex::new(&format!(r"--procable-variant-ready{}*:", WS)).unwrap());
 static SCOPE_PRELUDE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?i)^@scope(?-u:\b)").unwrap());
 static SCOPE_CHILD_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(&format!(r":scope(?:\[[^\]]+\])?{ws}*>{ws}*", ws = WS)).unwrap());
@@ -722,11 +722,11 @@ static SCOPE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r":scope(?:\[[^\]]+\])?")
 static WS_RUN_RE: Lazy<Regex> = Lazy::new(|| Regex::new(&format!("{}+", WS)).unwrap());
 static LEADING_COMB_RE: Lazy<Regex> = Lazy::new(|| Regex::new(&format!(r"^[>+~]{}*", WS)).unwrap());
 
-/// Remove `[data-impeccable-variant=<q>...<q>]` occurrences; `only` restricts
+/// Remove `[data-procable-variant=<q>...<q>]` occurrences; `only` restricts
 /// to a specific value.
 fn strip_variant_attrs(selector: &str, only: Option<&str>) -> (String, bool) {
     let chars: Vec<char> = selector.chars().collect();
-    let prefix: Vec<char> = "[data-impeccable-variant=".chars().collect();
+    let prefix: Vec<char> = "[data-procable-variant=".chars().collect();
     let mut out = String::new();
     let mut found = false;
     let mut i = 0;
@@ -807,7 +807,7 @@ fn rewrite_accepted_svelte_selector_part(
     from_scope: bool,
 ) -> String {
     let mut out = trim(selector).to_string();
-    let has_variant = out.contains("data-impeccable-variant");
+    let has_variant = out.contains("data-procable-variant");
     if has_variant && !selector_has_variant(&out, variant_num) {
         return String::new();
     }
@@ -875,7 +875,7 @@ fn append_sanitized_css_rule(
         return;
     }
     if SCOPE_PRELUDE_RE.is_match(prelude) {
-        if prelude.contains("data-impeccable-variant")
+        if prelude.contains("data-procable-variant")
             && !selector_has_variant(prelude, variant_num)
         {
             return;
@@ -911,7 +911,7 @@ fn sanitize_accepted_svelte_css(
     root_tag: &str,
 ) -> Vec<String> {
     let css = css_lines.join("\n");
-    if !css.contains("data-impeccable-variant") && !css.contains("impeccable-variant-ready") {
+    if !css.contains("data-procable-variant") && !css.contains("procable-variant-ready") {
         return css_lines.to_vec();
     }
     let mut output: Vec<String> = Vec::new();
@@ -1002,12 +1002,12 @@ fn class_value_of(raw: &str) -> Option<(char, String)> {
     while i + needle.len() <= chars.len() {
         if chars[i..i + needle.len()] == needle[..] {
             let mut j = i + needle.len();
-            while j < chars.len() && impeccable_core::js::is_js_whitespace(chars[j]) {
+            while j < chars.len() && procable_core::js::is_js_whitespace(chars[j]) {
                 j += 1;
             }
             if j < chars.len() && chars[j] == '=' {
                 j += 1;
-                while j < chars.len() && impeccable_core::js::is_js_whitespace(chars[j]) {
+                while j < chars.len() && procable_core::js::is_js_whitespace(chars[j]) {
                     j += 1;
                 }
                 if let Some((content, _)) = quoted_lazy(&chars, j, &|_, _| true) {
@@ -1259,7 +1259,7 @@ pub fn merge_css_into_svelte_source(source: &str, incoming: &str) -> (String, i6
     match last_style_block(source) {
         None => {
             let (css, replaced, appended) = reconcile_css("", incoming);
-            let base = source.trim_end_matches(impeccable_core::js::is_js_whitespace);
+            let base = source.trim_end_matches(procable_core::js::is_js_whitespace);
             (
                 format!(
                     "{}\n\n<style>\n{}\n</style>\n",
@@ -1290,8 +1290,8 @@ static VISIBLE_TAG_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(?i)<(img|svg|canvas|video|audio|picture|input|button|select|textarea)(?-u:\b)")
         .unwrap()
 });
-static DATA_IMPECCABLE_ATTR_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!(r"(?-u:\b)data-impeccable-[A-Za-z0-9_-]*{}*=", WS)).unwrap());
+static DATA_PROCABLE_ATTR_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(&format!(r"(?-u:\b)data-procable-[A-Za-z0-9_-]*{}*=", WS)).unwrap());
 
 fn svelte_markup_has_visible_content(markup: &str) -> bool {
     let a = SCRIPT_ANY_RE.replace_all(markup, "");
@@ -1473,8 +1473,8 @@ pub fn inline_svelte_component_accept(
 
     let declared_params = read_declared_params(manifest, variant_num, cwd);
     let mut variant_css = css_lines.join("\n");
-    if variant_css.contains("data-impeccable-variant")
-        || variant_css.contains("impeccable-variant-ready")
+    if variant_css.contains("data-procable-variant")
+        || variant_css.contains("procable-variant-ready")
     {
         variant_css =
             sanitize_accepted_svelte_css(&css_lines, variant_num, param_values, &root_tag)
@@ -1618,9 +1618,9 @@ fn inline_svelte_component_insert_accept(
             manifest,
         );
     }
-    if DATA_IMPECCABLE_ATTR_RE.is_match(markup) {
+    if DATA_PROCABLE_ATTR_RE.is_match(markup) {
         return failure(
-            "Accepted Svelte insert variant contains preview-only data-impeccable attributes"
+            "Accepted Svelte insert variant contains preview-only data-procable attributes"
                 .to_string(),
             manifest,
         );
@@ -1669,8 +1669,8 @@ fn inline_svelte_component_insert_accept(
     new_lines.extend_from_slice(&source_lines[insert_index..]);
 
     let mut variant_css = css_lines.join("\n");
-    if variant_css.contains("data-impeccable-variant")
-        || variant_css.contains("impeccable-variant-ready")
+    if variant_css.contains("data-procable-variant")
+        || variant_css.contains("procable-variant-ready")
     {
         variant_css = sanitize_accepted_svelte_css(css_lines, variant_num, param_values, &root_tag)
             .join("\n");
@@ -1872,14 +1872,14 @@ pub fn build_svelte_component_css_authoring(count: i64) -> Value {
             "Keep the prop names from propContract; bind dynamic text with {propName}, not literal snapshot text.",
             "Put variant CSS in the component <style> block using semantic class selectors.",
             "Author param-driven CSS against var(--p-<id>, default) and [data-p-<id>] using :global(...) so the runtime knob values reach the mounted root.",
-            "Declare params in componentDir/params.json keyed by variant number (e.g. {\"1\": [...], \"2\": [...]}), NOT as a data-impeccable-params attribute.",
-            "Do not use @scope or data-impeccable-variant selectors in component files.",
+            "Declare params in componentDir/params.json keyed by variant number (e.g. {\"1\": [...], \"2\": [...]}), NOT as a data-procable-params attribute.",
+            "Do not use @scope or data-procable-variant selectors in component files.",
             "Do not edit the route source file during generation; only edit files under componentDir.",
         ],
         "forbidden": [
             "Do not use @scope blocks in Svelte component variants.",
             "Do not copy live DOM snapshot text into markup when propContract provides bindings.",
-            "Do not add data-impeccable-* attributes inside component files. Svelte parses { in attribute values as an expression, so data-impeccable-params with JSON breaks the build; use componentDir/params.json instead.",
+            "Do not add data-procable-* attributes inside component files. Svelte parses { in attribute values as an expression, so data-procable-params with JSON breaks the build; use componentDir/params.json instead.",
         ],
         "paramsFile": "params.json",
     })

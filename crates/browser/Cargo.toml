@@ -1,14 +1,14 @@
 [package]
-name = "impeccable-browser"
+name = "procable-browser"
 edition.workspace = true
 version.workspace = true
 license.workspace = true
 publish.workspace = true
 
 [dependencies]
-impeccable-common = { workspace = true }
-impeccable-core = { workspace = true }
-impeccable-detect = { workspace = true }
+procable-common = { workspace = true }
+procable-core = { workspace = true }
+procable-detect = { workspace = true }
 serde_json = { workspace = true, features = ["preserve_order", "float_roundtrip"] }
 tungstenite = { version = "0.28", default-features = false, features = ["handshake"] }
 png = "0.18"

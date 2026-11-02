@@ -23,7 +23,7 @@ use std::collections::HashMap;
 
 /// The stylesheet-text utilities and finding shapes these scanners are built
 /// on are shared; re-exported so `checks::css_scan` stays one path.
-pub use impeccable_foundation::css::scan::*;
+pub use procable_foundation::css::scan::*;
 
 macro_rules! re {
     ($name:ident, $pat:expr) => {

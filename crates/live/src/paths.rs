@@ -1,25 +1,25 @@
-//! JS: lib/impeccable-paths.mjs (the live subset): `.impeccable/live` paths,
+//! JS: lib/procable-paths.mjs (the live subset): `.procable/live` paths,
 //! the live config path, server.json read/write, session ids.
 
 use crate::util::{exists, jsp, pid_reachable, read_json, Env};
-use impeccable_context::context::resolve_project_root;
-use impeccable_context::target_args::TargetOptions;
+use procable_context::context::resolve_project_root;
+use procable_context::target_args::TargetOptions;
 use serde_json::Value;
 
-pub const IMPECCABLE_DIR: &str = ".impeccable";
+pub const PROCABLE_DIR: &str = ".procable";
 pub const LIVE_DIR: &str = "live";
 
-/// JS: getImpeccableDir(cwd)
-pub fn impeccable_dir(cwd: &str, env: &Env) -> String {
+/// JS: getProcableDir(cwd)
+pub fn procable_dir(cwd: &str, env: &Env) -> String {
     jsp::join(&[
         &resolve_project_root(cwd, &TargetOptions::default(), env),
-        IMPECCABLE_DIR,
+        PROCABLE_DIR,
     ])
 }
 
 /// JS: getLiveDir(cwd)
 pub fn live_dir(cwd: &str, env: &Env) -> String {
-    jsp::join(&[&impeccable_dir(cwd, env), LIVE_DIR])
+    jsp::join(&[&procable_dir(cwd, env), LIVE_DIR])
 }
 
 /// JS: getLiveConfigPath(cwd)
@@ -31,8 +31,8 @@ pub fn live_config_path(cwd: &str, env: &Env) -> String {
 /// `<scriptsDir>/config.json` fallback has no home in a single binary; the
 /// primary path is returned when the env override is unset.
 pub fn resolve_live_config_path(cwd: &str, env: &Env) -> String {
-    if let Some(v) = env.get("IMPECCABLE_LIVE_CONFIG") {
-        let t = impeccable_context::util::js_trim(v);
+    if let Some(v) = env.get("PROCABLE_LIVE_CONFIG") {
+        let t = procable_context::util::js_trim(v);
         if !t.is_empty() {
             return if jsp::is_absolute(t) {
                 t.to_string()
@@ -53,7 +53,7 @@ pub fn live_server_path(cwd: &str, env: &Env) -> String {
 pub fn legacy_live_server_path(cwd: &str, env: &Env) -> String {
     jsp::join(&[
         &resolve_project_root(cwd, &TargetOptions::default(), env),
-        ".impeccable-live.json",
+        ".procable-live.json",
     ])
 }
 
@@ -66,7 +66,7 @@ pub fn live_sessions_dir(cwd: &str, env: &Env) -> String {
 pub fn legacy_live_sessions_dir(cwd: &str, env: &Env) -> String {
     jsp::join(&[
         &resolve_project_root(cwd, &TargetOptions::default(), env),
-        ".impeccable-live",
+        ".procable-live",
         "sessions",
     ])
 }

@@ -9,7 +9,7 @@ use serde_json::{Map, Value};
 pub const SURFACE_BRIEF_VERSION: u32 = 1;
 
 pub fn get_surface_brief_dir(project_root: &str) -> String {
-    jsp::join(&[project_root, ".impeccable", "surfaces"])
+    jsp::join(&[project_root, ".procable", "surfaces"])
 }
 
 fn normalize_route_target(route: &str) -> Option<String> {
@@ -361,7 +361,7 @@ mod tests {
     #[test]
     fn resolves_pre_hash_long_slug_briefs() {
         let root = std::env::temp_dir().join(format!(
-            "impeccable-surface-legacy-{}-{}",
+            "procable-surface-legacy-{}-{}",
             std::process::id(),
             TMP_SEQ.fetch_add(1, Ordering::Relaxed)
         ));
@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn reads_relative_file_targets_from_cwd() {
         let tmp = std::env::temp_dir().to_string_lossy().into_owned();
-        let repo = jsp::join(&[tmp.as_str(), "impeccable-cwd-target-repo"]);
+        let repo = jsp::join(&[tmp.as_str(), "procable-cwd-target-repo"]);
         let root = jsp::join(&[repo.as_str(), "apps", "a"]);
         let src = jsp::join(&[root.as_str(), "src"]);
         let normalize = |target: &str, cwd: &str| normalize_surface_target(Some(target), &root, cwd);
@@ -405,7 +405,7 @@ mod tests {
     #[test]
     fn rejects_unmapped_pre_hash_slug_collisions() {
         let root = std::env::temp_dir().join(format!(
-            "impeccable-surface-legacy-collision-{}-{}",
+            "procable-surface-legacy-collision-{}-{}",
             std::process::id(),
             TMP_SEQ.fetch_add(1, Ordering::Relaxed)
         ));

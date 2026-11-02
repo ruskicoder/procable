@@ -1,11 +1,11 @@
-//! JS: live-poll.mjs -> `impeccable live-poll`. CLI client for the live
+//! JS: live-poll.mjs -> `procable live-poll`. CLI client for the live
 //! variant mode poll/reply protocol.
 
 use crate::instructions::instructions_for_event;
 use crate::paths::read_live_server_info;
 use crate::roots::enter_live_root;
 use crate::util::{println, Env};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
 use std::time::{Duration, Instant};
 
@@ -19,7 +19,7 @@ const EVENT_TYPES_NEEDING_AGENT_REPLY: [&str; 5] = [
     "variant_mount_failed",
 ];
 
-const HELP: &str = "Usage: impeccable poll [options]
+const HELP: &str = "Usage: procable poll [options]
 
 Wait for a browser event from the live variant server, or reply to one.
 
@@ -65,7 +65,7 @@ enum PollError {
 }
 
 fn self_cmd(env: &Env, cwd: &str) -> String {
-    impeccable_context::provider::detect(env, cwd).self_cmd
+    procable_context::provider::detect(env, cwd).self_cmd
 }
 
 fn script_cmd(env: &Env, cwd: &str, verb: &str) -> String {
@@ -176,7 +176,7 @@ fn parse_reply_args(args: &[String], env: &Env, cwd: &str) -> Result<Option<Repl
 }
 
 fn agent(timeout_ms: u64) -> ureq::Agent {
-    impeccable_context::http::agent_builder()
+    procable_context::http::agent_builder()
         .timeout_connect(Duration::from_millis(10_000))
         .timeout_read(Duration::from_millis(timeout_ms))
         .timeout_write(Duration::from_millis(30_000))
@@ -261,7 +261,7 @@ fn js_display(v: &Value) -> String {
         Value::Bool(b) => b.to_string(),
         Value::Number(n) => n
             .as_f64()
-            .map(impeccable_context::util::js_number_to_string)
+            .map(procable_context::util::js_number_to_string)
             .unwrap_or_default(),
         other => other.to_string(),
     }
@@ -682,7 +682,7 @@ fn arg_value_int(args: &[String], prefix: &str, default: i64) -> i64 {
     match args.iter().find(|a| a.starts_with(prefix)) {
         Some(a) => {
             let raw = a.splitn(2, '=').nth(1).unwrap_or("");
-            let n = impeccable_core::js::parse_int(raw, 10);
+            let n = procable_core::js::parse_int(raw, 10);
             if n.is_nan() {
                 i64::MIN
             } else {
@@ -774,7 +774,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
     let ack_timeout_ms = arg_value_int(&argv, "--ack-timeout=", 600_000);
 
     if stream_mode {
-        io.err("[impeccable-poll] stream mode: one JSON object per line on stdout; use --reply while this process stays running\n");
+        io.err("[procable-poll] stream mode: one JSON object per line on stdout; use --reply while this process stays running\n");
         loop {
             let event = match fetch_next_event(&base, &token, None, &types) {
                 Ok(e) => e,

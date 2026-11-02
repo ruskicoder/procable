@@ -7,41 +7,41 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Value};
 
-pub const IGNORE_MARKER_OPEN: &str = "# impeccable-live-ignore-start";
-pub const IGNORE_MARKER_CLOSE: &str = "# impeccable-live-ignore-end";
+pub const IGNORE_MARKER_OPEN: &str = "# procable-live-ignore-start";
+pub const IGNORE_MARKER_CLOSE: &str = "# procable-live-ignore-end";
 
 /// JS: LIVE_IGNORE_PATTERNS (order matters: it is the written order).
 pub const LIVE_IGNORE_PATTERNS: [&str; 30] = [
-    ".impeccable/hook.cache.json",
-    ".impeccable/hook.pending.json",
-    ".impeccable/config.local.json",
-    ".impeccable/live/server.json",
-    ".impeccable/live/roots.json",
-    ".impeccable/live/app-root.json",
-    ".impeccable/live/inject-journal.json",
-    ".impeccable/live/sessions/",
-    ".impeccable/live/previews/",
-    ".impeccable/live/annotations/",
-    ".impeccable/live/artifacts/",
-    ".impeccable/live/accept-receipts/",
-    ".impeccable/live/locks/",
-    ".impeccable/live/cache/",
-    ".impeccable/live/manual-edit-apply-transaction.json",
-    ".impeccable/live/manual-edit-events.jsonl",
-    ".impeccable/live/manual-edit-evidence/",
-    ".impeccable/live/pending-manual-edits.json",
-    ".impeccable/live/deferred-svelte-component-accepts.json",
-    ".impeccable-live.json",
-    ".impeccable-live/",
-    "app/.impeccable-live/",
-    "src/.impeccable-live/",
-    "node_modules/.impeccable-live/",
-    "src/lib/impeccable/ImpeccableLiveRoot.svelte",
-    "src/lib/impeccable/__runtime.js",
-    "src/lib/impeccable/[0-9a-f]*/",
-    "plugins/impeccable-live.client.ts",
-    "app/plugins/impeccable-live.client.ts",
-    "src/plugins/impeccable-live.client.ts",
+    ".procable/hook.cache.json",
+    ".procable/hook.pending.json",
+    ".procable/config.local.json",
+    ".procable/live/server.json",
+    ".procable/live/roots.json",
+    ".procable/live/app-root.json",
+    ".procable/live/inject-journal.json",
+    ".procable/live/sessions/",
+    ".procable/live/previews/",
+    ".procable/live/annotations/",
+    ".procable/live/artifacts/",
+    ".procable/live/accept-receipts/",
+    ".procable/live/locks/",
+    ".procable/live/cache/",
+    ".procable/live/manual-edit-apply-transaction.json",
+    ".procable/live/manual-edit-events.jsonl",
+    ".procable/live/manual-edit-evidence/",
+    ".procable/live/pending-manual-edits.json",
+    ".procable/live/deferred-svelte-component-accepts.json",
+    ".procable-live.json",
+    ".procable-live/",
+    "app/.procable-live/",
+    "src/.procable-live/",
+    "node_modules/.procable-live/",
+    "src/lib/procable/ProcableLiveRoot.svelte",
+    "src/lib/procable/__runtime.js",
+    "src/lib/procable/[0-9a-f]*/",
+    "plugins/procable-live.client.ts",
+    "app/plugins/procable-live.client.ts",
+    "src/plugins/procable-live.client.ts",
 ];
 
 /// The `gitIgnore` result object.
@@ -151,7 +151,7 @@ pub fn resolve_git_info_exclude_path(cwd: &str) -> Option<String> {
         return None;
     }
     let body = safe_read(&dot_git)?;
-    let body = impeccable_context::util::js_trim(&body);
+    let body = procable_context::util::js_trim(&body);
     let m = GITDIR_RE.captures(body)?;
     let git_dir_raw = m.get(1)?.as_str();
     let git_dir = if jsp::is_absolute(git_dir_raw) {
@@ -159,7 +159,7 @@ pub fn resolve_git_info_exclude_path(cwd: &str) -> Option<String> {
     } else {
         jsp::resolve(cwd, &[git_dir_raw])
     };
-    Some(impeccable_common::git::info_exclude(&git_dir))
+    Some(procable_common::git::info_exclude(&git_dir))
 }
 
 #[cfg(test)]
@@ -169,7 +169,7 @@ mod tests {
     #[test]
     fn linked_worktree_resolves_to_the_common_dir_exclude() {
         let base = std::env::temp_dir().join(format!(
-            "impeccable-live-gitignore-{}-{:?}",
+            "procable-live-gitignore-{}-{:?}",
             std::process::id(),
             std::thread::current().id()
         ));

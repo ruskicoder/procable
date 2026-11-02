@@ -2,9 +2,9 @@
 // A/B differential of the in-page bundles: inject an older checkout's JS
 // bundle (cli/engine/detect-antipatterns-browser.js, --public) and this repo's WASM
 // bundle (dist/detect-antipatterns-browser.js) into the SAME page in the same
-// Chrome, and diff the raw `impeccableDetect({ decorate: false, serialize:
-// true })` arrays (plus impeccableMeasureHiddenText and, with --visual, the
-// impeccableAnalyzeVisualContrast results). Verification tooling only: it
+// Chrome, and diff the raw `procableDetect({ decorate: false, serialize:
+// true })` arrays (plus procableMeasureHiddenText and, with --visual, the
+// procableAnalyzeVisualContrast results). Verification tooling only: it
 // needs puppeteer and a pre-Rust checkout for the JS side, and is not part
 // of any build.
 //
@@ -26,7 +26,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const engineRoot = path.resolve(here, '../../..');
 // The fixtures and puppeteer live in this repo; --public points at another
 // checkout (an older one, for A/B against the pre-Rust engine).
-const publicRepo = path.resolve(flag('--public') || process.env.IMPECCABLE_PUBLIC_REPO || engineRoot);
+const publicRepo = path.resolve(flag('--public') || process.env.PROCABLE_PUBLIC_REPO || engineRoot);
 const require = createRequire(path.join(publicRepo, 'package.json'));
 const puppeteer = require('puppeteer');
 
@@ -59,16 +59,16 @@ let failures = 0;
 const timing = [];
 async function runBundle(page, url, code) {
   await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
-  await page.evaluate(() => { window.__IMPECCABLE_CONFIG__ = { autoScan: false }; });
+  await page.evaluate(() => { window.__PROCABLE_CONFIG__ = { autoScan: false }; });
   const t0 = performance.now();
   await page.evaluate(code);
   const tLoad = performance.now() - t0;
   const t1 = performance.now();
-  const results = await page.evaluate(() => window.impeccableDetect({ decorate: false, serialize: true }));
+  const results = await page.evaluate(() => window.procableDetect({ decorate: false, serialize: true }));
   const tScan = performance.now() - t1;
-  const hidden = await page.evaluate(() => window.impeccableMeasureHiddenText());
+  const hidden = await page.evaluate(() => window.procableMeasureHiddenText());
   let vis = null;
-  if (visual) vis = await page.evaluate(() => window.impeccableAnalyzeVisualContrast({ maxCandidates: 12, scrollOffscreen: true }));
+  if (visual) vis = await page.evaluate(() => window.procableAnalyzeVisualContrast({ maxCandidates: 12, scrollOffscreen: true }));
   return { results, hidden, vis, tLoad, tScan };
 }
 function project(results) {

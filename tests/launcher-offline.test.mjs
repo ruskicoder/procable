@@ -16,9 +16,9 @@ const COMSPEC = process.env.ComSpec || process.env.COMSPEC || 'C:\\Windows\\Syst
 // asserts that the launcher never sends it a request.
 const PAYLOAD = WINDOWS ? fs.readFileSync(COMSPEC) : Buffer.from('#!/bin/sh\necho verified-engine\n');
 const HASH = createHash('sha256').update(PAYLOAD).digest('hex');
-const BIN = WINDOWS ? 'impeccable.exe' : 'impeccable';
+const BIN = WINDOWS ? 'procable.exe' : 'procable';
 // The release asset this host's launcher asks for (the cmd tests pin AMD64).
-const ASSET = `impeccable-${WINDOWS ? 'windows' : process.platform === 'darwin' ? 'darwin' : 'linux'}-${!WINDOWS && process.arch === 'arm64' ? 'arm64' : 'x64'}${WINDOWS ? '.exe' : ''}`;
+const ASSET = `procable-${WINDOWS ? 'windows' : process.platform === 'darwin' ? 'darwin' : 'linux'}-${!WINDOWS && process.arch === 'arm64' ? 'arm64' : 'x64'}${WINDOWS ? '.exe' : ''}`;
 
 
 async function exercise(t, scenario) {
@@ -30,7 +30,7 @@ async function exercise(t, scenario) {
   fs.mkdirSync(scripts);
   fs.mkdirSync(home);
   fs.writeFileSync(path.join(scripts, 'VERSION'), '0.0.0-test\n');
-  const name = WINDOWS ? 'impeccable.cmd' : 'impeccable';
+  const name = WINDOWS ? 'procable.cmd' : 'procable';
   const launcher = path.join(scripts, name);
   fs.copyFileSync(path.join(ROOT, 'skill/scripts', name), launcher);
   const digest = scenario === 'cached-stamp-trusted' ? '1'.repeat(64) : HASH;
@@ -72,8 +72,8 @@ async function exercise(t, scenario) {
   const env = {
     PATH: WINDOWS ? `${process.env.SystemRoot}\\System32;${process.env.SystemRoot}` : `${tools}:/usr/bin:/bin`,
     HOME: home, USERPROFILE: home, TEMP: root, TMP: root,
-    IMPECCABLE_HOME: cache,
-    IMPECCABLE_DOWNLOAD_BASE: `http://127.0.0.1:${server.address().port}`,
+    PROCABLE_HOME: cache,
+    PROCABLE_DOWNLOAD_BASE: `http://127.0.0.1:${server.address().port}`,
     ...(WINDOWS ? { SystemRoot: process.env.SystemRoot, ComSpec: COMSPEC, PROCESSOR_ARCHITECTURE: 'AMD64' } : {}),
   };
   const run = () => new Promise((resolve, reject) => {
@@ -98,7 +98,7 @@ test('launcher with no engine fails offline and sends no request', async t => {
   assert.equal(result.status, 127, JSON.stringify(result));
   assert.doesNotMatch(result.stdout, /verified-engine/);
   assert.match(result.stderr, /runs offline and does not download its engine/);
-  assert.match(result.stderr, /IMPECCABLE_BIN/);
+  assert.match(result.stderr, /PROCABLE_BIN/);
   assert.deepEqual(result.files, []);
 });
 
@@ -144,30 +144,30 @@ test('launcher runs a cached engine on a good stamp without hashing it', async t
 });
 
 test('launchers carry no download path', () => {
-  for (const name of ['impeccable', 'impeccable.cmd']) {
+  for (const name of ['procable', 'procable.cmd']) {
     const source = fs.readFileSync(path.join(ROOT, 'skill/scripts', name), 'utf8');
-    assert.doesNotMatch(source, /curl|wget|IMPECCABLE_DOWNLOAD_BASE|releases\/download/, name);
+    assert.doesNotMatch(source, /curl|wget|PROCABLE_DOWNLOAD_BASE|releases\/download/, name);
   }
 });
 
 test('cmd launcher is checked out with CRLF line endings', () => {
-  const source = fs.readFileSync(path.join(ROOT, 'skill/scripts/impeccable.cmd'));
+  const source = fs.readFileSync(path.join(ROOT, 'skill/scripts/procable.cmd'));
   const withoutCrlf = Buffer.from(source.toString('binary').replaceAll('\r\n', ''));
   assert.equal(withoutCrlf.includes(10), false, 'cmd.exe batch labels require CRLF line endings');
 });
 
 test('cmd launcher forwards engine exit code through cmd /c', { skip: WINDOWS ? false : 'Windows-only cmd /c exit-code forwarding' }, async t => {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-launcher-exit-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-launcher-exit-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const home = path.join(root, 'home');
   fs.mkdirSync(home);
-  const launcher = path.join(root, 'impeccable.cmd');
-  fs.copyFileSync(path.join(ROOT, 'skill/scripts/impeccable.cmd'), launcher);
+  const launcher = path.join(root, 'procable.cmd');
+  fs.copyFileSync(path.join(ROOT, 'skill/scripts/procable.cmd'), launcher);
   const env = {
     PATH: `${process.env.SystemRoot}\\System32;${process.env.SystemRoot}`,
     HOME: home, USERPROFILE: home, TEMP: root, TMP: root,
-    IMPECCABLE_HOME: path.join(root, 'cache'),
-    IMPECCABLE_BIN: COMSPEC,
+    PROCABLE_HOME: path.join(root, 'cache'),
+    PROCABLE_BIN: COMSPEC,
     SystemRoot: process.env.SystemRoot,
     ComSpec: COMSPEC,
     PROCESSOR_ARCHITECTURE: 'AMD64',
@@ -186,20 +186,20 @@ test('cmd launcher forwards engine exit code through cmd /c', { skip: WINDOWS ? 
 
 for (const [probeStatus, trusted] of [[0, true], [1, false]]) {
   test(`sh launcher ${trusted ? 'runs' : 'skips'} a home binary whose engine-probe exits ${probeStatus}`, { skip: WINDOWS ? 'POSIX launcher probe' : false }, async t => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-launcher-probe-'));
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-launcher-probe-'));
     t.after(() => fs.rmSync(root, { recursive: true, force: true }));
     const scripts = path.join(root, 'scripts');
     const home = path.join(root, 'home');
-    const homeBin = path.join(home, '.impeccable', 'bin');
+    const homeBin = path.join(home, '.procable', 'bin');
     fs.mkdirSync(scripts);
     fs.mkdirSync(homeBin, { recursive: true });
     fs.writeFileSync(path.join(scripts, 'VERSION'), '0.0.0-test\n');
     fs.writeFileSync(path.join(scripts, 'engine-checksums.txt'), `0.0.0-test ${ASSET} ${HASH}\n`);
-    const launcher = path.join(scripts, 'impeccable');
-    fs.copyFileSync(path.join(ROOT, 'skill/scripts/impeccable'), launcher);
+    const launcher = path.join(scripts, 'procable');
+    fs.copyFileSync(path.join(ROOT, 'skill/scripts/procable'), launcher);
     // Prints the handshake marker either way; only the exit status differs.
-    fs.writeFileSync(path.join(homeBin, 'impeccable'),
-      `#!/bin/sh\nif [ "$1" = engine-probe ]; then echo impeccable-engine 0.0.0-test; exit ${probeStatus}; fi\necho home-engine-ran\n`,
+    fs.writeFileSync(path.join(homeBin, 'procable'),
+      `#!/bin/sh\nif [ "$1" = engine-probe ]; then echo procable-engine 0.0.0-test; exit ${probeStatus}; fi\necho home-engine-ran\n`,
       { mode: 0o755 });
     const requests = [];
     const server = http.createServer((req, res) => {
@@ -212,8 +212,8 @@ for (const [probeStatus, trusted] of [[0, true], [1, false]]) {
     const env = {
       PATH: '/usr/bin:/bin',
       HOME: home,
-      IMPECCABLE_HOME: path.join(root, 'cache'),
-      IMPECCABLE_DOWNLOAD_BASE: `http://127.0.0.1:${server.address().port}`,
+      PROCABLE_HOME: path.join(root, 'cache'),
+      PROCABLE_DOWNLOAD_BASE: `http://127.0.0.1:${server.address().port}`,
     };
     const result = await new Promise((resolve, reject) => {
       const child = spawn('/bin/sh', [launcher, 'detect'], { env, cwd: root, timeout: 20000 });
@@ -238,12 +238,12 @@ for (const [probeStatus, trusted] of [[0, true], [1, false]]) {
 // The sibling engine slot is gitignored, so a skill upgrade that copies files
 // over it leaves the old engine behind. POSIX: a sh stub. Windows: a copy of
 // node.exe that answers `engine-probe` through engine-probe.js in the cwd.
-const SIBLING_DIR = ASSET.slice('impeccable-'.length).replace(/\.exe$/, '');
+const SIBLING_DIR = ASSET.slice('procable-'.length).replace(/\.exe$/, '');
 // Args for a run that reaches the cached engine (a copy of cmd.exe on Windows).
 const CACHED_ARGS = WINDOWS ? ['/d', '/c', 'echo verified-engine'] : ['engine-probe'];
 
 async function runWithSibling(t, { version, probeStatus = 0, mode = 0o755, cached = false, args = ['engine-probe'] }) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-launcher-sibling-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-launcher-sibling-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   // A space and a parenthesis, as in C:\\Program Files (x86).
   const scripts = path.join(root, 'skill (scripts)');
@@ -257,14 +257,14 @@ async function runWithSibling(t, { version, probeStatus = 0, mode = 0o755, cache
   // was honored in a path with a space and a parenthesis, without a rehash.
   const digest = '1'.repeat(64);
   fs.writeFileSync(path.join(scripts, 'engine-checksums.txt'), `0.0.0-test ${ASSET} ${digest}\n`);
-  const name = WINDOWS ? 'impeccable.cmd' : 'impeccable';
+  const name = WINDOWS ? 'procable.cmd' : 'procable';
   const launcher = path.join(scripts, name);
   fs.copyFileSync(path.join(ROOT, 'skill/scripts', name), launcher);
   if (WINDOWS) {
     fs.copyFileSync(process.execPath, sibling);
-    fs.writeFileSync(path.join(root, 'engine-probe.js'), `console.log('impeccable-engine ${version}');\nprocess.exitCode = ${probeStatus};\n`);
+    fs.writeFileSync(path.join(root, 'engine-probe.js'), `console.log('procable-engine ${version}');\nprocess.exitCode = ${probeStatus};\n`);
   } else {
-    fs.writeFileSync(sibling, `#!/bin/sh\necho impeccable-engine ${version}\nexit ${probeStatus}\n`, { mode });
+    fs.writeFileSync(sibling, `#!/bin/sh\necho procable-engine ${version}\nexit ${probeStatus}\n`, { mode });
   }
   if (cached) {
     // A trusted cache entry: a stamp holding the manifest digest and size, newer than the binary.
@@ -286,8 +286,8 @@ async function runWithSibling(t, { version, probeStatus = 0, mode = 0o755, cache
   const env = {
     PATH: WINDOWS ? `${process.env.SystemRoot}\\System32;${process.env.SystemRoot}` : '/usr/bin:/bin',
     HOME: home,
-    IMPECCABLE_HOME: cache,
-    IMPECCABLE_DOWNLOAD_BASE: `http://127.0.0.1:${server.address().port}`,
+    PROCABLE_HOME: cache,
+    PROCABLE_DOWNLOAD_BASE: `http://127.0.0.1:${server.address().port}`,
     ...(WINDOWS ? { USERPROFILE: home, TEMP: root, TMP: root, SystemRoot: process.env.SystemRoot, ComSpec: COMSPEC, PROCESSOR_ARCHITECTURE: 'AMD64' } : {}),
   };
   const result = await new Promise((resolve, reject) => {
@@ -308,7 +308,7 @@ async function runWithSibling(t, { version, probeStatus = 0, mode = 0o755, cache
 test('launcher runs a sibling engine that reports the pinned version', async t => {
   const result = await runWithSibling(t, { version: '0.0.0-test' });
   assert.equal(result.status, 0, JSON.stringify(result));
-  assert.match(result.stdout, /impeccable-engine 0\.0\.0-test/);
+  assert.match(result.stdout, /procable-engine 0\.0\.0-test/);
   assert.equal(result.stderr, '');
   assert.deepEqual(result.requests, []);
 });
@@ -317,7 +317,7 @@ test('launcher skips a sibling engine from another version and runs the cached o
   const result = await runWithSibling(t, { version: '0.0.0-old', cached: true, args: CACHED_ARGS });
   assert.equal(result.status, 0, JSON.stringify(result));
   assert.match(result.stdout, /verified-engine/);
-  assert.doesNotMatch(result.stdout, /impeccable-engine/);
+  assert.doesNotMatch(result.stdout, /procable-engine/);
   for (const part of [path.join('bin', SIBLING_DIR, BIN), '0.0.0-old', '0.0.0-test']) {
     assert.ok(result.stderr.includes(part), result.stderr);
   }
@@ -328,7 +328,7 @@ test('sh launcher skips a sibling engine whose probe fails', { skip: WINDOWS ? '
   const result = await runWithSibling(t, { version: '0.0.0-test', probeStatus: 1, cached: true, args: CACHED_ARGS });
   assert.equal(result.status, 0, JSON.stringify(result));
   assert.match(result.stdout, /verified-engine/);
-  assert.doesNotMatch(result.stdout, /impeccable-engine/);
+  assert.doesNotMatch(result.stdout, /procable-engine/);
   assert.match(result.stderr, /reports engine unknown/);
   assert.deepEqual(result.requests, []);
 });
@@ -336,7 +336,7 @@ test('sh launcher skips a sibling engine whose probe fails', { skip: WINDOWS ? '
 test('sh launcher runs a current sibling engine that lost its executable bit', { skip: WINDOWS ? 'POSIX file modes' : false }, async t => {
   const result = await runWithSibling(t, { version: '0.0.0-test', mode: 0o644 });
   assert.equal(result.status, 0, JSON.stringify(result));
-  assert.match(result.stdout, /impeccable-engine 0\.0\.0-test/);
+  assert.match(result.stdout, /procable-engine 0\.0\.0-test/);
   assert.equal(result.stderr, '');
   assert.deepEqual(result.requests, []);
 });

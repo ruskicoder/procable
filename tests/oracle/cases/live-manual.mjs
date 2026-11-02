@@ -24,7 +24,7 @@ const removal = (ws) => writeBuffer(ws, [
 ]);
 const D = (id, args, setup, extra = {}) => ({ id, verb: 'live-discard-manual-edits', workspace: 'live-html', args, setup, files: F, ...extra });
 const C = (id, args, setup, extra = {}) => ({ id, verb: 'live-commit-manual-edits', workspace: 'live-html', args, setup, files: F, ...extra });
-const MOCK = { IMPECCABLE_LIVE_COPY_AGENT: 'mock' };
+const MOCK = { PROCABLE_LIVE_COPY_AGENT: 'mock' };
 
 export default [
   D('live-discard-help', ['--help'], null),
@@ -34,12 +34,12 @@ export default [
   D('live-discard-page-no-match', ['--page-url=/nope'], twoPages),
   D('live-discard-page-bare-flag', ['--page-url'], twoPages),
   D('live-discard-twice', [], twoPages, { steps: [{}, {}] }),
-  D('live-discard-invalid-buffer', [], (ws) => write(ws, '.impeccable/live/pending-manual-edits.json', '{ nope')),
+  D('live-discard-invalid-buffer', [], (ws) => write(ws, '.procable/live/pending-manual-edits.json', '{ nope')),
 
   C('live-commit-help', ['--help'], null),
   C('live-commit-no-pending', [], null, { env: MOCK }),
   C('live-commit-no-pending-page', ['--page-url=/'], null, { env: MOCK }),
-  C('live-commit-invalid-buffer', [], (ws) => write(ws, '.impeccable/live/pending-manual-edits.json', '{ nope'), { env: MOCK }),
+  C('live-commit-invalid-buffer', [], (ws) => write(ws, '.procable/live/pending-manual-edits.json', '{ nope'), { env: MOCK }),
   C('live-commit-mock-default-result', ['--provider=mock'], twoPages, {
     // Mock reports every entry applied but touched no files: source
     // verification finds the new text nowhere and refuses to clear.
@@ -48,25 +48,25 @@ export default [
   C('live-commit-mock-applied-page', ['--page-url=/', '--provider=mock'], twoPages, {
     env: {
       ...MOCK,
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<!DOCTYPE html>\n<html lang="en">\n  <body>\n    <main class="page">\n      <h1 id="hero" class="hero-title">Oracle Fixture, renamed</h1>\n      <p class="hero-hook">A tighter hook.</p>\n      <aside class="side-note"><p>Nested copy.</p></aside>\n    </main>\n  </body>\n</html>\n' }),
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e1', 'e2'], failed: [], files: ['index.html'], notes: ['oracle mock'] }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<!DOCTYPE html>\n<html lang="en">\n  <body>\n    <main class="page">\n      <h1 id="hero" class="hero-title">Oracle Fixture, renamed</h1>\n      <p class="hero-hook">A tighter hook.</p>\n      <aside class="side-note"><p>Nested copy.</p></aside>\n    </main>\n  </body>\n</html>\n' }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e1', 'e2'], failed: [], files: ['index.html'], notes: ['oracle mock'] }),
     },
   }),
   C('live-commit-mock-partial', ['--page-url=/', '--provider=mock'], twoPages, {
     env: {
       ...MOCK,
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<html><body><h1 id="hero" class="hero-title">Oracle Fixture, renamed</h1><p class="hero-hook">Minimal static page for oracle live-mode goldens.</p><aside><p>Nested content.</p></aside></body></html>\n' }),
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'partial', appliedEntryIds: ['e1'], failed: [{ entryId: 'e2', reason: 'ambiguous duplicate copy' }], files: ['index.html'] }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<html><body><h1 id="hero" class="hero-title">Oracle Fixture, renamed</h1><p class="hero-hook">Minimal static page for oracle live-mode goldens.</p><aside><p>Nested content.</p></aside></body></html>\n' }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'partial', appliedEntryIds: ['e1'], failed: [{ entryId: 'e2', reason: 'ambiguous duplicate copy' }], files: ['index.html'] }),
     },
   }),
   C('live-commit-mock-error', ['--provider=mock'], twoPages, {
-    env: { ...MOCK, IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'error', message: 'agent gave up', appliedEntryIds: [], failed: [], files: [] }) },
+    env: { ...MOCK, PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'error', message: 'agent gave up', appliedEntryIds: [], failed: [], files: [] }) },
   }),
   C('live-commit-mock-unreported-file-change', ['--page-url=/', '--provider=mock'], twoPages, {
     env: {
       ...MOCK,
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<html><body><h1 id="hero" class="hero-title">Oracle Fixture, renamed</h1><p class="hero-hook">A tighter hook.</p><aside><p>Nested copy.</p></aside></body></html>\n' }),
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e1', 'e2'], failed: [], files: [] }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<html><body><h1 id="hero" class="hero-title">Oracle Fixture, renamed</h1><p class="hero-hook">A tighter hook.</p><aside><p>Nested copy.</p></aside></body></html>\n' }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e1', 'e2'], failed: [], files: [] }),
     },
   }),
   C('live-commit-mock-remove-element', ['--page-url=/', '--provider=mock'], removal, {
@@ -74,25 +74,25 @@ export default [
     // passes because the hinted line no longer carries the element's text.
     env: {
       ...MOCK,
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <title>Oracle Live HTML Fixture</title>\n    <style>\n      .hero-title { font-size: 2rem; }\n      .hero-hook { color: #555; }\n    </style>\n  </head>\n  <body>\n    <main class="page">\n      <h1 id="hero" class="hero-title">Oracle Fixture</h1>\n      <p class="hero-hook">Minimal static page for oracle live-mode goldens.</p>\n      <section id="features" class="feature-grid">\n        <article class="feature-card">One</article>\n        <article class="feature-card">Two</article>\n      </section>\n    </main>\n  </body>\n</html>\n' }),
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['r1'], failed: [], files: ['index.html'], notes: ['oracle mock removed the aside'] }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'index.html': '<!DOCTYPE html>\n<html lang="en">\n  <head>\n    <meta charset="UTF-8" />\n    <title>Oracle Live HTML Fixture</title>\n    <style>\n      .hero-title { font-size: 2rem; }\n      .hero-hook { color: #555; }\n    </style>\n  </head>\n  <body>\n    <main class="page">\n      <h1 id="hero" class="hero-title">Oracle Fixture</h1>\n      <p class="hero-hook">Minimal static page for oracle live-mode goldens.</p>\n      <section id="features" class="feature-grid">\n        <article class="feature-card">One</article>\n        <article class="feature-card">Two</article>\n      </section>\n    </main>\n  </body>\n</html>\n' }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['r1'], failed: [], files: ['index.html'], notes: ['oracle mock removed the aside'] }),
     },
   }),
   C('live-commit-mock-invalid-result-json', ['--provider=mock'], twoPages, {
-    env: { ...MOCK, IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: '{not json' },
+    env: { ...MOCK, PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: '{not json' },
   }),
   C('live-commit-mock-leftover-marker-check', ['--page-url=/docs/guide', '--provider=mock'], twoPages, {
     env: {
       ...MOCK,
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'public/docs/guide.html': '<html><body>\n<!-- impeccable-variants-start ab12cd34 -->\n<p class="doc-lead">Second page lead.</p>\n</body></html>\n' }),
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e3'], failed: [], files: ['public/docs/guide.html'] }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'public/docs/guide.html': '<html><body>\n<!-- procable-variants-start ab12cd34 -->\n<p class="doc-lead">Second page lead.</p>\n</body></html>\n' }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e3'], failed: [], files: ['public/docs/guide.html'] }),
     },
   }),
   C('live-commit-mock-then-discard-remaining', ['--page-url=/docs/guide', '--provider=mock'], twoPages, {
     env: {
       ...MOCK,
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'public/docs/guide.html': '<html><body><article class="doc"><h1 class="doc-title">Guide</h1><p class="doc-lead">Second page lead.</p></article></body></html>\n' }),
-      IMPECCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e3'], failed: [], files: ['public/docs/guide.html'] }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_WRITES: JSON.stringify({ 'public/docs/guide.html': '<html><body><article class="doc"><h1 class="doc-title">Guide</h1><p class="doc-lead">Second page lead.</p></article></body></html>\n' }),
+      PROCABLE_LIVE_COPY_AGENT_MOCK_RESULT: JSON.stringify({ status: 'done', appliedEntryIds: ['e3'], failed: [], files: ['public/docs/guide.html'] }),
     },
     steps: [{}, { verb: 'live-discard-manual-edits', args: [] }],
   }),

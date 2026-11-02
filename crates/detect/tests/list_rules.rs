@@ -1,11 +1,11 @@
-//! `impeccable detect --list-rules` prints the catalog and never scans.
+//! `procable detect --list-rules` prints the catalog and never scans.
 
 use std::collections::HashMap;
 
-use impeccable_common::Io;
-use impeccable_core::registry::all_antipatterns;
-use impeccable_detect::cli::run_detect;
-use impeccable_detect::{Engines, MissingHtmlEngine};
+use procable_common::Io;
+use procable_core::registry::all_antipatterns;
+use procable_detect::cli::run_detect;
+use procable_detect::{Engines, MissingHtmlEngine};
 use serde_json::Value;
 
 fn run(args: &[&str]) -> (i32, String, String) {
@@ -67,7 +67,7 @@ fn list_rules_help_wins() {
     let (code, out, err) = run(&["--list-rules", "--help"]);
     assert_eq!(code, 0, "{err}");
     assert!(err.is_empty(), "{err}");
-    assert!(out.starts_with("Usage: impeccable detect"));
+    assert!(out.starts_with("Usage: procable detect"));
     assert!(out.contains("--list-rules"));
     assert!(!out.contains("  side-tab\n"));
 }

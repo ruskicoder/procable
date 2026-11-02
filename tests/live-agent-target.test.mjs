@@ -37,7 +37,7 @@ function readVisualActions() {
 const VISUAL_ACTIONS = readVisualActions();
 
 function liveServerPath(cwd) {
-  return join(cwd, '.impeccable/live/server.json');
+  return join(cwd, '.procable/live/server.json');
 }
 
 /** Run the live-generate verb; the JSON verdict is on stdout on every exit code. */
@@ -54,7 +54,7 @@ function startServer(port, { cwd, env = {} } = {}) {
     const proc = trackServerChild(spawn(ENGINE_BIN, ['live-server', '--port=' + port], {
       cwd,
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: engineEnv(ENGINE_BIN, { IMPECCABLE_LIVE_COPY_AGENT: 'off', ...env }),
+      env: engineEnv(ENGINE_BIN, { PROCABLE_LIVE_COPY_AGENT: 'off', ...env }),
     }));
     let output = '';
     proc.stdout.on('data', (d) => { output += d.toString(); });
@@ -154,14 +154,14 @@ describe('POST /agent-target', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESSA
   let server;
 
   before(async () => {
-    tmp = mkdtempSync(join(tmpdir(), 'impeccable-agent-target-'));
-    mkdirSync(join(tmp, '.impeccable/live'), { recursive: true });
+    tmp = mkdtempSync(join(tmpdir(), 'procable-agent-target-'));
+    mkdirSync(join(tmp, '.procable/live'), { recursive: true });
     writeFileSync(join(tmp, 'index.html'), '<html><body><h1>t</h1></body></html>');
     // A short timeout keeps the browser_timeout case fast; the env override
     // exists exactly for this.
     server = await startServer(8497, {
       cwd: tmp,
-      env: { IMPECCABLE_AGENT_TARGET_TIMEOUT_MS: '400', IMPECCABLE_AGENT_TARGET_RESOLVE_GRACE_MS: '150' },
+      env: { PROCABLE_AGENT_TARGET_TIMEOUT_MS: '400', PROCABLE_AGENT_TARGET_RESOLVE_GRACE_MS: '150' },
     });
   });
 
@@ -302,12 +302,12 @@ describe('POST /agent-target', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESSA
   it('reopens the claim after the winner lease lapses, so a surviving tab can rescue', async () => {
     // Own server: the shared one keeps the default 3s claim lease, which its
     // 400ms target timeout would delete long before the lease could lapse.
-    const tmp2 = mkdtempSync(join(tmpdir(), 'impeccable-agent-lease-'));
-    mkdirSync(join(tmp2, '.impeccable/live'), { recursive: true });
+    const tmp2 = mkdtempSync(join(tmpdir(), 'procable-agent-lease-'));
+    mkdirSync(join(tmp2, '.procable/live'), { recursive: true });
     writeFileSync(join(tmp2, 'index.html'), '<html><body><h1>t</h1></body></html>');
     const leaseServer = await startServer(8495, {
       cwd: tmp2,
-      env: { IMPECCABLE_AGENT_TARGET_TIMEOUT_MS: '2000', IMPECCABLE_AGENT_TARGET_CLAIM_LEASE_MS: '250' },
+      env: { PROCABLE_AGENT_TARGET_TIMEOUT_MS: '2000', PROCABLE_AGENT_TARGET_CLAIM_LEASE_MS: '250' },
     });
     const sse = await openSseClient(leaseServer);
     try {
@@ -775,7 +775,7 @@ describe('POST /agent-target', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESSA
         token: server.token, targetId: pushed.targetId, clientId: 'tab-b', eligible: true,
       })).json();
       assert.deepEqual(late, { ok: true, granted: false, pending: false }, 'nothing is left for a rescuer to serve twice');
-      const journal = readFileSync(join(tmp, '.impeccable/live/sessions/aabbccdd.jsonl'), 'utf-8');
+      const journal = readFileSync(join(tmp, '.procable/live/sessions/aabbccdd.jsonl'), 'utf-8');
       assert.ok(!journal.includes('agentTarget'), 'the envelope never reaches the journal');
       const journaled = JSON.parse(journal.split('\n').find((l) => l.includes('"generate"')));
       assert.equal((journaled.event || journaled).origin, 'agent', 'an agent-initiated generate is marked so the poll hands out the fast path');
@@ -810,7 +810,7 @@ describe('POST /agent-target', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESSA
       const body = await refused.json();
       assert.equal(body.error, 'agent_target_already_served');
       assert.equal(body.sessionId, 'cccccccc');
-      assert.ok(!existsSync(join(tmp, '.impeccable/live/sessions/dddddddd.jsonl')), 'a refused Go journals nothing');
+      assert.ok(!existsSync(join(tmp, '.procable/live/sessions/dddddddd.jsonl')), 'a refused Go journals nothing');
       // The answering session's own event is welcome.
       assert.equal((await event('cccccccc', 'tab-a')).status, 200);
     } finally {
@@ -841,7 +841,7 @@ describe('POST /agent-target', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESSA
       const body = await late.json();
       assert.equal(body.error, 'agent_target_already_served');
       assert.equal(body.sessionId, undefined);
-      assert.ok(!existsSync(join(tmp, '.impeccable/live/sessions/eeeeeeee.jsonl')), 'a fenced Go journals nothing');
+      assert.ok(!existsSync(join(tmp, '.procable/live/sessions/eeeeeeee.jsonl')), 'a fenced Go journals nothing');
     } finally {
       tabA.close();
     }
@@ -856,7 +856,7 @@ describe('POST /agent-target', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESSA
     const refused = await event({ targetId: '0badf00d', clientId: 'tab-a', result: { ok: true, sessionId: 'ffffffff' } });
     assert.equal(refused.status, 409);
     assert.equal((await refused.json()).error, 'agent_target_already_served');
-    assert.ok(!existsSync(join(tmp, '.impeccable/live/sessions/ffffffff.jsonl')), 'nothing journaled');
+    assert.ok(!existsSync(join(tmp, '.procable/live/sessions/ffffffff.jsonl')), 'nothing journaled');
     // Without an envelope the same event is an ordinary Go.
     assert.equal((await event(null)).status, 200);
   });
@@ -1043,12 +1043,12 @@ describe('live-generate CLI --wait-for-browser', { skip: ENGINE_BIN ? false : EN
   let server;
 
   before(async () => {
-    tmp = mkdtempSync(join(tmpdir(), 'impeccable-generate-wait-'));
-    mkdirSync(join(tmp, '.impeccable/live'), { recursive: true });
+    tmp = mkdtempSync(join(tmpdir(), 'procable-generate-wait-'));
+    mkdirSync(join(tmp, '.procable/live'), { recursive: true });
     writeFileSync(join(tmp, 'index.html'), '<html><body><h1>t</h1></body></html>');
     server = await startServer(8496, {
       cwd: tmp,
-      env: { IMPECCABLE_AGENT_TARGET_TIMEOUT_MS: '400' },
+      env: { PROCABLE_AGENT_TARGET_TIMEOUT_MS: '400' },
     });
   });
 
@@ -1117,7 +1117,7 @@ describe('live-generate CLI local failure modes', { skip: ENGINE_BIN ? false : E
   }
 
   it('accepts --no-live-bar as a boolean flag', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'impeccable-generate-cli-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'procable-generate-cli-'));
     try {
       const { code, json } = runCli(tmp, ['--selector', 'h1', '--action', 'bolder', '--no-live-bar']);
       assert.equal(code, 1);
@@ -1128,7 +1128,7 @@ describe('live-generate CLI local failure modes', { skip: ENGINE_BIN ? false : E
   });
 
   it('fails with server_not_running when no live server is recorded', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'impeccable-generate-cli-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'procable-generate-cli-'));
     try {
       const { code, json } = runCli(tmp, ['--selector', 'h1', '--action', 'bolder']);
       assert.equal(code, 1);
@@ -1140,7 +1140,7 @@ describe('live-generate CLI local failure modes', { skip: ENGINE_BIN ? false : E
   });
 
   it('fails with invalid_action locally, listing the vocabulary and the mapping hint', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'impeccable-generate-cli-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'procable-generate-cli-'));
     try {
       const { code, json } = runCli(tmp, ['--selector', 'h1', '--action', 'bold']);
       assert.equal(code, 1);
@@ -1153,7 +1153,7 @@ describe('live-generate CLI local failure modes', { skip: ENGINE_BIN ? false : E
   });
 
   it('fails with selector_required when --selector is missing', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'impeccable-generate-cli-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'procable-generate-cli-'));
     try {
       const { code, json } = runCli(tmp, ['--action', 'bolder']);
       assert.equal(code, 1);
@@ -1164,7 +1164,7 @@ describe('live-generate CLI local failure modes', { skip: ENGINE_BIN ? false : E
   });
 
   it('fails with invalid_count on a non-integer count', () => {
-    const tmp = mkdtempSync(join(tmpdir(), 'impeccable-generate-cli-'));
+    const tmp = mkdtempSync(join(tmpdir(), 'procable-generate-cli-'));
     try {
       const { code, json } = runCli(tmp, ['--selector', 'h1', '--count', 'many']);
       assert.equal(code, 1);

@@ -1,11 +1,11 @@
 //! Integration tests for `extreme-negative-tracking` over the repo fixture:
 //! the size-scaled threshold and the CJK exemption.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::{Path, PathBuf};
 
 fn repo_root() -> PathBuf {
-    std::env::var("IMPECCABLE_PUBLIC_REPO")
+    std::env::var("PROCABLE_PUBLIC_REPO")
         .map(PathBuf::from)
         .unwrap_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }

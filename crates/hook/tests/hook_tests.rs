@@ -10,11 +10,11 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use impeccable_common::{jsp, Io};
-use impeccable_core::findings::{finding, Finding};
-use impeccable_detect::MissingHtmlEngine;
-use impeccable_hook::hook_lib::*;
-use impeccable_hook::{admin, before_edit, hook};
+use procable_common::{jsp, Io};
+use procable_core::findings::{finding, Finding};
+use procable_detect::MissingHtmlEngine;
+use procable_hook::hook_lib::*;
+use procable_hook::{admin, before_edit, hook};
 use serde_json::{json, Map, Value};
 
 static HTML: MissingHtmlEngine = MissingHtmlEngine;
@@ -23,14 +23,14 @@ static HTML: MissingHtmlEngine = MissingHtmlEngine;
 #[cfg(unix)]
 fn gemini_before_tool_preserves_command_body_and_only_carries_literal_identity() {
     let t = Tmp::new();
-    let command = "printf '%s\\n' \"$IMPECCABLE_SESSION_ID\" # impeccable build-phase completion\nexit 7";
+    let command = "printf '%s\\n' \"$PROCABLE_SESSION_ID\" # procable build-phase completion\nexit 7";
     for (name, session, disabled, expected) in [
         ("run_shell_command", "owner-123", false, true),
         ("read_file", "owner-123", false, false),
         ("run_shell_command", "bad'$(touch unsafe)", false, false),
         ("run_shell_command", "owner-123", true, false),
     ] {
-        let r = rt_with(&t.path(), env(&[("IMPECCABLE_HOOK_DISABLED", if disabled { "1" } else { "" })]));
+        let r = rt_with(&t.path(), env(&[("PROCABLE_HOOK_DISABLED", if disabled { "1" } else { "" })]));
         let event = json!({"hook_event_name":"BeforeTool", "session_id":session,
             "cwd":t.path(), "tool_name":name, "tool_input":{"command":command, "timeout":12}});
         let (mut io, capture) = Io::captured("", t.0.clone(), HashMap::new());
@@ -39,7 +39,7 @@ fn gemini_before_tool_preserves_command_body_and_only_carries_literal_identity()
         if expected {
             let output: Value = serde_json::from_str(&stdout).unwrap();
             let rewritten = output["hookSpecificOutput"]["tool_input"]["command"].as_str().unwrap();
-            assert_eq!(rewritten, format!("export IMPECCABLE_SESSION_ID='owner-123'\n{command}"));
+            assert_eq!(rewritten, format!("export PROCABLE_SESSION_ID='owner-123'\n{command}"));
             assert!(output["hookSpecificOutput"].get("additionalContext").is_none());
             #[cfg(unix)] {
                 let execution = std::process::Command::new("sh").args(["-c", rewritten]).output().unwrap();
@@ -52,12 +52,12 @@ fn gemini_before_tool_preserves_command_body_and_only_carries_literal_identity()
 
 #[test]
 fn gemini_before_tool_leaves_unrelated_shell_commands_untouched() {
-    // Only build-phase reads IMPECCABLE_SESSION_ID. Every other shell command
+    // Only build-phase reads PROCABLE_SESSION_ID. Every other shell command
     // must reach Gemini's allowlist / coreTools policy exactly as the model
     // wrote it, so its first word is unchanged.
     let t = Tmp::new();
     let r = rt(&t.path());
-    for command in ["npm test", "git status && ls", "impeccable build-phase completion --session-id x"] {
+    for command in ["npm test", "git status && ls", "procable build-phase completion --session-id x"] {
         let event = json!({"hook_event_name":"BeforeTool", "session_id":"owner-123",
             "cwd":t.path(), "tool_name":"run_shell_command", "tool_input":{"command":command}});
         let (mut io, capture) = Io::captured("", t.0.clone(), HashMap::new());
@@ -71,7 +71,7 @@ fn build_completion_reminder_skips_native_projects() {
     let t = Tmp::new();
     t.write("PRODUCT.md", "# P\n\n## Platform\nios\n");
     t.write("index.html", "<main>In progress</main>");
-    t.write(".impeccable/build/state.json", &json!({
+    t.write(".procable/build/state.json", &json!({
         "sessionId":"owner", "artifact":"index.html", "startedAt":"native-build",
         "phases":{"hero":{"status":"open"}}, "finish":null
     }).to_string());
@@ -84,7 +84,7 @@ fn build_completion_reminder_skips_native_projects() {
 fn session_start_respects_disabled_hook_config() {
     let t = Tmp::new();
     let env_path = t.write("session.env", "");
-    t.write(".impeccable/config.json", r#"{"hook":{"enabled":false}}"#);
+    t.write(".procable/config.json", r#"{"hook":{"enabled":false}}"#);
     let r = rt_with(&t.path(), env(&[("CLAUDE_ENV_FILE", &env_path)]));
     let mut io = Io::captured("", t.0.clone(), HashMap::new()).0;
     let event = json!({"hook_event_name":"SessionStart", "session_id":"owner-123", "cwd":t.path()}).to_string();
@@ -97,7 +97,7 @@ fn admin_on_and_reset_manage_gemini_without_losing_user_settings() {
     let t = Tmp::new();
     let cwd = t.path();
     let r = rt(&cwd);
-    std::fs::create_dir_all(t.0.join(".gemini/skills/impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".gemini/skills/procable")).unwrap();
     t.write(".gemini/settings.json", "{\n  // user model\n  \"model\": {\"name\": \"gemini-3-pro\"}, /* auth */\n  \"security\": {\"auth\": {\"selectedType\": \"oauth-personal\"}}\n}\n");
     let (out, _, code) = admin_run(&r, &["on"]);
     assert_eq!(code, 0);
@@ -125,7 +125,7 @@ fn admin_on_and_reset_manage_gemini_without_losing_user_settings() {
 fn gemini_after_agent_uses_native_retry_contract_and_session_scope() {
     let t = Tmp::new();
     t.write("index.html", "<main>In progress</main>");
-    t.write(".impeccable/build/state.json", &json!({
+    t.write(".procable/build/state.json", &json!({
         "sessionId":"gemini-owner", "artifact":"index.html", "startedAt":"gemini-build",
         "phases":{"hero":{"status":"open"}}, "finish":null
     }).to_string());
@@ -155,7 +155,7 @@ fn session_start_persists_only_a_literal_session_identity() {
         let event = json!({"hook_event_name":"SessionStart", "session_id":session, "cwd":t.path()}).to_string();
         assert_eq!(hook::run(&r, &event, &mut io), 0);
     }
-    assert_eq!(t.read("session.env"), "export EXISTING=kept\nexport IMPECCABLE_SESSION_ID='owner-123'\n");
+    assert_eq!(t.read("session.env"), "export EXISTING=kept\nexport PROCABLE_SESSION_ID='owner-123'\n");
 }
 
 #[test]
@@ -170,7 +170,7 @@ fn session_start_writes_the_session_identity_once_across_resumes() {
     }
     assert_eq!(
         t.read("session.env"),
-        "export EXISTING=kept\nexport IMPECCABLE_SESSION_ID='owner-123'\nexport IMPECCABLE_SESSION_ID='other-456'\nexport IMPECCABLE_SESSION_ID='owner-123'\n"
+        "export EXISTING=kept\nexport PROCABLE_SESSION_ID='owner-123'\nexport PROCABLE_SESSION_ID='other-456'\nexport PROCABLE_SESSION_ID='owner-123'\n"
     );
 }
 
@@ -178,7 +178,7 @@ fn session_start_writes_the_session_identity_once_across_resumes() {
 fn unfinished_comp_stop_is_owned_bounded_and_does_not_reopen_on_unrelated_turn() {
     let t = Tmp::new();
     t.write("index.html", "<main>In progress</main>");
-    t.write(".impeccable/build/state.json", &json!({
+    t.write(".procable/build/state.json", &json!({
         "tool":"build-phase", "version":2, "startedAt":"build-one",
         "sessionId":"owner", "artifact":"index.html", "finish":null,
         "phases":{"hero":{"status":"open"}}
@@ -210,10 +210,10 @@ fn shipped_build_in(t: &Tmp, dir: &str) {
     for phase in ["comps", "spec", "plates", "hero", "sections", "motion", "responsive", "review"] {
         state["phases"][phase] = json!({"status":"closed"});
     }
-    let hash = impeccable_comp_verbs::completion::artifact_hash(&t.0.join(dir), &state).unwrap();
+    let hash = procable_comp_verbs::completion::artifact_hash(&t.0.join(dir), &state).unwrap();
     state["finish"] = json!({"disposition":"ship", "phaseAtFinish":"review", "artifactSha256":hash,
         "captureInputs":[{"path":"index.html","sha256":hash}]});
-    t.write(&format!("{dir}.impeccable/build/state.json"), &state.to_string());
+    t.write(&format!("{dir}.procable/build/state.json"), &state.to_string());
 }
 
 #[test]
@@ -228,7 +228,7 @@ fn findings_over_a_shipped_build_say_a_fix_voids_the_finish_and_the_follow_up_as
     let first = hook::run_stop_hook(&r, &stop_event(&t.path(), "owner"));
     assert!(first.stdout.contains("side-tab") || first.stdout.contains("Side-tab"), "{}", first.stdout);
     assert!(first.stdout.contains("The comp build for index.html has finish --disposition ship recorded. A fix after it voids that finish"), "{}", first.stdout);
-    assert!(first.stdout.contains("/opt/bin/impeccable") && first.stdout.contains(" build-phase finish --disposition ship again"), "{}", first.stdout);
+    assert!(first.stdout.contains("/opt/bin/procable") && first.stdout.contains(" build-phase finish --disposition ship again"), "{}", first.stdout);
     // The agent fixes the page in the continuation those findings started.
     t.write("index.html", "<main>Shipped, then fixed</main>");
     let active = json!({"session_id":"owner","cwd":t.path(),"hook_event_name":"Stop","stop_hook_active":true}).to_string();
@@ -274,7 +274,7 @@ fn a_bound_stylesheet_edit_after_a_reminder_earns_another() {
     let t = Tmp::new();
     t.write("site.css", "body{}");
     shipped_build(&t);
-    let path = t.0.join(".impeccable/build/state.json");
+    let path = t.0.join(".procable/build/state.json");
     let mut state: Value = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
     let css_hash = format!("{:x}", <sha2::Sha256 as sha2::Digest>::digest(b"body{}"));
     state["finish"]["captureInputs"].as_array_mut().unwrap().push(json!({"path":"site.css","sha256":css_hash}));
@@ -305,7 +305,7 @@ fn findings_with_no_shipped_build_carry_no_finish_note() {
 fn legacy_comp_state_never_implicitly_claims_the_current_session() {
     let t = Tmp::new();
     t.write("index.html", "<main>Old work</main>");
-    t.write(".impeccable/build/state.json", &json!({"artifact":"index.html","startedAt":"old","phases":{}}).to_string());
+    t.write(".procable/build/state.json", &json!({"artifact":"index.html","startedAt":"old","phases":{}}).to_string());
     assert!(hook::run_stop_hook(&rt(&t.path()), &stop_event(&t.path(), "new")).stdout.is_empty());
 }
 
@@ -314,7 +314,7 @@ fn completion_only_transport_does_not_duplicate_detector_feedback() {
     let t = Tmp::new();
     t.write("package.json", "{}");
     let file = t.write("card.css", SIDE_TAB_CSS);
-    let r = rt_with(&t.path(), env(&[("IMPECCABLE_HOOK_COMPLETION_ONLY", "1")]));
+    let r = rt_with(&t.path(), env(&[("PROCABLE_HOOK_COMPLETION_ONLY", "1")]));
     hook::run_hook(&r, &edit_with_original(&t.path(), &file, "owner", ".card {}\n", ".card {}\n", SIDE_TAB_CSS));
     let stop = hook::run_stop_hook(&r, &stop_event(&t.path(), "owner"));
     assert!(stop.stdout.is_empty());
@@ -329,7 +329,7 @@ impl Tmp {
         // workspace load); the per-process counter makes each dir unique.
         static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let base = std::env::temp_dir().join(format!(
-            "impeccable-hook-rs-{}-{}-{}",
+            "procable-hook-rs-{}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -375,20 +375,20 @@ impl Drop for Tmp {
 /// project, in the host's path form (backslashes on Windows, as `path.relative`
 /// renders it there).
 fn shared_config_rel() -> String {
-    jsp::join(&[".impeccable", "config.json"])
+    jsp::join(&[".procable", "config.json"])
 }
 
 /// The local config path as the admin verbs print it, in the same host form.
 fn local_config_rel() -> String {
-    jsp::join(&[".impeccable", "config.local.json"])
+    jsp::join(&[".procable", "config.local.json"])
 }
 
 fn rt_with(cwd: &str, env: HashMap<String, String>) -> Runtime<'static> {
     Runtime::new(
         cwd.to_string(),
         env,
-        "/impeccable".to_string(),
-        "/opt/bin/impeccable",
+        "/procable".to_string(),
+        "/opt/bin/procable",
         &HTML,
     )
 }
@@ -435,7 +435,7 @@ fn monorepo_design_fixture(root_design: bool) -> Tmp {
     if root_design {
         t.write("DESIGN.md", "---\ncolors:\n  primary: '#224466'\n---\n");
     }
-    t.write(".impeccable/config.json", r#"{"hook":{"perEditRules":"all"},"detector":{"advisoryRules":"include"}}"#);
+    t.write(".procable/config.json", r#"{"hook":{"perEditRules":"all"},"detector":{"advisoryRules":"include"}}"#);
     t
 }
 
@@ -473,7 +473,7 @@ fn check_monorepo_design_hook(mode: &str) {
         };
         assert_eq!(out.contains("design-system-color"), expected,
             "{mode}: root_design={root_design}, app={app}, color={color}: {out}");
-        assert!(!t.exists(&format!("apps/{app}/.impeccable/hook.cache.json")),
+        assert!(!t.exists(&format!("apps/{app}/.procable/hook.cache.json")),
             "design resolution must not relocate hook state");
     }
 }
@@ -515,7 +515,7 @@ fn cursor_post_tool_use_feeds_findings_back_as_additional_context() {
 fn cursor_additional_context_stays_under_cursors_cap() {
     let t = Tmp::new();
     let cwd = t.path();
-    t.write(".impeccable/config.json", r#"{"hook":{"perEditRules":"all","limits":{"maxChars":50000,"maxFindings":1000}}}"#);
+    t.write(".procable/config.json", r#"{"hook":{"perEditRules":"all","limits":{"maxChars":50000,"maxFindings":1000}}}"#);
     let css: String = (0..400)
         .map(|i| format!(".c{i} {{ border-left: 4px solid #6366f1; border-radius: 8px; background: linear-gradient(90deg, #f472b6, #a78bfa); -webkit-background-clip: text; color: transparent; }}\n"))
         .collect();
@@ -550,7 +550,7 @@ fn monorepo_design_document_locations_and_sidecars() {
         let file = t.write("apps/b/src/probe.css", ".probe {}\n");
         let md = t.write(&format!("apps/b/{location}"),
             "---\ntypography:\n  body:\n    fontFamily: Georgia\nrounded:\n  md: 8px\ncolors:\n  primary: '#abcdef'\n---\n");
-        let sidecar = t.write("apps/b/.impeccable/design.json", "{}");
+        let sidecar = t.write("apps/b/.procable/design.json", "{}");
         let scan = design_system_options_for_file(&rt(&cwd), &read_config(&cwd), &cwd, &file);
         let ds = scan.design_system.as_ref().unwrap();
         assert_eq!(ds.source_path.as_deref(), Some(md.as_str()));
@@ -594,8 +594,8 @@ fn monorepo_design_batch_notes_follow_the_displayed_file() {
             if mode == "post-pending" {
                 hook::run_hook(&r, &edit_event(&cwd, &a, "s1"));
             }
-            let sidecar = t.write(if stale_app == "a" { "apps/a/.impeccable/design.json" }
-                else { ".impeccable/design.json" }, "{}");
+            let sidecar = t.write(if stale_app == "a" { "apps/a/.procable/design.json" }
+                else { ".procable/design.json" }, "{}");
             std::fs::File::options().write(true).open(sidecar).unwrap()
                 .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000)).unwrap();
             let out = if mode == "stop" {
@@ -640,8 +640,8 @@ fn stop_baseline_import_only_edit_does_not_blame_existing_font() {
     let stop = hook::run_stop_hook(&r, &stop_event(&cwd, "s1"));
     assert!(stop.stdout.is_empty(), "{}", stop.stdout);
     assert_eq!(stop.audit["preExistingFindings"], json!(1));
-    assert!(!t.read(".impeccable/hook.cache.json").contains("const report"), "do not persist source contents");
-    assert!(!t.exists(".impeccable/config.local.json"), "baseline is not an ignore");
+    assert!(!t.read(".procable/hook.cache.json").contains("const report"), "do not persist source contents");
+    assert!(!t.exists(".procable/config.local.json"), "baseline is not an ignore");
     assert!(detector_detect_text(&after, &file, &HookScanOptions::default()).iter().any(|f| f.antipattern == "overused-font"), "explicit scans stay unchanged");
 }
 
@@ -794,14 +794,14 @@ fn stop_baseline_unknown_notice_respects_small_output_budget() {
         let t = Tmp::new();
         let cwd = t.path();
         t.write("package.json", "{}");
-        t.write(".impeccable/config.json", &json!({"hook":{"limits":{"maxChars":budget}}}).to_string());
+        t.write(".procable/config.json", &json!({"hook":{"limits":{"maxChars":budget}}}).to_string());
         let file = t.write("card.css", SIDE_TAB_CSS);
         let r = rt(&cwd);
         hook::run_hook(&r, &edit_event(&cwd, &file, "s1"));
         if stale {
             // Make the notice eligible only at Stop; no sleeps or clock races.
             t.write("DESIGN.md", "---\nname: Test\n---\n");
-            let sidecar = t.write(".impeccable/design.json", "{}");
+            let sidecar = t.write(".procable/design.json", "{}");
             std::fs::File::options().write(true).open(sidecar).unwrap()
                 .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000)).unwrap();
             assert!(design_system_options(&read_config(&cwd), &cwd).md_newer_than_json());
@@ -816,7 +816,7 @@ fn stop_baseline_unknown_notice_respects_small_output_budget() {
         assert!(text.contains("card.css"), "{text}");
         if stale {
             assert_eq!(text.contains("DESIGN.md is newer"), budget > 500, "{text}");
-            let cache: Value = serde_json::from_str(&t.read(".impeccable/hook.cache.json")).unwrap();
+            let cache: Value = serde_json::from_str(&t.read(".procable/hook.cache.json")).unwrap();
             assert_eq!(cache["sessions"]["s1"]["designNoteShown"] == json!(true), budget > 500);
         }
     }
@@ -848,7 +848,7 @@ fn stop_baseline_capped_unknown_does_not_add_notice_to_new_finding() {
     let t = Tmp::new();
     let cwd = t.path();
     t.write("package.json", "{}");
-    t.write(".impeccable/config.json", r#"{"hook":{"limits":{"maxFindings":1}}}"#);
+    t.write(".procable/config.json", r#"{"hook":{"limits":{"maxFindings":1}}}"#);
     let r = rt(&cwd);
     let new = t.write("new/card.css", SIDE_TAB_CSS);
     hook::run_hook(&r, &edit_with_original(&cwd, &new, "s1", ".card {}", ".card {}", SIDE_TAB_CSS));
@@ -866,7 +866,7 @@ fn stop_baseline_small_grouped_output_keeps_finding_and_attribution() {
     let t = Tmp::new();
     let cwd = t.path();
     t.write("package.json", "{}");
-    t.write(".impeccable/config.json", r#"{"hook":{"limits":{"maxChars":500}}}"#);
+    t.write(".procable/config.json", r#"{"hook":{"limits":{"maxChars":500}}}"#);
     let r = rt(&cwd);
     for path in ["one/card.css", "two/card.css"] {
         let file = t.write(path, SIDE_TAB_CSS);
@@ -887,7 +887,7 @@ fn stop_baseline_dropped_notice_reclaims_its_rendering_budget() {
         let t = Tmp::new();
         let cwd = t.path();
         t.write("package.json", "{}");
-        t.write(".impeccable/config.json", &json!({"hook":{"limits":{"maxChars":500,"maxFindings":max_findings}}}).to_string());
+        t.write(".procable/config.json", &json!({"hook":{"limits":{"maxChars":500,"maxFindings":max_findings}}}).to_string());
         let r = rt(&cwd);
         let new = t.write("new/card.css", SIDE_TAB_CSS);
         hook::run_hook(&r, &edit_with_original(&cwd, &new, "s1", ".card {}", ".card {}", SIDE_TAB_CSS));
@@ -962,7 +962,7 @@ fn stop_baseline_untrusted_shapes_do_not_suppress_findings() {
             }
             _ => {},
         }
-        let r = if variant == "other-provider" { rt_with(&cwd, env(&[("IMPECCABLE_HOOK_HARNESS", "codex")])) } else { rt(&cwd) };
+        let r = if variant == "other-provider" { rt_with(&cwd, env(&[("PROCABLE_HOOK_HARNESS", "codex")])) } else { rt(&cwd) };
         hook::run_hook(&r, &event.to_string());
         let session = if variant == "no-session" { "unknown" } else { "s1" };
         let stop = hook::run_stop_hook(&r, &stop_event(&cwd, session));
@@ -1106,11 +1106,11 @@ fn read_config_merges_shared_then_local_and_legacy_keys() {
     let cwd = t.path();
     assert_eq!(read_config(&cwd), HookConfig::default());
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"hook":{"enabled":true,"quiet":true,"auditLog":" log.ndjson ","perEditRules":"all","ignoreRules":["a"],"limits":{"maxFindings":2,"maxChars":100,"maxFileBytes":-1}},"detector":{"ignoreRules":["b"],"ignoreFiles":["x/**"],"extensions":[".blade.php",{"ext":"heex","engine":"text"}],"advisoryRules":"include","designSystem":{"enabled":false}}}"#,
     );
     t.write(
-        ".impeccable/config.local.json",
+        ".procable/config.local.json",
         r#"{"hook":{"enabled":false},"detector":{"ignoreRules":["a","c"],"extensions":[{"ext":".heex","engine":"html"}],"ignoreValues":[{"rule":"Overused-Font","value":"\"Inter\"","file":"a.css","files":["b.css","a.css"],"createdAt":"2026","reason":" r "}]}}"#,
     );
     let c = read_config(&cwd);
@@ -1148,7 +1148,7 @@ fn read_config_merges_shared_then_local_and_legacy_keys() {
     );
     assert_eq!(e.reason.as_deref(), Some("r"));
     // malformed local config is ignored, shared survives
-    t.write(".impeccable/config.local.json", "{ nope");
+    t.write(".procable/config.local.json", "{ nope");
     let c = read_config(&cwd);
     assert!(c.enabled);
     assert_eq!(c.ignore_rules, vec!["a", "b"]);
@@ -1251,7 +1251,7 @@ fn git_excludes_land_in_info_exclude_not_gitignore() {
     let ex = t.read(".git/info/exclude");
     assert_eq!(
         ex,
-        "# impeccable-hook-ignore-start .\n.impeccable/hook.cache.json\n.impeccable/hook.pending.json\n.impeccable/config.local.json\n# impeccable-hook-ignore-end .\n"
+        "# procable-hook-ignore-start .\n.procable/hook.cache.json\n.procable/hook.pending.json\n.procable/config.local.json\n# procable-hook-ignore-end .\n"
     );
     assert_eq!(t.read(".gitignore"), "node_modules\n");
     let again = ensure_hook_git_excludes(&r, &root);
@@ -1260,10 +1260,10 @@ fn git_excludes_land_in_info_exclude_not_gitignore() {
     std::fs::create_dir_all(t.0.join("apps/web")).unwrap();
     let nested = format!("{root}/apps/web");
     let res = ensure_hook_git_excludes(&r, &nested);
-    assert_eq!(res.patterns[0], "apps/web/.impeccable/hook.cache.json");
+    assert_eq!(res.patterns[0], "apps/web/.procable/hook.cache.json");
     let ex = t.read(".git/info/exclude");
     assert!(
-        ex.contains("# impeccable-hook-ignore-end .\n\n# impeccable-hook-ignore-start apps/web\n")
+        ex.contains("# procable-hook-ignore-end .\n\n# procable-hook-ignore-start apps/web\n")
     );
     // no repo at all
     let t2 = Tmp::new();
@@ -1297,10 +1297,10 @@ fn git_excludes_in_a_linked_worktree_reach_the_exclude_file_git_reads() {
     }
     // A linked worktree's `.git` is a file; git reads `info/exclude` from the
     // common dir, never from the per-worktree gitdir the file points at.
-    assert!(impeccable_detect::config::ensure_config_git_exclude(&wt));
-    assert!(git(&wt, &["check-ignore", "-q", ".impeccable/config.local.json"]).status.success());
+    assert!(procable_detect::config::ensure_config_git_exclude(&wt));
+    assert!(git(&wt, &["check-ignore", "-q", ".procable/config.local.json"]).status.success());
     ensure_hook_git_excludes(&rt(&wt), &wt);
-    assert!(git(&wt, &["check-ignore", "-q", ".impeccable/hook.cache.json"]).status.success());
+    assert!(git(&wt, &["check-ignore", "-q", ".procable/hook.cache.json"]).status.success());
 }
 
 // ── filtering ─────────────────────────────────────────────────────────────
@@ -1331,18 +1331,18 @@ fn filter_findings_rules_advisory_and_values() {
         1
     );
     c.ignore_rules.clear();
-    c.ignore_values = impeccable_detect::config::normalize_ignore_value_entries(&[
+    c.ignore_values = procable_detect::config::normalize_ignore_value_entries(&[
         json!({"rule": "overused-font", "value": "inter"}),
     ]);
     assert!(filter_findings(vec![font.clone()], &c).is_empty());
-    c.ignore_values = impeccable_detect::config::normalize_ignore_value_entries(&[
+    c.ignore_values = procable_detect::config::normalize_ignore_value_entries(&[
         json!({"rule": "overused-font", "value": "*", "files": ["src/*.css"]}),
     ]);
     assert!(
         filter_findings(vec![font.clone()], &c).is_empty(),
         "wildcard scoped to a suffix glob"
     );
-    c.ignore_values = impeccable_detect::config::normalize_ignore_value_entries(&[
+    c.ignore_values = procable_detect::config::normalize_ignore_value_entries(&[
         json!({"rule": "overused-font", "value": "*"}),
     ]);
     assert_eq!(
@@ -1381,17 +1381,17 @@ fn render_template_caps_and_footers() {
         .collect();
     let text = render_template(&r, &many, "/x/Card.tsx", &c, &opts("/x"));
     assert!(text.starts_with(
-        "[impeccable@1] Design hook findings requiring review in Card.tsx (12 issue(s)):"
+        "[procable@1] Design hook findings requiring review in Card.tsx (12 issue(s)):"
     ));
-    assert!(text.contains("... and 7 more (see /impeccable audit)."));
+    assert!(text.contains("... and 7 more (see /procable audit)."));
     assert_eq!(text.lines().filter(|l| l.starts_with("- L")).count(), 5);
     // The self-command is quoted in the host's shell form (#476 / #533):
     // single quotes under sh, double quotes on Windows.
-    let self_cmd = quote_command_arg("/opt/bin/impeccable", cfg!(windows));
+    let self_cmd = quote_command_arg("/opt/bin/procable", cfg!(windows));
     assert!(text.contains(&format!(
         "Run `{self_cmd} hooks ignore-value <rule> \"<value>\" --reason \"<who decided: evidence>\"`"
     )));
-    assert!(text.contains("Full suppression ladder: /impeccable hooks."));
+    assert!(text.contains("Full suppression ladder: /procable hooks."));
     let short = render_template(
         &r,
         &many[..1],
@@ -1403,7 +1403,7 @@ fn render_template_caps_and_footers() {
         },
     );
     assert!(short.contains("Triage per the session policy"));
-    assert!(short.contains("`impeccable hooks ignore-value`"));
+    assert!(short.contains("`procable hooks ignore-value`"));
     assert!(!short.contains("Triage each finding"));
     let zero = render_template(
         &r,
@@ -1488,12 +1488,12 @@ fn render_template_dedupes_descriptions_and_quotes_hints() {
     // The Windows .cmd launcher is quoted, so PowerShell needs `&` (#744);
     // the sh launcher and bare names keep their spelling.
     assert_eq!(
-        self_command_spelling(r"C:\Users\A B\impeccable.cmd", true),
-        r"& 'C:\Users\A B\impeccable.cmd'"
+        self_command_spelling(r"C:\Users\A B\procable.cmd", true),
+        r"& 'C:\Users\A B\procable.cmd'"
     );
-    assert_eq!(self_command_spelling("/opt/a b/impeccable", false), "'/opt/a b/impeccable'");
-    assert_eq!(self_command_spelling("/opt/a b/impeccable", true), "\"/opt/a b/impeccable\"");
-    assert_eq!(self_command_spelling("impeccable", true), "impeccable");
+    assert_eq!(self_command_spelling("/opt/a b/procable", false), "'/opt/a b/procable'");
+    assert_eq!(self_command_spelling("/opt/a b/procable", true), "\"/opt/a b/procable\"");
+    assert_eq!(self_command_spelling("procable", true), "procable");
     assert_eq!(
         quote_command_arg("Space Grotesk Var", false),
         "'Space Grotesk Var'"
@@ -1570,8 +1570,8 @@ fn render_template_clamps_inside_budget_and_keeps_policy() {
         },
     ];
     let text = render_grouped_template(&r, &groups, &HookConfig::default(), &opts("/x"));
-    assert!(text.starts_with("[impeccable@1] Design hook findings requiring review across 2 files (7 issue(s)):\na.css (4 issue(s)):\n"));
-    assert!(text.contains("b.css (3 issue(s)):\n- L1 [gradient-text] G. d\n- ... 2 more in b.css (see /impeccable audit)."));
+    assert!(text.starts_with("[procable@1] Design hook findings requiring review across 2 files (7 issue(s)):\na.css (4 issue(s)):\n"));
+    assert!(text.contains("b.css (3 issue(s)):\n- L1 [gradient-text] G. d\n- ... 2 more in b.css (see /procable audit)."));
     let pending = render_pending_ack(
         &r,
         "/x/a.css",
@@ -1581,7 +1581,7 @@ fn render_template_clamps_inside_budget_and_keeps_policy() {
     assert!(pending
         .contains("Still has 4 finding(s) flagged earlier this session (a:1, b:2, c:3, +1 more)."));
     assert!(render_clean_ack(&r, "/x/a.css", "/x")
-        .ends_with("keep following the project design system and the impeccable skill guidance."));
+        .ends_with("keep following the project design system and the procable skill guidance."));
 }
 
 // ── events / targets ──────────────────────────────────────────────────────
@@ -1623,7 +1623,7 @@ fn harness_detection_and_github_normalization() {
     assert_eq!(ev["tool_input"]["file_path"], json!("src/App.jsx"));
     // c9e7cd8a: an explicit codex harness now keeps its own identity so the
     // Stop pass can emit the Codex decision/block contract.
-    let forced = rt_with("/p", env(&[("IMPECCABLE_HOOK_HARNESS", "codex")]));
+    let forced = rt_with("/p", env(&[("PROCABLE_HOOK_HARNESS", "codex")]));
     assert_eq!(resolve_harness(&forced, Some(&gh)), "codex");
     assert_eq!(
         parse_apply_patch_paths(&r, "*** Begin Patch\n*** Update File: a.css\r\n*** Add File: /abs/b.css\n*** Delete File: c.css\n", "/p"),
@@ -1640,7 +1640,7 @@ fn harness_detection_and_github_normalization() {
         payload("t", "PostToolUse", "vscode"),
         r#"{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"t"},"additionalContext":"t"}"#
     );
-    let vscode = rt_with("/p", env(&[("IMPECCABLE_HOOK_HARNESS", "vscode")]));
+    let vscode = rt_with("/p", env(&[("PROCABLE_HOOK_HARNESS", "vscode")]));
     assert_eq!(resolve_harness(&vscode, None), "vscode");
     // Grok honors the manifest's `env` too, so its event shape still wins.
     let grok_shaped: Map<String, Value> = json!({"hookEventName": "PostToolUse", "toolName": "Edit", "toolInput": {}}).as_object().unwrap().clone();
@@ -1719,7 +1719,7 @@ fn run_hook_fresh_then_pending_then_stop() {
     assert!(!one.stdout.contains("[side-tab]"));
     assert_eq!(one.audit["deferred"], json!(1));
     assert_eq!(one.audit["freshFindings"], json!(1));
-    assert!(t.exists(".impeccable/hook.cache.json"));
+    assert!(t.exists(".procable/hook.cache.json"));
     let two = hook::run_hook(&r, &ev);
     assert!(two
         .stdout
@@ -1783,10 +1783,10 @@ fn run_hook_acks_and_quiet_modes() {
         .stdout
         .contains("No deterministic design-quality issues found"));
     assert!(
-        !t.exists(".impeccable"),
+        !t.exists(".procable"),
         "clean edit in a project without a footprint writes nothing"
     );
-    std::fs::create_dir_all(t.0.join(".impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".procable")).unwrap();
     let one = hook::run_hook(&r, &ev);
     assert_eq!(audit_str(&one.audit, "kind"), Some("clean"));
     let two = hook::run_hook(&r, &ev);
@@ -1801,13 +1801,13 @@ fn run_hook_acks_and_quiet_modes() {
         four.stdout.contains("[gradient-text]"),
         "findings still surface for .ts"
     );
-    let quiet = rt_with(&cwd, env(&[("IMPECCABLE_HOOK_QUIET", "1")]));
+    let quiet = rt_with(&cwd, env(&[("PROCABLE_HOOK_QUIET", "1")]));
     let q = hook::run_hook(&quiet, &edit_event(&cwd, &clean, "s2"));
     assert_eq!(q.audit["quiet"], json!(true));
     assert!(q.stdout.is_empty());
     let re = rt_with(&cwd, env(&[("CLAUDE_HOOK_DEPTH", "2")]));
     assert_eq!(hook::run_hook(&re, &ev).audit["reentrant"], json!(true));
-    let off = rt_with(&cwd, env(&[("IMPECCABLE_HOOK_DISABLED", "yes")]));
+    let off = rt_with(&cwd, env(&[("PROCABLE_HOOK_DISABLED", "yes")]));
     assert_eq!(
         audit_str(&hook::run_hook(&off, &ev).audit, "skipped"),
         Some("env-disabled")
@@ -1855,13 +1855,13 @@ fn run_hook_skips_unsafe_and_foreign_targets() {
         audit_str(&go(&outside).audit, "skipped"),
         Some("outside-project")
     );
-    assert!(!t.exists(".impeccable"));
+    assert!(!t.exists(".procable"));
     // template extensions (#316): .blade.php is skipped without config,
     // routed through the text engine with `engine: text`
     let blade = t.write("views/a.blade.php", "<style>.t{background: linear-gradient(90deg,#f00,#00f); -webkit-background-clip: text; color: transparent;}</style>");
     assert_eq!(audit_str(&go(&blade).audit, "skipped"), Some("extension"));
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"detector":{"extensions":[{"ext":".blade.php","engine":"text"}]}}"#,
     );
     let res = go(&blade);
@@ -1896,8 +1896,8 @@ fn run_hook_symlinked_cwd_and_umbrella_launch() {
         audit_str(&res.audit, "cwd"),
         Some(format!("{root}/app").as_str())
     );
-    assert!(t.exists("app/.impeccable/hook.cache.json"));
-    assert!(!t.exists(".impeccable"));
+    assert!(t.exists("app/.procable/hook.cache.json"));
+    assert!(!t.exists(".procable"));
 }
 
 /// VS Code reports edits in its tools' own shapes, and keeps every rule per edit (#1249).
@@ -1905,8 +1905,8 @@ fn run_hook_symlinked_cwd_and_umbrella_launch() {
 fn run_hook_scans_files_named_by_vscode_tool_inputs() {
     let t = Tmp::new();
     let cwd = t.path();
-    std::fs::create_dir_all(t.0.join(".impeccable")).unwrap();
-    let r = rt_with(&cwd, env(&[("IMPECCABLE_HOOK_HARNESS", "vscode")]));
+    std::fs::create_dir_all(t.0.join(".procable")).unwrap();
+    let r = rt_with(&cwd, env(&[("PROCABLE_HOOK_HARNESS", "vscode")]));
     let main = t.write("main.css", GRADIENT_CSS);
     let patch = format!("*** Begin Patch\n*** Update File: {main}\n@@\n-a\n+b\n*** End Patch\n");
     let inputs = [
@@ -1931,7 +1931,7 @@ fn run_hook_scans_files_named_by_vscode_tool_inputs() {
 fn run_hook_oversized_files_and_suppression() {
     let t = Tmp::new();
     let cwd = t.path();
-    std::fs::create_dir_all(t.0.join(".impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".procable")).unwrap();
     let r = rt(&cwd);
     let big = t.write("bundle.js", &format!("/* {} */", "x".repeat(200 * 1024)));
     let res = hook::run_hook(&r, &edit_event(&cwd, &big, "s1"));
@@ -1951,7 +1951,7 @@ fn run_hook_oversized_files_and_suppression() {
     let res = hook::run_hook(&r, &patch);
     assert!(res.audit.get("bytes").is_none(), "{:?}", res.audit);
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"hook":{"limits":{"maxFileBytes":1024}}}"#,
     );
     let res = hook::run_hook(&r, &edit_event(&cwd, &main, "s3"));
@@ -1961,13 +1961,13 @@ fn run_hook_oversized_files_and_suppression() {
         "configured maxFileBytes is honored"
     );
     // suppression: the 7th edit emits the notice once, later edits stay silent
-    t.write(".impeccable/config.json", "{}");
+    t.write(".procable/config.json", "{}");
     let css = t.write("src/b.css", GRADIENT_CSS);
     let mut outputs = Vec::new();
     for _ in 0..9 {
         outputs.push(hook::run_hook(&r, &edit_event(&cwd, &css, "sup")));
     }
-    assert!(outputs[6].stdout.contains("Suppressing further design hints on src/b.css. More than 6 edits in this session reached. Run /impeccable audit to revisit."));
+    assert!(outputs[6].stdout.contains("Suppressing further design hints on src/b.css. More than 6 edits in this session reached. Run /procable audit to revisit."));
     assert_eq!(outputs[6].audit["suppressed"], json!(true));
     assert!(outputs[7].stdout.is_empty());
     assert_eq!(outputs[8].audit["emitted"], json!(false));
@@ -2004,27 +2004,27 @@ fn run_hook_co_located_styles_and_tiering_config() {
     );
     // perEditRules: all restores the deferred tier per edit
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"hook":{"perEditRules":"all"}}"#,
     );
     let res = hook::run_hook(&r, &edit_event(&cwd, &app, "s2"));
     assert!(res.stdout.contains("[side-tab]"), "{}", res.stdout);
     assert!(res.stdout.contains("(2 issue(s))"));
     // github harness keeps the full set too
-    t.write(".impeccable/config.json", "{}");
-    let gh = rt_with(&cwd, env(&[("IMPECCABLE_HOOK_HARNESS", "github")]));
+    t.write(".procable/config.json", "{}");
+    let gh = rt_with(&cwd, env(&[("PROCABLE_HOOK_HARNESS", "github")]));
     let res = hook::run_hook(&gh, &edit_event(&cwd, &app, "s3"));
     assert!(res.stdout.starts_with("{\"additionalContext\":"));
     assert!(res.stdout.contains("[side-tab]"));
     // ignoreFiles glob and ignoreRules
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"detector":{"ignoreFiles":["src/**"]}}"#,
     );
     let res = hook::run_hook(&r, &edit_event(&cwd, &app, "s4"));
     assert_eq!(audit_str(&res.audit, "skipped"), Some("config-ignore-file"));
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"detector":{"ignoreRules":["gradient-text"]}}"#,
     );
     let res = hook::run_hook(&r, &edit_event(&cwd, &app, "s5"));
@@ -2050,7 +2050,7 @@ fn write_audit_log_targets() {
     entry.insert("cwd".into(), json!(cwd));
     let r = rt_with(
         "/elsewhere",
-        env(&[("IMPECCABLE_HOOK_LOG", "logs/a.ndjson")]),
+        env(&[("PROCABLE_HOOK_LOG", "logs/a.ndjson")]),
     );
     assert!(write_audit_log(&r, &entry, "/elsewhere"));
     let line = t.read("logs/a.ndjson");
@@ -2065,7 +2065,7 @@ fn write_audit_log_targets() {
         "no target, no-op"
     );
     t.write(
-        ".impeccable/config.json",
+        ".procable/config.json",
         r#"{"hook":{"auditLog":"~/h.ndjson"}}"#,
     );
     let r3 = rt_with("/elsewhere", env(&[("HOME", &cwd)]));
@@ -2124,7 +2124,7 @@ fn before_edit_denies_shell_and_edit_shapes() {
     let deny = |stdin: &str, label: &str| {
         let (out, code) = hbe(&r, stdin);
         assert_eq!(code, 0);
-        assert!(out.starts_with("{\"permission\":\"deny\",\"user_message\":\"[impeccable@1] Impeccable design hook blocked this write before it landed. Design hook findings requiring review in"), "{label}: {out}");
+        assert!(out.starts_with("{\"permission\":\"deny\",\"user_message\":\"[procable@1] Procable design hook blocked this write before it landed. Design hook findings requiring review in"), "{label}: {out}");
         out
     };
     let allow = |stdin: &str, label: &str| {
@@ -2212,7 +2212,7 @@ fn before_edit_denies_shell_and_edit_shapes() {
     allow(&cursor(&cwd, "Shell", json!({"command": "ls"})), "no file");
     allow("", "empty stdin");
     allow("{", "malformed stdin");
-    let off = rt_with(&cwd, env(&[("IMPECCABLE_HOOK_DISABLED", "true")]));
+    let off = rt_with(&cwd, env(&[("PROCABLE_HOOK_DISABLED", "true")]));
     let (out, _) = hbe(&off, "{");
     assert_eq!(out, "{\"permission\":\"allow\"}");
     // repeated identical denials downgrade to allow-with-warning after the threshold
@@ -2229,7 +2229,7 @@ fn before_edit_denies_shell_and_edit_shapes() {
         last.starts_with("{\"permission\":\"allow\",\"user_message\":\""),
         "{last}"
     );
-    assert!(last.contains("This is the 7th repeated denial for the same file and finding signature, so Impeccable is allowing this write to avoid a loop."));
+    assert!(last.contains("This is the 7th repeated denial for the same file and finding signature, so Procable is allowing this write to avoid a loop."));
     let cache = read_cache(&cwd);
     assert_eq!(
         cache["sessions"]["cv1"]["files"][jsp::join(&[&cwd, "src/new.css"])]["cursorDenials"]
@@ -2263,8 +2263,8 @@ fn admin_ignore_value_scoping_and_idempotency() {
         out,
         format!("Added overused-font=inter to shared detector.ignoreValues ({}).\n", shared_config_rel())
     );
-    assert!(!t.exists(".impeccable/config.local.json"));
-    let cfg: Value = serde_json::from_str(&t.read(".impeccable/config.json")).unwrap();
+    assert!(!t.exists(".procable/config.local.json"));
+    let cfg: Value = serde_json::from_str(&t.read(".procable/config.json")).unwrap();
     let entry = &cfg["detector"]["ignoreValues"][0];
     assert_eq!(
         entry
@@ -2275,10 +2275,10 @@ fn admin_ignore_value_scoping_and_idempotency() {
             .collect::<Vec<_>>(),
         vec!["rule", "value", "createdAt"]
     );
-    let before = t.read(".impeccable/config.json");
+    let before = t.read(".procable/config.json");
     // an unrelated edit keeps the entry byte-identical
     admin_run(&r, &["ignore-rule", "side-tab"]);
-    let after = t.read(".impeccable/config.json");
+    let after = t.read(".procable/config.json");
     assert!(after.contains(
         &before[before.find("\"ignoreValues\"").unwrap()..before.find("\n  }").unwrap()]
     ));
@@ -2304,7 +2304,7 @@ fn admin_ignore_value_scoping_and_idempotency() {
     assert!(out.contains("ignoreRules:  side-tab\n"));
     let (_, err, code) = admin_run(&r, &["ignore-value", "overused-font", "*"]);
     assert_eq!(code, 1);
-    assert_eq!(err, "Error: Wildcard value ignores must be scoped with --file <glob>, e.g. /impeccable hooks ignore-value design-system-font-size \"*\" --file \"src/widget.js\". To suppress the rule project-wide use /impeccable hooks ignore-rule overused-font --all-values.\n");
+    assert_eq!(err, "Error: Wildcard value ignores must be scoped with --file <glob>, e.g. /procable hooks ignore-value design-system-font-size \"*\" --file \"src/widget.js\". To suppress the rule project-wide use /procable hooks ignore-rule overused-font --all-values.\n");
     let (_, err, _) = admin_run(&r, &["ignore-value", "overused-font", "Inter", "--file="]);
     assert_eq!(err, "Error: --file requires a non-empty glob\n");
     let (_, err, _) = admin_run(&r, &["ignore-value", "overused-font", "Inter", "--shard"]);
@@ -2314,7 +2314,7 @@ fn admin_ignore_value_scoping_and_idempotency() {
     assert_eq!(err, "Unknown action: bogus\nValid: status, on, off, ignore-rule, ignore-file, ignore-value, reset\n");
     let (out, _, _) = admin_run(&r, &["reset"]);
     assert_eq!(out, format!("Reset design hook config and cache (removed: {}, {}).\n", shared_config_rel(), local_config_rel()));
-    assert!(!t.exists(".impeccable/config.json"));
+    assert!(!t.exists(".procable/config.json"));
 }
 
 /// Upstream be87f5eb (#662), the `hooks ignore-value` twin of the detect-side
@@ -2328,11 +2328,11 @@ fn admin_ignore_value_refuses_inert_exact_values() {
     let r = rt(&cwd);
     let (_, err, code) = admin_run(&r, &["ignore-value", "cramped-padding", "padding: 4px 8px"]);
     assert_eq!(code, 1);
-    assert_eq!(err, "Error: cramped-padding has no extractable ignore value. Use /impeccable hooks ignore-value cramped-padding \"*\" --file <glob> to suppress it in matching files.\n");
+    assert_eq!(err, "Error: cramped-padding has no extractable ignore value. Use /procable hooks ignore-value cramped-padding \"*\" --file <glob> to suppress it in matching files.\n");
     let (_, err, code) = admin_run(&r, &["ignore-value", "side-tab", "Inter", "--file", "a.css"]);
     assert_eq!(code, 1);
-    assert_eq!(err, "Error: side-tab has no extractable ignore value. Use /impeccable hooks ignore-value side-tab \"*\" --file <glob> to suppress it in matching files.\n");
-    assert!(!t.exists(".impeccable/config.json"), "a refused ignore must not write config");
+    assert_eq!(err, "Error: side-tab has no extractable ignore value. Use /procable hooks ignore-value side-tab \"*\" --file <glob> to suppress it in matching files.\n");
+    assert!(!t.exists(".procable/config.json"), "a refused ignore must not write config");
 
     let (out, _, code) = admin_run(&r, &["ignore-value", "overused-font", "Inter"]);
     assert_eq!(code, 0);
@@ -2340,7 +2340,7 @@ fn admin_ignore_value_refuses_inert_exact_values() {
 
     let (_, _, code) = admin_run(&r, &["ignore-value", "cramped-padding", "*", "--file", "index.html"]);
     assert_eq!(code, 0);
-    let cfg: Value = serde_json::from_str(&t.read(".impeccable/config.json")).unwrap();
+    let cfg: Value = serde_json::from_str(&t.read(".procable/config.json")).unwrap();
     let entries: Vec<&Value> = cfg["detector"]["ignoreValues"]
         .as_array()
         .unwrap()
@@ -2357,13 +2357,13 @@ fn admin_on_off_preserve_sibling_hook_fields() {
     let t = Tmp::new();
     let cwd = t.path();
     let r = rt(&cwd);
-    t.write(".impeccable/config.json", "{\n  \"hook\": {\n    \"quiet\": true,\n    \"consent\": \"accepted\",\n    \"advisoryRules\": \"include\"\n  },\n  \"updateCheck\": false\n}\n");
+    t.write(".procable/config.json", "{\n  \"hook\": {\n    \"quiet\": true,\n    \"consent\": \"accepted\",\n    \"advisoryRules\": \"include\"\n  },\n  \"updateCheck\": false\n}\n");
     let (out, _, _) = admin_run(&r, &["off"]);
     assert_eq!(
         out,
         format!("Design hook disabled for this project (wrote {}).\n", shared_config_rel())
     );
-    let cfg: Value = serde_json::from_str(&t.read(".impeccable/config.json")).unwrap();
+    let cfg: Value = serde_json::from_str(&t.read(".procable/config.json")).unwrap();
     assert_eq!(cfg["hook"]["quiet"], json!(true));
     assert_eq!(cfg["hook"]["consent"], json!("accepted"));
     assert_eq!(cfg["hook"]["enabled"], json!(false));
@@ -2382,7 +2382,7 @@ fn admin_on_off_preserve_sibling_hook_fields() {
         cfg.as_object().unwrap().keys().cloned().collect::<Vec<_>>(),
         vec!["hook", "updateCheck", "detector"]
     );
-    std::fs::create_dir_all(t.0.join(".github/skills/impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".github/skills/procable")).unwrap();
     let (out, _, _) = admin_run(&r, &["on"]);
     assert_eq!(out, format!(
         "Design hook enabled for this project (wrote {}). Recorded local hook consent in {}. Installed or repaired hook manifests for: .github.\n",
@@ -2390,7 +2390,7 @@ fn admin_on_off_preserve_sibling_hook_fields() {
         local_config_rel()
     ));
     assert!(t
-        .read(".github/hooks/impeccable.json")
+        .read(".github/hooks/procable.json")
         .contains("\"matcher\": \"edit|create|apply_patch\""));
     let (out, _, _) = admin_run(&r, &["on"]);
     assert!(out.ends_with("Hook manifests already installed for: .github.\n"));
@@ -2404,14 +2404,14 @@ fn admin_on_prunes_local_manifest_when_shared_settings_carry_the_hook() {
     let t = Tmp::new();
     let cwd = t.path();
     let r = rt(&cwd);
-    std::fs::create_dir_all(t.0.join(".claude/skills/impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".claude/skills/procable")).unwrap();
     t.write(
         ".claude/settings.json",
-        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
     );
     t.write(
         ".claude/settings.local.json",
-        "{\n  \"permissions\": {\n    \"allow\": [\n      \"Bash(ls)\"\n    ]\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"Edit\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"node old/skills/impeccable/scripts/hook.mjs\"\n          }\n        ]\n      }\n    ]\n  }\n}\n",
+        "{\n  \"permissions\": {\n    \"allow\": [\n      \"Bash(ls)\"\n    ]\n  },\n  \"hooks\": {\n    \"PostToolUse\": [\n      {\n        \"matcher\": \"Edit\",\n        \"hooks\": [\n          {\n            \"type\": \"command\",\n            \"command\": \"node old/skills/procable/scripts/hook.mjs\"\n          }\n        ]\n      }\n    ]\n  }\n}\n",
     );
     let (out, _, _) = admin_run(&r, &["on"]);
     assert!(
@@ -2421,13 +2421,13 @@ fn admin_on_prunes_local_manifest_when_shared_settings_carry_the_hook() {
     let local: Value = serde_json::from_str(&t.read(".claude/settings.local.json")).unwrap();
     assert!(
         local.get("hooks").is_none(),
-        "impeccable entries pruned, empty hooks dropped: {local}"
+        "procable entries pruned, empty hooks dropped: {local}"
     );
     assert_eq!(local["permissions"]["allow"], json!(["Bash(ls)"]));
-    // a local manifest holding only impeccable entries is deleted outright
+    // a local manifest holding only procable entries is deleted outright
     t.write(
         ".claude/settings.local.json",
-        r#"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node x/skills/impeccable/scripts/hook.mjs"}]}]}}"#,
+        r#"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node x/skills/procable/scripts/hook.mjs"}]}]}}"#,
     );
     admin_run(&r, &["on"]);
     assert!(!t.exists(".claude/settings.local.json"));
@@ -2439,10 +2439,10 @@ fn admin_on_writes_launcher_manifests_for_every_harness() {
     let cwd = t.path();
     let r = rt(&cwd);
     for skill in [
-        ".claude/skills/impeccable",
-        ".agents/skills/impeccable",
-        ".cursor/skills/impeccable",
-        ".github/skills/impeccable",
+        ".claude/skills/procable",
+        ".agents/skills/procable",
+        ".cursor/skills/procable",
+        ".github/skills/procable",
     ] {
         std::fs::create_dir_all(t.0.join(skill)).unwrap();
     }
@@ -2451,7 +2451,7 @@ fn admin_on_writes_launcher_manifests_for_every_harness() {
     assert!(out.ends_with("Installed or repaired hook manifests for: .claude, .agents, .cursor, .github.\n"), "{out}");
 
     let claude: Value = serde_json::from_str(&t.read(".claude/settings.local.json")).unwrap();
-    let cmd = "\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook";
+    let cmd = "\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook";
     assert_eq!(claude["hooks"]["PostToolUse"][0]["hooks"][0]["command"], json!(cmd));
     assert_eq!(claude["hooks"]["Stop"][0]["hooks"][0]["command"], json!(cmd));
     assert!(claude["hooks"]["PostToolUse"][0]["hooks"][0].get("commandWindows").is_none());
@@ -2459,30 +2459,30 @@ fn admin_on_writes_launcher_manifests_for_every_harness() {
 
     let codex: Value = serde_json::from_str(&t.read(".codex/hooks.json")).unwrap();
     let entry = &codex["hooks"]["PostToolUse"][0]["hooks"][0];
-    assert_eq!(entry["command"], json!("\".agents/skills/impeccable/scripts/impeccable\" hook"));
-    assert_eq!(entry["commandWindows"], json!(r#"cmd /c if exist ".agents\skills\impeccable\scripts\impeccable.cmd" ".agents\skills\impeccable\scripts\impeccable.cmd" hook"#));
+    assert_eq!(entry["command"], json!("\".agents/skills/procable/scripts/procable\" hook"));
+    assert_eq!(entry["commandWindows"], json!(r#"cmd /c if exist ".agents\skills\procable\scripts\procable.cmd" ".agents\skills\procable\scripts\procable.cmd" hook"#));
     assert_eq!(
         entry.as_object().unwrap().keys().cloned().collect::<Vec<_>>(),
         vec!["type", "command", "commandWindows", "timeout", "statusMessage"]
     );
     let stop = &codex["hooks"]["Stop"][0]["hooks"][0];
-    assert_eq!(stop["command"], json!("\".agents/skills/impeccable/scripts/impeccable\" hook"));
-    assert_eq!(stop["commandWindows"], json!(r#"cmd /c if exist ".agents\skills\impeccable\scripts\impeccable.cmd" ".agents\skills\impeccable\scripts\impeccable.cmd" hook"#));
+    assert_eq!(stop["command"], json!("\".agents/skills/procable/scripts/procable\" hook"));
+    assert_eq!(stop["commandWindows"], json!(r#"cmd /c if exist ".agents\skills\procable\scripts\procable.cmd" ".agents\skills\procable\scripts\procable.cmd" hook"#));
     assert_eq!(stop["timeout"], json!(30));
 
     let cursor: Value = serde_json::from_str(&t.read(".cursor/hooks.json")).unwrap();
     assert_eq!(
         cursor,
         json!({"version": 1, "hooks": {"postToolUse": [{
-            "command": "\".cursor/skills/impeccable/scripts/impeccable\" hook",
+            "command": "\".cursor/skills/procable/scripts/procable\" hook",
             "matcher": "^Write$",
             "timeout": 5,
         }]}})
     );
-    let github: Value = serde_json::from_str(&t.read(".github/hooks/impeccable.json")).unwrap();
+    let github: Value = serde_json::from_str(&t.read(".github/hooks/procable.json")).unwrap();
     assert_eq!(
         github["hooks"]["postToolUse"][0]["bash"],
-        json!("\"$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts/impeccable\" hook")
+        json!("\"$(git rev-parse --show-toplevel)/.github/skills/procable/scripts/procable\" hook")
     );
 
     // A second `on` is a no-op against the manifests it just wrote.
@@ -2491,7 +2491,7 @@ fn admin_on_writes_launcher_manifests_for_every_harness() {
 }
 
 fn expected_user_claude_hook_command(home: &str) -> String {
-    let launcher = jsp::join(&[home, ".claude", "skills", "impeccable", "scripts", "impeccable"]);
+    let launcher = jsp::join(&[home, ".claude", "skills", "procable", "scripts", "procable"]);
     let q = if cfg!(windows) {
         serde_json::to_string(&launcher).unwrap()
     } else {
@@ -2505,12 +2505,12 @@ fn admin_on_repairs_project_manifest_from_user_scope_claude_skill() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".claude/skills/impeccable/scripts")).unwrap();
-    std::fs::write(home.join(".claude/skills/impeccable/scripts/impeccable"), "#!/bin/sh\n").unwrap();
+    std::fs::create_dir_all(home.join(".claude/skills/procable/scripts")).unwrap();
+    std::fs::write(home.join(".claude/skills/procable/scripts/procable"), "#!/bin/sh\n").unwrap();
     std::fs::write(home.join(".claude/settings.json"), r#"{"model":"claude-sonnet-5"}"#).unwrap();
     t.write(
         ".claude/settings.local.json",
-        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
     );
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2540,13 +2540,13 @@ fn admin_on_repairs_shared_project_manifest_from_user_scope_claude_skill() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".claude/skills/impeccable/scripts")).unwrap();
-    std::fs::write(home.join(".claude/skills/impeccable/scripts/impeccable"), "#!/bin/sh\n").unwrap();
-    let shared_original = r#"{"model":"claude-sonnet-5","hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#;
+    std::fs::create_dir_all(home.join(".claude/skills/procable/scripts")).unwrap();
+    std::fs::write(home.join(".claude/skills/procable/scripts/procable"), "#!/bin/sh\n").unwrap();
+    let shared_original = r#"{"model":"claude-sonnet-5","hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#;
     t.write(".claude/settings.json", shared_original);
     t.write(
         ".claude/settings.local.json",
-        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node old/skills/impeccable/scripts/hook.mjs"}]}]}}"#,
+        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"Stop":[{"hooks":[{"type":"command","command":"node old/skills/procable/scripts/hook.mjs"}]}]}}"#,
     );
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2572,9 +2572,9 @@ fn admin_on_user_scope_repair_leaves_committed_settings_byte_unchanged() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".claude/skills/impeccable/scripts")).unwrap();
-    std::fs::write(home.join(".claude/skills/impeccable/scripts/impeccable"), "#!/bin/sh\n").unwrap();
-    let shared_original = "{\n  \"hooks\": {\"PostToolUse\": [{\"matcher\": \"Edit\", \"hooks\": [{\"type\": \"command\", \"command\": \"\\\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\\\" hook\"}]}]}\n}\n";
+    std::fs::create_dir_all(home.join(".claude/skills/procable/scripts")).unwrap();
+    std::fs::write(home.join(".claude/skills/procable/scripts/procable"), "#!/bin/sh\n").unwrap();
+    let shared_original = "{\n  \"hooks\": {\"PostToolUse\": [{\"matcher\": \"Edit\", \"hooks\": [{\"type\": \"command\", \"command\": \"\\\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\\\" hook\"}]}]}\n}\n";
     t.write(".claude/settings.json", shared_original);
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2585,7 +2585,7 @@ fn admin_on_user_scope_repair_leaves_committed_settings_byte_unchanged() {
     let shared = t.read(".claude/settings.json");
     assert_eq!(shared, shared_original);
     assert!(!shared.contains(&home_text), "home path leaked into the committed manifest: {shared}");
-    assert!(std::fs::read_to_string(home.join(".claude/settings.json")).unwrap().contains("impeccable"));
+    assert!(std::fs::read_to_string(home.join(".claude/settings.json")).unwrap().contains("procable"));
 }
 
 /// Regression: an unreadable `~/.claude/settings.json` is skipped, so the
@@ -2595,11 +2595,11 @@ fn admin_on_user_scope_keeps_project_hook_when_user_settings_are_invalid() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".claude/skills/impeccable/scripts")).unwrap();
-    std::fs::write(home.join(".claude/skills/impeccable/scripts/impeccable"), "#!/bin/sh\n").unwrap();
+    std::fs::create_dir_all(home.join(".claude/skills/procable/scripts")).unwrap();
+    std::fs::write(home.join(".claude/skills/procable/scripts/procable"), "#!/bin/sh\n").unwrap();
     let broken = "{ \"model\": \"claude-sonnet-5\",, }";
     std::fs::write(home.join(".claude/settings.json"), broken).unwrap();
-    let local_original = r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#;
+    let local_original = r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#;
     t.write(".claude/settings.local.json", local_original);
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2621,8 +2621,8 @@ fn admin_on_user_scope_without_launcher_keeps_project_hook() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".claude/skills/impeccable")).unwrap();
-    let local_original = r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#;
+    std::fs::create_dir_all(home.join(".claude/skills/procable")).unwrap();
+    let local_original = r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#;
     t.write(".claude/settings.local.json", local_original);
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2642,16 +2642,16 @@ fn admin_on_replaces_legacy_user_hook_before_pruning_project_hook() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".claude/skills/impeccable/scripts")).unwrap();
-    std::fs::write(home.join(".claude/skills/impeccable/scripts/impeccable"), "#!/bin/sh\n").unwrap();
+    std::fs::create_dir_all(home.join(".claude/skills/procable/scripts")).unwrap();
+    std::fs::write(home.join(".claude/skills/procable/scripts/procable"), "#!/bin/sh\n").unwrap();
     std::fs::write(
         home.join(".claude/settings.json"),
-        r#"{"model":"claude-sonnet-5","hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"~/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+        r#"{"model":"claude-sonnet-5","hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"~/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
     )
     .unwrap();
     t.write(
         ".claude/settings.local.json",
-        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
     );
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2674,12 +2674,12 @@ fn admin_on_moves_the_retired_cursor_gate_to_post_tool_use() {
     let t = Tmp::new();
     let cwd = t.path();
     let r = rt(&cwd);
-    std::fs::create_dir_all(t.0.join(".cursor/skills/impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".cursor/skills/procable")).unwrap();
     // A pre-migration manifest: the gate on preToolUse beside a foreign hook
     // on the same event and another on a different one.
     t.write(
         ".cursor/hooks.json",
-        r#"{"version":1,"hooks":{"preToolUse":[{"command":"./audit.sh","matcher":"Shell"},{"command":"\".cursor/skills/impeccable/scripts/impeccable\" hook-before-edit","timeout":5}],"stop":[{"command":"./notify.sh"}]}}"#,
+        r#"{"version":1,"hooks":{"preToolUse":[{"command":"./audit.sh","matcher":"Shell"},{"command":"\".cursor/skills/procable/scripts/procable\" hook-before-edit","timeout":5}],"stop":[{"command":"./notify.sh"}]}}"#,
     );
 
     let (out, _, code) = admin_run(&r, &["on"]);
@@ -2693,7 +2693,7 @@ fn admin_on_moves_the_retired_cursor_gate_to_post_tool_use() {
             "preToolUse": [{"command": "./audit.sh", "matcher": "Shell"}],
             "stop": [{"command": "./notify.sh"}],
             "postToolUse": [{
-                "command": "\".cursor/skills/impeccable/scripts/impeccable\" hook",
+                "command": "\".cursor/skills/procable/scripts/procable\" hook",
                 "matcher": "^Write$",
                 "timeout": 5,
             }],
@@ -2706,8 +2706,8 @@ fn admin_on_does_not_repair_project_manifests_from_other_user_scope_skills() {
     let t = Tmp::new();
     let cwd = t.path();
     let home = t.0.join("home");
-    std::fs::create_dir_all(home.join(".cursor/skills/impeccable")).unwrap();
-    let original = r#"{"version":1,"hooks":{"preToolUse":[{"command":".cursor/skills/impeccable/scripts/impeccable hook-before-edit"}]}}"#;
+    std::fs::create_dir_all(home.join(".cursor/skills/procable")).unwrap();
+    let original = r#"{"version":1,"hooks":{"preToolUse":[{"command":".cursor/skills/procable/scripts/procable hook-before-edit"}]}}"#;
     t.write(".cursor/hooks.json", original);
     let home_text = home.to_string_lossy().to_string();
     let r = rt_with(&cwd, env(&[("HOME", &home_text), ("USERPROFILE", &home_text)]));
@@ -2724,17 +2724,17 @@ fn admin_on_repairs_legacy_mjs_manifests_to_the_launcher_form() {
     let t = Tmp::new();
     let cwd = t.path();
     let r = rt(&cwd);
-    std::fs::create_dir_all(t.0.join(".claude/skills/impeccable")).unwrap();
-    std::fs::create_dir_all(t.0.join(".agents/skills/impeccable")).unwrap();
-    // JS-era Claude manifest with a foreign entry alongside the impeccable one.
+    std::fs::create_dir_all(t.0.join(".claude/skills/procable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".agents/skills/procable")).unwrap();
+    // JS-era Claude manifest with a foreign entry alongside the procable one.
     t.write(
         ".claude/settings.local.json",
-        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"echo other"}]},{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\"","timeout":5}]}],"Stop":[{"hooks":[{"type":"command","command":"[ ! -f '/x/.claude/skills/impeccable/scripts/hook.mjs' ] || node '/x/.claude/skills/impeccable/scripts/hook.mjs'"}]}]}}"#,
+        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"echo other"}]},{"matcher":"Edit|Write|MultiEdit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\"","timeout":5}]}],"Stop":[{"hooks":[{"type":"command","command":"[ ! -f '/x/.claude/skills/procable/scripts/hook.mjs' ] || node '/x/.claude/skills/procable/scripts/hook.mjs'"}]}]}}"#,
     );
     // JS-era Codex manifest carrying the CLI installer's commandWindows sibling.
     t.write(
         ".codex/hooks.json",
-        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit|Write|apply_patch","hooks":[{"type":"command","command":"[ ! -f \".agents/skills/impeccable/scripts/hook.mjs\" ] || node \".agents/skills/impeccable/scripts/hook.mjs\"","commandWindows":"if exist \".agents/skills/impeccable/scripts/hook.mjs\" (node \".agents/skills/impeccable/scripts/hook.mjs\" & exit /b)","timeout":5}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit|Write|apply_patch","hooks":[{"type":"command","command":"[ ! -f \".agents/skills/procable/scripts/hook.mjs\" ] || node \".agents/skills/procable/scripts/hook.mjs\"","commandWindows":"if exist \".agents/skills/procable/scripts/hook.mjs\" (node \".agents/skills/procable/scripts/hook.mjs\" & exit /b)","timeout":5}]}]}}"#,
     );
     let (out, _, code) = admin_run(&r, &["on"]);
     assert_eq!(code, 0, "{out}");
@@ -2745,11 +2745,11 @@ fn admin_on_repairs_legacy_mjs_manifests_to_the_launcher_form() {
     let claude: Value = serde_json::from_str(&claude).unwrap();
     assert_eq!(claude["permissions"]["allow"], json!(["Bash(ls)"]));
     let post = claude["hooks"]["PostToolUse"].as_array().unwrap();
-    assert_eq!(post.len(), 2, "foreign entry kept, impeccable entry replaced once: {post:?}");
+    assert_eq!(post.len(), 2, "foreign entry kept, procable entry replaced once: {post:?}");
     assert_eq!(post[0]["hooks"][0]["command"], json!("echo other"));
     assert_eq!(
         post[1]["hooks"][0]["command"],
-        json!("\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook")
+        json!("\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook")
     );
     // Upstream 611147a3: the repaired Claude group must exist and carry the
     // current Edit|Write matcher (MultiEdit is retired; see 55fb8e8).
@@ -2762,19 +2762,19 @@ fn admin_on_repairs_legacy_mjs_manifests_to_the_launcher_form() {
     assert_eq!(codex["hooks"]["PostToolUse"].as_array().unwrap().len(), 1);
     assert_eq!(
         codex["hooks"]["PostToolUse"][0]["hooks"][0]["commandWindows"],
-        json!(r#"cmd /c if exist ".agents\skills\impeccable\scripts\impeccable.cmd" ".agents\skills\impeccable\scripts\impeccable.cmd" hook"#)
+        json!(r#"cmd /c if exist ".agents\skills\procable\scripts\procable.cmd" ".agents\skills\procable\scripts\procable.cmd" hook"#)
     );
 
     // A launcher-form manifest written by another checkout is recognized as
     // ours too: shared settings carrying it make `on` prune the local file.
     t.write(
         ".claude/settings.json",
-        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
     );
     let (out, _, _) = admin_run(&r, &["on"]);
     assert!(out.contains("already installed for: .claude"), "{out}");
     let local = t.read(".claude/settings.local.json");
-    assert!(!local.contains("skills/impeccable"), "launcher-form entries pruned: {local}");
+    assert!(!local.contains("skills/procable"), "launcher-form entries pruned: {local}");
     let local: Value = serde_json::from_str(&local).unwrap();
     assert_eq!(local["hooks"]["PostToolUse"][0]["hooks"][0]["command"], json!("echo other"));
     assert!(local["hooks"].get("Stop").is_none());
@@ -2809,7 +2809,7 @@ fn grok_and_codex_harness_detection() {
     let claude = json!({ "hook_event_name": "Stop", "session_id": "s" }).as_object().cloned().unwrap();
     assert_eq!(resolve_harness(&r, Some(&claude)), "claude");
     // Explicit env overrides.
-    let forced = rt_with("/p", env(&[("IMPECCABLE_HOOK_HARNESS", "grok")]));
+    let forced = rt_with("/p", env(&[("PROCABLE_HOOK_HARNESS", "grok")]));
     assert_eq!(resolve_harness(&forced, Some(&gh)), "grok");
     // Stop detection matches both casings, on the raw stdin shape.
     assert!(is_stop_event(&grok_stop));
@@ -2882,7 +2882,7 @@ fn stop_cache_syncs_after_clean_scan_so_reintroductions_fire() {
 #[test]
 fn stop_from_a_subfolder_finds_the_root_cache() {
     // #1088: the per-edit pass keys the cache to the project root; Stop from a
-    // subfolder, even one with its own `.impeccable/`, must still find it.
+    // subfolder, even one with its own `.procable/`, must still find it.
     let t = Tmp::new();
     t.write("package.json", "{}");
     let cwd = t.path();
@@ -2890,7 +2890,7 @@ fn stop_from_a_subfolder_finds_the_root_cache() {
     let docs = jsp::join(&[&cwd, "docs"]);
     t.write("docs/readme.txt", "x");
     let app = jsp::join(&[&cwd, "app"]);
-    t.write("app/.impeccable/live/roots.json", "{}");
+    t.write("app/.procable/live/roots.json", "{}");
     for (session, sub) in [("s1", &docs), ("s2", &app)] {
         hook::run_hook(&rt(&cwd), &edit_event(&cwd, &css, session));
         let res = hook::run_stop_hook(&rt(sub), &stop_event(sub, session));
@@ -2908,7 +2908,7 @@ fn stop_from_a_subfolder_build_keeps_its_reminder_and_scans_the_root_cache() {
     let cwd = t.path();
     let css = t.write("src/a.css", SIDE_TAB_CSS);
     t.write("app/index.html", "<main>In progress</main>");
-    let build = |owner: &str| t.write("app/.impeccable/build/state.json", &json!({
+    let build = |owner: &str| t.write("app/.procable/build/state.json", &json!({
         "tool":"build-phase", "version":2, "startedAt":"build-one",
         "sessionId":owner, "artifact":"index.html", "finish":null,
         "phases":{"hero":{"status":"open"}}
@@ -2921,13 +2921,13 @@ fn stop_from_a_subfolder_build_keeps_its_reminder_and_scans_the_root_cache() {
     build("owner");
     let res = hook::run_stop_hook(&rt(&app), &stop_event(&app, "owner"));
     assert!(res.stdout.contains("Comp build"), "{}", res.stdout);
-    t.write("app/.impeccable/config.json", r#"{"hook":{"enabled":false}}"#);
+    t.write("app/.procable/config.json", r#"{"hook":{"enabled":false}}"#);
     let res = hook::run_stop_hook(&rt(&app), &stop_event(&app, "owner"));
     assert_eq!(audit_str(&res.audit, "skipped"), Some("config-disabled"));
     // The root's own config gates the scan of root edits.
-    t.write("app/.impeccable/config.json", "{}");
-    t.write("app/.impeccable/build/state.json", "{}");
-    t.write(".impeccable/config.json", r#"{"hook":{"enabled":false}}"#);
+    t.write("app/.procable/config.json", "{}");
+    t.write("app/.procable/build/state.json", "{}");
+    t.write(".procable/config.json", r#"{"hook":{"enabled":false}}"#);
     let res = hook::run_stop_hook(&rt(&app), &stop_event(&app, "owner"));
     assert_eq!(audit_str(&res.audit, "skipped"), Some("config-disabled"));
     assert_eq!(audit_str(&res.audit, "cwd"), Some(cwd.as_str()));
@@ -2947,8 +2947,8 @@ fn stop_from_a_subfolder_shipped_build_marks_the_build_folder_cache() {
     let res = hook::run_stop_hook(&rt(&app), &stop_event(&app, "owner"));
     assert!(res.stdout.contains("[side-tab]"), "{}", res.stdout);
     assert!(res.stdout.contains("finish --disposition ship recorded"), "{}", res.stdout);
-    assert!(t.read("app/.impeccable/hook.cache.json").contains("findingsAfterFinish"));
-    assert!(!t.read(".impeccable/hook.cache.json").contains("findingsAfterFinish"));
+    assert!(t.read("app/.procable/hook.cache.json").contains("findingsAfterFinish"));
+    assert!(!t.read(".procable/hook.cache.json").contains("findingsAfterFinish"));
 }
 
 #[test]
@@ -2980,7 +2980,7 @@ fn codex_stop_emits_decision_block() {
 fn hermes_harness_shapes_each_pass() {
     // #1178: the Hermes plugin sets the harness explicitly and sends
     // Claude-shaped events; its pre_verify gate reads Codex's Stop shape.
-    let forced = rt_with("/p", env(&[("IMPECCABLE_HOOK_HARNESS", "hermes")]));
+    let forced = rt_with("/p", env(&[("PROCABLE_HOOK_HARNESS", "hermes")]));
     let claude = json!({ "hook_event_name": "Stop", "session_id": "s" }).as_object().cloned().unwrap();
     assert_eq!(resolve_harness(&forced, Some(&claude)), "hermes");
     assert_eq!(payload("findings", "Stop", "hermes"), r#"{"decision":"block","reason":"findings"}"#);
@@ -2992,7 +2992,7 @@ fn hermes_harness_shapes_each_pass() {
 
     let t = Tmp::new();
     let cwd = t.path();
-    let r = rt_with(&cwd, env(&[("IMPECCABLE_HOOK_HARNESS", "hermes")]));
+    let r = rt_with(&cwd, env(&[("PROCABLE_HOOK_HARNESS", "hermes")]));
     let css = t.write("src/a.css", SIDE_TAB_CSS);
     let edit = json!({
         "session_id": "h1", "cwd": cwd, "hook_event_name": "PostToolUse",
@@ -3014,7 +3014,7 @@ fn hermes_harness_shapes_each_pass() {
 // ── live-preview stand-down ───────────────────────────────────────────────
 //
 // A live variant session owns files carrying preview scaffolding
-// (`data-impeccable-variants=` wrappers, `impeccable-carbonize-start`
+// (`data-procable-variants=` wrappers, `procable-carbonize-start`
 // blocks). Every hook entry stands down on them: findings there are noise
 // and acting on them derails the session; live-complete verifies the file
 // once the accepted variant is permanent.
@@ -3031,7 +3031,7 @@ fn run_hook_stands_down_on_live_preview_markers() {
     // A carbonize block in flight: skipped, nothing emitted.
     let carbonized = t.write(
         "src/carbonized.css",
-        &format!("/* impeccable-carbonize-start ab12cd34 */\n{GRADIENT_CSS}/* impeccable-carbonize-end ab12cd34 */\n"),
+        &format!("/* procable-carbonize-start ab12cd34 */\n{GRADIENT_CSS}/* procable-carbonize-end ab12cd34 */\n"),
     );
     let skipped = hook::run_hook(&r, &edit_event(&cwd, &carbonized, "s1"));
     assert_eq!(skipped.stdout, "", "no findings while live markers are in the file");
@@ -3039,7 +3039,7 @@ fn run_hook_stands_down_on_live_preview_markers() {
     // A published variants wrapper, same stand-down.
     let wrapped = t.write(
         "src/wrapped.html",
-        "<!-- impeccable-variants-start ab12cd34 --><div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"3\"></div>\n",
+        "<!-- procable-variants-start ab12cd34 --><div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"3\"></div>\n",
     );
     let skipped = hook::run_hook(&r, &edit_event(&cwd, &wrapped, "s1"));
     assert_eq!(skipped.stdout, "");
@@ -3058,13 +3058,13 @@ fn before_edit_stands_down_on_live_preview_markers() {
     assert!(out.starts_with("{\"permission\":\"deny\""), "{out}");
     // The very first variants write introduces the markers in the proposed
     // content itself.
-    let proposed = format!("/* impeccable-carbonize-start ab12cd34 */\n{slop}");
+    let proposed = format!("/* procable-carbonize-start ab12cd34 */\n{slop}");
     let (out, code) = hbe(&r, &cursor(&cwd, "Write", json!({"file_path": "src/x.css", "content": proposed})));
     assert_eq!(code, 0);
     assert_eq!(out, "{\"permission\":\"allow\"}");
     // Later fragment edits touch a file that already carries them on disk:
     // the proposed content alone looks like plain slop.
-    t.write("src/y.css", "/* impeccable-carbonize-start ab12cd34 */\n.v { color: red; }\n");
+    t.write("src/y.css", "/* procable-carbonize-start ab12cd34 */\n.v { color: red; }\n");
     let (out, code) = hbe(&r, &cursor(&cwd, "Write", json!({"file_path": "src/y.css", "content": slop})));
     assert_eq!(code, 0);
     assert_eq!(out, "{\"permission\":\"allow\"}");
@@ -3085,7 +3085,7 @@ fn run_hook_stands_down_for_the_whole_edit_when_the_primary_carries_live_markers
     assert!(reported.stdout.contains("[gradient-text]"), "co-scanned stylesheet is reported without markers: {}", reported.stdout);
     let wrapped = t.write(
         "src/App.jsx",
-        "import './styles.css';\n{/* impeccable-variants-start ab12cd34 */}<div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"3\"></div>\n",
+        "import './styles.css';\n{/* procable-variants-start ab12cd34 */}<div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"3\"></div>\n",
     );
     let skipped = hook::run_hook(&r, &edit_event(&cwd, &wrapped, "s2"));
     assert_eq!(skipped.stdout, "", "nothing is emitted while the edited file is in a live session");
@@ -3101,7 +3101,7 @@ fn run_hook_stands_down_before_the_edit_cap_can_suppress_a_live_file() {
     // wrap on such a file must stand down instead, every time.
     let t = Tmp::new();
     let cwd = t.path();
-    std::fs::create_dir_all(t.0.join(".impeccable")).unwrap();
+    std::fs::create_dir_all(t.0.join(".procable")).unwrap();
     let r = rt(&cwd);
     // Seven plain edits cross the cap: the 7th carries the notice.
     let css = t.write("src/b.css", GRADIENT_CSS);
@@ -3115,7 +3115,7 @@ fn run_hook_stands_down_before_the_edit_cap_can_suppress_a_live_file() {
     // suppress.
     t.write(
         "src/b.css",
-        &format!("/* impeccable-carbonize-start ab12cd34 */\n{GRADIENT_CSS}/* impeccable-carbonize-end ab12cd34 */\n"),
+        &format!("/* procable-carbonize-start ab12cd34 */\n{GRADIENT_CSS}/* procable-carbonize-end ab12cd34 */\n"),
     );
     for i in 0..3 {
         let out = hook::run_hook(&r, &edit_event(&cwd, &css, "cap"));
@@ -3130,7 +3130,7 @@ fn run_hook_stands_down_before_the_edit_cap_can_suppress_a_live_file() {
 
 fn claim_env(t: &Tmp, extra: &[(&str, &str)]) -> HashMap<String, String> {
     let mut e = env(extra);
-    e.insert("IMPECCABLE_HOOK_CLAIM_DIR".into(), jsp::join(&[&t.path(), "claims"]));
+    e.insert("PROCABLE_HOOK_CLAIM_DIR".into(), jsp::join(&[&t.path(), "claims"]));
     e
 }
 
@@ -3208,7 +3208,7 @@ fn plugin_and_project_hooks_for_one_codex_event_scan_once() {
     let cwd = t.path();
     let file = t.write("src/card.css", SIDE_TAB_CSS);
     let stdin = codex_post_tool_use(&cwd, &file, "call-7");
-    let plugin = hook::run_hook(&rt_with(&cwd, claim_env(&t, &[("IMPECCABLE_HOOK_HARNESS", "codex")])), &stdin);
+    let plugin = hook::run_hook(&rt_with(&cwd, claim_env(&t, &[("PROCABLE_HOOK_HARNESS", "codex")])), &stdin);
     let project = hook::run_hook(&rt_with(&cwd, claim_env(&t, &[])), &stdin);
     assert!(scanned(&plugin) && plugin.audit.contains_key("findings"), "{:?}", plugin.audit);
     assert!(!scanned(&project) && project.stdout.is_empty(), "{:?}", project.audit);
@@ -3236,7 +3236,7 @@ fn an_unusable_claim_dir_still_scans() {
     let file = t.write("src/card.css", SIDE_TAB_CSS);
     let blocker = t.write("claims-file", "not a dir");
     let mut e = env(&[]);
-    e.insert("IMPECCABLE_HOOK_CLAIM_DIR".into(), jsp::join(&[&blocker, "nested"]));
+    e.insert("PROCABLE_HOOK_CLAIM_DIR".into(), jsp::join(&[&blocker, "nested"]));
     let stdin = claude_post_tool_use(&cwd, &file, "toolu_9");
     for _ in 0..2 {
         let res = hook::run_hook(&rt_with(&cwd, e.clone()), &stdin);
@@ -3247,11 +3247,11 @@ fn an_unusable_claim_dir_still_scans() {
 #[test]
 fn claim_keys_are_path_safe_and_separator_independent_of_the_platform() {
     let ev: Map<String, Value> = serde_json::from_value(json!({ "session_id": "s", "tool_use_id": "t" })).unwrap();
-    let key = impeccable_hook::hook_claim::event_key(&ev, r"C:\Users\dev\proj", &[r"C:\Users\dev\proj\src\a.css".into()]).unwrap();
+    let key = procable_hook::hook_claim::event_key(&ev, r"C:\Users\dev\proj", &[r"C:\Users\dev\proj\src\a.css".into()]).unwrap();
     assert_eq!(key.len(), 64);
     assert!(key.chars().all(|c| c.is_ascii_hexdigit()));
     let ev_none: Map<String, Value> = serde_json::from_value(json!({ "session_id": "s" })).unwrap();
-    assert!(impeccable_hook::hook_claim::event_key(&ev_none, "/p", &[]).is_none());
+    assert!(procable_hook::hook_claim::event_key(&ev_none, "/p", &[]).is_none());
 }
 
 // ─── Claim storage safety (#1069 review: shared temp roots) ──────────────────
@@ -3272,7 +3272,7 @@ fn a_symlinked_claim_root_is_never_followed() {
     let link = jsp::join(&[&cwd, "claims-link"]);
     std::os::unix::fs::symlink(&victim, &link).unwrap();
     let mut e = env(&[]);
-    e.insert("IMPECCABLE_HOOK_CLAIM_DIR".into(), link.clone());
+    e.insert("PROCABLE_HOOK_CLAIM_DIR".into(), link.clone());
     let stdin = claude_post_tool_use(&cwd, &file, "toolu_link");
     for _ in 0..2 {
         let res = hook::run_hook(&rt_with(&cwd, e.clone()), &stdin);
@@ -3352,11 +3352,11 @@ fn claims_default_to_the_users_home() {
     let first = hook::run_hook(&rt_with(&cwd, e.clone()), &stdin);
     let second = hook::run_hook(&rt_with(&cwd, e.clone()), &stdin);
     assert!(scanned(&first) && !scanned(&second));
-    assert!(t.exists("home/.impeccable/hook-claims"));
+    assert!(t.exists("home/.procable/hook-claims"));
 }
 
 /// The first edit in a fresh home: concurrent hooks race to create
-/// `~/.impeccable`, and the loser must still claim rather than scan.
+/// `~/.procable`, and the loser must still claim rather than scan.
 #[test]
 fn concurrent_first_edits_in_a_fresh_home_scan_once() {
     for round in 0..8 {
@@ -3388,7 +3388,7 @@ fn home_env(t: &Tmp) -> HashMap<String, String> {
 }
 
 fn index_dir(t: &Tmp) -> String {
-    jsp::join(&[&t.path(), "home", ".impeccable", "hook-sessions"])
+    jsp::join(&[&t.path(), "home", ".procable", "hook-sessions"])
 }
 
 fn names_in(dir: &str) -> Vec<String> {
@@ -3423,7 +3423,7 @@ fn stop_from_an_umbrella_cwd_finds_the_project_below_it() {
     assert_eq!(audit_str(&stop.audit, "cwd"), Some(site.as_str()));
     assert!(stop.audit.get("roots").is_none(), "{:?}", stop.audit);
     // Nothing lands in the umbrella folder itself (#346).
-    assert!(!t.exists("work/.impeccable"));
+    assert!(!t.exists("work/.procable"));
     // The second Stop has nothing new to say.
     let again = hook::run_stop_hook(&rt_with(&work, e.clone()), &stop_event(&work, "p1"));
     assert_eq!(again.stdout, "", "{:?}", again.audit);
@@ -3446,7 +3446,7 @@ fn stop_reports_every_project_the_session_edited_within_the_caps() {
     assert!(stop.stdout.contains("site/src/a.css"), "{}", stop.stdout);
     assert_eq!(stop.audit["roots"], 2);
     assert_eq!(stop.audit["freshFiles"], 2);
-    assert!(!t.exists("work/.impeccable"));
+    assert!(!t.exists("work/.procable"));
     let again = hook::run_stop_hook(&rt_with(&work, e.clone()), &stop_event(&work, "p1"));
     assert_eq!(again.stdout, "", "{:?}", again.audit);
 
@@ -3454,7 +3454,7 @@ fn stop_reports_every_project_the_session_edited_within_the_caps() {
     let t = Tmp::new();
     let e = home_env(&t);
     let (work, files) = umbrella(&t, &[("app", SIDE_TAB_CSS), ("site", SIDE_TAB_CSS)]);
-    t.write("work/app/.impeccable/config.json", r#"{"hook":{"limits":{"maxFindings":1}}}"#);
+    t.write("work/app/.procable/config.json", r#"{"hook":{"limits":{"maxFindings":1}}}"#);
     for file in &files {
         hook::run_hook(&rt_with(&work, e.clone()), &edit_event(&work, file, "p1"));
     }
@@ -3475,7 +3475,7 @@ fn a_disabled_or_native_project_drops_out_and_the_other_still_reports() {
     for file in &files {
         hook::run_hook(&rt_with(&work, e.clone()), &edit_event(&work, file, "p1"));
     }
-    t.write("work/app/.impeccable/config.json", r#"{"hook":{"enabled":false}}"#);
+    t.write("work/app/.procable/config.json", r#"{"hook":{"enabled":false}}"#);
     let stop = hook::run_stop_hook(&rt_with(&work, e.clone()), &stop_event(&work, "p1"));
     assert!(stop.stdout.contains("[side-tab]"), "{}", stop.stdout);
     assert!(!stop.stdout.contains("app/src"), "{}", stop.stdout);
@@ -3520,7 +3520,7 @@ fn a_symlinked_index_root_is_never_followed() {
     let (work, files) = umbrella(&t, &[("site", SIDE_TAB_CSS)]);
     let victim = jsp::join(&[&t.path(), "victim"]);
     t.write(&format!("victim/{OLD_CLAIM}/{OLD_CLAIM}"), &work);
-    t.write("home/.impeccable/keep.txt", "");
+    t.write("home/.procable/keep.txt", "");
     std::os::unix::fs::symlink(&victim, index_dir(&t)).unwrap();
     hook::run_hook(&rt_with(&work, e.clone()), &edit_event(&work, &files[0], "p1"));
     let res = hook::run_stop_hook(&rt_with(&work, e), &stop_event(&work, "p1"));
@@ -3583,7 +3583,7 @@ fn parallel_first_edits_record_each_root_once() {
         for i in 0..16 {
             let (e, root) = (e.clone(), roots[i % 2].clone());
             let cwd = t.path();
-            s.spawn(move || impeccable_hook::hook_sessions::record_root(&rt_with(&cwd, e), "p1", &root));
+            s.spawn(move || procable_hook::hook_sessions::record_root(&rt_with(&cwd, e), "p1", &root));
         }
     });
     for root in &roots {
@@ -3594,7 +3594,7 @@ fn parallel_first_edits_record_each_root_once() {
     expected.sort();
     assert_eq!(names_in(&session_dir), expected);
     let r = rt_with(&t.path(), e);
-    let mut recorded = impeccable_hook::hook_sessions::recorded_roots(&r, "p1");
+    let mut recorded = procable_hook::hook_sessions::recorded_roots(&r, "p1");
     recorded.sort();
     assert_eq!(recorded, roots.to_vec());
     #[cfg(unix)]
@@ -3618,18 +3618,18 @@ fn index_names_are_safe_on_every_file_system() {
     let root = jsp::join(&[&t.path(), "proj"]);
     std::fs::create_dir_all(&root).unwrap();
     let session = r"a/b:c*?<>|\d";
-    impeccable_hook::hook_sessions::record_root(&r, session, &root);
+    procable_hook::hook_sessions::record_root(&r, session, &root);
     // A recorded root that no longer exists is not returned.
-    impeccable_hook::hook_sessions::record_root(&r, session, &jsp::join(&[&t.path(), "gone"]));
+    procable_hook::hook_sessions::record_root(&r, session, &jsp::join(&[&t.path(), "gone"]));
     let sessions = names_in(&index_dir(&t));
     assert_eq!(sessions.len(), 1);
     let records = names_in(&jsp::join(&[&index_dir(&t), &sessions[0]]));
     for name in sessions.iter().chain(&records) {
         assert!(name.len() == 64 && name.bytes().all(|b| b.is_ascii_hexdigit()), "{name}");
     }
-    assert_eq!(impeccable_hook::hook_sessions::recorded_roots(&r, session), vec![root]);
+    assert_eq!(procable_hook::hook_sessions::recorded_roots(&r, session), vec![root]);
     // A relative root is not recorded.
-    impeccable_hook::hook_sessions::record_root(&r, "p2", "relative/dir");
+    procable_hook::hook_sessions::record_root(&r, "p2", "relative/dir");
     assert_eq!(names_in(&index_dir(&t)).len(), 1);
 }
 
@@ -3647,22 +3647,22 @@ fn expiry_removes_only_old_session_dirs_of_ours() {
     let old_b = "b".repeat(64);
     let fresh = "c".repeat(64);
     let linked = "d".repeat(64);
-    t.write(&format!("home/.impeccable/hook-sessions/{old_a}/{OLD_CLAIM}"), "/x");
-    t.write(&format!("home/.impeccable/hook-sessions/{old_b}/{OLD_CLAIM}"), "/x");
-    t.write(&format!("home/.impeccable/hook-sessions/{old_b}/notes.txt"), "not ours");
-    t.write(&format!("home/.impeccable/hook-sessions/{fresh}/{OLD_CLAIM}"), "/x");
-    t.write("home/.impeccable/hook-sessions/keep-me/x", "not ours");
+    t.write(&format!("home/.procable/hook-sessions/{old_a}/{OLD_CLAIM}"), "/x");
+    t.write(&format!("home/.procable/hook-sessions/{old_b}/{OLD_CLAIM}"), "/x");
+    t.write(&format!("home/.procable/hook-sessions/{old_b}/notes.txt"), "not ours");
+    t.write(&format!("home/.procable/hook-sessions/{fresh}/{OLD_CLAIM}"), "/x");
+    t.write("home/.procable/hook-sessions/keep-me/x", "not ours");
     t.write(&format!("outside/{OLD_CLAIM}"), "/x");
     std::os::unix::fs::symlink(jsp::join(&[&t.path(), "outside"]), jsp::join(&[&root, &linked])).unwrap();
     for d in [root.clone(), jsp::join(&[&root, &old_a]), jsp::join(&[&root, &old_b]), jsp::join(&[&root, &fresh]), jsp::join(&[&root, "keep-me"])] {
         std::fs::set_permissions(&d, std::fs::Permissions::from_mode(0o700)).unwrap();
     }
     let long_ago = std::time::SystemTime::now()
-        - std::time::Duration::from_secs(impeccable_hook::hook_sessions::EXPIRE_SECONDS + 3600);
+        - std::time::Duration::from_secs(procable_hook::hook_sessions::EXPIRE_SECONDS + 3600);
     for d in [&old_a, &old_b, &"keep-me".to_string()] {
         std::fs::File::open(jsp::join(&[&root, d])).unwrap().set_modified(long_ago).unwrap();
     }
-    impeccable_hook::hook_sessions::record_root(&rt_with(&t.path(), e), "new-session", &jsp::join(&[&t.path(), "p"]));
+    procable_hook::hook_sessions::record_root(&rt_with(&t.path(), e), "new-session", &jsp::join(&[&t.path(), "p"]));
     let names = names_in(&root);
     assert!(!names.contains(&old_a), "{names:?}");
     assert!(names.contains(&old_b) && names.contains(&fresh) && names.contains(&linked), "{names:?}");
@@ -3670,5 +3670,5 @@ fn expiry_removes_only_old_session_dirs_of_ours() {
     assert_eq!(names_in(&jsp::join(&[&root, &old_b])), vec!["notes.txt".to_string()]);
     assert_eq!(names_in(&jsp::join(&[&root, &fresh])), vec![OLD_CLAIM.to_string()]);
     assert!(t.exists(&format!("outside/{OLD_CLAIM}")));
-    assert!(t.exists("home/.impeccable/hook-sessions/keep-me/x"));
+    assert!(t.exists("home/.procable/hook-sessions/keep-me/x"));
 }

@@ -10,16 +10,16 @@
 //! * 665c51b9 (#604): Windows hook migration dedupe (separator normalization)
 //!
 //! Where the JS asserted on `node ".../hook.mjs"` command forms, the
-//! launcher-era engine writes `"<skill>/scripts/impeccable" hook`; those
+//! launcher-era engine writes `"<skill>/scripts/procable" hook`; those
 //! assertions are adapted to the launcher form the bundle ships today.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use impeccable_common::{jsp, Io};
-use impeccable_skills::bundle::{self, download_file_with, FetchResponse};
-use impeccable_skills::hook_manifest::merge_hook_manifests;
-use impeccable_skills::providers::{Scope, Sys};
+use procable_common::{jsp, Io};
+use procable_skills::bundle::{self, download_file_with, FetchResponse};
+use procable_skills::hook_manifest::merge_hook_manifests;
+use procable_skills::providers::{Scope, Sys};
 use serde_json::{json, Value};
 
 fn temp_root(name: &str) -> String {
@@ -27,7 +27,7 @@ fn temp_root(name: &str) -> String {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0);
-    let dir = std::env::temp_dir().join(format!("impeccable-{name}-{}-{nanos}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-{name}-{}-{nanos}", std::process::id()));
     std::fs::create_dir_all(&dir).expect("temp root");
     // Like Node's `realpathSync`: no `\\?\` verbatim prefix on Windows, so the
     // `/`-joined paths these tests build under this root still resolve (the
@@ -50,28 +50,28 @@ fn read(path: &str) -> String {
 fn create_fake_universal_bundle(root: &str, providers: &[&str]) -> String {
     let bundle_root = format!("{root}/universal-bundle");
     for provider in providers {
-        let skill_dir = format!("{bundle_root}/{provider}/skills/impeccable");
+        let skill_dir = format!("{bundle_root}/{provider}/skills/procable");
         write(
             &format!("{skill_dir}/SKILL.md"),
-            &format!("---\nname: impeccable\nversion: 9.9.9-local\n---\n\nLocal deterministic bundle for {provider}.\n"),
+            &format!("---\nname: procable\nversion: 9.9.9-local\n---\n\nLocal deterministic bundle for {provider}.\n"),
         );
         write(&format!("{skill_dir}/scripts/context.mjs"), "console.log(\"local bundle context\");\n");
         // Real bundles ship the launcher; a user-scope Claude hook counts as
         // current only when the launcher it names exists.
-        write(&format!("{skill_dir}/scripts/impeccable"), "#!/bin/sh\n");
+        write(&format!("{skill_dir}/scripts/procable"), "#!/bin/sh\n");
     }
     if providers.contains(&".claude") {
         write(
             &format!("{bundle_root}/.claude/settings.json"),
             &json!({
                 "description": "fresh claude hook",
-                "hooks": { "PostToolUse": [{ "matcher": "Edit", "hooks": [{ "type": "command", "command": "node \".claude/skills/impeccable/scripts/hook.mjs\"" }] }] },
+                "hooks": { "PostToolUse": [{ "matcher": "Edit", "hooks": [{ "type": "command", "command": "node \".claude/skills/procable/scripts/hook.mjs\"" }] }] },
             })
             .to_string(),
         );
         write(
-            &format!("{bundle_root}/.claude/agents/impeccable-finish-reviewer.md"),
-            "---\nname: impeccable-finish-reviewer\ndescription: Reviews a finished build.\n---\nClaude reviewer body.\n",
+            &format!("{bundle_root}/.claude/agents/procable-finish-reviewer.md"),
+            "---\nname: procable-finish-reviewer\ndescription: Reviews a finished build.\n---\nClaude reviewer body.\n",
         );
     }
     if providers.contains(&".cursor") {
@@ -79,54 +79,54 @@ fn create_fake_universal_bundle(root: &str, providers: &[&str]) -> String {
             &format!("{bundle_root}/.cursor/hooks.json"),
             &json!({
                 "version": 1,
-                "hooks": { "preToolUse": [{ "command": "node \".cursor/skills/impeccable/scripts/hook-before-edit.mjs\"" }] },
+                "hooks": { "preToolUse": [{ "command": "node \".cursor/skills/procable/scripts/hook-before-edit.mjs\"" }] },
             })
             .to_string(),
         );
         write(
-            &format!("{bundle_root}/.cursor/agents/impeccable-finish-reviewer.md"),
-            "---\nname: impeccable-finish-reviewer\ndescription: Reviews a finished build.\nmodel: inherit\nreadonly: true\nis_background: false\n---\nCursor reviewer body.\n",
+            &format!("{bundle_root}/.cursor/agents/procable-finish-reviewer.md"),
+            "---\nname: procable-finish-reviewer\ndescription: Reviews a finished build.\nmodel: inherit\nreadonly: true\nis_background: false\n---\nCursor reviewer body.\n",
         );
     }
     if providers.contains(&".agents") {
         write(
             &format!("{bundle_root}/.codex/hooks.json"),
             &json!({
-                "hooks": { "PostToolUse": [{ "matcher": "apply_patch", "hooks": [{ "type": "command", "command": "node \".codex/skills/impeccable/scripts/hook.mjs\"" }] }] },
+                "hooks": { "PostToolUse": [{ "matcher": "apply_patch", "hooks": [{ "type": "command", "command": "node \".codex/skills/procable/scripts/hook.mjs\"" }] }] },
             })
             .to_string(),
         );
     }
     if providers.contains(&".grok") {
         write(
-            &format!("{bundle_root}/.grok/hooks/impeccable.json"),
+            &format!("{bundle_root}/.grok/hooks/procable.json"),
             &json!({
-                "hooks": { "PostToolUse": [{ "matcher": "Edit|Write|MultiEdit", "hooks": [{ "type": "command", "command": "node \".grok/skills/impeccable/scripts/hook.mjs\"" }] }] },
+                "hooks": { "PostToolUse": [{ "matcher": "Edit|Write|MultiEdit", "hooks": [{ "type": "command", "command": "node \".grok/skills/procable/scripts/hook.mjs\"" }] }] },
             })
             .to_string(),
         );
     }
     if providers.contains(&".github") {
         write(
-            &format!("{bundle_root}/.github/hooks/impeccable.json"),
+            &format!("{bundle_root}/.github/hooks/procable.json"),
             &json!({
                 "version": 1,
                 "hooks": { "postToolUse": [{
                     "type": "command",
                     "matcher": "edit|create|apply_patch",
-                    "bash": "[ ! -f \"$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts/impeccable\" ] || \"$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts/impeccable\" hook",
+                    "bash": "[ ! -f \"$(git rev-parse --show-toplevel)/.github/skills/procable/scripts/procable\" ] || \"$(git rev-parse --show-toplevel)/.github/skills/procable/scripts/procable\" hook",
                     "timeoutSec": 5
                 }] },
             })
             .to_string(),
         );
         write(
-            &format!("{bundle_root}/.github/agents/impeccable-finish-reviewer.agent.md"),
-            "---\nname: impeccable-finish-reviewer\ndescription: Reviews a finished build.\n---\nCopilot reviewer body.\n",
+            &format!("{bundle_root}/.github/agents/procable-finish-reviewer.agent.md"),
+            "---\nname: procable-finish-reviewer\ndescription: Reviews a finished build.\n---\nCopilot reviewer body.\n",
         );
         write(
-            &format!("{bundle_root}/.github/agents/impeccable-asset-producer.agent.md"),
-            "---\nname: impeccable-asset-producer\ndescription: Produces assets.\n---\nCopilot producer body.\n",
+            &format!("{bundle_root}/.github/agents/procable-asset-producer.agent.md"),
+            "---\nname: procable-asset-producer\ndescription: Produces assets.\n---\nCopilot producer body.\n",
         );
     }
     bundle_root
@@ -141,7 +141,7 @@ struct Run {
 fn run_cli(args: &[&str], cwd: &str, env: &HashMap<String, String>) -> Run {
     let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
     let (mut io, captured) = Io::captured("", PathBuf::from(cwd), env.clone());
-    let code = impeccable_skills::run(&argv, &mut io);
+    let code = procable_skills::run(&argv, &mut io);
     drop(io);
     let stdout = String::from_utf8_lossy(&captured.stdout.borrow()).into_owned();
     let stderr = String::from_utf8_lossy(&captured.stderr.borrow()).into_owned();
@@ -156,7 +156,7 @@ fn base_env(home: &str, tmp: &str, bundle: &str) -> HashMap<String, String> {
     env.insert("USERPROFILE".to_string(), home.to_string());
     env.insert("TMPDIR".to_string(), tmp.to_string());
     env.insert("TEMP".to_string(), tmp.to_string());
-    env.insert("IMPECCABLE_BUNDLE_PATH".to_string(), bundle.to_string());
+    env.insert("PROCABLE_BUNDLE_PATH".to_string(), bundle.to_string());
     env
 }
 
@@ -318,9 +318,9 @@ fn local_bundle_uses_mkdtemp_staging_under_tmpdir() {
     let staging = bundle::download_and_extract_bundle(&sys).unwrap();
     assert!(staging.starts_with(&tmp), "{staging} not under {tmp}");
     let basename = staging.rsplit(['/', '\\']).next().unwrap();
-    assert!(basename.starts_with("impeccable-local-bundle-"), "{basename}");
+    assert!(basename.starts_with("procable-local-bundle-"), "{basename}");
     // Random mkdtemp suffix, not the old `-<pid>-<millis>` form.
-    let suffix = &basename["impeccable-local-bundle-".len()..];
+    let suffix = &basename["procable-local-bundle-".len()..];
     assert!(
         !suffix.split('-').all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit())),
         "staging dir still uses the pid-timestamp form: {basename}"
@@ -330,7 +330,7 @@ fn local_bundle_uses_mkdtemp_staging_under_tmpdir() {
         use std::os::unix::fs::PermissionsExt;
         assert_eq!(std::fs::metadata(&staging).unwrap().permissions().mode() & 0o777, 0o700);
     }
-    assert!(std::path::Path::new(&format!("{staging}/.claude/skills/impeccable/SKILL.md")).exists());
+    assert!(std::path::Path::new(&format!("{staging}/.claude/skills/procable/SKILL.md")).exists());
     std::fs::remove_dir_all(&root).ok();
 }
 
@@ -365,7 +365,7 @@ fn claude_project_and_user_scopes_use_claude_agents_dir() {
     std::fs::create_dir_all(&tmp).unwrap();
     std::fs::create_dir_all(&home).unwrap();
     let bundle_dir = create_fake_universal_bundle(&root, &[".claude"]);
-    write(&format!("{home}/.claude/agents/impeccable-finish-reviewer.md"), "stale copy\n");
+    write(&format!("{home}/.claude/agents/procable-finish-reviewer.md"), "stale copy\n");
 
     let env: HashMap<String, String> = HashMap::from([
         ("HOME".to_string(), home.clone()),
@@ -380,8 +380,8 @@ fn claude_project_and_user_scopes_use_claude_agents_dir() {
     assert_eq!(project_results.len(), 1);
     assert!(project_results[0].shadowed.is_empty());
     assert_eq!(user_results.len(), 1);
-    assert!(read(&format!("{tmp}/.claude/agents/impeccable-finish-reviewer.md")).contains("Claude reviewer body."));
-    assert!(read(&format!("{home}/.claude/agents/impeccable-finish-reviewer.md")).contains("Claude reviewer body."));
+    assert!(read(&format!("{tmp}/.claude/agents/procable-finish-reviewer.md")).contains("Claude reviewer body."));
+    assert!(read(&format!("{home}/.claude/agents/procable-finish-reviewer.md")).contains("Claude reviewer body."));
     std::fs::remove_dir_all(&root).ok();
 }
 
@@ -397,7 +397,7 @@ fn claude_install_and_update_backfill_bundled_agents() {
     std::fs::create_dir_all(format!("{tmp}/.git")).unwrap();
     let bundle_root = create_fake_universal_bundle(&tmp, &[".claude"]);
     let env = base_env(&home, &tmpdir, &bundle_root);
-    let agent_path = format!("{tmp}/.claude/agents/impeccable-finish-reviewer.md");
+    let agent_path = format!("{tmp}/.claude/agents/procable-finish-reviewer.md");
 
     let r = run_cli(&["install", "-y", "--no-hooks", "--providers=claude"], &tmp, &env);
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
@@ -427,17 +427,17 @@ fn dsh_install_and_update_use_relocated_home_without_touching_project_skills() {
     let bundle = create_fake_universal_bundle(&root, &[".dsh"]);
     let mut env = base_env(&home, &tmpdir, &bundle);
     env.insert("DSH_HOME".into(), dsh_home.clone());
-    let project_skill = jsp::join(&[&project, ".dsh", "skills", "impeccable", "SKILL.md"]);
+    let project_skill = jsp::join(&[&project, ".dsh", "skills", "procable", "SKILL.md"]);
     write(&project_skill, "project skill must stay untouched");
-    let installed = jsp::join(&[&dsh_home, "skills", "impeccable", "SKILL.md"]);
-    let source = jsp::join(&[&bundle, ".dsh", "skills", "impeccable", "SKILL.md"]);
+    let installed = jsp::join(&[&dsh_home, "skills", "procable", "SKILL.md"]);
+    let source = jsp::join(&[&bundle, ".dsh", "skills", "procable", "SKILL.md"]);
 
     let r = run_cli(&["install", "-y", "--providers=deepseek-harness", "--scope=global"], &project, &env);
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
     assert_eq!(read(&installed), read(&source));
     assert!(!std::path::Path::new(&jsp::join(&[&home, ".dsh"])).exists());
 
-    write(&source, "---\nname: impeccable\nversion: 9.9.10-local\n---\n\nUpdated DSH fixture.\n");
+    write(&source, "---\nname: procable\nversion: 9.9.10-local\n---\n\nUpdated DSH fixture.\n");
     let r = run_cli(&["update", "-y", "--providers=dsh", "--scope=global"], &project, &env);
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
     assert_eq!(read(&installed), read(&source));
@@ -467,7 +467,7 @@ fn check_accepts_current_copilot_user_agents_in_home_rooted_checkout() {
         &env,
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
-    assert!(std::path::Path::new(&format!("{home}/.copilot/agents/impeccable-finish-reviewer.agent.md")).exists());
+    assert!(std::path::Path::new(&format!("{home}/.copilot/agents/procable-finish-reviewer.agent.md")).exists());
     assert!(!std::path::Path::new(&format!("{home}/.github/agents")).exists());
 
     let r = run_cli(&["check"], &home, &env);
@@ -528,7 +528,7 @@ fn check_ignores_leftover_pi_project_layout_in_home_rooted_tree() {
         &env,
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
-    assert!(std::path::Path::new(&format!("{home}/.pi/agent/skills/impeccable/SKILL.md")).exists());
+    assert!(std::path::Path::new(&format!("{home}/.pi/agent/skills/procable/SKILL.md")).exists());
     write(
         &format!("{home}/.pi/skills/other/SKILL.md"),
         "---\nname: other\n---\nLeftover project-layout skill.\n",
@@ -561,8 +561,8 @@ fn check_sees_home_rooted_project_scope_pi_install() {
         &env,
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
-    assert!(std::path::Path::new(&format!("{home}/.pi/skills/impeccable/SKILL.md")).exists());
-    assert!(!std::path::Path::new(&format!("{home}/.pi/agent/skills/impeccable/SKILL.md")).exists());
+    assert!(std::path::Path::new(&format!("{home}/.pi/skills/procable/SKILL.md")).exists());
+    assert!(!std::path::Path::new(&format!("{home}/.pi/agent/skills/procable/SKILL.md")).exists());
     write(
         &format!("{home}/.pi/agent/skills/other/SKILL.md"),
         "---\nname: other\n---\nLeftover user-layout skill.\n",
@@ -576,7 +576,7 @@ fn check_sees_home_rooted_project_scope_pi_install() {
 }
 
 #[test]
-fn check_reports_stale_impeccable_in_home_rooted_tree() {
+fn check_reports_stale_procable_in_home_rooted_tree() {
     let root = temp_root("check-824-stale");
     let home = format!("{root}/home");
     let tmpdir = format!("{root}/tmp");
@@ -594,8 +594,8 @@ fn check_reports_stale_impeccable_in_home_rooted_tree() {
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
     write(
-        &format!("{home}/.claude/skills/impeccable/SKILL.md"),
-        "---\nname: impeccable\nversion: 0.0.0-stale\n---\n\nStale copy.\n",
+        &format!("{home}/.claude/skills/procable/SKILL.md"),
+        "---\nname: procable\nversion: 0.0.0-stale\n---\n\nStale copy.\n",
     );
 
     let r = run_cli(&["check"], &home, &env);
@@ -623,7 +623,7 @@ fn check_ignores_engine_binary_installed_beside_the_skill() {
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
     // A real install fetches the engine here; the bundle never ships it.
-    write(&format!("{project}/.claude/skills/impeccable/scripts/bin/windows-x64/impeccable.exe"), "MZ");
+    write(&format!("{project}/.claude/skills/procable/scripts/bin/windows-x64/procable.exe"), "MZ");
 
     let r = run_cli(&["check"], &project, &env);
     assert!(r.stdout.contains("Skills are up to date"), "{}\n{}", r.stdout, r.stderr);
@@ -644,8 +644,8 @@ fn inferred_home_rooted_updates_refresh_stale_or_missing_copilot_user_agents() {
     std::fs::create_dir_all(format!("{home}/.git")).unwrap();
     let bundle_root = create_fake_universal_bundle(&home, &[".github"]);
     let env = base_env(&home, &tmpdir, &bundle_root);
-    let user_agent = format!("{home}/.copilot/agents/impeccable-finish-reviewer.agent.md");
-    let project_agent = format!("{home}/.github/agents/impeccable-finish-reviewer.agent.md");
+    let user_agent = format!("{home}/.copilot/agents/procable-finish-reviewer.agent.md");
+    let project_agent = format!("{home}/.github/agents/procable-finish-reviewer.agent.md");
 
     let r = run_cli(
         &["install", "-y", "--scope=global", "--no-hooks", "--providers=github"],
@@ -683,7 +683,7 @@ fn manifest_names_launcher(manifest: &str, home: &str, provider: &str) -> bool {
             _ => false,
         }
     }
-    let p = jsp::join(&[home, provider, "skills", "impeccable", "scripts", "impeccable"]);
+    let p = jsp::join(&[home, provider, "skills", "procable", "scripts", "procable"]);
     let escaped = p.replace('\\', "\\\\");
     let value: Value = serde_json::from_str(&read(manifest)).unwrap();
     any_string(&value, &|s: &str| s.contains(&p) || s.contains(&escaped))
@@ -709,13 +709,13 @@ fn global_install_rewrites_grok_project_hooks_to_the_global_skill_path() {
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
     assert!(
-        r.stdout.contains("Installed impeccable into: .claude, .agents, .cursor, .grok (global)"),
+        r.stdout.contains("Installed procable into: .claude, .agents, .cursor, .grok (global)"),
         "{}",
         r.stdout
     );
     for provider in [".claude", ".agents", ".cursor", ".grok"] {
-        assert!(std::path::Path::new(&format!("{home}/{provider}/skills/impeccable/SKILL.md")).exists());
-        assert!(!std::path::Path::new(&format!("{tmp}/{provider}/skills/impeccable/SKILL.md")).exists());
+        assert!(std::path::Path::new(&format!("{home}/{provider}/skills/procable/SKILL.md")).exists());
+        assert!(!std::path::Path::new(&format!("{tmp}/{provider}/skills/procable/SKILL.md")).exists());
     }
     // Launcher-era adaptation: the JS asserted the rewritten hook.mjs path;
     // the engine writes the launcher form pointing at the same global root.
@@ -723,14 +723,14 @@ fn global_install_rewrites_grok_project_hooks_to_the_global_skill_path() {
     assert!(!std::path::Path::new(&format!("{home}/.claude/settings.local.json")).exists());
     assert!(manifest_names_launcher(&format!("{tmp}/.codex/hooks.json"), &home, ".agents"));
     assert!(manifest_names_launcher(&format!("{tmp}/.cursor/hooks.json"), &home, ".cursor"));
-    let grok_manifest = format!("{tmp}/.grok/hooks/impeccable.json");
+    let grok_manifest = format!("{tmp}/.grok/hooks/procable.json");
     let grok_hooks = read(&grok_manifest);
     assert!(
         manifest_names_launcher(&grok_manifest, &home, ".grok"),
         "grok hook not rewritten to the global skill path: {grok_hooks}"
     );
     assert!(
-        !grok_hooks.contains("\\\".grok/skills/impeccable/scripts/hook.mjs\\\"") && !grok_hooks.contains("hook.mjs"),
+        !grok_hooks.contains("\\\".grok/skills/procable/scripts/hook.mjs\\\"") && !grok_hooks.contains("hook.mjs"),
         "grok hook still points at the project-relative bundle command: {grok_hooks}"
     );
     std::fs::remove_dir_all(&root).ok();
@@ -755,11 +755,11 @@ fn global_install_rewrites_github_project_hook_to_the_global_skill_path() {
         &env,
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
-    let manifest = read(&format!("{project}/.github/hooks/impeccable.json"));
+    let manifest = read(&format!("{project}/.github/hooks/procable.json"));
     let expected = if cfg!(windows) {
-        format!("{}/.github/skills/impeccable/scripts/impeccable", home.replace('\\', "/"))
+        format!("{}/.github/skills/procable/scripts/procable", home.replace('\\', "/"))
     } else {
-        "$HOME/.github/skills/impeccable/scripts/impeccable".to_string()
+        "$HOME/.github/skills/procable/scripts/procable".to_string()
     };
     assert!(
         manifest.contains(&expected),
@@ -794,9 +794,9 @@ fn windows_global_github_hook_uses_userprofile_when_shell_home_differs() {
         &env,
     );
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
-    let manifest = read(&format!("{project}/.github/hooks/impeccable.json"));
+    let manifest = read(&format!("{project}/.github/hooks/procable.json"));
     let expected = format!(
-        "{}/.github/skills/impeccable/scripts/impeccable",
+        "{}/.github/skills/procable/scripts/procable",
         home.replace('\\', "/")
     );
     assert!(manifest.contains(&expected), "global GitHub hook did not name USERPROFILE: {manifest}");
@@ -816,17 +816,17 @@ fn user_scope_update_writes_claude_user_settings() {
     }
     std::fs::create_dir_all(format!("{project}/.git")).unwrap();
     write(
-        &format!("{home}/.claude/skills/impeccable/SKILL.md"),
-        "---\nname: impeccable\nversion: 1.0.0\n---\n",
+        &format!("{home}/.claude/skills/procable/SKILL.md"),
+        "---\nname: procable\nversion: 1.0.0\n---\n",
     );
     write(&format!("{home}/.claude/settings.json"), r#"{"model":"claude-sonnet-5"}"#);
     write(
         &format!("{home}/.claude/settings.local.json"),
-        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"~/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"~/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
     );
     write(
         &format!("{project}/.claude/settings.local.json"),
-        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
     );
     let bundle = create_fake_universal_bundle(&project, &[".claude"]);
     let env = base_env(&home, &tmpdir, &bundle);
@@ -865,15 +865,15 @@ fn slash_norm(s: &str) -> String {
     out
 }
 
-/// The Impeccable entries of a Cursor manifest, by event, separators
+/// The Procable entries of a Cursor manifest, by event, separators
 /// normalized.
-fn cursor_impeccable_events(manifest: &str) -> Vec<(String, String)> {
+fn cursor_procable_events(manifest: &str) -> Vec<(String, String)> {
     let value: Value = serde_json::from_str(&read(manifest)).unwrap();
     let mut out = Vec::new();
     for (event, entries) in value["hooks"].as_object().unwrap() {
         for entry in entries.as_array().unwrap() {
             let command = slash_norm(entry["command"].as_str().unwrap_or_default());
-            if command.contains("skills/impeccable/scripts/") {
+            if command.contains("skills/procable/scripts/") {
                 out.push((event.clone(), command));
             }
         }
@@ -899,10 +899,10 @@ fn user_scope_update_migrates_the_project_cursor_gate() {
         }
         std::fs::create_dir_all(format!("{project}/.git")).unwrap();
         write(
-            &format!("{home}/.cursor/skills/impeccable/SKILL.md"),
-            "---\nname: impeccable\nversion: 1.0.0\n---\n",
+            &format!("{home}/.cursor/skills/procable/SKILL.md"),
+            "---\nname: procable\nversion: 1.0.0\n---\n",
         );
-        let launcher = jsp::join(&[&home, ".cursor", "skills", "impeccable", "scripts", "impeccable"]);
+        let launcher = jsp::join(&[&home, ".cursor", "skills", "procable", "scripts", "procable"]);
         let gate = format!("[ ! -f '{launcher}' ] || '{launcher}' hook-before-edit");
         let project_manifest = format!("{project}/.cursor/hooks.json");
         write(
@@ -933,7 +933,7 @@ fn user_scope_update_migrates_the_project_cursor_gate() {
         let r = run_cli(&args, &project, &env);
         assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
 
-        let ours = cursor_impeccable_events(&project_manifest);
+        let ours = cursor_procable_events(&project_manifest);
         assert!(!ours.is_empty(), "{}", read(&project_manifest));
         for (event, command) in &ours {
             assert_eq!(event, "postToolUse", "{}", read(&project_manifest));
@@ -943,7 +943,7 @@ fn user_scope_update_migrates_the_project_cursor_gate() {
         assert_eq!(project_value["hooks"]["preToolUse"], json!([{ "command": "./audit.sh", "matcher": "Shell" }]));
         assert_eq!(project_value["hooks"]["postToolUse"][0]["matcher"], "^Write$");
 
-        let home_ours = cursor_impeccable_events(&home_manifest);
+        let home_ours = cursor_procable_events(&home_manifest);
         assert!(!home_ours.is_empty() && home_ours.iter().all(|(event, _)| event == "postToolUse"), "{}", read(&home_manifest));
         if home_foreign {
             let after: Value = serde_json::from_str(&read(&home_manifest)).unwrap();
@@ -969,10 +969,10 @@ fn user_scope_update_honors_the_projects_declined_hook_consent() {
     }
     std::fs::create_dir_all(format!("{project}/.git")).unwrap();
     write(
-        &format!("{home}/.cursor/skills/impeccable/SKILL.md"),
-        "---\nname: impeccable\nversion: 1.0.0\n---\n",
+        &format!("{home}/.cursor/skills/procable/SKILL.md"),
+        "---\nname: procable\nversion: 1.0.0\n---\n",
     );
-    impeccable_skills::hook_manifest::set_hook_consent(&project, "declined").unwrap();
+    procable_skills::hook_manifest::set_hook_consent(&project, "declined").unwrap();
     let bundle = create_fake_universal_bundle(&project, &[".cursor"]);
     let env = base_env(&home, &tmpdir, &bundle);
 
@@ -997,8 +997,8 @@ fn user_scope_update_writes_the_cursor_hook_into_the_project() {
     }
     std::fs::create_dir_all(format!("{project}/.git")).unwrap();
     write(
-        &format!("{home}/.cursor/skills/impeccable/SKILL.md"),
-        "---\nname: impeccable\nversion: 1.0.0\n---\n",
+        &format!("{home}/.cursor/skills/procable/SKILL.md"),
+        "---\nname: procable\nversion: 1.0.0\n---\n",
     );
     let bundle = create_fake_universal_bundle(&project, &[".cursor"]);
     let env = base_env(&home, &tmpdir, &bundle);
@@ -1007,8 +1007,8 @@ fn user_scope_update_writes_the_cursor_hook_into_the_project() {
     assert_eq!(r.code, 0, "{}\n{}", r.stdout, r.stderr);
 
     let project_manifest = format!("{project}/.cursor/hooks.json");
-    let launcher = slash_norm(&jsp::join(&[&home, ".cursor", "skills", "impeccable", "scripts", "impeccable"]));
-    let ours = cursor_impeccable_events(&project_manifest);
+    let launcher = slash_norm(&jsp::join(&[&home, ".cursor", "skills", "procable", "scripts", "procable"]));
+    let ours = cursor_procable_events(&project_manifest);
     assert!(!ours.is_empty(), "{}", read(&project_manifest));
     for (event, command) in &ours {
         assert_eq!(event, "postToolUse", "{}", read(&project_manifest));
@@ -1037,11 +1037,11 @@ fn existing_user_install_ignores_project_hook_when_user_hook_is_missing() {
     std::fs::remove_file(format!("{home}/.claude/settings.json")).unwrap();
     write(
         &format!("{home}/.claude/settings.local.json"),
-        r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"~/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"~/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
     );
     write(
         &format!("{project}/.claude/settings.local.json"),
-        r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+        r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
     );
 
     let second = run_cli(&args, &project, &env);
@@ -1072,14 +1072,14 @@ fn repeat_user_install_prunes_duplicate_project_hook_when_user_hook_exists() {
     let project_local = format!("{project}/.claude/settings.local.json");
     write(
         &project_local,
-        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
     );
 
     let second = run_cli(&args, &project, &env);
     assert_eq!(second.code, 0, "{}\n{}", second.stdout, second.stderr);
     assert!(manifest_names_launcher(&format!("{home}/.claude/settings.json"), &home, ".claude"));
     let local = read(&project_local);
-    assert!(!local.contains("impeccable"), "duplicate project hook survived a repeat install: {local}");
+    assert!(!local.contains("procable"), "duplicate project hook survived a repeat install: {local}");
     let local_json: Value = serde_json::from_str(&local).unwrap();
     assert_eq!(local_json["permissions"]["allow"][0], "Bash(ls)");
     std::fs::remove_dir_all(&root).ok();
@@ -1107,12 +1107,12 @@ fn repeat_user_install_replaces_legacy_user_hook_before_pruning_project_hook() {
     let user_settings = format!("{home}/.claude/settings.json");
     write(
         &user_settings,
-        r#"{"model":"claude-sonnet-5","hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"~/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+        r#"{"model":"claude-sonnet-5","hooks":{"PostToolUse":[{"matcher":"Edit","hooks":[{"type":"command","command":"node \"~/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
     );
     let project_local = format!("{project}/.claude/settings.local.json");
     write(
         &project_local,
-        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+        r#"{"permissions":{"allow":["Bash(ls)"]},"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
     );
 
     let second = run_cli(&args, &project, &env);
@@ -1123,7 +1123,7 @@ fn repeat_user_install_replaces_legacy_user_hook_before_pruning_project_hook() {
     let user_json: Value = serde_json::from_str(&user).unwrap();
     assert_eq!(user_json["model"], "claude-sonnet-5");
     let local = read(&project_local);
-    assert!(!local.contains("impeccable"), "duplicate project hook survived: {local}");
+    assert!(!local.contains("procable"), "duplicate project hook survived: {local}");
     std::fs::remove_dir_all(&root).ok();
 }
 
@@ -1134,24 +1134,24 @@ fn user_hook_with_missing_launcher_is_not_current() {
     let root = temp_root("claude-user-hook-dangling");
     let home = format!("{root}/home");
     let settings = format!("{home}/.claude/settings.json");
-    let command = impeccable_skills::hook_manifest::user_claude_hook_command(&home, false).unwrap();
+    let command = procable_skills::hook_manifest::user_claude_hook_command(&home, false).unwrap();
     write(
         &settings,
         &serde_json::json!({"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":command}]}]}}).to_string(),
     );
-    assert!(!impeccable_skills::hook_manifest::user_claude_hook_is_current_for(&home, false));
-    write(&format!("{home}/.claude/skills/impeccable/scripts/impeccable"), "#!/bin/sh\n");
-    assert!(impeccable_skills::hook_manifest::user_claude_hook_is_current_for(&home, false));
+    assert!(!procable_skills::hook_manifest::user_claude_hook_is_current_for(&home, false));
+    write(&format!("{home}/.claude/skills/procable/scripts/procable"), "#!/bin/sh\n");
+    assert!(procable_skills::hook_manifest::user_claude_hook_is_current_for(&home, false));
     // A legacy entry beside the current one still needs a rewrite.
     write(
         &settings,
         &serde_json::json!({"hooks":{"PostToolUse":[
             {"hooks":[{"type":"command","command":command}]},
-            {"hooks":[{"type":"command","command":"node \"~/.claude/skills/impeccable/scripts/hook.mjs\""}]}
+            {"hooks":[{"type":"command","command":"node \"~/.claude/skills/procable/scripts/hook.mjs\""}]}
         ]}})
         .to_string(),
     );
-    assert!(!impeccable_skills::hook_manifest::user_claude_hook_is_current_for(&home, false));
+    assert!(!procable_skills::hook_manifest::user_claude_hook_is_current_for(&home, false));
     std::fs::remove_dir_all(&root).ok();
 }
 
@@ -1159,7 +1159,7 @@ fn user_hook_with_missing_launcher_is_not_current() {
 
 #[test]
 fn merge_hook_manifests_replaces_legacy_windows_path_claude_hooks() {
-    let legacy_path = r"C:\Users\alice\.claude\skills\impeccable\scripts\hook.mjs";
+    let legacy_path = r"C:\Users\alice\.claude\skills\procable\scripts\hook.mjs";
     let legacy_command = format!("[ ! -f \"{legacy_path}\" ] || node \"{legacy_path}\"");
     let fresh_command = format!("node -e \"guard\" \"{legacy_path}\"");
     let merged = merge_hook_manifests(

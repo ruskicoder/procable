@@ -918,8 +918,8 @@ mod tests {
         assert_eq!(m.signal(runs[0]), Some(MockupSignal::Labelled));
         assert!(!m.declared(runs[0]));
         // A verb is not a picture: impeccable.style's tab strip
-        // "Preview Impeccable commands".
-        d.set_attr(w, "aria-label", "Preview Impeccable commands");
+        // "Preview Procable commands".
+        d.set_attr(w, "aria-label", "Preview Procable commands");
         assert_eq!(HiddenMockups::scan(&d).signal(runs[0]), None);
         // A labelled control, or a box too small for a frame, is not one.
         d.set_attr(w, "aria-label", "Screenshot gallery");

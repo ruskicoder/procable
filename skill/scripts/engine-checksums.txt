@@ -1,4 +1,4 @@
 # Engine binary digests for the pinned ENGINE_VERSION: <engine-version> <asset> <sha256>.
-# The launchers, the npm shim, `impeccable install` and scripts/fetch-engine.mjs verify
+# The launchers, the npm shim, `procable install` and scripts/fetch-engine.mjs verify
 # every engine download against this file. Written by
 # `node scripts/check-engine-release.mjs --record` after each engine release.

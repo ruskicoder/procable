@@ -1,4 +1,4 @@
-"""impeccable-design-hook: the Impeccable design detector as a Hermes plugin.
+"""procable-design-hook: the Procable design detector as a Hermes plugin.
 
 Hermes has no command-hook manifest, so this plugin feeds the engine's ``hook`` verb the
 Claude-shaped events it already understands: ``transform_tool_result`` on ``write_file`` /
@@ -6,7 +6,7 @@ Claude-shaped events it already understands: ``transform_tool_result`` on ``writ
 ``pre_verify`` sends a Stop event so the deep pass can keep the turn going. The engine owns
 everything else (UI-file filtering, ``hook.enabled``, dedupe between the two passes).
 
-It runs only where the impeccable skill is reachable: a ``.hermes/skills/impeccable`` above the
+It runs only where the procable skill is reachable: a ``.hermes/skills/procable`` above the
 edited file in a project Hermes trusts (``hermes skills trust``, the gate Hermes itself puts on
 project skills), else the one in the Hermes home. Fail-open: any error, timeout or missing
 launcher leaves Hermes untouched.
@@ -26,12 +26,12 @@ _TOOL_NAMES = {"write_file": "Write", "patch": "Edit"}
 _EDIT_TIMEOUT_S = 5
 _STOP_TIMEOUT_S = 30
 _TRUTHY = {"1", "true", "yes", "on"}
-_LAUNCHER = "impeccable.cmd" if os.name == "nt" else "impeccable"
-_SKILL_SCRIPTS = os.path.join("skills", "impeccable", "scripts", _LAUNCHER)
+_LAUNCHER = "procable.cmd" if os.name == "nt" else "procable"
+_SKILL_SCRIPTS = os.path.join("skills", "procable", "scripts", _LAUNCHER)
 
 
 def _disabled() -> bool:
-    return os.environ.get("IMPECCABLE_HOOK_DISABLED", "").strip().lower() in _TRUTHY
+    return os.environ.get("PROCABLE_HOOK_DISABLED", "").strip().lower() in _TRUTHY
 
 
 def _hermes_home() -> str:
@@ -68,7 +68,7 @@ def _run_hook(launcher: Optional[str], cwd: str, event: Dict[str, Any], timeout:
     """Run ``<launcher> hook`` with ``event`` on stdin; the parsed stdout object, or None."""
     if launcher is None or _disabled():
         return None
-    env = dict(os.environ, IMPECCABLE_HOOK_HARNESS="hermes")
+    env = dict(os.environ, PROCABLE_HOOK_HARNESS="hermes")
     proc = subprocess.run(
         [launcher, "hook"], input=json.dumps(event), capture_output=True,
         encoding="utf-8", errors="replace", cwd=cwd, env=env, timeout=timeout,
@@ -105,7 +105,7 @@ def _edited_paths(result: str, args: Any, cwd: str) -> list:
 
 
 def _with_findings(result: str, text: str) -> str:
-    """The result with the findings added. A JSON object gets them as an ``impeccable``
+    """The result with the findings added. A JSON object gets them as an ``procable``
     key: Hermes reads the result JSON back to record the edit for its verify gate, and
     text after the JSON would hide the write from ``pre_verify``."""
     try:
@@ -113,7 +113,7 @@ def _with_findings(result: str, text: str) -> str:
     except ValueError:
         parsed = None
     if isinstance(parsed, dict):
-        parsed["impeccable"] = text
+        parsed["procable"] = text
         return json.dumps(parsed, ensure_ascii=False)
     return result + "\n\n" + text
 
@@ -141,7 +141,7 @@ def _make_hooks(session_cwd: Callable[[], str]):
                     session_launchers[session_id] = launcher
                 texts.append(_additional_context(_run_hook(launcher, cwd, event, _EDIT_TIMEOUT_S)))
             except Exception as err:  # fail-open: a broken hook must never cost the user a write
-                logger.debug("impeccable-design-hook: edit hook skipped for %s: %s", path, err)
+                logger.debug("procable-design-hook: edit hook skipped for %s: %s", path, err)
         text = "\n\n".join(t for t in texts if t)
         return _with_findings(result, text) if text else None
 
@@ -157,7 +157,7 @@ def _make_hooks(session_cwd: Callable[[], str]):
             launcher = session_launchers.get(session_id or "") or _find_launcher(cwd)
             output = _run_hook(launcher, cwd, event, _STOP_TIMEOUT_S)
         except Exception as err:  # fail-open: never trap the turn on a hook failure
-            logger.debug("impeccable-design-hook: stop hook skipped: %s", err)
+            logger.debug("procable-design-hook: stop hook skipped: %s", err)
             return None
         if not output:
             return None

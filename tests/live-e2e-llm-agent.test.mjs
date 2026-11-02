@@ -46,7 +46,7 @@ describe('live-e2e LLM agent provider config', () => {
   });
 
   it('still resolves Anthropic when explicitly selected', () => {
-    const config = resolveLlmAgentConfig({}, { IMPECCABLE_E2E_LLM_PROVIDER: 'anthropic', ANTHROPIC_API_KEY: 'k' });
+    const config = resolveLlmAgentConfig({}, { PROCABLE_E2E_LLM_PROVIDER: 'anthropic', ANTHROPIC_API_KEY: 'k' });
 
     assert.equal(config.provider, 'anthropic');
     assert.equal(config.model, 'claude-haiku-4-5');
@@ -80,7 +80,7 @@ describe('live-e2e LLM agent provider config', () => {
 
   it('explicitly selects DeepSeek over Anthropic', () => {
     const config = resolveLlmAgentConfig({}, {
-      IMPECCABLE_E2E_LLM_PROVIDER: 'deepseek',
+      PROCABLE_E2E_LLM_PROVIDER: 'deepseek',
       ANTHROPIC_API_KEY: 'claude-key',
       DEEPSEEK_API_KEY: 'deepseek-key',
     });
@@ -96,8 +96,8 @@ describe('live-e2e LLM agent provider config', () => {
     const config = resolveLlmAgentConfig(
       { model: 'custom-model', baseURL: 'https://example.test/anthropic' },
       {
-        IMPECCABLE_E2E_LLM_PROVIDER: 'deepseek',
-        IMPECCABLE_E2E_LLM_MODEL: 'ignored-model',
+        PROCABLE_E2E_LLM_PROVIDER: 'deepseek',
+        PROCABLE_E2E_LLM_MODEL: 'ignored-model',
         DEEPSEEK_API_KEY: 'test-key',
       },
     );
@@ -108,7 +108,7 @@ describe('live-e2e LLM agent provider config', () => {
 
   it('allows the DeepSeek API base URL to come from env', () => {
     const config = resolveLlmAgentConfig({}, {
-      IMPECCABLE_E2E_LLM_PROVIDER: 'deepseek',
+      PROCABLE_E2E_LLM_PROVIDER: 'deepseek',
       DEEPSEEK_API_KEY: 'test-key',
       DEEPSEEK_API_BASE_URL: 'https://proxy.example.test/anthropic',
     });
@@ -118,8 +118,8 @@ describe('live-e2e LLM agent provider config', () => {
 
   it('rejects unsupported providers', () => {
     assert.throws(
-      () => resolveLlmAgentConfig({}, { IMPECCABLE_E2E_LLM_PROVIDER: 'other' }),
-      /Unsupported IMPECCABLE_E2E_LLM_PROVIDER: other/,
+      () => resolveLlmAgentConfig({}, { PROCABLE_E2E_LLM_PROVIDER: 'other' }),
+      /Unsupported PROCABLE_E2E_LLM_PROVIDER: other/,
     );
   });
 });
@@ -192,14 +192,14 @@ describe('live-e2e LLM agent createLlmAgent', () => {
 
 describe('live-e2e LLM agent provider replay', () => {
   it('applies a generic label/count/source-key batch through the selected provider', async (t) => {
-    if (process.env.IMPECCABLE_LLM_REPLAY !== '1') {
-      t.skip('set IMPECCABLE_LLM_REPLAY=1 to run provider-backed manual edit replay');
+    if (process.env.PROCABLE_LLM_REPLAY !== '1') {
+      t.skip('set PROCABLE_LLM_REPLAY=1 to run provider-backed manual edit replay');
       return;
     }
 
     const config = resolveLlmAgentConfig({
-      provider: process.env.IMPECCABLE_E2E_LLM_PROVIDER || 'deepseek',
-      model: process.env.IMPECCABLE_E2E_LLM_MODEL,
+      provider: process.env.PROCABLE_E2E_LLM_PROVIDER || 'deepseek',
+      model: process.env.PROCABLE_E2E_LLM_MODEL,
     });
     const agent = await createLlmAgent({ config, log: (msg) => t.diagnostic(msg) });
     if (!agent) {
@@ -229,14 +229,14 @@ describe('live-e2e LLM agent provider replay', () => {
   });
 
   it('restores a generic source-key batch through the selected provider without leaving numeric strings', async (t) => {
-    if (process.env.IMPECCABLE_LLM_REPLAY !== '1') {
-      t.skip('set IMPECCABLE_LLM_REPLAY=1 to run provider-backed manual edit replay');
+    if (process.env.PROCABLE_LLM_REPLAY !== '1') {
+      t.skip('set PROCABLE_LLM_REPLAY=1 to run provider-backed manual edit replay');
       return;
     }
 
     const config = resolveLlmAgentConfig({
-      provider: process.env.IMPECCABLE_E2E_LLM_PROVIDER || 'deepseek',
-      model: process.env.IMPECCABLE_E2E_LLM_MODEL,
+      provider: process.env.PROCABLE_E2E_LLM_PROVIDER || 'deepseek',
+      model: process.env.PROCABLE_E2E_LLM_MODEL,
     });
     const agent = await createLlmAgent({ config, log: (msg) => t.diagnostic(msg) });
     if (!agent) {
@@ -267,7 +267,7 @@ describe('live-e2e LLM agent provider replay', () => {
 });
 
 function createSourceKeyReplayProject(mode) {
-  const root = mkdtempSync(join(tmpdir(), 'impeccable-llm-replay-'));
+  const root = mkdtempSync(join(tmpdir(), 'procable-llm-replay-'));
   mkdirSync(join(root, 'src'), { recursive: true });
   if (mode === 'restore') {
     writeFileSync(join(root, 'src/data.js'), [
@@ -1559,8 +1559,8 @@ describe('live-e2e LLM agent variant prompt', () => {
 
   it('uses permanent styling hooks outside the reserved live-runtime namespace', () => {
     assert.match(VARIANT_SYSTEM_INSTRUCTIONS, /data-design-variant/);
-    assert.doesNotMatch(VARIANT_SYSTEM_INSTRUCTIONS, /add[^\n]*data-impeccable-e2e-variant/);
-    assert.match(VARIANT_SYSTEM_INSTRUCTIONS, /Never invent data-impeccable-\*/);
+    assert.doesNotMatch(VARIANT_SYSTEM_INSTRUCTIONS, /add[^\n]*data-procable-e2e-variant/);
+    assert.match(VARIANT_SYSTEM_INSTRUCTIONS, /Never invent data-procable-\*/);
   });
 });
 
@@ -1597,7 +1597,7 @@ describe('live-e2e LLM agent variant copy validation', () => {
     assert.match(
       validateProgressiveVariantOutput(
         {
-          scopedCss: '@scope ([data-impeccable-variant="1"]) { .hero-title { color: red; } }',
+          scopedCss: '@scope ([data-procable-variant="1"]) { .hero-title { color: red; } }',
           variants: [{ innerHtml: firstHtml, params: [] }],
         },
         {
@@ -1694,7 +1694,7 @@ describe('live-e2e LLM agent variant copy validation', () => {
 
 describe('live-e2e LLM agent parseVariantResponse', () => {
   const validParsed = {
-    scopedCss: '@scope ([data-impeccable-variant="1"]) {}',
+    scopedCss: '@scope ([data-procable-variant="1"]) {}',
     variants: [{ innerHtml: '<h1 class="hero-title">Title</h1>' }],
   };
 
@@ -1730,7 +1730,7 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects scopedCss that includes an outer style tag', () => {
     const body = JSON.stringify({
-      scopedCss: '<style data-impeccable-css="SESSION_ID">@scope ([data-impeccable-variant="1"]) {}</style>',
+      scopedCss: '<style data-procable-css="SESSION_ID">@scope ([data-procable-variant="1"]) {}</style>',
       variants: [{ innerHtml: '<h1>x</h1>' }],
     });
     assert.throws(
@@ -1741,7 +1741,7 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects scopedCss that would break JSX template literals', () => {
     const body = JSON.stringify({
-      scopedCss: '@scope ([data-impeccable-variant="1"]) { .title::before { content: `bad`; } }',
+      scopedCss: '@scope ([data-procable-variant="1"]) { .title::before { content: `bad`; } }',
       variants: [{ innerHtml: '<h1>x</h1>' }],
     });
     assert.throws(
@@ -1752,7 +1752,7 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects scopedCss with template interpolation', () => {
     const body = JSON.stringify({
-      scopedCss: '@scope ([data-impeccable-variant="1"]) { .title { color: ${bad}; } }',
+      scopedCss: '@scope ([data-procable-variant="1"]) { .title { color: ${bad}; } }',
       variants: [{ innerHtml: '<h1>x</h1>' }],
     });
     assert.throws(
@@ -1763,7 +1763,7 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects malformed scopedCss before it reaches framework compilers', () => {
     const body = JSON.stringify({
-      scopedCss: '@scope ([data-impeccable-variant="1"]) { .title { color: red; }',
+      scopedCss: '@scope ([data-procable-variant="1"]) { .title { color: red; }',
       variants: [{ innerHtml: '<h1>x</h1>' }],
     });
     assert.throws(
@@ -1774,7 +1774,7 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects variant HTML that includes its own style tag', () => {
     const body = JSON.stringify({
-      scopedCss: '@scope ([data-impeccable-variant="1"]) {}',
+      scopedCss: '@scope ([data-procable-variant="1"]) {}',
       variants: [{ innerHtml: '<h1><style>.x{color:red}</style>x</h1>' }],
     });
     assert.throws(
@@ -1785,7 +1785,7 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects framework-shaped variant HTML', () => {
     const body = JSON.stringify({
-      scopedCss: '@scope ([data-impeccable-variant="1"]) {}',
+      scopedCss: '@scope ([data-procable-variant="1"]) {}',
       variants: [{ innerHtml: '<h1 className="hero-title" style={{ color: "red" }}>x</h1>' }],
     });
     assert.throws(
@@ -1796,12 +1796,12 @@ describe('live-e2e LLM agent parseVariantResponse', () => {
 
   it('rejects variant HTML that tries to emit wrapper scaffolding', () => {
     const body = JSON.stringify({
-      scopedCss: '@scope ([data-impeccable-variant="1"]) {}',
-      variants: [{ innerHtml: '<div data-impeccable-variant="1"><h1>x</h1></div>' }],
+      scopedCss: '@scope ([data-procable-variant="1"]) {}',
+      variants: [{ innerHtml: '<div data-procable-variant="1"><h1>x</h1></div>' }],
     });
     assert.throws(
       () => parseVariantResponse(body),
-      /must not include Impeccable wrapper attributes/,
+      /must not include Procable wrapper attributes/,
     );
   });
 

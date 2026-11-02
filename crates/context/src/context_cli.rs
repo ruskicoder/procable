@@ -7,7 +7,7 @@ use crate::staleness::{collect_boot_findings, design_sidecar_candidates_for, Boo
 use crate::staleness_notice::{build_staleness_directive, filter_fresh_findings, staleness_check_disabled};
 use crate::target_args::{has_target_option, parse_target_options, TargetOptions};
 use crate::util::*;
-use impeccable_common::Io;
+use procable_common::Io;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -20,8 +20,8 @@ pub fn hook_manifests_for(provider_id: &str) -> &'static [&'static str] {
         "claude-code" => &[".claude/settings.local.json", ".claude/settings.json"],
         "codex" | "agents" => &[".codex/hooks.json"],
         "cursor" => &[".cursor/hooks.json"],
-        "github" => &[".github/hooks/impeccable.json"],
-        "grok" => &[".grok/hooks/impeccable.json"],
+        "github" => &[".github/hooks/procable.json"],
+        "grok" => &[".grok/hooks/procable.json"],
         "gemini" => &[".gemini/settings.json"],
         _ => &[],
     }
@@ -60,11 +60,11 @@ fn value_has_hook_marker(v: &Value) -> bool {
 }
 
 fn hook_enabled_at(root: &str, env: &Env) -> bool {
-    if truthy_env(env, "IMPECCABLE_HOOK_DISABLED") {
+    if truthy_env(env, "PROCABLE_HOOK_DISABLED") {
         return false;
     }
     let mut enabled = true;
-    for name in [".impeccable/config.json", ".impeccable/config.local.json"] {
+    for name in [".procable/config.json", ".procable/config.local.json"] {
         if let Some(raw) = read_json(&jsp::join(&[root, name])) {
             if let Some(hook) = raw.get("hook") {
                 if crate::staleness::js_truthy(hook) {
@@ -157,7 +157,7 @@ fn hook_manifest_search_roots(ctx: &Ctx, cwd: &str, env: &Env) -> Vec<String> {
             roots.push(current.clone());
         }
         if crate::context::has_git_boundary(&current)
-            && !impeccable_common::git::linked_worktree_checkout(&current)
+            && !procable_common::git::linked_worktree_checkout(&current)
                 .is_some_and(|checkout| crate::context::is_path_inside(&current, &checkout))
         {
             break;
@@ -174,10 +174,10 @@ fn hook_manifest_search_roots(ctx: &Ctx, cwd: &str, env: &Env) -> Vec<String> {
 fn read_build_path_at(root: &str) -> Option<(String, String)> {
     let mut found: Option<(String, String)> = None;
     for name in ["config.json", "config.local.json"] {
-        if let Some(raw) = read_json(&jsp::join(&[root, ".impeccable", name])) {
+        if let Some(raw) = read_json(&jsp::join(&[root, ".procable", name])) {
             if let Some(bp) = raw.get("buildPath").and_then(|v| v.as_str()) {
                 if bp == "comp" || bp == "code" {
-                    found = Some((bp.to_string(), format!(".impeccable/{}", name)));
+                    found = Some((bp.to_string(), format!(".procable/{}", name)));
                 }
             }
         }
@@ -216,7 +216,7 @@ fn append_detector_fallback(parts: &mut Parts, ctx: &Ctx, cwd: &str, env: &Env, 
         return;
     }
     parts.push([
-        "MANUAL_DETECTOR_REQUIRED: No automatic Impeccable design hook is active this session.".to_string(),
+        "MANUAL_DETECTOR_REQUIRED: No automatic Procable design hook is active this session.".to_string(),
         format!("Once the changed web UI is finished, run the mechanical detector over it: `{} --json <changed targets>`.", provider.verb_cmd("detect")),
         "Run it once, and not earlier during concept selection.".to_string(),
     ].join(" "));
@@ -233,7 +233,7 @@ pub fn probe_image_tools(env: &Env) -> Vec<&'static str> {
             if let Some(p) = env.get("PATH") {
                 cmd.env("PATH", p);
             }
-            impeccable_common::proc::hide_window(&mut cmd);
+            procable_common::proc::hide_window(&mut cmd);
             cmd.status().map(|s| s.success()).unwrap_or(false)
         })
         .collect()
@@ -258,7 +258,7 @@ fn project_roots_diagnostic(ctx: &Ctx, options: &TargetOptions, env: &Env) -> (O
     if jsp::resolve(&ctx.project_root, &[]) != jsp::resolve(&ctx.repo_root, &[]) {
         return (None, vec![]);
     }
-    let patterns = read_impeccable_project_roots(&ctx.repo_root);
+    let patterns = read_procable_project_roots(&ctx.repo_root);
     if patterns.is_empty() {
         return (None, vec![]);
     }
@@ -365,7 +365,7 @@ fn should_warn_missing_target(ctx: &Ctx, target_provided: bool, target_exists: O
 
 fn build_missing_target_directive(provider: &Provider) -> String {
     format!(
-        "MONOREPO_TARGET_REQUIRED: This is a monorepo and impeccable context ran without --target. If the user named a file, route, or child app, do not answer from this output. Rerun `{} --target <path>` and answer from that run's RESOLVED_CONTEXT fields.",
+        "MONOREPO_TARGET_REQUIRED: This is a monorepo and procable context ran without --target. If the user named a file, route, or child app, do not answer from this output. Rerun `{} --target <path>` and answer from that run's RESOLVED_CONTEXT fields.",
         provider.verb_cmd("context")
     )
 }
@@ -390,7 +390,7 @@ fn build_target_selection_directive(sel: &TargetSelection) -> String {
         String::new()
     };
     format!(
-        "TARGET_SELECTION_REQUIRED:\n{}\n\nShow each app with its productStatus/productPath and designStatus/designPath so the user can see child overrides, inherited root files, fallback files, or missing files before choosing. Ask the user which app Impeccable should use, then rerun Impeccable helper commands from that child app cwd using this same scripts directory. Use `--target <path>` only as a fallback when changing cwd is not possible, or when the user explicitly named a file/path.{}",
+        "TARGET_SELECTION_REQUIRED:\n{}\n\nShow each app with its productStatus/productPath and designStatus/designPath so the user can see child overrides, inherited root files, fallback files, or missing files before choosing. Ask the user which app Procable should use, then rerun Procable helper commands from that child app cwd using this same scripts directory. Use `--target <path>` only as a fallback when changing cwd is not possible, or when the user explicitly named a file/path.{}",
         json_pretty(&Value::Object(m)),
         skipped
     )
@@ -478,7 +478,7 @@ pub(crate) fn read_local_skill_version(provider: &Provider) -> Option<String> {
 }
 
 /// The installed skill's SKILL.md frontmatter version, resolving the skill
-/// dir the way every verb does (`IMPECCABLE_SKILL_DIR`, else the binary's path).
+/// dir the way every verb does (`PROCABLE_SKILL_DIR`, else the binary's path).
 pub fn installed_skill_version(env: &Env, cwd: &str) -> Option<String> {
     read_local_skill_version(&crate::provider::detect(env, cwd))
 }
@@ -659,7 +659,7 @@ impl Parts {
 
     fn doc(&mut self, heading: String, path: &str, body: &str) {
         let body = js_trim(body);
-        let pointer = format!("DOCUMENT_NOT_INLINED: {} ({} characters) is omitted here because inlining it would push this output's directives past agent tool-output limits. Read {} in full with your file-read tool before any design decision. Do not rerun `impeccable context` to see it.", path, body.chars().count(), path);
+        let pointer = format!("DOCUMENT_NOT_INLINED: {} ({} characters) is omitted here because inlining it would push this output's directives past agent tool-output limits. Read {} in full with your file-read tool before any design decision. Do not rerun `procable context` to see it.", path, body.chars().count(), path);
         self.sized(format!("{}\n\n{}", heading, body), format!("{}\n\n{}", heading, pointer));
     }
 
@@ -694,11 +694,11 @@ mod skill_version_tests {
     /// Values recorded from origin/main's `parseSkillFrontmatterVersion` (#703).
     #[test]
     fn frontmatter_version_shapes() {
-        assert_eq!(v("---\nname: impeccable\nversion: 4.1.3\n---\n\nbody\n").as_deref(), Some("4.1.3"));
-        assert_eq!(v("---\nname: impeccable\nversion: \"4.1.3\"\n---\n").as_deref(), Some("4.1.3"));
-        assert_eq!(v("---\nname: impeccable\nversion: '4.1.3'\n---\n").as_deref(), Some("4.1.3"));
+        assert_eq!(v("---\nname: procable\nversion: 4.1.3\n---\n\nbody\n").as_deref(), Some("4.1.3"));
+        assert_eq!(v("---\nname: procable\nversion: \"4.1.3\"\n---\n").as_deref(), Some("4.1.3"));
+        assert_eq!(v("---\nname: procable\nversion: '4.1.3'\n---\n").as_deref(), Some("4.1.3"));
         assert_eq!(
-            v("---\nname: impeccable\nmetadata:\n  version: 4.1.3\n  argument-hint: \"[t]\"\n---\n").as_deref(),
+            v("---\nname: procable\nmetadata:\n  version: 4.1.3\n  argument-hint: \"[t]\"\n---\n").as_deref(),
             Some("4.1.3")
         );
         // A metadata version wins over a legacy top-level one, in either order.
@@ -766,7 +766,7 @@ mod user_scope_hook_tests {
     use crate::util::Env;
     use std::path::PathBuf;
 
-    const CODEX_HOOK: &str = r#"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"\"/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#;
+    const CODEX_HOOK: &str = r#"{"hooks":{"Stop":[{"hooks":[{"type":"command","command":"\"/skills/procable/scripts/procable\" hook"}]}]}}"#;
 
     struct UserHookFixture {
         root: PathBuf,
@@ -777,7 +777,7 @@ mod user_scope_hook_tests {
     impl UserHookFixture {
         fn new(provider: &str) -> Self {
             let root = std::env::temp_dir().join(format!(
-                "impeccable-codex-user-hook-{}-{}",
+                "procable-codex-user-hook-{}-{}",
                 std::process::id(),
                 std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
             ));
@@ -788,7 +788,7 @@ mod user_scope_hook_tests {
             let env = Env::from([
                 ("HOME".to_string(), home.to_string_lossy().into_owned()),
                 ("USERPROFILE".to_string(), home.to_string_lossy().into_owned()),
-                ("IMPECCABLE_PROVIDER_ID".to_string(), provider.to_string()),
+                ("PROCABLE_PROVIDER_ID".to_string(), provider.to_string()),
             ]);
             Self { root, project: project.to_string_lossy().into_owned(), env }
         }
@@ -880,11 +880,11 @@ mod user_scope_hook_tests {
         assert_eq!(fixture.mode(), "none", "missing manifest");
         for manifest in [
             "{invalid json",
-            r#"{"command":"/skills/impeccable/scripts/impeccable hook"}"#,
+            r#"{"command":"/skills/procable/scripts/procable hook"}"#,
             r#"{"hooks":{}}"#,
             r#"{"hooks":{"Stop":[{"command":"echo hook"}]}}"#,
-            r#"{"hooks":{"Stop":[{"command":"node /skills/impeccable/scripts/hook.mjs"}]}}"#,
-            r#"{"hooks":{"SessionStart":[{"command":"/skills/impeccable/scripts/impeccable context"}]}}"#,
+            r#"{"hooks":{"Stop":[{"command":"node /skills/procable/scripts/hook.mjs"}]}}"#,
+            r#"{"hooks":{"SessionStart":[{"command":"/skills/procable/scripts/procable context"}]}}"#,
         ] {
             fixture.put("home/.codex/hooks.json", manifest);
             assert_eq!(fixture.mode(), "none", "{manifest}");
@@ -895,15 +895,15 @@ mod user_scope_hook_tests {
     fn disabled_project_or_environment_blocks_user_hooks() {
         let mut fixture = UserHookFixture::new("codex");
         fixture.put("home/.codex/hooks.json", CODEX_HOOK);
-        fixture.env.insert("IMPECCABLE_HOOK_DISABLED".to_string(), "yes".to_string());
+        fixture.env.insert("PROCABLE_HOOK_DISABLED".to_string(), "yes".to_string());
         assert_eq!(fixture.mode(), "none", "environment disabled");
-        fixture.env.remove("IMPECCABLE_HOOK_DISABLED");
-        fixture.put("project/.impeccable/config.json", r#"{"hook":{"enabled":false}}"#);
+        fixture.env.remove("PROCABLE_HOOK_DISABLED");
+        fixture.put("project/.procable/config.json", r#"{"hook":{"enabled":false}}"#);
         assert_eq!(fixture.mode(), "none", "project disabled");
-        fixture.put("project/.impeccable/config.local.json", r#"{"hook":{"enabled":true}}"#);
+        fixture.put("project/.procable/config.local.json", r#"{"hook":{"enabled":true}}"#);
         assert_eq!(fixture.mode(), "stop", "local config re-enables hooks");
-        fixture.put("project/.impeccable/config.json", r#"{"hook":{"enabled":true}}"#);
-        fixture.put("project/.impeccable/config.local.json", r#"{"hook":{"enabled":false}}"#);
+        fixture.put("project/.procable/config.json", r#"{"hook":{"enabled":true}}"#);
+        fixture.put("project/.procable/config.local.json", r#"{"hook":{"enabled":false}}"#);
         assert_eq!(fixture.mode(), "none", "local config disables hooks");
     }
 
@@ -911,7 +911,7 @@ mod user_scope_hook_tests {
     fn home_lifecycle_config_does_not_disable_an_unrelated_project() {
         let fixture = UserHookFixture::new("codex");
         fixture.put("home/.codex/hooks.json", CODEX_HOOK);
-        fixture.put("home/.impeccable/config.json", r#"{"hook":{"enabled":false}}"#);
+        fixture.put("home/.procable/config.json", r#"{"hook":{"enabled":false}}"#);
         assert_eq!(fixture.mode(), "stop");
     }
 
@@ -957,12 +957,12 @@ mod user_scope_hook_tests {
         assert_eq!(fixture.mode(), "stop");
     }
 
-    const HERMES_PLUGIN: &str = "home/.hermes/plugins/impeccable-design-hook";
-    const HERMES_ENABLED: &str = "plugins:\n  clone_timeout_seconds: 300\n  enabled:\n    - impeccable-design-hook\n  disabled: []\n";
+    const HERMES_PLUGIN: &str = "home/.hermes/plugins/procable-design-hook";
+    const HERMES_ENABLED: &str = "plugins:\n  clone_timeout_seconds: 300\n  enabled:\n    - procable-design-hook\n  disabled: []\n";
 
     fn hermes_fixture(config: &str) -> UserHookFixture {
         let fixture = UserHookFixture::new("hermes");
-        fixture.put(&format!("{HERMES_PLUGIN}/plugin.yaml"), "name: impeccable-design-hook\n");
+        fixture.put(&format!("{HERMES_PLUGIN}/plugin.yaml"), "name: procable-design-hook\n");
         fixture.put(&format!("{HERMES_PLUGIN}/__init__.py"), "");
         fixture.put("home/.hermes/config.yaml", config);
         fixture
@@ -971,7 +971,7 @@ mod user_scope_hook_tests {
     #[test]
     fn hermes_enabled_plugin_supplies_stop_coverage() {
         assert_eq!(hermes_fixture(HERMES_ENABLED).mode(), "stop", "block list");
-        let flow = "model: x\nplugins:\n  enabled: [other, 'impeccable-design-hook']  # on\n  disabled: []\n";
+        let flow = "model: x\nplugins:\n  enabled: [other, 'procable-design-hook']  # on\n  disabled: []\n";
         assert_eq!(hermes_fixture(flow).mode(), "stop", "flow list");
     }
 
@@ -979,9 +979,9 @@ mod user_scope_hook_tests {
     fn hermes_plugin_not_enabled_falls_back_to_manual() {
         let not_listed = "plugins:\n  enabled:\n    - other\n  disabled: []\n";
         assert_eq!(hermes_fixture(not_listed).mode(), "none", "present but not listed");
-        let disabled = "plugins:\n  enabled:\n    - impeccable-design-hook\n  disabled:\n    - impeccable-design-hook\n";
+        let disabled = "plugins:\n  enabled:\n    - procable-design-hook\n  disabled:\n    - procable-design-hook\n";
         assert_eq!(hermes_fixture(disabled).mode(), "none", "listed under disabled");
-        let unreadable = "plugins:\n  enabled: impeccable-design-hook\n";
+        let unreadable = "plugins:\n  enabled: procable-design-hook\n";
         assert_eq!(hermes_fixture(unreadable).mode(), "none", "scalar, not a list");
         let fixture = hermes_fixture(HERMES_ENABLED);
         std::fs::remove_file(fixture.root.join(format!("{HERMES_PLUGIN}/__init__.py"))).unwrap();
@@ -991,13 +991,13 @@ mod user_scope_hook_tests {
     #[test]
     fn hermes_home_and_hook_disable_are_respected() {
         let mut fixture = hermes_fixture(HERMES_ENABLED);
-        fixture.env.insert("IMPECCABLE_HOOK_DISABLED".to_string(), "yes".to_string());
+        fixture.env.insert("PROCABLE_HOOK_DISABLED".to_string(), "yes".to_string());
         assert_eq!(fixture.mode(), "none", "environment disabled");
-        fixture.env.remove("IMPECCABLE_HOOK_DISABLED");
+        fixture.env.remove("PROCABLE_HOOK_DISABLED");
         fixture.env.insert("HERMES_HOME".to_string(), fixture.root.join("home/custom").to_string_lossy().into_owned());
         assert_eq!(fixture.mode(), "none", "HERMES_HOME points elsewhere");
-        fixture.put("home/custom/plugins/impeccable-design-hook/plugin.yaml", "");
-        fixture.put("home/custom/plugins/impeccable-design-hook/__init__.py", "");
+        fixture.put("home/custom/plugins/procable-design-hook/plugin.yaml", "");
+        fixture.put("home/custom/plugins/procable-design-hook/__init__.py", "");
         fixture.put("home/custom/config.yaml", HERMES_ENABLED);
         assert_eq!(fixture.mode(), "stop", "HERMES_HOME under home");
     }
@@ -1005,14 +1005,14 @@ mod user_scope_hook_tests {
     #[test]
     fn claude_user_settings_supply_automatic_hook_coverage() {
         let root = std::env::temp_dir().join(format!(
-            "impeccable-user-hook-context-{}-{}",
+            "procable-user-hook-context-{}-{}",
             std::process::id(),
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
         ));
         let project = root.join("project");
         let home = root.join("home");
         std::fs::create_dir_all(project.join(".git")).unwrap();
-        let launcher = home.join(".claude/skills/impeccable/scripts/impeccable");
+        let launcher = home.join(".claude/skills/procable/scripts/procable");
         std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
         std::fs::write(&launcher, "#!/bin/sh\n").unwrap();
         let settings = home.join(".claude/settings.json");
@@ -1059,10 +1059,10 @@ mod user_scope_hook_tests {
         let provider = Provider {
             id: "claude-code".to_string(),
             command_prefix: "/".to_string(),
-            command: "/impeccable".to_string(),
+            command: "/procable".to_string(),
             skill_dir: None,
-            self_cmd: "impeccable".to_string(),
-            self_raw: "impeccable".to_string(),
+            self_cmd: "procable".to_string(),
+            self_raw: "procable".to_string(),
         };
         let mut env = Env::new();
         env.insert("HOME".to_string(), home.clone());
@@ -1079,7 +1079,7 @@ mod worktree_hook_tests {
 
     #[test]
     fn nested_linked_worktree_finds_the_checkouts_hook_manifest() {
-        let base = std::env::temp_dir().join(format!("impeccable-wt-hook-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("procable-wt-hook-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         let tmp = base.to_string_lossy().into_owned();
         let at = |parts: &[&str]| jsp::join(&[&[tmp.as_str()], parts].concat());
@@ -1087,7 +1087,7 @@ mod worktree_hook_tests {
             std::fs::create_dir_all(jsp::dirname(&path)).unwrap();
             std::fs::write(path, body).unwrap();
         };
-        let settings = r#"{"hooks":{"PostToolUse":[{"matcher":"Edit|Write","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#;
+        let settings = r#"{"hooks":{"PostToolUse":[{"matcher":"Edit|Write","hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#;
         put(at(&["main", ".claude", "settings.json"]), settings);
         put(at(&["main", ".git", "worktrees", "demo", "commondir"]), "../..\n");
         put(at(&["main", ".git", "worktrees", "ext", "commondir"]), "../..\n");
@@ -1104,7 +1104,7 @@ mod worktree_hook_tests {
         let env = Env::from([
             ("HOME".to_string(), tmp.clone()),
             ("USERPROFILE".to_string(), tmp.clone()),
-            ("IMPECCABLE_PROVIDER_ID".to_string(), "claude-code".to_string()),
+            ("PROCABLE_PROVIDER_ID".to_string(), "claude-code".to_string()),
         ]);
         let provider = crate::provider::detect(&env, &tmp);
         let mode = |dir: String| {
@@ -1121,7 +1121,7 @@ mod worktree_hook_tests {
 
     #[test]
     fn cursor_post_edit_and_unmigrated_gate_both_count_as_per_edit_coverage() {
-        let base = std::env::temp_dir().join(format!("impeccable-cursor-hook-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("procable-cursor-hook-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&base);
         let tmp = base.to_string_lossy().into_owned();
         let project = jsp::join(&[&tmp, "proj"]);
@@ -1131,7 +1131,7 @@ mod worktree_hook_tests {
         let env = Env::from([
             ("HOME".to_string(), tmp.clone()),
             ("USERPROFILE".to_string(), tmp.clone()),
-            ("IMPECCABLE_PROVIDER_ID".to_string(), "cursor".to_string()),
+            ("PROCABLE_PROVIDER_ID".to_string(), "cursor".to_string()),
         ]);
         let provider = crate::provider::detect(&env, &project);
         assert_eq!(provider.id, "cursor");
@@ -1141,10 +1141,10 @@ mod worktree_hook_tests {
         };
         assert_eq!(mode(), "none");
         // Post-edit only: Cursor has no Stop deep pass wired (#1061).
-        std::fs::write(&manifest, r#"{"version":1,"hooks":{"postToolUse":[{"command":"\".cursor/skills/impeccable/scripts/impeccable\" hook","matcher":"^Write$","timeout":5}]}}"#).unwrap();
+        std::fs::write(&manifest, r#"{"version":1,"hooks":{"postToolUse":[{"command":"\".cursor/skills/procable/scripts/procable\" hook","matcher":"^Write$","timeout":5}]}}"#).unwrap();
         assert_eq!(mode(), "per-edit");
         // The retired gate still runs until the manifest is migrated.
-        std::fs::write(&manifest, r#"{"version":1,"hooks":{"preToolUse":[{"command":"\".cursor/skills/impeccable/scripts/impeccable\" hook-before-edit","timeout":5}]}}"#).unwrap();
+        std::fs::write(&manifest, r#"{"version":1,"hooks":{"preToolUse":[{"command":"\".cursor/skills/procable/scripts/procable\" hook-before-edit","timeout":5}]}}"#).unwrap();
         assert_eq!(mode(), "per-edit");
         let _ = std::fs::remove_dir_all(&base);
     }

@@ -1,9 +1,9 @@
 /**
- * Locate the impeccable engine binary for tests that drive verbs end to end.
+ * Locate the procable engine binary for tests that drive verbs end to end.
  *
- * Order: $IMPECCABLE_BIN, then skill/scripts/bin/<os>-<arch>/impeccable[.exe]
- * (what `bun run fetch:engine` writes), then target/release/impeccable[.exe]
- * (what `cargo build --release -p impeccable` writes, so a local source build
+ * Order: $PROCABLE_BIN, then skill/scripts/bin/<os>-<arch>/procable[.exe]
+ * (what `bun run fetch:engine` writes), then target/release/procable[.exe]
+ * (what `cargo build --release -p procable` writes, so a local source build
  * is picked up without any extra step). Returns null when none exists so a
  * suite can skip cleanly instead of failing on a machine without the engine.
  */
@@ -21,10 +21,10 @@ export function engineTarget() {
 }
 
 export function findEngineBinary() {
-  const fromEnv = process.env.IMPECCABLE_BIN;
+  const fromEnv = process.env.PROCABLE_BIN;
   if (fromEnv && fs.existsSync(fromEnv)) return path.resolve(fromEnv);
   const target = engineTarget();
-  const exe = target.startsWith('windows-') ? 'impeccable.exe' : 'impeccable';
+  const exe = target.startsWith('windows-') ? 'procable.exe' : 'procable';
   const candidates = [
     path.join(REPO_ROOT, 'skill', 'scripts', 'bin', target, exe),
     path.join(REPO_ROOT, 'target', 'release', exe),
@@ -33,17 +33,17 @@ export function findEngineBinary() {
 }
 
 export const ENGINE_MISSING_MESSAGE =
-  'engine binary not found: run `cargo build --release -p impeccable` or `bun run fetch:engine`, or set IMPECCABLE_BIN';
+  'engine binary not found: run `cargo build --release -p procable` or `bun run fetch:engine`, or set PROCABLE_BIN';
 
 /** Environment the launcher would export for the binary when run from this repo's skill dir. */
 export function engineEnv(bin, extra = {}) {
   return {
     ...process.env,
-    IMPECCABLE_SKILL_DIR: path.join(REPO_ROOT, 'skill'),
-    IMPECCABLE_SELF: bin,
+    PROCABLE_SKILL_DIR: path.join(REPO_ROOT, 'skill'),
+    PROCABLE_SELF: bin,
     ...extra,
     // Any roll API request a test makes is tagged as test traffic. Set last,
     // so neither the shell nor a test's extras can untag it.
-    IMPECCABLE_TELEMETRY_CHANNEL: 'test',
+    PROCABLE_TELEMETRY_CHANNEL: 'test',
   };
 }

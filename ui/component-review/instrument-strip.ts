@@ -1,4 +1,4 @@
-/** Port of impeccable-site/site/scripts/instrument-strip.js (vendored at vendor/instrument-strip.js,
+/** Port of procable-site/site/scripts/instrument-strip.js (vendored at vendor/instrument-strip.js,
  * the source of truth) for views that live in a shadow root and re-render with innerHTML.
  * Same behavior: one .ks-thumb per .ks-instrument-strip, measured from the active key and
  * slid on the kit's curve; mouse and pen can scrub between keys; touch keeps native taps.

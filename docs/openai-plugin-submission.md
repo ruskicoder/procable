@@ -1,25 +1,25 @@
 # OpenAI plugin submission packet
 
-Use this packet for the initial public submission of Impeccable. The release build creates the upload at `dist/openai-plugin.zip`.
+Use this packet for the initial public submission of Procable. The release build creates the upload at `dist/openai-plugin.zip`.
 
 ## Submission type
 
-Choose **Skills only**. Impeccable has no MCP server. The package includes one skill, its referenced scripts and files, a branded icon, and a `PostToolUse` lifecycle hook.
+Choose **Skills only**. Procable has no MCP server. The package includes one skill, its referenced scripts and files, a branded icon, and a `PostToolUse` lifecycle hook.
 
-The hook runs locally after supported file edits, checks changed UI files for known anti-patterns, and returns findings to the active coding-agent session. It does not call an Impeccable service. Codex asks each user to review and trust the hook before it can run.
+The hook runs locally after supported file edits, checks changed UI files for known anti-patterns, and returns findings to the active coding-agent session. It does not call an Procable service. Codex asks each user to review and trust the hook before it can run.
 
 ## Listing
 
-- Plugin name: Impeccable
+- Plugin name: Procable
 - Publisher: Renaissance Geek Inc
 - Short description: Design and refine interfaces
-- Long description: Create, critique, and refine frontend interfaces with your coding agent. Impeccable provides 23 focused design commands, live browser iteration for exploring visual directions, and automatic checks that flag common design anti-patterns as you work.
+- Long description: Create, critique, and refine frontend interfaces with your coding agent. Procable provides 23 focused design commands, live browser iteration for exploring visual directions, and automatic checks that flag common design anti-patterns as you work.
 - Category: Creativity
 - Website: https://impeccable.style
 - Support: https://github.com/pbakaus/impeccable/issues
 - Privacy policy: https://impeccable.style/privacy
 - Terms: https://github.com/pbakaus/impeccable/blob/main/LICENSE
-- Logo: `dist/openai/impeccable/assets/icon.png`
+- Logo: `dist/openai/procable/assets/icon.png`
 
 Use the verified Renaissance Geek Inc business identity. The generated manifest uses the same publisher name in both `author.name` and `interface.developerName`.
 
@@ -27,21 +27,21 @@ Use the verified Renaissance Geek Inc business identity. The generated manifest 
 
 1. critique this interface and prioritize what to fix.
 2. craft a distinctive landing page, then polish the result.
-3. start impeccable live so I can explore bolder or more delightful variants.
+3. start procable live so I can explore bolder or more delightful variants.
 
 ## Positive tests
 
 ### 1. Technical UI audit
 
 - User prompt: `audit demos/landing-demo/index.html for accessibility, responsive behavior, and performance problems.`
-- Expected behavior: Invoke Impeccable, load the audit and brand references, inspect the existing HTML, CSS, PRODUCT.md, and DESIGN.md, then run the bundled detector where applicable.
+- Expected behavior: Invoke Procable, load the audit and brand references, inspect the existing HTML, CSS, PRODUCT.md, and DESIGN.md, then run the bundled detector where applicable.
 - Expected result: A prioritized audit with evidence, affected selectors or files, severity, and concrete fixes. Do not change files unless the user also asks for fixes.
 - Fixture data: The public `demos/landing-demo/` folder in `pbakaus/impeccable`.
 
 ### 2. Final polish pass
 
 - User prompt: `polish demos/landing-demo/index.html and fix the rough edges without changing the brand.`
-- Expected behavior: Invoke Impeccable, load the polish and brand references, preserve the existing design tokens, inspect the page in a browser when available, and make scoped edits.
+- Expected behavior: Invoke Procable, load the polish and brand references, preserve the existing design tokens, inspect the page in a browser when available, and make scoped edits.
 - Expected result: Updated frontend files plus a concise summary of visual, responsive, and accessibility improvements and the validation performed.
 - Fixture data: The public `demos/landing-demo/` folder in `pbakaus/impeccable`.
 
@@ -71,13 +71,13 @@ Use the verified Renaissance Geek Inc business identity. The generated manifest 
 ### 1. Backend-only task
 
 - User prompt: `optimize this PostgreSQL query and redesign the database indexes.`
-- Expected behavior: Do not invoke Impeccable. Explain that the plugin is scoped to frontend interface work and continue with suitable general coding help if available.
+- Expected behavior: Do not invoke Procable. Explain that the plugin is scoped to frontend interface work and continue with suitable general coding help if available.
 - Why: Database tuning is explicitly outside the plugin's frontend scope.
 
 ### 2. Standalone bitmap asset
 
 - User prompt: `create a photorealistic PNG logo for my restaurant.`
-- Expected behavior: Do not use Impeccable as the asset generator. Route to image generation when available, or explain that the plugin handles interface design rather than standalone raster artwork.
+- Expected behavior: Do not use Procable as the asset generator. Route to image generation when available, or explain that the plugin handles interface design rather than standalone raster artwork.
 - Why: The request is for a bitmap asset, not a frontend interface or design-system task.
 
 ### 3. Skip required project context
@@ -88,14 +88,14 @@ Use the verified Renaissance Geek Inc business identity. The generated manifest 
 
 ## Initial release notes
 
-Initial submission of Impeccable, a frontend design skill for ChatGPT and Codex. It packages one skill with 23 design workflows, referenced scripts and guidance, a local anti-pattern detector, and an optional `PostToolUse` hook. No MCP server, authentication, demo account, or private network is required. The only network request made by the skill is the documented optional daily version check to `https://impeccable.style/api/version`.
+Initial submission of Procable, a frontend design skill for ChatGPT and Codex. It packages one skill with 23 design workflows, referenced scripts and guidance, a local anti-pattern detector, and an optional `PostToolUse` hook. No MCP server, authentication, demo account, or private network is required. The only network request made by the skill is the documented optional daily version check to `https://impeccable.style/api/version`.
 
 ## Final checks
 
 - Confirm Apps Management write access for the submitting role.
 - Select a verified developer or business identity and align the manifest and listing publisher name.
 - Confirm the website, support, privacy, and terms links are public.
-- Upload `dist/openai-plugin.zip` and confirm the scanner recognizes `skills/impeccable/SKILL.md` and `hooks/hooks.json`.
+- Upload `dist/openai-plugin.zip` and confirm the scanner recognizes `skills/procable/SKILL.md` and `hooks/hooks.json`.
 - Enter exactly five positive and three negative tests from this packet.
 - Review the hook description and the optional version check against the privacy policy.
 - Submit for review only after the automated scan is clean.

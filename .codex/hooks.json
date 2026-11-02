@@ -6,8 +6,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \".codex/skills/impeccable/scripts/impeccable\" ] || \".codex/skills/impeccable/scripts/impeccable\" hook",
-            "commandWindows": "cmd /c if exist \".codex\\skills\\impeccable\\scripts\\impeccable.cmd\" \".codex\\skills\\impeccable\\scripts\\impeccable.cmd\" hook",
+            "command": "[ ! -f \".codex/skills/procable/scripts/procable\" ] || \".codex/skills/procable/scripts/procable\" hook",
+            "commandWindows": "cmd /c if exist \".codex\\skills\\procable\\scripts\\procable.cmd\" \".codex\\skills\\procable\\scripts\\procable.cmd\" hook",
             "timeout": 5,
             "statusMessage": "Checking UI changes"
           }
@@ -19,8 +19,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "[ ! -f \".codex/skills/impeccable/scripts/impeccable\" ] || \".codex/skills/impeccable/scripts/impeccable\" hook",
-            "commandWindows": "cmd /c if exist \".codex\\skills\\impeccable\\scripts\\impeccable.cmd\" \".codex\\skills\\impeccable\\scripts\\impeccable.cmd\" hook",
+            "command": "[ ! -f \".codex/skills/procable/scripts/procable\" ] || \".codex/skills/procable/scripts/procable\" hook",
+            "commandWindows": "cmd /c if exist \".codex\\skills\\procable\\scripts\\procable.cmd\" \".codex\\skills\\procable\\scripts\\procable.cmd\" hook",
             "timeout": 30,
             "statusMessage": "Design deep pass"
           }

@@ -5,8 +5,8 @@
 //! `serde_json::Map` here is built in the same order the JS object literal
 //! builds its keys, and a key whose JS value would be `undefined` is omitted.
 
-use impeccable_context::util::js_trim;
-use impeccable_core::js::{ci, is_js_whitespace, to_lower_case, to_upper_case, WS_CHARS};
+use procable_context::util::js_trim;
+use procable_core::js::{ci, is_js_whitespace, to_lower_case, to_upper_case, WS_CHARS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -248,7 +248,7 @@ fn js_number_value(s: &str) -> Value {
     if !v.is_finite() {
         return Value::Null;
     }
-    let text = impeccable_core::js::number_to_string(v);
+    let text = procable_core::js::number_to_string(v);
     if let Ok(i) = text.parse::<i64>() {
         return Value::from(i);
     }
@@ -751,7 +751,7 @@ fn extract_named_rules(lines: &[String]) -> Vec<NamedRule> {
     let mut rules: Vec<NamedRule> = Vec::new();
     let mut seen: Vec<String> = Vec::new();
 
-    // Style A (Impeccable)
+    // Style A (Procable)
     let joined = lines.join("\n");
     let inline: Vec<(String, usize, usize)> = INLINE_RULE_RE
         .captures_iter(&joined)
@@ -1034,7 +1034,7 @@ fn extract_colors(section: Option<&Section>) -> Value {
 fn parse_color_bullet(bullet: &str) -> Option<ColorEntry> {
     let text = js_trim(bullet);
 
-    // Case 1 (Impeccable)
+    // Case 1 (Procable)
     if let Some(bold) = COLOR_BOLD_RE.captures(text) {
         let b2 = bold.get(2).unwrap().as_str();
         if b2.starts_with('(') {

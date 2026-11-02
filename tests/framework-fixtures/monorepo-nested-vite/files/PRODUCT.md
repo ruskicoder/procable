@@ -1,6 +1,6 @@
 # Product
 
-<!-- impeccable:product-schema 1 -->
+<!-- procable:product-schema 1 -->
 
 ## Platform
 

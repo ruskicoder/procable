@@ -1,5 +1,5 @@
 /**
- * Impeccable DevTools Extension - Popup
+ * Procable DevTools Extension - Popup
  *
  * Quick controls: scan, toggle overlays, and see finding count.
  */

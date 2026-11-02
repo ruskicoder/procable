@@ -33,12 +33,12 @@ describe('live boot fast lane', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESS
   let server;
   let devUrl;
   before(async () => {
-    tmp = mkdtempSync(join(tmpdir(), 'impeccable-boot-fastlane-'));
+    tmp = mkdtempSync(join(tmpdir(), 'procable-boot-fastlane-'));
     writeFileSync(join(tmp, 'package.json'), JSON.stringify({ name: 'fastlane', scripts: { dev: 'vite' } }));
     writeFileSync(join(tmp, 'vite.config.js'), 'export default {}\n');
     writeFileSync(join(tmp, 'index.html'), '<!doctype html><html><body><h1 id="hero">Hero</h1></body></html>\n');
-    mkdirSync(join(tmp, '.impeccable/live'), { recursive: true });
-    writeFileSync(join(tmp, '.impeccable/live/config.json'), JSON.stringify({"files": ["index.html"], "insertBefore": "</body>", "commentSyntax": "html"}));
+    mkdirSync(join(tmp, '.procable/live'), { recursive: true });
+    writeFileSync(join(tmp, '.procable/live/config.json'), JSON.stringify({"files": ["index.html"], "insertBefore": "</body>", "commentSyntax": "html"}));
     // A stand-in dev server: serves the project's index.html as it is on disk,
     // injected tag included, the way Vite would.
     server = createServer((req, res) => {
@@ -49,7 +49,7 @@ describe('live boot fast lane', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESS
     devUrl = `http://127.0.0.1:${server.address().port}/`;
   });
   after(async () => {
-    if (existsSync(join(tmp, '.impeccable/live/server.json'))) await run(tmp, ['live-server', 'stop']);
+    if (existsSync(join(tmp, '.procable/live/server.json'))) await run(tmp, ['live-server', 'stop']);
     await new Promise((r) => server.close(r));
     rmSync(tmp, { recursive: true, force: true });
   });
@@ -60,7 +60,7 @@ describe('live boot fast lane', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESS
     assert.equal(refused.error, 'context_missing');
     assert.deepEqual(refused.missing, ['PRODUCT.md', 'DESIGN.md']);
 
-    const booted = await run(tmp, ['live', '--allow-missing-context', '--dev-url'], { IMPECCABLE_DEV_URL_CANDIDATES: `http://127.0.0.1:1/, ${devUrl}` });
+    const booted = await run(tmp, ['live', '--allow-missing-context', '--dev-url'], { PROCABLE_DEV_URL_CANDIDATES: `http://127.0.0.1:1/, ${devUrl}` });
     assert.equal(booted.ok, true, JSON.stringify(booted));
     assert.deepEqual(booted.contextMissing, ['PRODUCT.md', 'DESIGN.md']);
     assert.match(booted.contextNote, /do not run init or document/);
@@ -76,7 +76,7 @@ describe('live boot fast lane', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESS
   it('with both files present the flags report devUrl null and an empty contextMissing', async () => {
     writeFileSync(join(tmp, 'PRODUCT.md'), '# Product\n\n## Platform\n\nweb\n');
     writeFileSync(join(tmp, 'DESIGN.md'), '---\nname: Test\n---\n# Design\n');
-    const booted = await run(tmp, ['live', '--allow-missing-context', '--dev-url'], { IMPECCABLE_DEV_URL_CANDIDATES: 'http://127.0.0.1:1/' });
+    const booted = await run(tmp, ['live', '--allow-missing-context', '--dev-url'], { PROCABLE_DEV_URL_CANDIDATES: 'http://127.0.0.1:1/' });
     assert.equal(booted.ok, true, JSON.stringify(booted));
     assert.deepEqual(booted.contextMissing, []);
     assert.equal(booted.contextNote, null);
@@ -85,7 +85,7 @@ describe('live boot fast lane', { skip: ENGINE_BIN ? false : ENGINE_MISSING_MESS
   });
 
   it('a plain live boot is untouched by the lane: no probe, no new keys', async () => {
-    const booted = await run(tmp, ['live'], { IMPECCABLE_DEV_URL_CANDIDATES: devUrl });
+    const booted = await run(tmp, ['live'], { PROCABLE_DEV_URL_CANDIDATES: devUrl });
     assert.equal(booted.ok, true, JSON.stringify(booted));
     assert.ok(!('devUrl' in booted), 'devUrl only appears with --dev-url');
     assert.ok(!('contextMissing' in booted) && !('contextNote' in booted), 'context keys only appear with --allow-missing-context');

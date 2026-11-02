@@ -1,4 +1,4 @@
-use impeccable_browser::html_snapshot::{HtmlSnapshot, SnapshotSelection};
+use procable_browser::html_snapshot::{HtmlSnapshot, SnapshotSelection};
 use std::{
     fs,
     path::PathBuf,
@@ -19,13 +19,13 @@ impl Fixture {
                 .as_nanos()
         ));
         fs::create_dir_all(root.join("assets")).unwrap();
-        fs::create_dir_all(root.join(".impeccable")).unwrap();
+        fs::create_dir_all(root.join(".procable")).unwrap();
         for (name, bytes) in [
             ("index.html", "<img src='assets/art.png'>"),
             ("other.html", "other page"),
             ("assets/art.png", "asset bytes"),
-            (".impeccable/spec.json", "{}"),
-            (".impeccable/comp.png", "comp bytes"),
+            (".procable/spec.json", "{}"),
+            (".procable/comp.png", "comp bytes"),
             (".env", "private"),
         ] {
             fs::write(root.join(name), bytes).unwrap();
@@ -38,8 +38,8 @@ impl Fixture {
             entry: "index.html".into(),
             served: vec!["index.html".into(), "assets/art.png".into()],
             bound: vec![
-                ".impeccable/spec.json".into(),
-                ".impeccable/comp.png".into(),
+                ".procable/spec.json".into(),
+                ".procable/comp.png".into(),
             ],
         }
     }
@@ -64,8 +64,8 @@ fn snapshot_freezes_bytes_and_detects_every_changed_input() {
     for name in [
         "index.html",
         "assets/art.png",
-        ".impeccable/spec.json",
-        ".impeccable/comp.png",
+        ".procable/spec.json",
+        ".procable/comp.png",
     ] {
         let before = fs::read(f.0.join(name)).unwrap();
         fs::write(f.0.join(name), b"changed").unwrap();
@@ -92,7 +92,7 @@ fn routes_are_explicit_and_never_expose_bound_private_files() {
         "/",
         "/other.html",
         "/.env",
-        "/.impeccable/comp.png",
+        "/.procable/comp.png",
         "/../index.html",
         "/assets/../index.html",
         "/%2e%2e/index.html",
@@ -174,7 +174,7 @@ fn snapshot_server_serves_frozen_bytes_and_checks_host() {
     assert!(String::from_utf8_lossy(&actual).starts_with("HTTP/1.1 200 OK"));
     for (path, h) in [
         ("/.env", host),
-        ("/.impeccable/spec.json", host),
+        ("/.procable/spec.json", host),
         ("/other.html", host),
         ("/index.html", "attacker.example"),
         ("/assets/../index.html", host),

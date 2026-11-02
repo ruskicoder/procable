@@ -186,7 +186,7 @@ pub static ANTIPATTERNS: &[Antipattern] = &[
         scopes: None,
         severity: Some("advisory"),
         name: "Hard offset shadow",
-        description: "A visible, unblurred shadow displaced by at least 4px can belong to an intentional neobrutalist direction. Check whether it fits the intended design; this is a review prompt, not evidence of AI authorship or a request to remove it automatically. Waive intentional uses with data-impeccable-ignore=\"hard-offset-shadow\".",
+        description: "A visible, unblurred shadow displaced by at least 4px can belong to an intentional neobrutalist direction. Check whether it fits the intended design; this is a review prompt, not evidence of AI authorship or a request to remove it automatically. Waive intentional uses with data-procable-ignore=\"hard-offset-shadow\".",
         skill_section: Some("Depth"),
         skill_guideline: Some("review hard offset shadows against the intended direction"),
     },
@@ -657,10 +657,10 @@ pub static ANTIPATTERNS: &[Antipattern] = &[
 /// mechanical slop, and design-system drift. Every one of them is mechanical,
 /// unambiguous, and cheap to correct at the edit site.
 ///
-/// It lives here rather than in `impeccable-hook` because the hook crate is
+/// It lives here rather than in `procable-hook` because the hook crate is
 /// native-only (it reaches for the filesystem and the process environment)
 /// while downstream consumers want the same list from wasm. `hook_lib`
-/// re-exports it; the `detect` feature of `impeccable-wasm` exports it as
+/// re-exports it; the `detect` feature of `procable-wasm` exports it as
 /// JSON.
 pub const IMMEDIATE_TIER_RULES: &[&str] = &[
     // Broken output.

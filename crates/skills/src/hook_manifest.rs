@@ -5,20 +5,20 @@
 //!
 //! Where the JS wrote `[ ! -f "<skill>/scripts/hook.mjs" ] || node
 //! "<skill>/scripts/hook.mjs"` (and a `node -e` guard on Windows), the binary
-//! writes the launcher form `[ ! -f "<skill>/scripts/impeccable" ] ||
-//! "<skill>/scripts/impeccable" hook` (Cursor included, on `postToolUse`), the
+//! writes the launcher form `[ ! -f "<skill>/scripts/procable" ] ||
+//! "<skill>/scripts/procable" hook` (Cursor included, on `postToolUse`), the
 //! shape the public build's `transformers/hooks.js` puts in the bundle; the
 //! Codex `commandWindows` sibling and a Windows Grok `command` run
-//! `impeccable.cmd` behind `cmd /c if exist`.
-//! `impeccable hooks on` (`impeccable_hook::admin`) writes the same launcher
+//! `procable.cmd` behind `cmd /c if exist`.
+//! `procable hooks on` (`procable_hook::admin`) writes the same launcher
 //! invocation for a project install (no existence guard on the POSIX `command`). Recognition of an
-//! Impeccable-owned entry (either the JS `.mjs` generation or the launcher
+//! Procable-owned entry (either the JS `.mjs` generation or the launcher
 //! generation) is shared with the hook crate, `context`, and `doctor` through
-//! `impeccable_context::hook_markers::is_impeccable_hook_command`, so the two
+//! `procable_context::hook_markers::is_procable_hook_command`, so the two
 //! writers and the three readers can never disagree on what counts as ours.
 
-use impeccable_context::hermes;
-use impeccable_context::hook_markers::{cursor_hook_manifest, cursor_manifest_has_retired_gate, is_impeccable_hook_command, is_launcher_hook_command, parse_manifest_jsonc, windows_launcher_hook_command};
+use procable_context::hermes;
+use procable_context::hook_markers::{cursor_hook_manifest, cursor_manifest_has_retired_gate, is_procable_hook_command, is_launcher_hook_command, parse_manifest_jsonc, windows_launcher_hook_command};
 use serde_json::{Map, Value};
 
 use crate::providers::Sys;
@@ -38,8 +38,8 @@ pub fn provider_hook_artifacts(provider: &str) -> &'static [HookArtifactSpec] {
         ".gemini" => &[HookArtifactSpec { source_provider: ".gemini", rel: "settings.json", dest_provider: ".gemini", dest_rel: None }],
         ".cursor" => &[HookArtifactSpec { source_provider: ".cursor", rel: "hooks.json", dest_provider: ".cursor", dest_rel: None }],
         ".agents" => &[HookArtifactSpec { source_provider: ".codex", rel: "hooks.json", dest_provider: ".codex", dest_rel: None }],
-        ".github" => &[HookArtifactSpec { source_provider: ".github", rel: "hooks/impeccable.json", dest_provider: ".github", dest_rel: None }],
-        ".grok" => &[HookArtifactSpec { source_provider: ".grok", rel: "hooks/impeccable.json", dest_provider: ".grok", dest_rel: None }],
+        ".github" => &[HookArtifactSpec { source_provider: ".github", rel: "hooks/procable.json", dest_provider: ".github", dest_rel: None }],
+        ".grok" => &[HookArtifactSpec { source_provider: ".grok", rel: "hooks/procable.json", dest_provider: ".grok", dest_rel: None }],
         _ => &[],
     }
 }
@@ -100,7 +100,7 @@ pub fn hook_verb(_provider: &str) -> &'static str {
 }
 
 /// Moves a Cursor manifest off the retired `preToolUse` before-edit gate:
-/// drops Impeccable entries from every event (other tools' hooks stay) and
+/// drops Procable entries from every event (other tools' hooks stay) and
 /// adds the post-edit `postToolUse` entry, its command rewritten for the
 /// install. A manifest without the gate is returned unchanged, so this is
 /// safe to run after any write.
@@ -109,7 +109,7 @@ pub fn migrate_cursor_gate(value: &Value, skill_root: &str, absolute: bool) -> V
         return value.clone();
     }
     // Any launcher-form command carries the marker the rewrite replaces.
-    let template = cursor_hook_manifest("\".cursor/skills/impeccable/scripts/impeccable\" hook", CURSOR_TIMEOUT_SECONDS);
+    let template = cursor_hook_manifest("\".cursor/skills/procable/scripts/procable\" hook", CURSOR_TIMEOUT_SECONDS);
     let fresh = rewrite_hook_commands_for_skill_root(&template, ".cursor", skill_root, absolute);
     merge_hook_manifests(value, &fresh)
 }
@@ -121,7 +121,7 @@ const CURSOR_TIMEOUT_SECONDS: i64 = 5;
 /// project-relative launcher path (Claude keeps its `${CLAUDE_PROJECT_DIR}`
 /// token).
 pub fn launcher_rel_path(provider: &str) -> String {
-    let rel = format!("{provider}/skills/impeccable/scripts/impeccable");
+    let rel = format!("{provider}/skills/procable/scripts/procable");
     if provider == ".claude" {
         format!("${{CLAUDE_PROJECT_DIR}}/{rel}")
     } else if provider == ".gemini" {
@@ -141,7 +141,7 @@ pub fn launcher_rel_path(provider: &str) -> String {
 pub fn launcher_path(skill_root: &str, provider: &str) -> Option<String> {
     match provider {
         ".cursor" | ".claude" | ".agents" | ".grok" | ".gemini" => {
-            Some(jsp::join(&[skill_root, provider, "skills", "impeccable", "scripts", "impeccable"]))
+            Some(jsp::join(&[skill_root, provider, "skills", "procable", "scripts", "procable"]))
         }
         _ => None,
     }
@@ -188,10 +188,10 @@ pub fn quoted_launcher_path(skill_root: &str, provider: &str, absolute: bool) ->
 /// so write that resolved root with Bash-compatible forward slashes.
 fn quoted_github_user_launcher(skill_root: &str, win32: bool) -> QuotedPath {
     let path = if win32 {
-        jsp::win32::join(&[skill_root, ".github", "skills", "impeccable", "scripts", "impeccable"])
+        jsp::win32::join(&[skill_root, ".github", "skills", "procable", "scripts", "procable"])
             .replace('\\', "/")
     } else {
-        "$HOME/.github/skills/impeccable/scripts/impeccable".to_string()
+        "$HOME/.github/skills/procable/scripts/procable".to_string()
     };
     QuotedPath {
         posix: if win32 { sh_single_quote(&path) } else { json_string(&path) },
@@ -284,9 +284,9 @@ pub fn rewrite_hook_commands_for_platform(value: &Value, provider: &str, skill_r
 fn rewrite_value(value: &Value, provider: &str, quoted: &QuotedPath, win32: bool) -> Value {
     match value {
         Value::String(_) => {
-            // JS: the string arm goes through valueHasImpeccableHookMarker,
+            // JS: the string arm goes through valueHasProcableHookMarker,
             // so the separator normalization applies here too.
-            if !value_has_impeccable_hook_marker(value) {
+            if !value_has_procable_hook_marker(value) {
                 return value.clone();
             }
             Value::String(hook_command(quoted, provider, win32))
@@ -299,7 +299,7 @@ fn rewrite_value(value: &Value, provider: &str, quoted: &QuotedPath, win32: bool
             }
             if provider == ".agents" {
                 if let Some(cmd @ Value::String(_)) = map.get("command") {
-                    if value_has_impeccable_hook_marker(cmd) {
+                    if value_has_procable_hook_marker(cmd) {
                         next.insert("commandWindows".to_string(), Value::String(windows_hook_command(quoted, provider)));
                     }
                 }
@@ -310,17 +310,17 @@ fn rewrite_value(value: &Value, provider: &str, quoted: &QuotedPath, win32: bool
     }
 }
 
-/// JS: valueHasImpeccableHookMarker(value).
-pub fn value_has_impeccable_hook_marker(value: &Value) -> bool {
+/// JS: valueHasProcableHookMarker(value).
+pub fn value_has_procable_hook_marker(value: &Value) -> bool {
     match value {
-        Value::String(s) => is_impeccable_hook_command(s),
-        Value::Array(a) => a.iter().any(value_has_impeccable_hook_marker),
-        Value::Object(o) => o.values().any(value_has_impeccable_hook_marker),
+        Value::String(s) => is_procable_hook_command(s),
+        Value::Array(a) => a.iter().any(value_has_procable_hook_marker),
+        Value::Object(o) => o.values().any(value_has_procable_hook_marker),
         _ => false,
     }
 }
 
-/// True when `value` names an Impeccable hook in the launcher generation.
+/// True when `value` names an Procable hook in the launcher generation.
 pub fn value_has_launcher_hook_marker(value: &Value) -> bool {
     match value {
         Value::String(s) => is_launcher_hook_command(s),
@@ -330,7 +330,7 @@ pub fn value_has_launcher_hook_marker(value: &Value) -> bool {
     }
 }
 
-/// True when a manifest's `hooks` subtree carries an Impeccable hook only in
+/// True when a manifest's `hooks` subtree carries an Procable hook only in
 /// the JS-era `.mjs` spelling (no launcher marker): a pre-launcher install
 /// whose hook script no longer exists after the skill update, so the hook is
 /// dead and the manifest must be rewritten to the launcher form.
@@ -341,7 +341,7 @@ pub fn manifest_has_stale_hook(file: &str) -> bool {
     let Ok(text) = util::read_text(file) else { return false };
     let Ok(Value::Object(map)) = serde_json::from_str::<Value>(&text) else { return false };
     match map.get("hooks") {
-        Some(h @ (Value::Object(_) | Value::Array(_))) => value_has_impeccable_hook_marker(h) && !value_has_launcher_hook_marker(h),
+        Some(h @ (Value::Object(_) | Value::Array(_))) => value_has_procable_hook_marker(h) && !value_has_launcher_hook_marker(h),
         _ => false,
     }
 }
@@ -357,12 +357,12 @@ pub fn manifest_has_retired_cursor_gate(file: &str) -> bool {
     cursor_manifest_has_retired_gate(&parsed)
 }
 
-/// JS: fileHasImpeccableHookMarker(file): parse and scan only the `hooks`
+/// JS: fileHasProcableHookMarker(file): parse and scan only the `hooks`
 /// subtree.
-pub fn file_has_impeccable_hook_marker(file: &str) -> bool {
+pub fn file_has_procable_hook_marker(file: &str) -> bool {
     let Some((Value::Object(map), _)) = read_manifest(file) else { return false };
     match map.get("hooks") {
-        Some(h @ (Value::Object(_) | Value::Array(_))) => value_has_impeccable_hook_marker(h),
+        Some(h @ (Value::Object(_) | Value::Array(_))) => value_has_procable_hook_marker(h),
         _ => false,
     }
 }
@@ -404,10 +404,10 @@ pub fn hook_installed_for_provider(sys: &Sys, root: &str, provider: &str) -> boo
     }
     artifacts.iter().all(|spec| {
         let write_rel = spec.dest_rel.unwrap_or(spec.rel);
-        if file_has_impeccable_hook_marker(&jsp::join(&[root, spec.dest_provider, write_rel])) {
+        if file_has_procable_hook_marker(&jsp::join(&[root, spec.dest_provider, write_rel])) {
             return true;
         }
-        write_rel != spec.rel && file_has_impeccable_hook_marker(&jsp::join(&[root, spec.dest_provider, spec.rel]))
+        write_rel != spec.rel && file_has_procable_hook_marker(&jsp::join(&[root, spec.dest_provider, spec.rel]))
     })
 }
 
@@ -433,11 +433,11 @@ pub fn hook_installed_for_provider_at_scope(sys: &Sys, root: &str, provider: &st
 }
 
 /// The portable prefix of a project Copilot hook command.
-const GITHUB_PORTABLE_PREFIX: &str = "$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts/impeccable";
+const GITHUB_PORTABLE_PREFIX: &str = "$(git rev-parse --show-toplevel)/.github/skills/procable/scripts/procable";
 
 /// True when the project carries its own Copilot skill launcher.
 fn github_project_skill_exists(project_root: &str) -> bool {
-    util::exists(&jsp::join(&[project_root, ".github", "skills", "impeccable", "scripts", "impeccable"]))
+    util::exists(&jsp::join(&[project_root, ".github", "skills", "procable", "scripts", "procable"]))
 }
 
 /// True when `root` is a project (not the home dir) that ships its own
@@ -446,40 +446,40 @@ fn github_keeps_portable_form(sys: &Sys, root: &str) -> bool {
     !sys.is_home_dir(root) && github_project_skill_exists(root)
 }
 
-/// True when `<root>/.github/hooks/impeccable.json` runs an Impeccable hook in
+/// True when `<root>/.github/hooks/procable.json` runs an Procable hook in
 /// the portable project form while `<root>` has no Copilot skill to run.
 fn github_manifest_names_missing_project_skill(root: &str) -> bool {
     if github_project_skill_exists(root) {
         return false;
     }
-    let Some((Value::Object(map), _)) = read_manifest(&jsp::join(&[root, ".github", "hooks", "impeccable.json"])) else {
+    let Some((Value::Object(map), _)) = read_manifest(&jsp::join(&[root, ".github", "hooks", "procable.json"])) else {
         return false;
     };
     let Some(hooks @ (Value::Object(_) | Value::Array(_))) = map.get("hooks") else { return false };
     let mut commands = Vec::new();
-    collect_impeccable_hook_commands(hooks, &mut commands);
+    collect_procable_hook_commands(hooks, &mut commands);
     commands.iter().any(|c| c.contains(GITHUB_PORTABLE_PREFIX))
 }
 
 /// The command a user-scope install writes into `<home>/.claude/settings.json`:
-/// the guarded absolute launcher under `<home>/.claude/skills/impeccable`.
+/// the guarded absolute launcher under `<home>/.claude/skills/procable`.
 pub fn user_claude_hook_command(home_root: &str, win32: bool) -> Option<String> {
     let quoted = quoted_launcher_path(home_root, ".claude", true)?;
     Some(hook_command(&quoted, ".claude", win32))
 }
 
-fn collect_impeccable_hook_commands<'a>(value: &'a Value, out: &mut Vec<&'a str>) {
+fn collect_procable_hook_commands<'a>(value: &'a Value, out: &mut Vec<&'a str>) {
     match value {
-        Value::String(s) if is_impeccable_hook_command(s) => out.push(s),
-        Value::Array(a) => a.iter().for_each(|v| collect_impeccable_hook_commands(v, out)),
-        Value::Object(o) => o.values().for_each(|v| collect_impeccable_hook_commands(v, out)),
+        Value::String(s) if is_procable_hook_command(s) => out.push(s),
+        Value::Array(a) => a.iter().for_each(|v| collect_procable_hook_commands(v, out)),
+        Value::Object(o) => o.values().for_each(|v| collect_procable_hook_commands(v, out)),
         _ => {}
     }
 }
 
 /// True only when `<home>/.claude/settings.json` parses, its launcher exists,
-/// and every Impeccable hook command in it is exactly the form this engine
-/// writes for a user-scope install. An Impeccable marker alone is not enough:
+/// and every Procable hook command in it is exactly the form this engine
+/// writes for a user-scope install. An Procable marker alone is not enough:
 /// a legacy `node .../hook.mjs` entry, or one naming a launcher that is gone,
 /// is a dead hook, and counting it would skip the rewrite and let the
 /// duplicate-hook cleanup delete the project hook that still works.
@@ -499,16 +499,16 @@ pub fn user_claude_hook_is_current_for(home_root: &str, win32: bool) -> bool {
     };
     let Some(hooks @ (Value::Object(_) | Value::Array(_))) = map.get("hooks") else { return false };
     let mut commands = Vec::new();
-    collect_impeccable_hook_commands(hooks, &mut commands);
+    collect_procable_hook_commands(hooks, &mut commands);
     !commands.is_empty() && commands.iter().all(|c| *c == expected)
 }
 
 fn marker_in(entry: &Map<String, Value>, key: &str) -> bool {
-    entry.get(key).map(value_has_impeccable_hook_marker).unwrap_or(false)
+    entry.get(key).map(value_has_procable_hook_marker).unwrap_or(false)
 }
 
-/// JS: stripImpeccableHookEntry(entry)
-fn strip_impeccable_hook_entry(entry: &Value) -> Option<Value> {
+/// JS: stripProcableHookEntry(entry)
+fn strip_procable_hook_entry(entry: &Value) -> Option<Value> {
     let Value::Object(e) = entry else {
         return Some(entry.clone());
     };
@@ -523,8 +523,8 @@ fn strip_impeccable_hook_entry(entry: &Value) -> Option<Value> {
     let Some(Value::Array(hooks)) = e.get("hooks") else {
         return Some(entry.clone());
     };
-    let stripped: Vec<Value> = hooks.iter().filter_map(strip_impeccable_hook_entry).collect();
-    if stripped.is_empty() && hooks.iter().any(value_has_impeccable_hook_marker) {
+    let stripped: Vec<Value> = hooks.iter().filter_map(strip_procable_hook_entry).collect();
+    if stripped.is_empty() && hooks.iter().any(value_has_procable_hook_marker) {
         return None;
     }
     let mut next = e.clone();
@@ -532,18 +532,18 @@ fn strip_impeccable_hook_entry(entry: &Value) -> Option<Value> {
     Some(Value::Object(next))
 }
 
-/// JS: stripImpeccableHookEntries(entries)
-pub fn strip_impeccable_hook_entries(entries: Option<&Value>) -> Vec<Value> {
+/// JS: stripProcableHookEntries(entries)
+pub fn strip_procable_hook_entries(entries: Option<&Value>) -> Vec<Value> {
     match entries {
-        Some(Value::Array(a)) => a.iter().filter_map(strip_impeccable_hook_entry).collect(),
+        Some(Value::Array(a)) => a.iter().filter_map(strip_procable_hook_entry).collect(),
         _ => Vec::new(),
     }
 }
 
-/// JS: pruneImpeccableHookFromManifest(manifestPath). Returns true if it
+/// JS: pruneProcableHookFromManifest(manifestPath). Returns true if it
 /// changed anything.
-pub fn prune_impeccable_hook_from_manifest(manifest_path: &str) -> Result<bool, String> {
-    if !file_has_impeccable_hook_marker(manifest_path) {
+pub fn prune_procable_hook_from_manifest(manifest_path: &str) -> Result<bool, String> {
+    if !file_has_procable_hook_marker(manifest_path) {
         return Ok(false);
     }
     let Some((Value::Object(parsed), had_comments)) = read_manifest(manifest_path) else { return Ok(false) };
@@ -553,7 +553,7 @@ pub fn prune_impeccable_hook_from_manifest(manifest_path: &str) -> Result<bool, 
     };
     let mut cleaned = Map::new();
     for (event, entries) in &existing_hooks {
-        let kept = strip_impeccable_hook_entries(Some(entries));
+        let kept = strip_procable_hook_entries(Some(entries));
         if !kept.is_empty() {
             cleaned.insert(event.clone(), Value::Array(kept));
         }
@@ -606,7 +606,7 @@ pub fn merge_hook_manifests(existing: &Value, fresh: &Value) -> Value {
     }
     let mut hooks = Map::new();
     for event in events {
-        let mut entries = strip_impeccable_hook_entries(existing_hooks.get(&event));
+        let mut entries = strip_procable_hook_entries(existing_hooks.get(&event));
         if let Some(Value::Array(added)) = fresh_hooks.get(&event) {
             entries.extend(added.iter().cloned());
         }
@@ -649,8 +649,8 @@ pub fn copy_provider_hooks(sys: &crate::providers::Sys, bundle_dir: &str, root: 
                 continue;
             }
             if let Some(shared) = &artifact.shared_dest {
-                if file_has_impeccable_hook_marker(shared) {
-                    prune_impeccable_hook_from_manifest(&artifact.dest)?;
+                if file_has_procable_hook_marker(shared) {
+                    prune_procable_hook_from_manifest(&artifact.dest)?;
                     continue;
                 }
             }
@@ -687,7 +687,7 @@ pub fn copy_provider_hooks(sys: &crate::providers::Sys, bundle_dir: &str, root: 
             }
             util::mkdir_p(&jsp::dirname(&artifact.dest))?;
             // Atomic: in user scope this is the user's whole Claude settings file.
-            impeccable_common::fsx::write_atomic(&artifact.dest, format!("{}\n", util::json_pretty(&next)).as_bytes()).map_err(|e| util::node_error("open", &artifact.dest, &e))?;
+            procable_common::fsx::write_atomic(&artifact.dest, format!("{}\n", util::json_pretty(&next)).as_bytes()).map_err(|e| util::node_error("open", &artifact.dest, &e))?;
             if !written.contains(&artifact.dest) {
                 written.push(artifact.dest.clone());
             }
@@ -738,7 +738,7 @@ pub fn hermes_plugin_enabled(sys: &Sys) -> bool {
 }
 
 /// Once a user-scope Claude hook is in `<home>/.claude/settings.json`, the
-/// Impeccable entries in `settings.local.json` (the home one Claude never
+/// Procable entries in `settings.local.json` (the home one Claude never
 /// loads, and the project's gitignored one) only make the hook fire twice.
 /// Prunes them, and only when the user hook is confirmed current: a legacy or
 /// dangling user entry does not count. Runs after a fresh hook write and on a
@@ -747,9 +747,9 @@ pub fn prune_duplicate_claude_hooks(sys: &crate::providers::Sys, home_root: &str
     if !user_claude_hook_is_current(home_root) {
         return Ok(());
     }
-    prune_impeccable_hook_from_manifest(&jsp::join(&[home_root, ".claude", "settings.local.json"]))?;
+    prune_procable_hook_from_manifest(&jsp::join(&[home_root, ".claude", "settings.local.json"]))?;
     if !sys.is_home_dir(project_root) {
-        prune_impeccable_hook_from_manifest(&jsp::join(&[project_root, ".claude", "settings.local.json"]))?;
+        prune_procable_hook_from_manifest(&jsp::join(&[project_root, ".claude", "settings.local.json"]))?;
     }
     Ok(())
 }
@@ -759,9 +759,9 @@ pub fn prune_duplicate_claude_hooks(sys: &crate::providers::Sys, home_root: &str
 /// the launcher-era skill no longer ships, so the editor fires a dead command
 /// on every edit and `context` would otherwise still count the stale marker as
 /// an active hook. Rewrite each such manifest's command strings to the
-/// launcher form this engine writes, in place, without touching non-Impeccable
+/// launcher form this engine writes, in place, without touching non-Procable
 /// entries. Runs regardless of hook consent — it repairs an already-installed
-/// hook, it does not add one (a dir with no Impeccable marker is left alone).
+/// hook, it does not add one (a dir with no Procable marker is left alone).
 /// Idempotent: a manifest already in the launcher form is not stale and is
 /// skipped. `.github` (and any provider with no rewritable launcher path)
 /// carries a portable, team-committed command form that must not be pinned to
@@ -813,11 +813,11 @@ pub fn repair_stale_hook_manifests(sys: &Sys, root: &str, providers: &[&'static 
 }
 
 /// JS: HOOK_EXPLAINER
-pub const HOOK_EXPLAINER: &str = "\nImpeccable can install a design hook for this project. It checks UI files\nafter your agent edits them and feeds the findings back to the agent, so\ndesign slop gets caught as you build. Change it later with\n/impeccable hooks on|off.\n";
+pub const HOOK_EXPLAINER: &str = "\nProcable can install a design hook for this project. It checks UI files\nafter your agent edits them and feeds the findings back to the agent, so\ndesign slop gets caught as you build. Change it later with\n/procable hooks on|off.\n";
 
-/// JS: impeccable-config.mjs#setHookConsent(root, value)
+/// JS: procable-config.mjs#setHookConsent(root, value)
 pub fn set_hook_consent(root: &str, value: &str) -> Result<String, String> {
-    let file_path = impeccable_detect::config::get_local_config_path(root);
+    let file_path = procable_detect::config::get_local_config_path(root);
     let existing: Map<String, Value> = util::read_text(&file_path)
         .ok()
         .and_then(|t| serde_json::from_str::<Value>(&t).ok())
@@ -835,11 +835,11 @@ pub fn set_hook_consent(root: &str, value: &str) -> Result<String, String> {
     next.insert("hook".to_string(), Value::Object(hook));
     util::mkdir_p(&jsp::dirname(&file_path))?;
     util::write_bytes(&file_path, format!("{}\n", util::json_pretty(&Value::Object(next))).as_bytes())?;
-    impeccable_detect::config::ensure_config_git_exclude(root);
+    procable_detect::config::ensure_config_git_exclude(root);
     Ok(file_path)
 }
 
-/// JS: impeccable-config.mjs#getHookConsent(root)
+/// JS: procable-config.mjs#getHookConsent(root)
 pub fn get_hook_consent(root: &str) -> Option<String> {
-    impeccable_detect::config::get_hook_consent(root)
+    procable_detect::config::get_hook_consent(root)
 }

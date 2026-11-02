@@ -1,8 +1,8 @@
 name: release-engine
 # Builds the engine binary for every supported target and publishes them, with
 # sha256 sidecars, as the GitHub Release `engine-v<X>` on this repo. That
-# release is what the launcher (skill/scripts/impeccable), the npm shim
-# (cli/bin/cli.js), `impeccable install`, and `bun run fetch:engine` download.
+# release is what the launcher (skill/scripts/procable), the npm shim
+# (cli/bin/cli.js), `procable install`, and `bun run fetch:engine` download.
 #
 # Trigger: `bun run release:engine` (scripts/release.mjs) verifies
 # ENGINE_VERSION, the npm platform-package pins, and a clean tree, then
@@ -48,16 +48,16 @@ jobs:
         run: cargo install cross --locked
       - name: Build
         shell: bash
-        run: ${{ matrix.cross && 'cross' || 'cargo' }} build --release -p impeccable --target ${{ matrix.target }}
+        run: ${{ matrix.cross && 'cross' || 'cargo' }} build --release -p procable --target ${{ matrix.target }}
       - name: Smoke the binary
         if: ${{ !matrix.cross }}
         shell: bash
-        run: target/${{ matrix.target }}/release/impeccable${{ runner.os == 'Windows' && '.exe' || '' }} engine-probe
+        run: target/${{ matrix.target }}/release/procable${{ runner.os == 'Windows' && '.exe' || '' }} engine-probe
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           # procable ships Windows unsigned: upstream's signing identity is not ours.
-          name: impeccable-${{ matrix.short }}
-          path: target/${{ matrix.target }}/release/impeccable${{ runner.os == 'Windows' && '.exe' || '' }}
+          name: procable-${{ matrix.short }}
+          path: target/${{ matrix.target }}/release/procable${{ runner.os == 'Windows' && '.exe' || '' }}
           if-no-files-found: error
   publish:
     needs: [build]
@@ -67,16 +67,16 @@ jobs:
     steps:
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: impeccable-*
+          pattern: procable-*
           path: artifacts
       - name: Lay out release assets with checksums
         run: |
           set -e
           mkdir -p out
-          for d in artifacts/impeccable-*; do
-            short=$(basename "$d" | sed 's/^impeccable-//')
+          for d in artifacts/procable-*; do
+            short=$(basename "$d" | sed 's/^procable-//')
             f=$(ls "$d" | head -1)
-            case "$short" in windows-*) dest="out/impeccable-$short.exe" ;; *) dest="out/impeccable-$short" ;; esac
+            case "$short" in windows-*) dest="out/procable-$short.exe" ;; *) dest="out/procable-$short" ;; esac
             cp "$d/$f" "$dest"
             (cd out && sha256sum "$(basename "$dest")" > "$(basename "$dest").sha256")
           done
@@ -91,5 +91,5 @@ jobs:
         run: |
           set -e
           tag="${GITHUB_REF_NAME}"
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title "impeccable engine $tag" \
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --title "procable engine $tag" \
             --notes "Prebuilt procable engine binaries ($tag), each with its sha256. procable runs offline and never downloads them: the prompt-orchestrator installer ships the binary for each platform next to the skill. The Windows binary is unsigned." out/*

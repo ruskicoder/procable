@@ -1,6 +1,6 @@
 # Developer Guide
 
-Documentation for contributors to Impeccable.
+Documentation for contributors to Procable.
 
 ## Architecture
 
@@ -177,13 +177,13 @@ The skill-behavior suite runs three providers (claude-haiku-4-5, gpt-5.4-mini, g
 ## Repository Structure
 
 ```
-impeccable/
+procable/
   skill/                           # Edit these! Source of truth
     SKILL.src.md                   # Frontmatter, shared design laws, command router
     reference/                     # One <command>.md per command + domain references
     scripts/                       # Skill runtime scripts (hooks, context.mjs, etc.)
     agents/                        # Nested subagent definitions
-  cli/                             # Standalone `impeccable` CLI (npm package)
+  cli/                             # Standalone `procable` CLI (npm package)
   site/                            # impeccable.style (Astro)
   extension/                       # Chrome extension
   functions/                       # Cloudflare Pages Functions

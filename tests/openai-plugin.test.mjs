@@ -18,11 +18,11 @@ describe('OpenAI plugin staging', () => {
   let dist;
 
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-openai-plugin-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-openai-plugin-'));
     dist = path.join(root, 'dist');
 
     write(root, '.claude-plugin/plugin.json', JSON.stringify({
-      name: 'impeccable',
+      name: 'procable',
       version: '3.9.1',
       author: {
         name: 'Paul Bakaus',
@@ -35,25 +35,25 @@ describe('OpenAI plugin staging', () => {
 
     write(
       root,
-      'dist/codex/.codex/skills/impeccable/SKILL.md',
-      '---\nname: impeccable\n---\n\nUse $impeccable. Run .codex/skills/impeccable/scripts/context.mjs.\n',
+      'dist/codex/.codex/skills/procable/SKILL.md',
+      '---\nname: procable\n---\n\nUse $procable. Run .codex/skills/procable/scripts/context.mjs.\n',
     );
     write(
       root,
-      'dist/codex/.codex/skills/impeccable/agents/openai.yaml',
-      'interface:\n  display_name: Impeccable\n',
+      'dist/codex/.codex/skills/procable/agents/openai.yaml',
+      'interface:\n  display_name: Procable\n',
     );
     write(
       root,
-      'dist/codex/.codex/skills/impeccable/agents/impeccable_asset_producer.toml',
-      'name = "impeccable_asset_producer"\n',
+      'dist/codex/.codex/skills/procable/agents/procable_asset_producer.toml',
+      'name = "procable_asset_producer"\n',
     );
 
     // A Claude payload exists too. The OpenAI stage must never read it.
     write(
       root,
-      'dist/claude-code/.claude/skills/impeccable/SKILL.md',
-      '---\nname: impeccable\n---\n\nUse /impeccable. Run .claude/skills/impeccable/scripts/context.mjs.\n',
+      'dist/claude-code/.claude/skills/procable/SKILL.md',
+      '---\nname: procable\n---\n\nUse /procable. Run .claude/skills/procable/scripts/context.mjs.\n',
     );
   });
 
@@ -63,19 +63,19 @@ describe('OpenAI plugin staging', () => {
 
   it('packages the Codex skill, agents, manifest, icon, and compatible hook', () => {
     const pluginRoot = stageOpenAIPlugin(root, dist);
-    const skill = fs.readFileSync(path.join(pluginRoot, 'skills/impeccable/SKILL.md'), 'utf8');
+    const skill = fs.readFileSync(path.join(pluginRoot, 'skills/procable/SKILL.md'), 'utf8');
     const manifest = JSON.parse(fs.readFileSync(path.join(pluginRoot, '.codex-plugin/plugin.json'), 'utf8'));
     const hooks = JSON.parse(fs.readFileSync(path.join(pluginRoot, 'hooks/hooks.json'), 'utf8'));
 
-    assert.match(skill, /\$impeccable/);
-    assert.match(skill, /\.codex\/skills\/impeccable/);
-    assert.doesNotMatch(skill, /(?:^|[\s`(])\/impeccable\b/m);
-    assert.doesNotMatch(skill, /\.claude\/skills\/impeccable/);
+    assert.match(skill, /\$procable/);
+    assert.match(skill, /\.codex\/skills\/procable/);
+    assert.doesNotMatch(skill, /(?:^|[\s`(])\/procable\b/m);
+    assert.doesNotMatch(skill, /\.claude\/skills\/procable/);
 
-    assert.ok(fs.existsSync(path.join(pluginRoot, 'skills/impeccable/agents/openai.yaml')));
+    assert.ok(fs.existsSync(path.join(pluginRoot, 'skills/procable/agents/openai.yaml')));
     assert.ok(fs.existsSync(path.join(
       pluginRoot,
-      'skills/impeccable/agents/impeccable_asset_producer.toml',
+      'skills/procable/agents/procable_asset_producer.toml',
     )));
     assert.ok(fs.existsSync(path.join(pluginRoot, 'assets/icon.png')));
 

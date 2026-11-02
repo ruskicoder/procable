@@ -1,6 +1,6 @@
 //! JS: live/sveltekit-adapter.mjs + live/frameworks/sveltekit.mjs. Mounts a
 //! dev-only shadow host from `+layout.svelte` via a generated
-//! `src/lib/impeccable/ImpeccableLiveRoot.svelte`; `src/app.html` stays
+//! `src/lib/procable/ProcableLiveRoot.svelte`; `src/app.html` stays
 //! untouched.
 
 use crate::config::LiveConfig;
@@ -12,20 +12,20 @@ use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 use serde_json::{json, Value};
 
-pub const SVELTE_LIVE_ROOT_COMPONENT: &str = "src/lib/impeccable/ImpeccableLiveRoot.svelte";
-pub const SVELTE_LAYOUT_MARKER_OPEN: &str = "<!-- impeccable-live-svelte-start -->";
-pub const SVELTE_LAYOUT_MARKER_CLOSE: &str = "<!-- impeccable-live-svelte-end -->";
+pub const SVELTE_LIVE_ROOT_COMPONENT: &str = "src/lib/procable/ProcableLiveRoot.svelte";
+pub const SVELTE_LAYOUT_MARKER_OPEN: &str = "<!-- procable-live-svelte-start -->";
+pub const SVELTE_LAYOUT_MARKER_CLOSE: &str = "<!-- procable-live-svelte-end -->";
 pub const SVELTE_ROOT_IMPORT: &str =
-    "import ImpeccableLiveRoot from '$lib/impeccable/ImpeccableLiveRoot.svelte';";
+    "import ProcableLiveRoot from '$lib/procable/ProcableLiveRoot.svelte';";
 
 static SVELTE_ROOT_IMPORT_LINE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?m)^[ \t]*import ImpeccableLiveRoot from '\$lib/impeccable/ImpeccableLiveRoot\.svelte(?:\?[^']*)?';[ \t]*\r?\n?").unwrap()
+    Regex::new(r"(?m)^[ \t]*import ProcableLiveRoot from '\$lib/procable/ProcableLiveRoot\.svelte(?:\?[^']*)?';[ \t]*\r?\n?").unwrap()
 });
 
 /// JS: svelteRootImportLine(rev)
 pub fn svelte_root_import_line(rev: Option<&str>) -> String {
     match rev {
-        Some(r) if !r.is_empty() => format!("import ImpeccableLiveRoot from '$lib/impeccable/ImpeccableLiveRoot.svelte?impeccable-live={}';", r),
+        Some(r) if !r.is_empty() => format!("import ProcableLiveRoot from '$lib/procable/ProcableLiveRoot.svelte?procable-live={}';", r),
         _ => SVELTE_ROOT_IMPORT.to_string(),
     }
 }
@@ -190,7 +190,7 @@ pub fn patch_svelte_layout(content: &str, rev: Option<&str>) -> String {
     }
     if !out.contains(SVELTE_LAYOUT_MARKER_OPEN) {
         let block = format!(
-            "{}\n<ImpeccableLiveRoot />\n{}\n",
+            "{}\n<ProcableLiveRoot />\n{}\n",
             SVELTE_LAYOUT_MARKER_OPEN, SVELTE_LAYOUT_MARKER_CLOSE
         );
         let m = RENDER_RE.find(&out).or_else(|| SLOT_RE.find(&out));
@@ -209,7 +209,7 @@ pub fn patch_svelte_layout(content: &str, rev: Option<&str>) -> String {
 /// JS: unpatchSvelteLayout(content)
 pub fn unpatch_svelte_layout(content: &str) -> String {
     let block_re = Regex::new(&format!(
-        "([ \\t]*){}\\n<ImpeccableLiveRoot\\s*/>\\n{}\\n?",
+        "([ \\t]*){}\\n<ProcableLiveRoot\\s*/>\\n{}\\n?",
         crate::util::escape_regex(SVELTE_LAYOUT_MARKER_OPEN),
         crate::util::escape_regex(SVELTE_LAYOUT_MARKER_CLOSE)
     ))
@@ -244,17 +244,17 @@ pub fn build_svelte_live_root_component(port: i64, token: Option<&str>) -> Strin
   import {{ onMount }} from 'svelte';
 
   const LIVE_URL = '{live_url}';
-  const HOST_ID = 'impeccable-live-root';
+  const HOST_ID = 'procable-live-root';
 
   onMount(() => {{
-    let host = document.querySelector('impeccable-live-root#' + HOST_ID) || document.getElementById(HOST_ID);
+    let host = document.querySelector('procable-live-root#' + HOST_ID) || document.getElementById(HOST_ID);
     if (!host) {{
-      host = document.createElement('impeccable-live-root');
+      host = document.createElement('procable-live-root');
       host.id = HOST_ID;
       document.body.appendChild(host);
     }}
 
-    host.dataset.impeccableLiveAdapter = 'sveltekit';
+    host.dataset.procableLiveAdapter = 'sveltekit';
     host.style.setProperty('all', 'initial', 'important');
     host.style.setProperty('display', 'block', 'important');
     host.style.setProperty('position', 'fixed', 'important');
@@ -267,16 +267,16 @@ pub fn build_svelte_live_root_component(port: i64, token: Option<&str>) -> Strin
     host.style.setProperty('pointer-events', 'none', 'important');
 
     const root = host.shadowRoot || host.attachShadow({{ mode: 'open' }});
-    if (!root.querySelector('style[data-impeccable-live-reset]')) {{
+    if (!root.querySelector('style[data-procable-live-reset]')) {{
       const reset = document.createElement('style');
-      reset.dataset.impeccableLiveReset = 'true';
+      reset.dataset.procableLiveReset = 'true';
       reset.textContent = ':host, :host *, * {{ box-sizing: border-box; }}';
       root.appendChild(reset);
     }}
 
-    window.__IMPECCABLE_LIVE_ADAPTER__ = 'sveltekit';
-    window.__IMPECCABLE_LIVE_UI_ROOT__ = root;
-    window.__IMPECCABLE_LIVE_CHROME_MOUNT__ = {{
+    window.__PROCABLE_LIVE_ADAPTER__ = 'sveltekit';
+    window.__PROCABLE_LIVE_UI_ROOT__ = root;
+    window.__PROCABLE_LIVE_CHROME_MOUNT__ = {{
       adapter: 'sveltekit',
       version: 1,
       host,
@@ -286,9 +286,9 @@ pub fn build_svelte_live_root_component(port: i64, token: Option<&str>) -> Strin
     const script = document.createElement('script');
     script.src = LIVE_URL;
     script.async = true;
-    script.dataset.impeccableLiveScript = 'true';
+    script.dataset.procableLiveScript = 'true';
     script.onerror = () => console.error(
-      '[impeccable] live.js failed to load from ' + LIVE_URL
+      '[procable] live.js failed to load from ' + LIVE_URL
       + ' (helper down, or the token rotated while a stale adapter module was cached).'
       + ' Re-run the live boot, then reload this page.'
     );
@@ -296,9 +296,9 @@ pub fn build_svelte_live_root_component(port: i64, token: Option<&str>) -> Strin
 
     return () => {{
       script.remove();
-      if (window.__IMPECCABLE_LIVE_UI_ROOT__ === root) delete window.__IMPECCABLE_LIVE_UI_ROOT__;
-      if (window.__IMPECCABLE_LIVE_CHROME_MOUNT__?.root === root) delete window.__IMPECCABLE_LIVE_CHROME_MOUNT__;
-      if (window.__IMPECCABLE_LIVE_ADAPTER__ === 'sveltekit') delete window.__IMPECCABLE_LIVE_ADAPTER__;
+      if (window.__PROCABLE_LIVE_UI_ROOT__ === root) delete window.__PROCABLE_LIVE_UI_ROOT__;
+      if (window.__PROCABLE_LIVE_CHROME_MOUNT__?.root === root) delete window.__PROCABLE_LIVE_CHROME_MOUNT__;
+      if (window.__PROCABLE_LIVE_ADAPTER__ === 'sveltekit') delete window.__PROCABLE_LIVE_ADAPTER__;
     }};
   }});
 </script>
@@ -389,7 +389,7 @@ pub fn prune_empty_dir(dir: &str, stop_dir: &str) {
 /// JS: sveltekit.inject.artifacts({ project })
 pub fn sveltekit_artifacts(project: &SvelteKitProject) -> Vec<Value> {
     vec![
-        json!({ "kind": "created", "path": SVELTE_LIVE_ROOT_COMPONENT, "marker": "impeccable-live-root", "pruneTo": "src" }),
+        json!({ "kind": "created", "path": SVELTE_LIVE_ROOT_COMPONENT, "marker": "procable-live-root", "pruneTo": "src" }),
         json!({ "kind": "patched", "path": project.layout_file, "patch": "sveltekit-layout", "markers": [SVELTE_LAYOUT_MARKER_OPEN] }),
     ]
 }

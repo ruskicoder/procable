@@ -4,11 +4,11 @@
 //! the element's own text, so a bar or a form control is not charged for the
 //! labels its children hold.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::{Path, PathBuf};
 
 fn repo_root() -> PathBuf {
-    if let Ok(p) = std::env::var("IMPECCABLE_PUBLIC_REPO") {
+    if let Ok(p) = std::env::var("PROCABLE_PUBLIC_REPO") {
         return PathBuf::from(p);
     }
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")

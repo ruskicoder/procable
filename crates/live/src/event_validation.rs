@@ -52,7 +52,7 @@ fn js_string(v: Option<&Value>) -> String {
         Some(Value::Bool(b)) => b.to_string(),
         Some(Value::Number(n)) => n
             .as_f64()
-            .map(impeccable_context::util::js_number_to_string)
+            .map(procable_context::util::js_number_to_string)
             .unwrap_or_default(),
         Some(Value::Array(a)) => a
             .iter()

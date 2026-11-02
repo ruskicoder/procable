@@ -1,7 +1,7 @@
 /**
- * Impeccable DevTools Extension - Elements Sidebar Pane
+ * Procable DevTools Extension - Elements Sidebar Pane
  *
- * Shows Impeccable findings for the currently selected element ($0) in the Elements panel.
+ * Shows Procable findings for the currently selected element ($0) in the Elements panel.
  */
 
 if (chrome.devtools.panels.themeName === 'dark') {
@@ -16,7 +16,7 @@ let currentFindings = [];
 let port = null;
 function getPort() {
   if (port) return port;
-  port = chrome.runtime.connect({ name: `impeccable-sidebar-${tabId}` });
+  port = chrome.runtime.connect({ name: `procable-sidebar-${tabId}` });
   port.onMessage.addListener((msg) => {
     if (msg.action === 'findings' || msg.action === 'state') {
       currentFindings = msg.findings || [];

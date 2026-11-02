@@ -14,7 +14,7 @@
 //! nothing here: this engine has only ever counted a box with a four-sided
 //! border or a shadow as a card.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::Path;
 
 fn nested(body: &str) -> usize {

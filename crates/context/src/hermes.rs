@@ -6,7 +6,7 @@
 use crate::jsp;
 use crate::util::Env;
 
-pub const PLUGIN_NAME: &str = "impeccable-design-hook";
+pub const PLUGIN_NAME: &str = "procable-design-hook";
 /// What the installer copies and Hermes needs to load the plugin.
 pub const PLUGIN_FILES: [&str; 2] = ["plugin.yaml", "__init__.py"];
 
@@ -24,7 +24,7 @@ pub fn hermes_global_home(env: &Env, cwd: &str, home: &str) -> String {
     jsp::join(&[home, ".hermes"])
 }
 
-/// `<hermes home>/plugins/impeccable-design-hook`
+/// `<hermes home>/plugins/procable-design-hook`
 pub fn plugin_dir(hermes_home: &str) -> String {
     jsp::join(&[hermes_home, "plugins", PLUGIN_NAME])
 }

@@ -3,9 +3,9 @@
  *
  * COMPETITORS is the rest of the simulated skill listing: realistic neighbours,
  * several deliberately close to the boundary (frontend-dev, docs-writer,
- * dataviz, brand-identity). impeccable is inserted in the middle of the list.
+ * dataviz, brand-identity). procable is inserted in the middle of the list.
  *
- * CASES: expect true means impeccable should load, false means it should not.
+ * CASES: expect true means procable should load, false means it should not.
  * Ids ending in _744 come from the pinned case set in issue #744 (verbatim).
  * cat groups cases for the per-category report; positives cover every command
  * family, document-shaped requests and native UI; negatives cover clear non-UI

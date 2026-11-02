@@ -31,13 +31,13 @@ fn raw_request(port: u16, method: &str, target: &str, headers: &[(&str, &str)], 
 
 #[test]
 fn detached_posts_require_key_and_loopback_host_origin() {
-    let dir = std::env::temp_dir().join(format!("impeccable-sq-sec-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-sq-sec-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     let payload = r#"{"title":"Choose the visual world","question":"The roll assigned Fillmore Handbill.","options":[{"id":"assigned","label":"Fillmore Handbill","kicker":"THE ROLL"},{"id":"challenger-1","label":"Teletext Service"}],"reroll":true,"steer":true}"#;
     std::fs::write(dir.join("q.json"), payload).unwrap();
     let key = "seckey";
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args([
             "serve-question",
             "--detached-serve",
@@ -55,9 +55,9 @@ fn detached_posts_require_key_and_loopback_host_origin() {
         .spawn()
         .expect("spawn serve-question");
 
-    let state_path = dir.join(".impeccable/questions").join(format!("{}.state.json", key));
-    let answer_path = dir.join(".impeccable/questions").join(format!("{}.answer.json", key));
-    let flip_path = dir.join(".impeccable/questions").join(format!("{}.flip.json", key));
+    let state_path = dir.join(".procable/questions").join(format!("{}.state.json", key));
+    let answer_path = dir.join(".procable/questions").join(format!("{}.answer.json", key));
+    let flip_path = dir.join(".procable/questions").join(format!("{}.flip.json", key));
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
     while !state_path.exists() && std::time::Instant::now() < deadline {
         std::thread::sleep(std::time::Duration::from_millis(50));
@@ -110,7 +110,7 @@ fn detached_posts_require_key_and_loopback_host_origin() {
         // wordmark, with no bundled font routes or external stylesheet.
         assert!(!page.contains("@font-face"));
         assert!(page.contains("--ks-font: system-ui,"));
-        assert!(page.contains("aria-label=\"Impeccable\""));
+        assert!(page.contains("aria-label=\"Procable\""));
         for path in ["/fonts/albert-sans.woff2", "/fonts/alumni-sans.ttf", "/fonts/%2e%2e/q.json"] {
             let (st, _) = raw_request(port, "GET", path, &[], None);
             assert_eq!(st, 404, "no font asset routes");

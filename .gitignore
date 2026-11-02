@@ -44,62 +44,62 @@ Thumbs.db
 # Cloudflare
 .wrangler/
 
-# Impeccable-owned project files are split: generated sidecars/config may be
+# Procable-owned project files are split: generated sidecars/config may be
 # tracked, but runtime recovery state and local assets should stay local.
-.impeccable/live/server.json
-.impeccable/live/codex-worker.json
-.impeccable/live/codex-worker.log
+.procable/live/server.json
+.procable/live/codex-worker.json
+.procable/live/codex-worker.log
 # Ephemeral hook cache/state, at the project root and inside generated harness
-# skill dirs (**/skills/impeccable/scripts/.impeccable/). Anchored patterns
+# skill dirs (**/skills/procable/scripts/.procable/). Anchored patterns
 # would miss the nested copies the build/hook writes.
-**/.impeccable/hook.cache.json
-.impeccable/live/sessions/
-.impeccable/live/previews/
-.impeccable/live/annotations/
-.impeccable/live/artifacts/
-.impeccable/live/accept-receipts/
-.impeccable/live/locks/
-.impeccable/live/cache/
-.impeccable/live/benchmarks/
-.impeccable/live/manual-edit-apply-transaction.json
-.impeccable/live/manual-edit-events.jsonl
-.impeccable/live/manual-edit-evidence/
-.impeccable/live/pending-manual-edits.json
-.impeccable/live/deferred-svelte-component-accepts.json
-.impeccable/history/
-.impeccable/config.local.json
-**/.impeccable/hook.pending.json
-.impeccable/provider-smoke/
-src/__impeccable_provider_smoke_*.html
+**/.procable/hook.cache.json
+.procable/live/sessions/
+.procable/live/previews/
+.procable/live/annotations/
+.procable/live/artifacts/
+.procable/live/accept-receipts/
+.procable/live/locks/
+.procable/live/cache/
+.procable/live/benchmarks/
+.procable/live/manual-edit-apply-transaction.json
+.procable/live/manual-edit-events.jsonl
+.procable/live/manual-edit-evidence/
+.procable/live/pending-manual-edits.json
+.procable/live/deferred-svelte-component-accepts.json
+.procable/history/
+.procable/config.local.json
+**/.procable/hook.pending.json
+.procable/provider-smoke/
+src/__procable_provider_smoke_*.html
 # Per-run critique snapshots are local artifacts. ignore.md (also under
 # this dir) carries deferrals the user may want to share, so it's
 # explicitly re-included below.
-.impeccable/critique/*
-!.impeccable/critique/ignore.md
+.procable/critique/*
+!.procable/critique/ignore.md
 
 # Legacy live mode session file + annotation screenshots
-.impeccable-live.json
-.impeccable-live/
-src/lib/impeccable/ImpeccableLiveRoot.svelte
-src/lib/impeccable/__runtime.js
+.procable-live.json
+.procable-live/
+src/lib/procable/ProcableLiveRoot.svelte
+src/lib/procable/__runtime.js
 
 # Legacy per-project live mode injection config. New installs use
-# .impeccable/live/config.json in the project root instead.
-**/skills/impeccable/scripts/config.json
+# .procable/live/config.json in the project root instead.
+**/skills/procable/scripts/config.json
 
 # Extension build artifacts
 extension/detector/
 
 # Engine binaries: fetched per platform (scripts/fetch-engine.mjs), never tracked.
-# The launcher next to them (skill/scripts/impeccable) is the tracked file.
+# The launcher next to them (skill/scripts/procable) is the tracked file.
 skill/scripts/bin/
-**/skills/impeccable/scripts/bin/
+**/skills/procable/scripts/bin/
 
 # Legacy design context (pre-v3.1, auto-migrated to PRODUCT.md by load-context.mjs)
-.impeccable.md
+.procable.md
 # Note: PRODUCT.md and DESIGN.md are INTENTIONALLY tracked in this repo —
-# they serve as reference implementations for users installing impeccable.
-# Users of impeccable in their own projects can choose whether to track them.
+# they serve as reference implementations for users installing procable.
+# Users of procable in their own projects can choose whether to track them.
 
 # Evals (private, commercial)
 evals/
@@ -133,7 +133,7 @@ talks/
 # Local-only scratch for exploratory scripts, parked pages, and unused asset candidates.
 tmp/
 
-# Isolated ablation staging (impeccable-evals copies the built staged skill here
+# Isolated ablation staging (procable-evals copies the built staged skill here
 # per rule, removes one rule, points a worker at it). Throwaway; never committed.
 .ablate-stage/
 

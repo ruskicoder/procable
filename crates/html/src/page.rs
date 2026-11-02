@@ -7,22 +7,22 @@ use crate::adapters::{class_selector, StyleRef};
 use crate::background::{read_own_background_color, resolve_border_radius_px, sv};
 use crate::dom::{StaticDocument, StaticElement};
 use crate::quality::{has_nonblank_direct_text, pf0};
-use impeccable_core::checks::embedded_content::{
+use procable_core::checks::embedded_content::{
     control_of, is_media_control_name, is_output_chrome, is_play_name, visible_chars, Control,
     CAPTION_MAX_CHARS,
 };
-use impeccable_core::checks::measures::{cream_from_class_list, is_cream_color};
-use impeccable_core::checks::rules::{
+use procable_core::checks::measures::{cream_from_class_list, is_cream_color};
+use procable_core::checks::rules::{
     check_flat_type_hierarchy_samples, flat_type_hierarchy_severity, is_card_like_from_props,
     parse_font_weight, type_hierarchy_role, RuleHit,
     TypeSample, TYPE_HIERARCHY_SELECTOR,
 };
-use impeccable_core::checks::text_rules::{
+use procable_core::checks::text_rules::{
     is_repeated_text_container, REPEATED_TEXT_CONTAINER_TAGS, REPEATED_TEXT_SKIP_SELECTOR,
 };
-use impeccable_core::constants::{overused_font_name, CSS_GENERIC_FONTS, OVERUSED_FONTS, SAFE_TAGS};
-use impeccable_core::js::{self, number_to_string, parse_float};
-use impeccable_core::js_ext_b::{slice_utf16_prefix, utf16_len};
+use procable_core::constants::{overused_font_name, CSS_GENERIC_FONTS, OVERUSED_FONTS, SAFE_TAGS};
+use procable_core::js::{self, number_to_string, parse_float};
+use procable_core::js_ext_b::{slice_utf16_prefix, utf16_len};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::collections::HashSet;
@@ -333,7 +333,7 @@ const INLINE_TAGS: [&str; 16] = [
 /// monospace tag, preserved white space, or inline runs holding 80% of it).
 fn is_output_block(el: &StaticElement<'_>, outer: &StaticElement<'_>) -> bool {
     let mono_face = |e: &StaticElement<'_>| {
-        impeccable_core::checks::text_rules::is_monospace_family(sv(e.style(), "fontFamily"))
+        procable_core::checks::text_rules::is_monospace_family(sv(e.style(), "fontFamily"))
     };
     if mono_face(outer) {
         return false;
@@ -485,7 +485,7 @@ pub fn check_page_layout(doc: &StaticDocument) -> Vec<RuleHit> {
             // A mockup's panels report as advisory
             // (decision r6-t3-nested-cards-mockups).
             let severity = crate::decorative_text::box_in_mockup(el)
-                .then(|| impeccable_core::checks::rules::ADVISORY_SEVERITY.to_string());
+                .then(|| procable_core::checks::rules::ADVISORY_SEVERITY.to_string());
             match panels.iter_mut().find(|(o, s, _, _)| o == outer && *s == severity) {
                 Some(panel) => panel.3 += 1,
                 None => panels.push((*outer, severity, el.tag_lower(), 0)),
@@ -495,7 +495,7 @@ pub fn check_page_layout(doc: &StaticDocument) -> Vec<RuleHit> {
     for (_, severity, tag, more) in panels {
         let mut hit = RuleHit::new(
             "nested-cards",
-            impeccable_core::checks::rules::with_more_count(&format!("Card inside card ({tag})"), more),
+            procable_core::checks::rules::with_more_count(&format!("Card inside card ({tag})"), more),
         );
         hit.severity = severity;
         findings.push(hit);
@@ -595,7 +595,7 @@ pub fn check_repeated_container_text_from_doc(doc: &StaticDocument) -> Vec<RuleH
                 } else {
                     WS_RE
                         .split(raw_cls)
-                        .filter(|s| !s.is_empty() && !impeccable_core::checks::text_rules::is_id_like_class(s))
+                        .filter(|s| !s.is_empty() && !procable_core::checks::text_rules::is_id_like_class(s))
                         .collect()
                 };
                 cls.sort_by(|a, b| a.encode_utf16().cmp(b.encode_utf16()));

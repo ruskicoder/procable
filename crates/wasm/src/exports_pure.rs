@@ -1,4 +1,4 @@
-//! JSON-in / JSON-out wasm exports over the pure `impeccable_core` surface —
+//! JSON-in / JSON-out wasm exports over the pure `procable_core` surface —
 //! for the site and other consumers, not the bundle's own scan path.
 //!
 //! Two layers:
@@ -10,7 +10,7 @@
 //!   cannot carry: `{"$undef":true}`, `{"$nan":true}`, `{"$inf":1|-1}`,
 //!   `{"$negzero":true}`, `{"$map":[[k,v],...]}`, `{"$set":[...]}`), the
 //!   result in the same encoding — or `null` for an unknown function. Backed
-//!   by `impeccable_core::vectors::call`, the same dispatch the recorded JS
+//!   by `procable_core::vectors::call`, the same dispatch the recorded JS
 //!   call vectors replay through, so every function it knows is byte-checked
 //!   against the JS. `pure_functions()` lists what it knows.
 //! - `pure_<snake_name>(args_json)`: one named export per function, same
@@ -33,7 +33,7 @@ fn args_of(args_json: &str) -> Vec<Value> {
 
 fn dispatch(module: &str, name: &str, args_json: &str) -> String {
     let args = args_of(args_json);
-    impeccable_core::vectors::call(module, name, &args)
+    procable_core::vectors::call(module, name, &args)
         .unwrap_or(Value::Null)
         .to_string()
 }
@@ -49,7 +49,7 @@ pub fn pure_call(module: &str, name: &str, args_json: &str) -> String {
 pub fn pure_functions() -> String {
     // `KNOWN_FUNCTIONS` is the union of foundation's arms and the core's.
     let mut out: Vec<Value> = Vec::new();
-    for (module, fns) in impeccable_core::vectors::KNOWN_FUNCTIONS.iter() {
+    for (module, fns) in procable_core::vectors::KNOWN_FUNCTIONS.iter() {
         out.push(json!({ "module": module, "functions": fns }));
     }
     Value::Array(out).to_string()
@@ -160,7 +160,7 @@ fn str_arg(args: &[Value], i: usize) -> Option<String> {
 fn num_arg(args: &[Value], i: usize) -> f64 {
     match args.get(i) {
         Some(Value::Number(n)) => n.as_f64().unwrap_or(f64::NAN),
-        Some(Value::String(s)) => impeccable_core::js::string_to_number(s),
+        Some(Value::String(s)) => procable_core::js::string_to_number(s),
         Some(Value::Null) => 0.0,
         Some(Value::Bool(true)) => 1.0,
         Some(Value::Bool(false)) => 0.0,
@@ -172,14 +172,14 @@ fn num_arg(args: &[Value], i: usize) -> f64 {
 #[wasm_bindgen]
 pub fn pure_css_color_is_transparent(args_json: &str) -> String {
     let a = args_of(args_json);
-    json!(impeccable_core::checks::measures::css_color_is_transparent(str_arg(&a, 0).as_deref())).to_string()
+    json!(procable_core::checks::measures::css_color_is_transparent(str_arg(&a, 0).as_deref())).to_string()
 }
 
 /// `colorsNearlyMatch(a, b)`: `[a, b]`.
 #[wasm_bindgen]
 pub fn pure_colors_nearly_match(args_json: &str) -> String {
     let a = args_of(args_json);
-    json!(impeccable_core::checks::measures::colors_nearly_match(
+    json!(procable_core::checks::measures::colors_nearly_match(
         str_arg(&a, 0).as_deref(),
         str_arg(&a, 1).as_deref()
     ))
@@ -195,7 +195,7 @@ pub fn pure_finding(args_json: &str) -> String {
     let file = str_arg(&a, 1).unwrap_or_default();
     let snippet = str_arg(&a, 2).unwrap_or_default();
     let line = num_arg(&a, 3);
-    match impeccable_core::findings::try_finding(&id, &file, &snippet, line) {
+    match procable_core::findings::try_finding(&id, &file, &snippet, line) {
         Some(f) => serde_json::to_value(&f).unwrap_or(Value::Null).to_string(),
         None => "null".to_string(),
     }
@@ -206,7 +206,7 @@ pub fn pure_finding(args_json: &str) -> String {
 pub fn pure_get_antipattern(args_json: &str) -> String {
     let a = args_of(args_json);
     let id = str_arg(&a, 0).unwrap_or_default();
-    match impeccable_core::registry::get_antipattern(&id) {
+    match procable_core::registry::get_antipattern(&id) {
         Some(ap) => antipattern_json(ap).to_string(),
         None => "null".to_string(),
     }
@@ -216,20 +216,20 @@ pub fn pure_get_antipattern(args_json: &str) -> String {
 #[wasm_bindgen]
 pub fn pure_is_advisory_rule(args_json: &str) -> String {
     let a = args_of(args_json);
-    json!(impeccable_core::registry::is_advisory_rule(&str_arg(&a, 0).unwrap_or_default())).to_string()
+    json!(procable_core::registry::is_advisory_rule(&str_arg(&a, 0).unwrap_or_default())).to_string()
 }
 
 /// `RULE_SCOPES`.
 #[wasm_bindgen]
 pub fn pure_rule_scopes(_args_json: &str) -> String {
-    json!(impeccable_core::registry::rule_scopes()).to_string()
+    json!(procable_core::registry::rule_scopes()).to_string()
 }
 
 /// `getRulesForCategory(category)`: `[category]`.
 #[wasm_bindgen]
 pub fn pure_get_rules_for_category(args_json: &str) -> String {
     let a = args_of(args_json);
-    let rows: Vec<Value> = impeccable_core::registry::get_rules_for_category(&str_arg(&a, 0).unwrap_or_default())
+    let rows: Vec<Value> = procable_core::registry::get_rules_for_category(&str_arg(&a, 0).unwrap_or_default())
         .into_iter()
         .map(antipattern_json)
         .collect();
@@ -240,10 +240,10 @@ pub fn pure_get_rules_for_category(args_json: &str) -> String {
 #[wasm_bindgen]
 pub fn pure_get_rule_engine_support(args_json: &str) -> String {
     let a = args_of(args_json);
-    json!(impeccable_core::registry::get_rule_engine_support(&str_arg(&a, 0).unwrap_or_default())).to_string()
+    json!(procable_core::registry::get_rule_engine_support(&str_arg(&a, 0).unwrap_or_default())).to_string()
 }
 
-fn antipattern_json(ap: &impeccable_core::registry::Antipattern) -> Value {
+fn antipattern_json(ap: &procable_core::registry::Antipattern) -> Value {
     let mut m = serde_json::Map::new();
     m.insert("id".into(), json!(ap.id));
     m.insert("category".into(), json!(ap.category));

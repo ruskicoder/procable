@@ -1,6 +1,6 @@
-//! The headless-browser side of `impeccable font-match`, wired over
+//! The headless-browser side of `procable font-match`, wired over
 //! `crates/browser`'s CDP client. This is the one piece the open
-//! `impeccable-comp-verbs` crate cannot do on its own; it is injected as a
+//! `procable-comp-verbs` crate cannot do on its own; it is injected as a
 //! `FontRenderer` so the browser (and its `core` dependency) stays out of that
 //! crate. Ported from `font-match.mjs` `renderCandidates` / `renderProofSheet`,
 //! which drove Playwright/Puppeteer; here the same steps run over CDP against a
@@ -10,12 +10,12 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use base64::Engine as _;
-use impeccable_browser::cdp::{default_chrome_args, Browser, EvalOutcome, Page, Viewport};
-use impeccable_browser::discovery;
-use impeccable_comp::font_fingerprint::{fingerprint, FpOpts};
-use impeccable_comp::png_io;
-use impeccable_comp::raster::Image;
-use impeccable_comp_verbs::font_match::{FontRenderer, RankCandidate, RenderedCandidate};
+use procable_browser::cdp::{default_chrome_args, Browser, EvalOutcome, Page, Viewport};
+use procable_browser::discovery;
+use procable_comp::font_fingerprint::{fingerprint, FpOpts};
+use procable_comp::png_io;
+use procable_comp::raster::Image;
+use procable_comp_verbs::font_match::{FontRenderer, RankCandidate, RenderedCandidate};
 
 const NAV_TIMEOUT: Duration = Duration::from_secs(30);
 
@@ -26,7 +26,7 @@ pub struct CdpFontRenderer {
 
 impl CdpFontRenderer {
     pub fn from_process_env() -> Self {
-        CdpFontRenderer { env: impeccable_common::process_env() }
+        CdpFontRenderer { env: procable_common::process_env() }
     }
 
     fn launch(&self) -> Option<Browser> {

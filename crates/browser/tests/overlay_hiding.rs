@@ -27,10 +27,10 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use impeccable_browser::overlays::HiddenOverlay;
-use impeccable_browser::{detect_url_evidence, BrowserEngine, EvidenceRequest};
-use impeccable_core::findings::Finding;
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::overlays::HiddenOverlay;
+use procable_browser::{detect_url_evidence, BrowserEngine, EvidenceRequest};
+use procable_core::findings::Finding;
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/overlays")
@@ -74,7 +74,7 @@ fn handle(mut stream: TcpStream) {
 
 fn engine() -> Option<BrowserEngine> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }
@@ -162,7 +162,7 @@ fn a_driver_tour_is_hidden_and_the_page_under_it_scored() {
     );
     assert_eq!(report.waited_ms, 0);
     let snapshot = evidence.scan_snapshot.as_deref().unwrap();
-    assert!(snapshot.contains("impeccable-overlay-hide"));
+    assert!(snapshot.contains("procable-overlay-hide"));
     assert!(!snapshot.contains(r#"["aria-controls","driver-popover-content"]"#), "highlight aria removed");
     assert!(!snapshot.contains(r#"["class","driver-active driver-fade"]"#), "body classes removed");
 
@@ -187,8 +187,8 @@ fn a_stuck_preloader_is_waited_for_then_hidden() {
     assert!(has(&found, "low-contrast", "#covered-copy"), "{found:#?}");
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert_eq!(report.hidden, vec![hidden("preloader", "div#preloader")]);
-    assert!(report.waited_ms >= impeccable_browser::overlays::PRELOADER_WAIT_MS, "{}", report.waited_ms);
-    assert!(evidence.scan_snapshot.as_deref().unwrap().contains("data-impeccable-hidden"));
+    assert!(report.waited_ms >= procable_browser::overlays::PRELOADER_WAIT_MS, "{}", report.waited_ms);
+    assert!(evidence.scan_snapshot.as_deref().unwrap().contains("data-procable-hidden"));
     // Kept, the white layer covers the copy and it is not scored.
     assert!(!has(&flagged(&kept), "low-contrast", "#covered-copy"), "{kept:#?}");
 }
@@ -268,7 +268,7 @@ fn a_preloader_that_clears_is_waited_for_and_nothing_hidden() {
     assert!(has(&flagged(&findings), "low-contrast", "#covered-copy"), "{findings:#?}");
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert!(report.hidden.is_empty(), "{report:?}");
-    assert!(report.waited_ms > 0 && report.waited_ms < impeccable_browser::overlays::PRELOADER_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms > 0 && report.waited_ms < procable_browser::overlays::PRELOADER_WAIT_MS, "{}", report.waited_ms);
 }
 
 #[test]
@@ -360,7 +360,7 @@ fn an_intro_that_ends_is_waited_for_and_nothing_hidden() {
     assert!(has(&flagged(&findings), "low-contrast", "#covered-copy"), "{findings:#?}");
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert!(report.hidden.is_empty(), "{report:?}");
-    assert!(report.waited_ms > 0 && report.waited_ms < impeccable_browser::overlays::PRELOADER_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms > 0 && report.waited_ms < procable_browser::overlays::PRELOADER_WAIT_MS, "{}", report.waited_ms);
 }
 
 #[test]
@@ -376,7 +376,7 @@ fn an_intro_that_never_ends_is_hidden_after_its_budget() {
     assert!(has(&flagged(&findings), "low-contrast", "#covered-copy"), "{findings:#?}");
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert_eq!(report.hidden, vec![hidden("intro", "div.cine-intro")]);
-    assert!(report.waited_ms >= impeccable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms >= procable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
 }
 
 /// A named intro whose text is longer than a splash allows and mentions
@@ -450,7 +450,7 @@ fn an_unnamed_intro_that_ends_is_waited_for_and_nothing_hidden() {
     assert!(has(&flagged(&findings), "low-contrast", "#covered-copy"), "{findings:#?}");
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert!(report.hidden.is_empty(), "{report:?}");
-    assert!(report.waited_ms > 0 && report.waited_ms < impeccable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms > 0 && report.waited_ms < procable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
 }
 
 /// The same layer, never removed once its animation ends: waited for the
@@ -468,7 +468,7 @@ fn an_unnamed_intro_that_never_ends_is_hidden_after_its_budget() {
     assert!(has(&flagged(&findings), "low-contrast", "#covered-copy"), "{findings:#?}");
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert_eq!(report.hidden, vec![hidden("intro", "div.spl")]);
-    assert!(report.waited_ms >= impeccable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms >= procable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
 }
 
 /// Twins of the unnamed intro that stay: an aria-hidden layer whose only
@@ -514,7 +514,7 @@ fn an_unnamed_fixed_hero_that_animates_stays() {
     browser.close();
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert!(report.hidden.is_empty(), "{report:?}");
-    assert!(report.waited_ms < impeccable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms < procable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
 }
 
 /// Review probe `hero-kenburns` (round 14): a fixed aria-hidden hero playing
@@ -552,5 +552,5 @@ fn an_unnamed_intro_over_a_sparse_page_is_still_waited_for() {
     browser.close();
     let report = evidence.overlays.as_ref().expect("overlay report");
     assert!(report.hidden.is_empty(), "{report:?}");
-    assert!(report.waited_ms > 0 && report.waited_ms < impeccable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
+    assert!(report.waited_ms > 0 && report.waited_ms < procable_browser::overlays::INTRO_WAIT_MS, "{}", report.waited_ms);
 }

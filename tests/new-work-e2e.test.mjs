@@ -13,7 +13,7 @@
  * cases) and is not repeated here.
  *
  * Both verbs (`serve-question`, `generate-image`) run through the engine
- * binary from tests/lib/engine-bin.mjs (IMPECCABLE_BIN or
+ * binary from tests/lib/engine-bin.mjs (PROCABLE_BIN or
  * skill/scripts/bin/<os>-<arch>/); the suite fails loudly without one.
  *
  * One-time setup:  npx playwright install chromium
@@ -74,7 +74,7 @@ function run(args, cwd) {
   return new Promise((resolve) => {
     const child = spawn(ENGINE_BIN, ['serve-question', ...args], {
       cwd,
-      env: engineEnv(ENGINE_BIN, { IMPECCABLE_QUESTION_FORCE: '1', IMPECCABLE_CATALOG_DIR: CATALOG_DIR }),
+      env: engineEnv(ENGINE_BIN, { PROCABLE_QUESTION_FORCE: '1', PROCABLE_CATALOG_DIR: CATALOG_DIR }),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let out = '';
@@ -128,7 +128,7 @@ function spawnSyncGen(prompt, out, size = null) {
   const args = ['generate-image', '--prompt', prompt, '--out', out];
   if (size) args.push('--size', size);
   return spawnSync(ENGINE_BIN, args, {
-    env: engineEnv(ENGINE_BIN, { IMPECCABLE_IMAGE_GEN_FAKE: '1' }),
+    env: engineEnv(ENGINE_BIN, { PROCABLE_IMAGE_GEN_FAKE: '1' }),
     encoding: 'buffer',
   });
 }
@@ -197,7 +197,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       assert.equal(appearance.switchBorder, appearance.rule, 'switch track has a quiet border');
       await page.locator('.card').first().hover();
       assert.equal(await page.locator('.face.lead').evaluate((el) => getComputedStyle(el).borderTopColor), appearance.kinpaku, 'hover preserves the default Kinpaku outline');
-      await page.getByRole('img', { name: 'Impeccable', exact: true }).waitFor();
+      await page.getByRole('img', { name: 'Procable', exact: true }).waitFor();
       assert.deepEqual(externalRequests, [], 'dialog must not request third-party resources');
       assert.deepEqual(fontResponses, [], 'no bundled or remote font downloads');
     } finally {
@@ -278,7 +278,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       assert.equal(first.code, 0, first.out);
       assert.match(first.out, /"optionId":"reroll"/);
       assert.match(first.out, /colder, more restraint/);
-      assert.ok(existsSync(path.join(cwd, '.impeccable', 'questions', `${key}.state.json`)),
+      assert.ok(existsSync(path.join(cwd, '.procable', 'questions', `${key}.state.json`)),
         'server state file survives a re-roll');
 
       // Deliver the next hand; the live page reloads itself.
@@ -298,7 +298,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       assert.equal(bot.results[1].action, 'pick');
 
       // Terminal pick cleans the state file up.
-      assert.ok(!existsSync(path.join(cwd, '.impeccable', 'questions', `${key}.state.json`)),
+      assert.ok(!existsSync(path.join(cwd, '.procable', 'questions', `${key}.state.json`)),
         'terminal pick removes the server state file');
     } finally {
       await stopDaemon(cwd, key);
@@ -413,29 +413,29 @@ describe('new-work-e2e: serve-question decision page', () => {
           viewport: 'The daily program fills a ruled community board.',
           case: 'The audience already reads this visual language.',
           risk: 'Can become nostalgic if the type loses discipline.',
-          comp: path.join(cwd, '.impeccable', 'mocks', 'decision', 'missing.webp'),
+          comp: path.join(cwd, '.procable', 'mocks', 'decision', 'missing.webp'),
         },
         {
           id: 'kept-only', label: 'Kept Line Only',
           kept: 'Keep the hand-painted timetable as the organizing device.',
-          comp: path.join(cwd, '.impeccable', 'mocks', 'decision', 'kept-missing.webp'),
+          comp: path.join(cwd, '.procable', 'mocks', 'decision', 'kept-missing.webp'),
         },
         {
           id: 'body-only', label: 'Body Line Only',
           thesis: 'A compact neighborhood notice.',
           body: 'Body copy must remain present exactly once.',
-          comp: path.join(cwd, '.impeccable', 'mocks', 'decision', 'body-missing.webp'),
+          comp: path.join(cwd, '.procable', 'mocks', 'decision', 'body-missing.webp'),
         },
         {
           id: 'plain-body', label: 'Plain Body',
           body: 'Plain body follows the promoted facts.',
           viewport: 'A compact neighborhood notice fills the first viewport.',
-          comp: path.join(cwd, '.impeccable', 'mocks', 'decision', 'plain-body-missing.webp'),
+          comp: path.join(cwd, '.procable', 'mocks', 'decision', 'plain-body-missing.webp'),
         },
         {
           id: 'board-only', label: 'Board Fallback',
           board,
-          comp: path.join(cwd, '.impeccable', 'mocks', 'decision', 'board-missing.webp'),
+          comp: path.join(cwd, '.procable', 'mocks', 'decision', 'board-missing.webp'),
         },
       ],
       reroll: true,
@@ -510,7 +510,7 @@ describe('new-work-e2e: serve-question decision page', () => {
           // A stray comp on a declined card must not re-promote it to a
           // full media face; the renderer ignores it outright. Declared with
           // the legacy `sketch` key, which doubles as alias coverage.
-          sketch: '.impeccable/sketches/challenger-deepsea.webp',
+          sketch: '.procable/sketches/challenger-deepsea.webp',
         },
         { id: 'challenger-waxprint', label: 'Wax Print Market', verdict: 'competitive', hero: winnerHero },
       ],
@@ -616,7 +616,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       assert.equal(firstAnswer.optionId, 'assigned');
       assert.equal(firstAnswer.followup, true, 'the answer marks the table as still open');
       assert.match(first.out, /FOLLOWUP OPEN:/, 'the directive tells the agent to send the next round');
-      assert.ok(existsSync(path.join(cwd, '.impeccable', 'questions', `${key}.state.json`)),
+      assert.ok(existsSync(path.join(cwd, '.procable', 'questions', `${key}.state.json`)),
         'server state file survives a followup pick');
 
       // The page swapped to the loading hand instead of goodbye.
@@ -637,7 +637,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       const secondAnswer = JSON.parse(second.out.match(/ANSWER: (\{.*\})/)[1]);
       assert.equal(secondAnswer.optionId, 'code-led');
       assert.equal(secondAnswer.followup, undefined, 'the build-path round is terminal');
-      assert.ok(!existsSync(path.join(cwd, '.impeccable', 'questions', `${key}.state.json`)),
+      assert.ok(!existsSync(path.join(cwd, '.procable', 'questions', `${key}.state.json`)),
         'the terminal pick removes the server state file');
     } finally {
       await stopDaemon(cwd, key);
@@ -655,7 +655,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       options: [
         {
           id: 'assigned', label: 'The Ledger Spine', kicker: 'THE ROLL',
-          comp: '.impeccable/mocks/decision/assigned.webp',
+          comp: '.procable/mocks/decision/assigned.webp',
           wireframe: { regions: [{ label: 'rail', x: 0, y: 0, w: 3, h: 10 }, { label: 'rows', x: 3, y: 0, w: 9, h: 10 }] },
         },
       ],
@@ -677,8 +677,8 @@ describe('new-work-e2e: serve-question decision page', () => {
       assert.match(flipped.out, /BUILD PATH FLIPPED: comp/, 'the flip surfaces through --wait');
       assert.doesNotMatch(flipped.out, /ANSWER:/, 'a flip is not an answer');
       // The agent generates the comp; the shimmer swaps for it.
-      mkdirSync(path.join(cwd, '.impeccable', 'mocks', 'decision'), { recursive: true });
-      makeFakeImage(path.join(cwd, '.impeccable', 'mocks', 'decision'), 'ledger spine comp', 'assigned.webp');
+      mkdirSync(path.join(cwd, '.procable', 'mocks', 'decision'), { recursive: true });
+      makeFakeImage(path.join(cwd, '.procable', 'mocks', 'decision'), 'ledger spine comp', 'assigned.webp');
       await page.waitForSelector('.card[data-id="assigned"] .media img.comp:not([hidden])', { timeout: 15000 });
       await page.click('.card[data-id="assigned"] .face.front button.choose');
       const collected = await waitLoop(cwd, key, { poll: 10 });
@@ -699,7 +699,7 @@ describe('new-work-e2e: serve-question decision page', () => {
   // files written for this hand, opens the file as written on expand, and the
   // picked sketch rides the answer as the composition to build.
   const sketchHtml = (headline, copy) => `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;height:900px;overflow:hidden;font-family:system-ui;background:#10161c;color:#edf1f4}h1{font-size:56px;margin:40px}p{font-size:15px;margin:0 40px}</style></head><body><h1>${headline}</h1><p>${copy}</p></body></html>`;
-  const decisionDir = (cwd) => { const d = path.join(cwd, '.impeccable', 'mocks', 'decision'); mkdirSync(d, { recursive: true }); return d; };
+  const decisionDir = (cwd) => { const d = path.join(cwd, '.procable', 'mocks', 'decision'); mkdirSync(d, { recursive: true }); return d; };
 
   it('(s1) sketches land as skeletons, a stale one waits for its rewrite, expand opens the raw file, and the pick carries it', async () => {
     const cwd = makeWorkspace();
@@ -711,8 +711,8 @@ describe('new-work-e2e: serve-question decision page', () => {
       title: 'Choose the structure',
       buildPath: { value: 'code', toggle: true },
       options: [
-        { id: 'assigned', label: 'Night timetable', kicker: 'THE ROLL', html: '.impeccable/mocks/decision/assigned.html', comp: '.impeccable/mocks/decision/assigned.webp' },
-        { id: 'phone', label: 'Pocket ledger', html: '.impeccable/mocks/decision/phone.html', htmlFrame: '390x844' },
+        { id: 'assigned', label: 'Night timetable', kicker: 'THE ROLL', html: '.procable/mocks/decision/assigned.html', comp: '.procable/mocks/decision/assigned.webp' },
+        { id: 'phone', label: 'Pocket ledger', html: '.procable/mocks/decision/phone.html', htmlFrame: '390x844' },
       ],
     };
     const { url } = await startDaemon(cwd, payload, key);
@@ -747,7 +747,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       await context.close();
       assert.equal(collected.code, 0, collected.out);
       const answer = JSON.parse(collected.out.match(/ANSWER: (\{.*\})/)[1]);
-      assert.equal(answer.html, '.impeccable/mocks/decision/assigned.html', 'the answer carries the picked sketch');
+      assert.equal(answer.html, '.procable/mocks/decision/assigned.html', 'the answer carries the picked sketch');
       assert.match(collected.out, /CHOSEN SKETCH:/, 'the sketch is named as the composition to build');
     } finally {
       await stopDaemon(cwd, key);
@@ -762,7 +762,7 @@ describe('new-work-e2e: serve-question decision page', () => {
     const payload = {
       title: 'Choose the structure',
       buildPath: { value: 'code', toggle: true },
-      options: [{ id: 'assigned', label: 'Night timetable', kicker: 'THE ROLL', html: '.impeccable/mocks/decision/assigned.html', comp: '.impeccable/mocks/decision/assigned.webp' }],
+      options: [{ id: 'assigned', label: 'Night timetable', kicker: 'THE ROLL', html: '.procable/mocks/decision/assigned.html', comp: '.procable/mocks/decision/assigned.webp' }],
     };
     const { url } = await startDaemon(cwd, payload, key);
     try {
@@ -820,7 +820,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       options: [
         {
           id: 'assigned', label: 'The Ledger Spine', kicker: 'THE ROLL', hero,
-          comp: '.impeccable/mocks/decision/assigned.webp',
+          comp: '.procable/mocks/decision/assigned.webp',
           viewport: 'A ruled masthead over a dense grid.', risk: 'Reads editorial.',
         },
       ],
@@ -854,8 +854,8 @@ describe('new-work-e2e: serve-question decision page', () => {
 
       // A comp that streams in must be openable. The zoom handlers used to be
       // bound once at deal time, so anything built by the flip was inert.
-      mkdirSync(path.join(cwd, '.impeccable', 'mocks', 'decision'), { recursive: true });
-      makeFakeImage(path.join(cwd, '.impeccable', 'mocks', 'decision'), 'ledger spine comp', 'assigned.webp');
+      mkdirSync(path.join(cwd, '.procable', 'mocks', 'decision'), { recursive: true });
+      makeFakeImage(path.join(cwd, '.procable', 'mocks', 'decision'), 'ledger spine comp', 'assigned.webp');
       await page.waitForSelector(`${front} .media img.comp:not([hidden])`, { timeout: 15000 });
       await page.click(`${front} .media .chip.expand`);
       await page.waitForSelector('#lightbox:not([hidden])');
@@ -910,7 +910,7 @@ describe('new-work-e2e: serve-question decision page', () => {
       steer: true,
     };
     await startDaemon(cwd, payload, key);
-    const state = JSON.parse(readFileSync(path.join(cwd, '.impeccable', 'questions', `${key}.state.json`), 'utf8'));
+    const state = JSON.parse(readFileSync(path.join(cwd, '.procable', 'questions', `${key}.state.json`), 'utf8'));
     try {
       const context = await browser.newContext();
       const page = await context.newPage();

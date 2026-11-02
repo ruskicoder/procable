@@ -1,4 +1,4 @@
-/* VENDORED from impeccable-site/site/styles/kinpaku-kit.css (buttons, tabs, select, icon button, instrument strip, grain, switch, paper strip, thumb) (the source of truth).
+/* VENDORED from procable-site/site/styles/kinpaku-kit.css (buttons, tabs, select, icon button, instrument strip, grain, switch, paper strip, thumb) (the source of truth).
    Do not edit here: change the site, then run node scripts/sync-kinpaku-kit.mjs. */
 /* ============================================================
    Buttons: primary, secondary, ghost, disabled
@@ -570,7 +570,7 @@ body::before {
 
    The detector flags bad design with a small gold tag carrying dark mono
    text. That tag is the one device a visitor already associates with
-   Impeccable, so it is also how the site labels things: section numerals,
+   Procable, so it is also how the site labels things: section numerals,
    a card's state, a release's status. Small, mono, ink on gold. It is the
    only gold fill allowed on paper, and it never grows past a label.
    ============================================================ */

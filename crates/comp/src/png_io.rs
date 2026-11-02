@@ -201,7 +201,7 @@ mod review_image_tests {
     #[test]
     fn load_raster_reads_an_edited_non_png_source() {
         let unique = format!(
-            "impeccable-load-raster-{}-{}",
+            "procable-load-raster-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)

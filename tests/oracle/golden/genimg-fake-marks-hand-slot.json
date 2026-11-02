@@ -1,10 +1,10 @@
 {
-  "stdout": "IMAGE: .impeccable/mocks/decision/a.png (64x40, fake synthetic comp, $0.00, no API call)\n",
+  "stdout": "IMAGE: .procable/mocks/decision/a.png (64x40, fake synthetic comp, $0.00, no API call)\n",
   "stderr": "",
   "exit": 0,
   "signal": null,
   "files": {
-    ".impeccable/questions/k1.generated/bc804e5cae3cb360-0123456789abcdef.json": "{\"slot\":\".impeccable/mocks/decision/a.png\",\"hand\":\"0123456789abcdef\"}",
-    ".impeccable/questions/k1.hand.json": "{\"digest\":\"0123456789abcdef\",\"comps\":[\".impeccable/mocks/decision/a.png\",\".impeccable/mocks/decision/b.png\"],\"pre\":{}}"
+    ".procable/questions/k1.generated/bc804e5cae3cb360-0123456789abcdef.json": "{\"slot\":\".procable/mocks/decision/a.png\",\"hand\":\"0123456789abcdef\"}",
+    ".procable/questions/k1.hand.json": "{\"digest\":\"0123456789abcdef\",\"comps\":[\".procable/mocks/decision/a.png\",\".procable/mocks/decision/b.png\"],\"pre\":{}}"
   }
 }

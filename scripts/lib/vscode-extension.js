@@ -3,9 +3,9 @@ import path from 'node:path';
 
 import { quoteLauncher, rewritePluginMarkdownTree } from './plugin-paths.js';
 
-const PROJECT_SCRIPTS = '.github/skills/impeccable/scripts';
+const PROJECT_SCRIPTS = '.github/skills/procable/scripts';
 const PROJECT_FALLBACK =
-  `That base directory resolves every \`${PROJECT_SCRIPTS}/impeccable <verb>\` command in this skill and its references, ` +
+  `That base directory resolves every \`${PROJECT_SCRIPTS}/procable <verb>\` command in this skill and its references, ` +
   `and \`${PROJECT_SCRIPTS}\` is the fallback only when the runtime reports no base directory.`;
 
 // VS Code provides the loaded skill's URI, not Claude's substitution variables.
@@ -17,29 +17,29 @@ export function rewriteVSCodeMarkdown(content, { isSkillEntrypoint = false } = {
       throw new Error('VS Code skill path rewrite drift: Setup fallback changed.');
     }
     content = content.replace(PROJECT_FALLBACK,
-      'Resolve the installed directory from this skill’s [launcher](scripts/impeccable). ' +
+      'Resolve the installed directory from this skill’s [launcher](scripts/procable). ' +
       'Replace `<skill-base-dir>` with that absolute directory before running commands; it is not a shell variable.');
   }
   return content.replaceAll(PROJECT_SCRIPTS, '<skill-base-dir>/scripts')
-    .replace(/(?<!["\w/])<skill-base-dir>\/scripts\/impeccable(\.cmd)?(?=[\s`])/g,
+    .replace(/(?<!["\w/])<skill-base-dir>\/scripts\/procable(\.cmd)?(?=[\s`])/g,
       (_, cmd) => quoteLauncher('<skill-base-dir>', Boolean(cmd)));
 }
 
 /** Stage a declarative skill extension, independently of repo-install sidecars. */
 export function stageVSCodeExtension(rootDir, distDir) {
-  const source = path.join(distDir, 'github', '.github', 'skills', 'impeccable');
+  const source = path.join(distDir, 'github', '.github', 'skills', 'procable');
   const version = JSON.parse(fs.readFileSync(path.join(rootDir, '.claude-plugin/plugin.json'), 'utf8')).version;
   const extensionRoot = path.join(distDir, 'vscode');
   // Only this generated artifact is replaced. Never touch the user's editor.
   fs.rmSync(extensionRoot, { recursive: true, force: true });
   fs.mkdirSync(extensionRoot, { recursive: true });
-  const skillDir = path.join(extensionRoot, 'skills', 'impeccable');
+  const skillDir = path.join(extensionRoot, 'skills', 'procable');
   fs.cpSync(source, skillDir, { recursive: true });
   rewritePluginMarkdownTree(skillDir, rewriteVSCodeMarkdown);
 
   const manifest = {
-    name: 'impeccable',
-    displayName: 'Impeccable',
+    name: 'procable',
+    displayName: 'Procable',
     description: 'Design skills for GitHub Copilot: build, critique, audit, and refine interfaces.',
     version,
     publisher: 'renaissance-geek',
@@ -54,7 +54,7 @@ export function stageVSCodeExtension(rootDir, distDir) {
     extensionKind: ['workspace'],
     extensionDependencies: ['GitHub.copilot-chat'],
     capabilities: { untrustedWorkspaces: { supported: false }, virtualWorkspaces: false },
-    contributes: { chatSkills: [{ path: './skills/impeccable/SKILL.md' }] },
+    contributes: { chatSkills: [{ path: './skills/procable/SKILL.md' }] },
   };
   fs.writeFileSync(path.join(extensionRoot, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   fs.copyFileSync(path.join(rootDir, 'scripts/lib/assets/plugin-icon.png'), path.join(extensionRoot, 'icon.png'));

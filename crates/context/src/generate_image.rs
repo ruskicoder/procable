@@ -2,14 +2,14 @@
 //!
 //! Upstream Impeccable sent prompts and reference images to the OpenAI
 //! images API. procable runs offline, so that path is removed. The verb keeps
-//! its offline modes: `IMPECCABLE_IMAGE_GEN_FAKE` writes deterministic
+//! its offline modes: `PROCABLE_IMAGE_GEN_FAKE` writes deterministic
 //! placeholder comps (SVG or PNG) with no request, which the comp round, the
 //! tests and code-led builds use. Anything else fails with a message that
 //! points the agent at the harness-native image tool or a code-led comp.
 
 use crate::jsp;
 use crate::util::{node_read_error, utf16_len, Env};
-use impeccable_common::Io;
+use procable_common::Io;
 use std::io::Write;
 
 /// What the verb prints when a real image is requested.
@@ -338,7 +338,7 @@ fn run_offline(args: &[String], io: &mut Io) -> i32 {
             }
         }
     };
-    if env.get("IMPECCABLE_IMAGE_GEN_FAKE").map(|v| !v.is_empty()).unwrap_or(false) {
+    if env.get("PROCABLE_IMAGE_GEN_FAKE").map(|v| !v.is_empty()).unwrap_or(false) {
         let prompt = match arg(args, "prompt-file") {
             Some(pf) => match read_prompt_file(io, &pf) {
                 Ok(p) => Some(p),
@@ -399,7 +399,7 @@ mod tests {
         let server = tiny_http::Server::http("127.0.0.1:0").unwrap();
         let url = format!("http://{}/cards/world.webp", server.server_addr());
         let dir = temp("url-ref-fake");
-        let env = Env::from([("IMPECCABLE_IMAGE_GEN_FAKE".into(), "1".into()), ("OPENAI_API_KEY".into(), "test-key".into())]);
+        let env = Env::from([("PROCABLE_IMAGE_GEN_FAKE".into(), "1".into()), ("OPENAI_API_KEY".into(), "test-key".into())]);
         let (mut io, captured) = Io::captured("", dir.clone(), env);
         let args: Vec<String> = ["--prompt", "p", "--out", "comp.png", "--ref", &url].iter().map(|s| s.to_string()).collect();
         assert_eq!(run(&args, &mut io), 0);

@@ -9,8 +9,8 @@
  *
  * 2. `createFakeAgent()` — produces canned variants in the EXACT format
  *    `skill/reference/live.md` describes: a colocated
- *    `<style data-impeccable-css="ID">` block with `@scope ([data-impeccable-variant="N"])`
- *    rules, a `data-impeccable-params` JSON manifest covering range + steps + toggle
+ *    `<style data-procable-css="ID">` block with `@scope ([data-procable-variant="N"])`
+ *    rules, a `data-procable-params` JSON manifest covering range + steps + toggle
  *    kinds across the variant set, single top-level element per variant matching
  *    the original tag.
  *
@@ -31,9 +31,9 @@ import { engineEnv } from '../lib/engine-bin.mjs';
 const execFileP = promisify(execFile);
 const CARBONIZE_HMR_BOUNDARY_MS = 250;
 
-// Outside the reserved data-impeccable-* namespace on purpose: an LLM agent
+// Outside the reserved data-procable-* namespace on purpose: an LLM agent
 // often carries the marker into its variants, and `live-complete` refuses an
-// accepted source that still holds a data-impeccable-* attribute.
+// accepted source that still holds a data-procable-* attribute.
 export const STEER_MARKER_ATTR = 'data-e2e-steer';
 export const STEER_MARKER_VALUE = 'e2e';
 
@@ -58,7 +58,7 @@ export const STEER_MARKER_VALUE = 'e2e';
  * @property {ParamSpec[]=} params       Optional 0-4 param manifest.
  *
  * @typedef {Object} GenerateOutput
- * @property {string}        scopedCss   Contents of the <style data-impeccable-css>
+ * @property {string}        scopedCss   Contents of the <style data-procable-css>
  *                                       block — `@scope` rules per variant.
  * @property {VariantSpec[]} variants
  *
@@ -88,8 +88,8 @@ export const STEER_MARKER_VALUE = 'e2e';
  * via `getComputedStyle` — variant 1 → red, variant 2 → bold, variant 3 → uppercase.
  *
  * The output mirrors a real agent's write-back faithfully:
- *   - <style data-impeccable-css="ID"> with @scope rules per variant
- *   - data-impeccable-params manifest with range + steps + toggle kinds
+ *   - <style data-procable-css="ID"> with @scope rules per variant
+ *   - data-procable-params manifest with range + steps + toggle kinds
  *   - first variant visible (no display:none), rest hidden by the agent caller
  *   - inner content = single <h1> per variant
  */
@@ -186,29 +186,29 @@ export function createFakeAgent({ autoRepairMountFailures = true } = {}) {
       // is selected. Keep these in sync with FAKE_VARIANT_FONT_WEIGHTS.
       const scopedCss = useAstroGlobalCss
         ? [
-            `[data-impeccable-variant="1"] > ${tag} {`,
+            `[data-procable-variant="1"] > ${tag} {`,
             '  font-weight: 300;',
             '  color: oklch(var(--p-lightness, 0.5) 0.25 25);',
             '}',
-            `[data-impeccable-variant="2"] > ${tag} { font-weight: 900; }`,
-            `[data-impeccable-variant="2"][data-p-face="serif"] > ${tag} { font-family: ui-serif, serif; }`,
-            `[data-impeccable-variant="2"][data-p-face="mono"]  > ${tag} { font-family: ui-monospace, monospace; }`,
-            `[data-impeccable-variant="3"] > ${tag} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`,
-            `[data-impeccable-variant="3"][data-p-italic] > ${tag} { font-style: italic; }`,
+            `[data-procable-variant="2"] > ${tag} { font-weight: 900; }`,
+            `[data-procable-variant="2"][data-p-face="serif"] > ${tag} { font-family: ui-serif, serif; }`,
+            `[data-procable-variant="2"][data-p-face="mono"]  > ${tag} { font-family: ui-monospace, monospace; }`,
+            `[data-procable-variant="3"] > ${tag} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`,
+            `[data-procable-variant="3"][data-p-italic] > ${tag} { font-style: italic; }`,
           ].join('\n')
         : [
-            '@scope ([data-impeccable-variant="1"]) {',
+            '@scope ([data-procable-variant="1"]) {',
             `  :scope > ${tag} {`,
             '    font-weight: 300;',
             '    color: oklch(var(--p-lightness, 0.5) 0.25 25);',
             '  }',
             '}',
-            '@scope ([data-impeccable-variant="2"]) {',
+            '@scope ([data-procable-variant="2"]) {',
             `  :scope > ${tag} { font-weight: 900; }`,
             `  :scope[data-p-face="serif"] > ${tag} { font-family: ui-serif, serif; }`,
             `  :scope[data-p-face="mono"]  > ${tag} { font-family: ui-monospace, monospace; }`,
             '}',
-            '@scope ([data-impeccable-variant="3"]) {',
+            '@scope ([data-procable-variant="3"]) {',
             `  :scope > ${tag} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`,
             `  :scope[data-p-italic] > ${tag} { font-style: italic; }`,
             '}',
@@ -287,29 +287,29 @@ function generateInsertFakeVariants(context = {}) {
 
   const scopedCss = useAstroGlobalCss
     ? [
-        '[data-impeccable-variant="1"] .inserted-copy {',
+        '[data-procable-variant="1"] .inserted-copy {',
         '  font-weight: 300;',
         '  color: oklch(var(--p-lightness, 0.5) 0.25 25);',
         '}',
-        '[data-impeccable-variant="2"] .inserted-copy { font-weight: 900; }',
-        '[data-impeccable-variant="2"][data-p-face="serif"] .inserted-copy { font-family: ui-serif, serif; }',
-        '[data-impeccable-variant="2"][data-p-face="mono"]  .inserted-copy { font-family: ui-monospace, monospace; }',
-        '[data-impeccable-variant="3"] .inserted-copy { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }',
-        '[data-impeccable-variant="3"][data-p-italic] .inserted-copy { font-style: italic; }',
+        '[data-procable-variant="2"] .inserted-copy { font-weight: 900; }',
+        '[data-procable-variant="2"][data-p-face="serif"] .inserted-copy { font-family: ui-serif, serif; }',
+        '[data-procable-variant="2"][data-p-face="mono"]  .inserted-copy { font-family: ui-monospace, monospace; }',
+        '[data-procable-variant="3"] .inserted-copy { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }',
+        '[data-procable-variant="3"][data-p-italic] .inserted-copy { font-style: italic; }',
       ].join('\n')
     : [
-        '@scope ([data-impeccable-variant="1"]) {',
+        '@scope ([data-procable-variant="1"]) {',
         '  :scope .inserted-copy {',
         '    font-weight: 300;',
         '    color: oklch(var(--p-lightness, 0.5) 0.25 25);',
         '  }',
         '}',
-        '@scope ([data-impeccable-variant="2"]) {',
+        '@scope ([data-procable-variant="2"]) {',
         '  :scope .inserted-copy { font-weight: 900; }',
         '  :scope[data-p-face="serif"] .inserted-copy { font-family: ui-serif, serif; }',
         '  :scope[data-p-face="mono"]  .inserted-copy { font-family: ui-monospace, monospace; }',
         '}',
-        '@scope ([data-impeccable-variant="3"]) {',
+        '@scope ([data-procable-variant="3"]) {',
         '  :scope .inserted-copy { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }',
         '  :scope[data-p-italic] .inserted-copy { font-style: italic; }',
         '}',
@@ -612,7 +612,7 @@ async function readOriginalMarkupFromWrap(wrapInfo, tmp) {
   if (!text) return null;
 
   const lines = String(text).split('\n');
-  const startIdx = lines.findIndex((line) => line.includes('data-impeccable-variant="original"'));
+  const startIdx = lines.findIndex((line) => line.includes('data-procable-variant="original"'));
   if (startIdx === -1) return null;
   const indent = (lines[startIdx].match(/^\s*/) || [''])[0];
   const closer = `${indent}</div>`;
@@ -789,7 +789,7 @@ function capitalize(str) {
   return str ? str[0].toUpperCase() + str.slice(1) : str;
 }
 
-export const HOIST_ATTR = 'data-impeccable-hoist-id';
+export const HOIST_ATTR = 'data-procable-hoist-id';
 
 export function normalizeVariantOutput(output, wrapInfo = {}) {
   const scopedCssInput = output.scopedCss || '';
@@ -826,8 +826,8 @@ export function normalizeVariantOutput(output, wrapInfo = {}) {
 
 function normalizeVariantSelectorQuotes(css) {
   return String(css).replace(
-    /\[data-impeccable-variant=(['"])(\d+)\1\]/g,
-    (_match, _quote, id) => `[data-impeccable-variant="${id}"]`,
+    /\[data-procable-variant=(['"])(\d+)\1\]/g,
+    (_match, _quote, id) => `[data-procable-variant="${id}"]`,
   );
 }
 
@@ -863,7 +863,7 @@ async function writeWatchedSourceFile(fullPath, body, { moduleUrl = null } = {})
   // the dev server can read mid-Apply and answer with a full reload. The temp
   // file sits beside the target so the rename stays on one filesystem, and
   // its `.tmp` extension is no source module any framework resolves.
-  const temporaryPath = `${fullPath}.impeccable-manual-apply-${process.pid}.tmp`;
+  const temporaryPath = `${fullPath}.procable-manual-apply-${process.pid}.tmp`;
   try {
     await fs.writeFile(temporaryPath, body, 'utf-8');
     await fs.rename(temporaryPath, fullPath);
@@ -1477,29 +1477,29 @@ function renderMissingBaseVariantRules({ scopedCss, count, styleMode }) {
 function hasBaseVariantRule(scopedCss, variantId, styleMode) {
   const q = String.raw`["']${variantId}["']`;
   if (styleMode === 'astro-global-prefixed') {
-    return new RegExp(String.raw`\[data-impeccable-variant=${q}\](?:\s|>|\.|#|\[${HOIST_ATTR}=)`).test(scopedCss);
+    return new RegExp(String.raw`\[data-procable-variant=${q}\](?:\s|>|\.|#|\[${HOIST_ATTR}=)`).test(scopedCss);
   }
-  return new RegExp(String.raw`@scope\s*\(\s*\[data-impeccable-variant=${q}\]\s*\)`).test(scopedCss);
+  return new RegExp(String.raw`@scope\s*\(\s*\[data-procable-variant=${q}\]\s*\)`).test(scopedCss);
 }
 
 function renderBaseVariantRule(variantId, styleMode) {
   if (styleMode === 'astro-global-prefixed') {
     return [
-      `[data-impeccable-variant="${variantId}"] > * {`,
-      '  --impeccable-variant-ready: 1;',
+      `[data-procable-variant="${variantId}"] > * {`,
+      '  --procable-variant-ready: 1;',
       '}',
     ].join('\n');
   }
   return [
-    `@scope ([data-impeccable-variant="${variantId}"]) {`,
-    '  :scope > * { --impeccable-variant-ready: 1; }',
+    `@scope ([data-procable-variant="${variantId}"]) {`,
+    '  :scope > * { --procable-variant-ready: 1; }',
     '}',
   ].join('\n');
 }
 
 // Walk each opening tag char-by-char (respecting quotes so a literal `>`
 // inside an attribute value doesn't terminate the tag early), strip any
-// `style="..."`, and tag the element with `data-impeccable-hoist-id="N"`.
+// `style="..."`, and tag the element with `data-procable-hoist-id="N"`.
 // The downstream rule selects on that attribute so it targets the exact
 // element that was styled — never sibling tags of the same name.
 function stripInlineStylesPerElement(innerHtml) {
@@ -1576,13 +1576,13 @@ function renderHoistedInlineStyleRule({ variantId, hoistId, declarations, styleM
   const target = `[${HOIST_ATTR}="${hoistId}"]`;
   if (styleMode === 'astro-global-prefixed') {
     return [
-      `[data-impeccable-variant="${variantId}"] ${target} {`,
+      `[data-procable-variant="${variantId}"] ${target} {`,
       ...lines.map((line) => line.slice(2)),
       '}',
     ].join('\n');
   }
   return [
-    `@scope ([data-impeccable-variant="${variantId}"]) {`,
+    `@scope ([data-procable-variant="${variantId}"]) {`,
     `  :scope ${target} {`,
     ...lines,
     '  }',
@@ -1598,7 +1598,7 @@ function renderHoistedInlineStyleRule({ variantId, hoistId, declarations, styleM
  *     doesn't choke on the {} in CSS
  *   - non-default visible variants use style={{display: 'none'}}
  *   - inner element class= becomes className=, style="..." becomes JSX style={{ ... }}
- *   - data-impeccable-params stays a single-quoted JSON string (JSX-legal)
+ *   - data-procable-params stays a single-quoted JSON string (JSX-legal)
  */
 function renderVariantsBlock({ sessionId, indent, output, commentSyntax, file, styleMode }) {
   const isJsx = commentSyntax.open === '{/*';
@@ -1607,12 +1607,12 @@ function renderVariantsBlock({ sessionId, indent, output, commentSyntax, file, s
 
   const styleLines = isJsx
     ? [
-        indent + '  <style data-impeccable-css="' + sessionId + '">{`',
+        indent + '  <style data-procable-css="' + sessionId + '">{`',
         ...output.scopedCss.split('\n').map((l) => indent + '    ' + l),
         indent + '  `}</style>',
       ]
     : [
-        indent + '  <style' + (isAstroGlobalCss ? ' is:inline' : '') + ' data-impeccable-css="' + sessionId + '">',
+        indent + '  <style' + (isAstroGlobalCss ? ' is:inline' : '') + ' data-procable-css="' + sessionId + '">',
         ...output.scopedCss.split('\n').map((l) => indent + '    ' + l),
         indent + '  </style>',
       ];
@@ -1620,14 +1620,14 @@ function renderVariantsBlock({ sessionId, indent, output, commentSyntax, file, s
   const variantBlocks = output.variants.map((v, i) => {
     const idx = i + 1;
     const paramsAttr = v.params && v.params.length
-      ? " data-impeccable-params='" + attrEscape(JSON.stringify(v.params), { svelte: isSvelte }) + "'"
+      ? " data-procable-params='" + attrEscape(JSON.stringify(v.params), { svelte: isSvelte }) + "'"
       : '';
     let styleAttr = '';
     if (i !== 0) styleAttr = isJsx ? " style={{display: 'none'}}" : ' style="display: none"';
     const inner = isJsx ? htmlToJsx(v.innerHtml) : v.innerHtml;
     return [
       indent + '  ' + commentSyntax.open + ' Variant ' + idx + ' ' + commentSyntax.close,
-      indent + '  <div data-impeccable-variant="' + idx + '"' + styleAttr + paramsAttr + '>',
+      indent + '  <div data-procable-variant="' + idx + '"' + styleAttr + paramsAttr + '>',
       indent + '    ' + inner,
       indent + '  </div>',
     ].join('\n');
@@ -1669,7 +1669,7 @@ function spliceVariantsIntoLines(lines, { sessionId, output, commentSyntax, file
   });
 
   const endMarkerIdx = lines.findIndex((line, index) =>
-    index > markerIdx && line.includes('impeccable-variants-end ' + sessionId),
+    index > markerIdx && line.includes('procable-variants-end ' + sessionId),
   );
   if (endMarkerIdx === -1) {
     throw new Error('end marker not found in ' + file);
@@ -1764,8 +1764,8 @@ async function writeSvelteComponentVariants({ tmp, wrapInfo, event, output, writ
     if (isInsert && !variantMarkupHasVisibleContent(markup)) {
       throw new Error(`Svelte insert variant ${variantId} has no visible content`);
     }
-    if (isInsert && /\bdata-impeccable-[\w-]*\s*=/.test(markup)) {
-      throw new Error(`Svelte insert variant ${variantId} contains preview-only data-impeccable attributes`);
+    if (isInsert && /\bdata-procable-[\w-]*\s*=/.test(markup)) {
+      throw new Error(`Svelte insert variant ${variantId} contains preview-only data-procable attributes`);
     }
     const css = svelteCssForVariant(output.scopedCss || '', variantId, tag);
     const component = [
@@ -1853,8 +1853,8 @@ function svelteCssForVariant(scopedCss, variantId, tag) {
   const chunks = extractVariantCssChunks(css, variantId);
   const rewritten = chunks
     .join('\n')
-    .replace(new RegExp(String.raw`\\[data-impeccable-variant=["']${variantId}["']\\]\\s*>\\s*`, 'g'), '')
-    .replace(new RegExp(String.raw`\\[data-impeccable-variant=["']${variantId}["']\\][^{]*>\\s*`, 'g'), '')
+    .replace(new RegExp(String.raw`\\[data-procable-variant=["']${variantId}["']\\]\\s*>\\s*`, 'g'), '')
+    .replace(new RegExp(String.raw`\\[data-procable-variant=["']${variantId}["']\\][^{]*>\\s*`, 'g'), '')
     .replace(/:scope(?:\[[^\]]+\])?\s*>\s*/g, '')
     .replace(/:scope(?:\[[^\]]+\])?/g, tag)
     .split('\n')
@@ -1871,7 +1871,7 @@ function extractVariantCssChunks(css, variantId) {
   let collecting = false;
   let depth = 0;
   for (const line of lines) {
-    if (line.includes(`[data-impeccable-variant="${variantId}"]`) || line.includes(`[data-impeccable-variant='${variantId}']`)) {
+    if (line.includes(`[data-procable-variant="${variantId}"]`) || line.includes(`[data-procable-variant='${variantId}']`)) {
       collecting = true;
       depth = 0;
       if (!line.trim().startsWith('@scope')) chunks.push(line);
@@ -1903,7 +1903,7 @@ function braceDelta(line) {
 /**
  * @param {object} opts
  * @param {string} opts.tmp        Project tmp dir (cwd for the live-* verbs).
- * @param {string} opts.engineBin  Path to the impeccable engine binary.
+ * @param {string} opts.engineBin  Path to the procable engine binary.
  * @param {number} opts.port       live-server port.
  * @param {string} opts.token      live-server token.
  * @param {LiveAgent} opts.agent
@@ -2075,7 +2075,7 @@ export async function runAgentLoop({
           await spliceVariantsIntoWrapper({ tmp, wrapInfo, sessionId: event.id, output });
         }
         trace('agent.write.end', { id: event.id, file: wrapInfo.file });
-        if (process.env.IMPECCABLE_E2E_DEBUG) {
+        if (process.env.PROCABLE_E2E_DEBUG) {
           const post = await fs.readFile(path.join(tmp, wrapInfo.file), 'utf-8');
           log(`--- post-splice (variants written) ---\n${post}`);
         }
@@ -2173,7 +2173,7 @@ export async function runAgentLoop({
         }
         log("Using source hints first; I'll only touch the hinted copy.");
         const result = await agent.applyManualEdits(event, { tmp, engineBin, devOrigin });
-        if (process.env.IMPECCABLE_E2E_DEBUG) {
+        if (process.env.PROCABLE_E2E_DEBUG) {
           log(`manual_edit_apply result: ${JSON.stringify(result)}`);
         }
         await runPollReply({
@@ -2239,7 +2239,7 @@ export async function runAgentLoop({
         // the @scope rules into the project's stylesheet — out of scope for
         // a deterministic test.
         if (acceptResult.handled === true && acceptResult.carbonize === true && acceptResult.file) {
-          if (process.env.IMPECCABLE_E2E_DEBUG) {
+          if (process.env.PROCABLE_E2E_DEBUG) {
             const post = await fs.readFile(path.join(tmp, acceptResult.file), 'utf-8');
             log(`--- post-accept (pre-carbonize) ---\n${post}`);
           }
@@ -2509,13 +2509,13 @@ async function runInsert({ tmp, engineBin, id, count, position, classes, tag, el
  * Apply the post-accept carbonize cleanup to the given file. Mirrors the
  * five-step rewrite the live skill expects of the agent:
  *
- *   1. Locate the carbonize block (bracketed by `impeccable-carbonize-start`
- *      and `impeccable-carbonize-end`).
+ *   1. Locate the carbonize block (bracketed by `procable-carbonize-start`
+ *      and `procable-carbonize-end`).
  *   2. Step 2 ("move CSS into the project stylesheet") is skipped — that
  *      requires per-project judgment about which file owns these styles.
  *      The fake agent leaves CSS migration to the LLM-backed agent.
  *   3-5. Strip the carbonize block entirely AND unwrap the temporary
- *      `<div data-impeccable-variant="N" style="display: contents"|...>` wrapper
+ *      `<div data-procable-variant="N" style="display: contents"|...>` wrapper
  *      that holds the accepted content. The accepted inner element survives.
  */
 async function runCarbonizeCleanup({ tmp, file, sessionId /* , variant */ }) {
@@ -2524,8 +2524,8 @@ async function runCarbonizeCleanup({ tmp, file, sessionId /* , variant */ }) {
 
   // 1. Strip the carbonize block. We match either comment style so this
   // works for both HTML and JSX targets.
-  const startRe = new RegExp('[ \\t]*(?:<!--|\\{/\\*)\\s*impeccable-carbonize-start\\s+' + sessionId + '\\s*(?:-->|\\*/\\})\\n');
-  const endRe   = new RegExp('[ \\t]*(?:<!--|\\{/\\*)\\s*impeccable-carbonize-end\\s+' + sessionId + '\\s*(?:-->|\\*/\\})\\n?');
+  const startRe = new RegExp('[ \\t]*(?:<!--|\\{/\\*)\\s*procable-carbonize-start\\s+' + sessionId + '\\s*(?:-->|\\*/\\})\\n');
+  const endRe   = new RegExp('[ \\t]*(?:<!--|\\{/\\*)\\s*procable-carbonize-end\\s+' + sessionId + '\\s*(?:-->|\\*/\\})\\n?');
   const startMatch = body.match(startRe);
   const endMatch = body.match(endRe);
   if (startMatch && endMatch && startMatch.index < endMatch.index) {
@@ -2534,25 +2534,25 @@ async function runCarbonizeCleanup({ tmp, file, sessionId /* , variant */ }) {
     body = body.slice(0, startIdx) + body.slice(endIdx);
   }
 
-  // 2. Unwrap the temporary `<div data-impeccable-variant="N" ...>` placed
+  // 2. Unwrap the temporary `<div data-procable-variant="N" ...>` placed
   // around the accepted content. For JSX targets, live-accept also adds an
-  // outer `<div data-impeccable-carbonize>` so the carbonize block and accepted
+  // outer `<div data-procable-carbonize>` so the carbonize block and accepted
   // node occupy one child slot; strip that shell after the accepted node is
   // clean.
-  body = unwrapDivAttributeWrapper(body, 'data-impeccable-variant', { expandSingleLineContainer: true });
-  body = unwrapDivAttributeWrapper(body, 'data-impeccable-carbonize');
+  body = unwrapDivAttributeWrapper(body, 'data-procable-variant', { expandSingleLineContainer: true });
+  body = unwrapDivAttributeWrapper(body, 'data-procable-carbonize');
 
-  // 3. Strip any `data-impeccable-hoist-id` attributes the normalize step
+  // 3. Strip any `data-procable-hoist-id` attributes the normalize step
   // may have injected when the model emitted inline styles. The hoisted
   // CSS already migrated into the project stylesheet (real agent) or was
   // dropped with the carbonize block (fake agent); the attribute on the
   // element is now dead weight.
-  body = body.replace(/\s+data-impeccable-hoist-id="[^"]*"/g, '');
+  body = body.replace(/\s+data-procable-hoist-id="[^"]*"/g, '');
 
   // Publish the clean source atomically. A direct write briefly exposes a
   // zero-byte file, which can make the harness (and Vite) observe cleanup as
   // complete before the accepted source has actually landed.
-  const temporaryPath = `${filePath}.impeccable-carbonize-${sessionId}.tmp`;
+  const temporaryPath = `${filePath}.procable-carbonize-${sessionId}.tmp`;
   await fs.writeFile(temporaryPath, body, 'utf-8');
   await fs.rename(temporaryPath, filePath);
 }

@@ -2,8 +2,8 @@ use super::{
     manifest::{digest, relative},
     store,
 };
-use impeccable_common::http::{Exchange, Request, Response, SerialServer};
-use impeccable_common::Io;
+use procable_common::http::{Exchange, Request, Response, SerialServer};
+use procable_common::Io;
 use serde_json::{json, Value};
 use std::{
     path::Path,
@@ -12,7 +12,7 @@ use std::{
 };
 
 const JS: &str = include_str!("../../assets/component-review.js");
-const HTML: &str = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Component review · Impeccable</title><link rel='stylesheet' href='/review.css'></head><body><main id='review'></main><script src='/review.js' defer></script></body></html>";
+const HTML: &str = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Component review · Procable</title><link rel='stylesheet' href='/review.css'></head><body><main id='review'></main><script src='/review.js' defer></script></body></html>";
 const CSS: &str = concat!("@font-face{font-family:Albert Sans;src:url(/fonts/albertsans.ttf)}@font-face{font-family:Alumni Sans;src:url(/fonts/alumnisans.ttf)}@font-face{font-family:JetBrains Mono;src:url(/fonts/jetbrainsmono.ttf)}body{margin:0;color:var(--ks-text,#292929);background:var(--ks-paper,#fafafa);--font-sans:'Albert Sans',Arial,sans-serif;--font-display:'Alumni Sans',Arial,sans-serif;--font-mono:'JetBrains Mono',monospace}body>p{padding:24px;font:16px var(--font-sans)}", include_str!("../../../../ui/component-review/theme.css"));
 /// Decision bodies over this are refused. The reader keeps one byte more so
 /// an oversized body is told apart from one exactly at the limit.

@@ -1,12 +1,12 @@
 //! Native component previews over the shared frozen-input/CDP capture foundation.
 //! This records provenance and pixels; visual acceptance remains a separate human decision.
 use base64::Engine;
-use impeccable_browser::{
+use procable_browser::{
     cdp::{Browser, Viewport},
     discovery,
     html_snapshot::HtmlSnapshot,
 };
-use impeccable_context::component_review::capture::{CapturedPreviews, ComponentCapturer};
+use procable_context::component_review::capture::{CapturedPreviews, ComponentCapturer};
 use serde_json::{Value, json};
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
@@ -27,7 +27,7 @@ fn source(view: &Value) -> Result<&str, String> {
         .ok_or_else(|| "preview needs a pinned source".into())
 }
 fn material(png: &[u8], format: &str) -> Result<Value, String> {
-    let (image, source_format) = impeccable_comp::png_io::decode_review_image(png)?;
+    let (image, source_format) = procable_comp::png_io::decode_review_image(png)?;
     let format = if format == "Captured HTML / CSS / SVG" { format } else { source_format };
     Ok(
         json!({"format":format,"width":image.width,"height":image.height,"alpha":if image.data.chunks_exact(4).any(|p|p[3]<255){"transparent"}else{"opaque"}}),
@@ -37,7 +37,7 @@ fn material(png: &[u8], format: &str) -> Result<Value, String> {
 // change edge antialiasing between frames. Verify the unmodified viewport first,
 // then take an integer crop from those exact pixels, without resizing.
 fn crop_viewport(png: &[u8], width: u32, height: u32, clip: [f64; 4]) -> Result<Vec<u8>, String> {
-    let image = impeccable_comp::png_io::decode_png(png)?.image;
+    let image = procable_comp::png_io::decode_png(png)?.image;
     if image.width != width as usize || image.height != height as usize {
         return Err("component capture does not match the requested viewport".into());
     }
@@ -50,11 +50,11 @@ fn crop_viewport(png: &[u8], width: u32, height: u32, clip: [f64; 4]) -> Result<
     }
     // Round endpoints together: round(x) + round(w) can exceed an odd-sized
     // viewport even when x + w is exactly its edge.
-    let rect = impeccable_comp::raster::clamp_rect(&image, x, y, w, h);
+    let rect = procable_comp::raster::clamp_rect(&image, x, y, w, h);
     if rect.w == 0 || rect.h == 0 {
         return Err("component box must contain real pixels inside the viewport".into());
     }
-    impeccable_comp::png_io::encode_png(&impeccable_comp::raster::crop(
+    procable_comp::png_io::encode_png(&procable_comp::raster::crop(
         &image, rect.x as f64, rect.y as f64, rect.w as f64, rect.h as f64,
     ), &[])
 }
@@ -249,7 +249,7 @@ impl ComponentCapturer for NativeComponentCapturer {
         if reference_size["width"] != width || reference_size["height"] != height {
             return Err("comp dimensions do not match its image".into());
         }
-        let env = impeccable_common::process_env();
+        let env = procable_common::process_env();
         let exe =
             discovery::find_browser(&env).map_err(|e| format!("browser unavailable: {e:?}"))?;
         let mut browser = Browser::launch(&exe, &[], false).map_err(|e| e.message)?;
@@ -363,7 +363,7 @@ mod tests {
     #[test]
     #[ignore = "requires Chromium"]
     fn reports_multiple_clipped_components_without_mutating_packet() {
-        let png = impeccable_comp::png_io::encode_png(&impeccable_comp::raster::create_image(100,100,[255;4]),&[]).unwrap();
+        let png = procable_comp::png_io::encode_png(&procable_comp::raster::create_image(100,100,[255;4]),&[]).unwrap();
         let html = br#"<style>body{margin:0}#one,#two{position:absolute;width:20px;height:20px;background:red}#one{left:10px;top:10px}#two{left:60px;top:60px}</style><div id="one"></div><div id="two"></div>"#;
         let inputs = BTreeMap::from([("comp.png".into(),png),("kit.html".into(),html.to_vec())]);
         let make = |id:&str| json!({"id":id,"box":{"x":0,"y":0,"w":0.05,"h":0.05},"preview":{"kind":"page","url":"/files/kit.html","selector":format!("#{id}")},"dependencies":[]});
@@ -380,7 +380,7 @@ mod tests {
     #[test]
     #[ignore = "requires Chromium"]
     fn generated_decoration_cannot_escape_component_crop() {
-        let png=impeccable_comp::png_io::encode_png(&impeccable_comp::raster::create_image(100,100,[255;4]),&[]).unwrap();
+        let png=procable_comp::png_io::encode_png(&procable_comp::raster::create_image(100,100,[255;4]),&[]).unwrap();
         let html=br#"<style>body{margin:0}#piece{position:absolute;left:30px;top:30px;width:20px;height:20px;background:blue}#piece::before{content:'';position:absolute;left:-20px;top:0;width:20px;height:20px;background:red}</style><div id="piece"></div>"#;
         let inputs=BTreeMap::from([("comp.png".into(),png),("index.html".into(),html.to_vec())]);
         let mut packet=json!({"schemaVersion":2,"stage":"components","comp":{"url":"/files/comp.png","width":100,"height":100},"components":[{"id":"piece","box":{"x":0.3,"y":0.3,"w":0.2,"h":0.2},"preview":{"kind":"page","url":"/files/index.html","selector":"#piece"},"dependencies":[]}]});
@@ -392,7 +392,7 @@ mod tests {
     #[test]
     #[ignore = "requires Chromium"]
     fn missing_primary_font_is_rejected_and_pinned_font_is_captured() {
-        let png = impeccable_comp::png_io::encode_png(&impeccable_comp::raster::create_image(300,100,[255;4]),&[]).unwrap();
+        let png = procable_comp::png_io::encode_png(&procable_comp::raster::create_image(300,100,[255;4]),&[]).unwrap();
         let html = "<style>body{margin:0}#piece{font:20px 'ReviewFixtureFont',sans-serif}</style><div id='piece'>Hotel review</div>";
         let mut inputs = BTreeMap::from([("comp.png".into(),png),("index.html".into(),html.as_bytes().to_vec())]);
         let packet = json!({"schemaVersion":2,"stage":"components","comp":{"url":"/files/comp.png","width":300,"height":100},"components":[{"id":"piece","box":{"x":0,"y":0,"w":1,"h":1},"preview":{"kind":"page","url":"/files/index.html","selector":"#piece"},"dependencies":[]}]});
@@ -411,8 +411,8 @@ mod tests {
     #[test]
     #[ignore = "requires Chromium"]
     fn shared_document_reports_all_missing_images_before_decode_and_names_corrupt_images() {
-        let image = impeccable_comp::raster::create_image(40,40,[255,255,255,255]);
-        let png = impeccable_comp::png_io::encode_png(&image,&[]).unwrap();
+        let image = procable_comp::raster::create_image(40,40,[255,255,255,255]);
+        let png = procable_comp::png_io::encode_png(&image,&[]).unwrap();
         let html = br#"<!doctype html><style>html,body{margin:0}#piece{width:40px;height:40px;background:red}</style><div id="piece"></div><img src="a.png"><img src="b.png">"#;
         let inputs = BTreeMap::from([("comp.png".into(),png.clone()),("index.html".into(),html.to_vec()),("a.png".into(),png), ("b.png".into(),b"not an image".to_vec())]);
         let packet = json!({"schemaVersion":2,"stage":"components","comp":{"url":"/files/comp.png","width":40,"height":40},"components":[{"id":"piece","box":{"x":0,"y":0,"w":1,"h":1},"preview":{"kind":"page","url":"/files/index.html","selector":"#piece"},"dependencies":[]}]});
@@ -427,7 +427,7 @@ mod tests {
     #[ignore = "requires Chromium"]
     fn bom_entry_and_latin1_stylesheet_verify_against_their_frozen_bytes() {
         // CDP reports text bodies decoded (BOM dropped, invalid UTF-8 as U+FFFD).
-        let png = impeccable_comp::png_io::encode_png(&impeccable_comp::raster::create_image(40,40,[255;4]),&[]).unwrap();
+        let png = procable_comp::png_io::encode_png(&procable_comp::raster::create_image(40,40,[255;4]),&[]).unwrap();
         let html = b"\xEF\xBB\xBF<!doctype html><link rel=stylesheet href=a.css><div id=piece></div>".to_vec();
         let css = b"/* caf\xE9 */ html,body{margin:0}\r\n#piece{width:40px;height:40px;background:blue}".to_vec();
         let inputs = BTreeMap::from([("comp.png".into(),png),("index.html".into(),html),("a.css".into(),css)]);
@@ -440,15 +440,15 @@ mod tests {
     #[test]
     #[ignore = "requires Chromium"]
     fn assembled_page_executes_pinned_script_but_component_capture_stays_static() {
-        let image = impeccable_comp::raster::Image { width:40,height:40,data:vec![255;40*40*4] };
-        let reference = impeccable_comp::png_io::encode_png(&image,&[]).unwrap();
+        let image = procable_comp::raster::Image { width:40,height:40,data:vec![255;40*40*4] };
+        let reference = procable_comp::png_io::encode_png(&image,&[]).unwrap();
         let html = br#"<!doctype html><style>html,body{margin:0;background:red}</style><div id="piece"></div><script src="app.js"></script>"#;
         let inputs = BTreeMap::from([("comp.png".into(),reference),("index.html".into(),html.to_vec()),("app.js".into(),b"document.body.style.background='lime';document.documentElement.style.background='lime';".to_vec())]);
         let packet = json!({"schemaVersion":2,"stage":"hero","comp":{"url":"/files/comp.png","width":40,"height":40},"components":[{"id":"hero","box":{"x":0,"y":0,"w":1,"h":1},"preview":{"kind":"page","url":"/files/index.html"},"dependencies":["app.js"]}]});
         let mut hero = packet.clone();
         let captured=NativeComponentCapturer.capture(&mut hero,&inputs).unwrap();
         let path=hero["components"][0]["preview"]["url"].as_str().unwrap().strip_prefix("/files/").unwrap();
-        let pixels=impeccable_comp::png_io::decode_png(&captured.files[path]).unwrap().image;
+        let pixels=procable_comp::png_io::decode_png(&captured.files[path]).unwrap().image;
         assert_eq!(&pixels.data[..4], &[0,255,0,255]);
         let proof=&captured.evidence["components"][0]["views"]["preview"];
         assert_eq!(proof["kind"],"assembled-page");
@@ -463,8 +463,8 @@ mod tests {
     #[test]
     #[ignore = "requires Chromium"]
     fn isolated_component_capture_keeps_layout_excludes_children_and_preserves_context() {
-        let comp = impeccable_comp::raster::Image { width:100,height:100,data:vec![255;100*100*4] };
-        let reference = impeccable_comp::png_io::encode_png(&comp,&[]).unwrap();
+        let comp = procable_comp::raster::Image { width:100,height:100,data:vec![255;100*100*4] };
+        let reference = procable_comp::png_io::encode_png(&comp,&[]).unwrap();
         let html = br#"<!doctype html><style>
           html,body{margin:0;background:purple} #surface{position:absolute;inset:0;background:yellow}
           #headline{position:absolute;left:10px;top:10px;width:40px;height:40px;background:red}
@@ -479,7 +479,7 @@ mod tests {
         let captured = NativeComponentCapturer.capture(&mut packet,&inputs).unwrap();
         let pixels = |index:usize,view:&str,x:usize,y:usize| {
             let path=packet["components"][index][view]["url"].as_str().unwrap().strip_prefix("/files/").unwrap();
-            let image=impeccable_comp::png_io::decode_png(&captured.files[path]).unwrap().image;
+            let image=procable_comp::png_io::decode_png(&captured.files[path]).unwrap().image;
             image.data[(y*100+x)*4..(y*100+x)*4+4].to_vec()
         };
         assert_eq!(pixels(0,"preview",12,12),[255,255,0,255]); // no foreground/pseudo
@@ -504,21 +504,21 @@ mod tests {
     }
     #[test]
     fn component_edge_crops_round_endpoints_on_odd_viewports() {
-        let image = impeccable_comp::raster::Image {width:3,height:3,data:(0u8..36).collect()};
-        let png = impeccable_comp::png_io::encode_png(&image, &[]).unwrap();
+        let image = procable_comp::raster::Image {width:3,height:3,data:(0u8..36).collect()};
+        let png = procable_comp::png_io::encode_png(&image, &[]).unwrap();
         let crop = crop_viewport(&png,3,3,[1.5,1.5,1.5,1.5]).unwrap();
-        let pixels = impeccable_comp::png_io::decode_png(&crop).unwrap().image;
+        let pixels = procable_comp::png_io::decode_png(&crop).unwrap().image;
         assert_eq!((pixels.width,pixels.height),(1,1));
         assert_eq!(pixels.data,image.data[32..36]);
         // Match the manifest's tolerance for normalized floating-point edges.
         let crop = crop_viewport(&png,3,3,[1.5,1.5,1.500001,1.500001]).unwrap();
-        assert_eq!(impeccable_comp::png_io::decode_png(&crop).unwrap().image.data,pixels.data);
+        assert_eq!(procable_comp::png_io::decode_png(&crop).unwrap().image.data,pixels.data);
     }
     #[test]
     #[ignore = "requires Chromium"]
     fn isolated_capture_refuses_overflow_clipped_by_review_box() {
-        let image=impeccable_comp::raster::create_image(200,100,[255,255,255,255]);
-        let reference=impeccable_comp::png_io::encode_png(&image,&[]).unwrap();
+        let image=procable_comp::raster::create_image(200,100,[255,255,255,255]);
+        let reference=procable_comp::png_io::encode_png(&image,&[]).unwrap();
         let html=br#"<!doctype html><style>html,body{margin:0}#nav{width:60px;height:40px}span{display:block;width:150px;height:20px;background:red}</style><nav id="nav"><span></span></nav>"#;
         let inputs=BTreeMap::from([("comp.png".into(),reference),("kit.html".into(),html.to_vec())]);
         let original=json!({"schemaVersion":2,"stage":"components","comp":{"url":"/files/comp.png","width":200,"height":100},"components":[{"id":"nav","box":{"x":0,"y":0,"w":0.3,"h":0.4},"preview":{"kind":"page","url":"/files/kit.html","selector":"#nav"},"dependencies":[]}]});
@@ -529,10 +529,10 @@ mod tests {
     }
     #[test]
     fn component_crops_copy_verified_pixels_without_resizing_or_synthetic_edges() {
-        let image = impeccable_comp::raster::Image {width:3,height:2,data:(0u8..24).collect()};
-        let png = impeccable_comp::png_io::encode_png(&image, &[]).unwrap();
+        let image = procable_comp::raster::Image {width:3,height:2,data:(0u8..24).collect()};
+        let png = procable_comp::png_io::encode_png(&image, &[]).unwrap();
         let crop = crop_viewport(&png,3,2,[1.,0.,2.,2.]).unwrap();
-        let pixels = impeccable_comp::png_io::decode_png(&crop).unwrap().image;
+        let pixels = procable_comp::png_io::decode_png(&crop).unwrap().image;
         assert_eq!((pixels.width,pixels.height),(2,2));
         assert_eq!(pixels.data,[&image.data[4..12],&image.data[16..24]].concat());
         assert!(crop_viewport(&png,3,2,[0.,0.,0.2,1.]).is_err());

@@ -1,6 +1,6 @@
 # Operate
 
-`impeccable concept-seed --mode operate` prints the two sections below as its MODE RULES block. On an Operate surface the visitor came to get a job done, so the page is first a working product of its category and the world serves it.
+`procable concept-seed --mode operate` prints the two sections below as its MODE RULES block. On an Operate surface the visitor came to get a job done, so the page is first a working product of its category and the world serves it.
 
 ## Directions
 

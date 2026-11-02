@@ -44,14 +44,14 @@ import { ENGINE_TARGETS, binaryName, main as fetchEngineMain, readEngineVersion 
  */
 function generateCounts(rootDir, skills, buildDir) {
   // Count active commands. After the v3.0 consolidation, commands are sub-commands
-  // of /impeccable. Count them from the command router table in SKILL.md.
-  const impeccableSkill = skills.find(s => s.name === 'impeccable');
+  // of /procable. Count them from the command router table in SKILL.md.
+  const procableSkill = skills.find(s => s.name === 'procable');
   let commandCount;
-  if (impeccableSkill) {
+  if (procableSkill) {
     // Count lines in the command table that start with | `...` | — tolerant
     // of argument hints inside the backticks (e.g. `craft [feature]`) and of
     // multi-word commands (e.g. `pin <command>`).
-    const routerMatches = impeccableSkill.body.match(/^\| `[^`]+` \|/gm);
+    const routerMatches = procableSkill.body.match(/^\| `[^`]+` \|/gm);
     commandCount = routerMatches ? routerMatches.length : 0;
   } else {
     // Fallback: count user-invocable skills
@@ -342,7 +342,7 @@ function validateProse(rootDir) {
 }
 
 /**
- * Narrow prose check for the impeccable skill source.
+ * Narrow prose check for the procable skill source.
  *
  * The full validateProse rules don't fit LLM-facing reference instructions:
  * the hardening repetition and triadic checklists those files use exist on
@@ -487,7 +487,7 @@ function validateAskInstructionSites(rootDir) {
  * Returns the number of validation errors. Build fails if > 0.
  */
 /**
- * Every shipped `impeccable.cmd` must have CRLF line endings: cmd.exe cannot
+ * Every shipped `procable.cmd` must have CRLF line endings: cmd.exe cannot
  * find `call :label` targets in an LF-only batch file (#1098). The build
  * writes CRLF itself (readSkillScripts), so a failure here means that
  * guarantee regressed. Checks dist/ (the release zips are packed from it)
@@ -499,7 +499,7 @@ function validateBatchLineEndings(rootDir, distDir, { syncRootOutputs }) {
   const dirs = [distDir];
   if (syncRootOutputs) {
     for (const { configDir } of Object.values(PROVIDERS)) {
-      dirs.push(path.join(rootDir, configDir, 'skills', 'impeccable'));
+      dirs.push(path.join(rootDir, configDir, 'skills', 'procable'));
     }
     dirs.push(path.join(rootDir, 'plugin'), path.join(rootDir, 'cursor-plugin'));
   }
@@ -586,9 +586,9 @@ function syncRootPluginPayloads(distDir, rootDir) {
 
 /**
  * Every skill copy in dist gets the engine binaries the launcher looks for
- * (`scripts/bin/<os>-<arch>/impeccable[.exe]`), so the release zips are
+ * (`scripts/bin/<os>-<arch>/procable[.exe]`), so the release zips are
  * self-contained for installs without egress. Opt-in only
- * (IMPECCABLE_BUNDLE_ENGINE=1 on a release build), and only after the root
+ * (PROCABLE_BUNDLE_ENGINE=1 on a release build), and only after the root
  * harness dirs and ./plugin have been synced from dist: those are
  * git-delivered and must stay launcher-only (the binaries are gitignored and
  * the launcher downloads them on first run).
@@ -608,7 +608,7 @@ async function stageEngineBinaries(rootDir, distDir) {
   }
   let copies = 0;
   for (const { provider, configDir } of Object.values(PROVIDERS)) {
-    const scriptsDir = path.join(distDir, provider, configDir, 'skills', 'impeccable', 'scripts');
+    const scriptsDir = path.join(distDir, provider, configDir, 'skills', 'procable', 'scripts');
     if (!fs.existsSync(scriptsDir)) continue;
     for (const target of present) {
       const src = path.join(binRoot, target, binaryName(target));
@@ -673,7 +673,7 @@ function assembleUniversal(distDir) {
   // Add a visible README so macOS users don't see an empty folder
   // (all provider dirs are dotfiles, hidden by default in Finder)
   fs.writeFileSync(path.join(universalDir, 'README.txt'),
-`Impeccable. Design fluency for AI harnesses.
+`Procable. Design fluency for AI harnesses.
 https://impeccable.style
 
 This folder contains skills for all supported tools:
@@ -813,9 +813,9 @@ async function build() {
     // in dist/ so the cleanup script can redirect users, but they should
     // not clutter the repo's own skill directories.
     const deprecatedLocalSkills = [
-      'frontend-design', 'teach-impeccable',
+      'frontend-design', 'teach-procable',
       'arrange', 'normalize', 'onboard', 'extract',
-      // v3.0 consolidation: standalone skills -> /impeccable sub-commands
+      // v3.0 consolidation: standalone skills -> /procable sub-commands
       'adapt', 'animate', 'audit', 'bolder', 'clarify', 'colorize',
       'critique', 'delight', 'distill', 'harden', 'layout', 'optimize',
       'overdrive', 'polish', 'quieter', 'shape', 'typeset',
@@ -894,10 +894,10 @@ async function build() {
       JSON.stringify(grokPluginManifest, null, 2) + '\n',
     );
 
-    const claudeSkillsSrc = path.join(DIST_DIR, 'claude-code', '.claude', 'skills', 'impeccable');
+    const claudeSkillsSrc = path.join(DIST_DIR, 'claude-code', '.claude', 'skills', 'procable');
     if (fs.existsSync(claudeSkillsSrc)) {
       fs.mkdirSync(pluginSkillsDir, { recursive: true });
-      copyDirSync(claudeSkillsSrc, path.join(pluginSkillsDir, 'impeccable'));
+      copyDirSync(claudeSkillsSrc, path.join(pluginSkillsDir, 'procable'));
     }
 
     if (fs.existsSync(claudeAgentsSrc)) {
@@ -912,7 +912,7 @@ async function build() {
     // Agents get the plugin-root variable, not the skill-base-dir token:
     // a spawned agent never loads SKILL.md, so the token is undefined there.
     rewritePluginMarkdownTree(pluginAgentsDir, rewritePluginAgentMarkdown);
-    verifyPluginSkillRewrite(path.join(pluginSkillsDir, 'impeccable', 'SKILL.md'));
+    verifyPluginSkillRewrite(path.join(pluginSkillsDir, 'procable', 'SKILL.md'));
     if (fs.existsSync(pluginAgentsDir)) {
       for (const agentFile of fs.readdirSync(pluginAgentsDir)) {
         if (agentFile.endsWith('.md')) verifyPluginAgentRewrite(path.join(pluginAgentsDir, agentFile));
@@ -953,14 +953,14 @@ async function build() {
   stageVSCodeExtension(ROOT_DIR, DIST_DIR);
 
   // Release zips ship launcher-only by default: the launcher downloads the
-  // pinned engine on first run. IMPECCABLE_BUNDLE_ENGINE=1 opts in to staging
+  // pinned engine on first run. PROCABLE_BUNDLE_ENGINE=1 opts in to staging
   // every fetched target into every dist skill copy for offline installs.
   // That was the default once and put universal.zip at ~340 MB (five targets
   // times every provider copy), past the 25 MB Cloudflare Pages file cap that
-  // `impeccable install` downloads through. Staging runs after the root
+  // `procable install` downloads through. Staging runs after the root
   // harness dirs, ./plugin, and the OpenAI plugin were staged from dist, so
   // git-delivered trees stay launcher-only either way.
-  if (BUILD_OPTIONS.syncRootOutputs && process.env.IMPECCABLE_BUNDLE_ENGINE === '1') {
+  if (BUILD_OPTIONS.syncRootOutputs && process.env.PROCABLE_BUNDLE_ENGINE === '1') {
     await stageEngineBinaries(ROOT_DIR, DIST_DIR);
   }
 

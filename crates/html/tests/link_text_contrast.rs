@@ -1,11 +1,11 @@
 //! Contrast scoring for links, spans and the other SAFE_TAGS elements that
 //! paint their own text without painting their own surface.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::Path;
 
 fn repo_root() -> std::path::PathBuf {
-    std::env::var("IMPECCABLE_PUBLIC_REPO")
+    std::env::var("PROCABLE_PUBLIC_REPO")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }
@@ -455,7 +455,7 @@ body { background: #ffffff; }
 a.pale { color: #aaaaaa; font-size: 14px; }
 </style></head>
 <body>
-  <a class="pale" href="/1" data-impeccable-ignore="low-contrast">Waived link</a>
+  <a class="pale" href="/1" data-procable-ignore="low-contrast">Waived link</a>
   <a class="pale" href="/2">Reported link</a>
   <a class="pale" href="/3">Third link</a>
 </body></html>

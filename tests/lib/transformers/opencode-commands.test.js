@@ -10,13 +10,13 @@ const transform = createTransformer(config);
 const TEST_DIR = path.join(process.cwd(), 'test-tmp-opencode-commands');
 const COMMAND_PATH = path.join(
   TEST_DIR,
-  `${config.provider}/${config.configDir}/commands/impeccable.md`,
+  `${config.provider}/${config.configDir}/commands/procable.md`,
 );
 
 const SAMPLE_SKILL = {
-  name: 'impeccable',
+  name: 'procable',
   description: 'Use when the user wants to design, redesign, shape, critique, audit, polish, clarify, distill, harden, optimize, adapt, animate, colorize, extract, or otherwise improve a frontend interface.',
-  body: '# Impeccable\n\nSkill body here.',
+  body: '# Procable\n\nSkill body here.',
   references: [],
   scripts: [],
   agents: [],
@@ -35,7 +35,7 @@ afterEach(() => {
 });
 
 describe('opencode commands bridge', () => {
-  test('emits .opencode/commands/impeccable.md alongside the skill', () => {
+  test('emits .opencode/commands/procable.md alongside the skill', () => {
     transform([SAMPLE_SKILL], TEST_DIR);
     expect(fs.existsSync(COMMAND_PATH)).toBe(true);
   });
@@ -64,12 +64,12 @@ describe('opencode commands bridge', () => {
     expect(value).toBe(SAMPLE_SKILL.description);
   });
 
-  test('command body delegates to the impeccable skill', () => {
+  test('command body delegates to the procable skill', () => {
     transform([SAMPLE_SKILL], TEST_DIR);
     const content = fs.readFileSync(COMMAND_PATH, 'utf-8');
     const body = content.replace(/^---\n[\s\S]*?\n---\n/, '');
     expect(body).toContain('skill({');
-    expect(body).toContain("name: \"impeccable\"");
+    expect(body).toContain("name: \"procable\"");
     expect(body).toContain('Setup');
     expect(body).toContain('Commands');
     expect(body).toContain('$ARGUMENTS');
@@ -101,7 +101,7 @@ describe('opencode commands bridge', () => {
     transform([SAMPLE_SKILL], TEST_DIR);
     const skillPath = path.join(
       TEST_DIR,
-      `${config.provider}/${config.configDir}/skills/impeccable/SKILL.md`,
+      `${config.provider}/${config.configDir}/skills/procable/SKILL.md`,
     );
     expect(fs.existsSync(skillPath)).toBe(true);
     expect(fs.existsSync(COMMAND_PATH)).toBe(true);

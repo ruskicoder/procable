@@ -1,4 +1,4 @@
-/* VENDORED from impeccable-site/site/styles/docs-kinpaku.css (the command rail list: the site's selected-row pattern) (the source of truth).
+/* VENDORED from procable-site/site/styles/docs-kinpaku.css (the command rail list: the site's selected-row pattern) (the source of truth).
    Do not edit here: change the site, then run node scripts/sync-kinpaku-kit.mjs. */
 /* Group headings are ink and bold, so they read as headings over their
    links rather than as meta beside them; the links are muted and a step

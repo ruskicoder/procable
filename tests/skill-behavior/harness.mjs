@@ -3,8 +3,8 @@
  *
  * Each scenario:
  *   1. Creates a temp workspace.
- *   2. Builds a neutral .claude/skills/impeccable into the workspace so
- *      the launcher (`scripts/impeccable`) resolves from the canonical path
+ *   2. Builds a neutral .claude/skills/procable into the workspace so
+ *      the launcher (`scripts/procable`) resolves from the canonical path
  *      the skill references, and points it at an engine binary.
  *   3. Optionally writes PRODUCT.md / DESIGN.md fixtures.
  *   4. Inlines SKILL.md as the system prompt (placeholders stripped to
@@ -39,7 +39,7 @@ function renderNeutral(content) {
   return stripRuleMarkers(replacePlaceholders(compileProviderBlocks(content, [])
     .replaceAll('{{ask_instruction}}', 'Use the ask_user_question tool.')
     .replaceAll('{{model}}', 'the assistant'), 'dsh'))
-    .replaceAll('{{scripts_path}}', '.claude/skills/impeccable/scripts')
+    .replaceAll('{{scripts_path}}', '.claude/skills/procable/scripts')
     .replaceAll('{{command_hint}}', 'command');
 }
 
@@ -97,7 +97,7 @@ function loadSkillBody() {
 // loader supplies a base-directory prefix; here it is workspace-relative
 // because the file tools reject absolute paths. Provider rewrite/loader
 // contracts are tested separately, not established by these behavior cases.
-export const SKILL_BODY = `Base directory for this skill (workspace-relative): .claude/skills/impeccable\n\n${loadSkillBody()}`;
+export const SKILL_BODY = `Base directory for this skill (workspace-relative): .claude/skills/procable\n\n${loadSkillBody()}`;
 
 /**
  * Create a temp workspace and prepopulate it.
@@ -105,20 +105,20 @@ export const SKILL_BODY = `Base directory for this skill (workspace-relative): .
  * - Compile current source into an independent fixture distribution. Shell
  *   and read tools see the same resolved references, including degraded roles.
  * - `files` lets the test seed PRODUCT.md / DESIGN.md (or anything else).
- * - `skillVersion` adds a `SKILL.md` version. `impeccable context` reads its
+ * - `skillVersion` adds a `SKILL.md` version. `procable context` reads its
  *   own version from that sibling file, so this is required for any scenario
  *   that exercises the update-check path (the source dir has only SKILL.src.md).
  *
  * The launcher in the staged scripts dir needs an engine binary. Every bash
- * call the agent makes gets `IMPECCABLE_BIN` (tests/lib/engine-bin.mjs:
- * `IMPECCABLE_BIN` or `skill/scripts/bin/<os>-<arch>/`), which the launcher
+ * call the agent makes gets `PROCABLE_BIN` (tests/lib/engine-bin.mjs:
+ * `PROCABLE_BIN` or `skill/scripts/bin/<os>-<arch>/`), which the launcher
  * honors first, so the staged skill works without a download.
  */
 export const ENGINE_BIN = findEngineBinary();
 export { ENGINE_MISSING_MESSAGE };
 
 export function prepareWorkspace({ files = {}, skillVersion = null } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-skill-test-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-skill-test-'));
   stageSkill(sourceSkills, dir, { skillsVersion: skillVersion || '' });
   fs.renameSync(path.join(dir, 'skill-behavior', '.claude'), path.join(dir, '.claude'));
   fs.rmdirSync(path.join(dir, 'skill-behavior'));
@@ -172,7 +172,7 @@ function safeResolve(root, userPath) {
 }
 
 function isContextOnlyCommand(workspace, command) {
-  const match = command.trim().match(/^\.claude\/skills\/impeccable\/scripts\/impeccable context(?: --target(?: |=)(?:"([a-zA-Z0-9_./+ -]+)"|'([a-zA-Z0-9_./+ -]+)'|([a-zA-Z0-9_./+-]+)))?$/);
+  const match = command.trim().match(/^\.claude\/skills\/procable\/scripts\/procable context(?: --target(?: |=)(?:"([a-zA-Z0-9_./+ -]+)"|'([a-zA-Z0-9_./+ -]+)'|([a-zA-Z0-9_./+-]+)))?$/);
   if (!match) return false;
   const target = match[1] ?? match[2] ?? match[3];
   return target === undefined || (!target.startsWith('-') && typeof safeResolve(workspace, target) === 'string');
@@ -188,7 +188,7 @@ function execBash(workspace, command, timeoutMs = 20_000, extraEnv = {}) {
       cwd: workspace,
       // The agent may roll against the live API: tag its roll and choice
       // requests as test traffic so they stay out of the choice dataset.
-      env: { ...shellEnv, ...(ENGINE_BIN ? { IMPECCABLE_BIN: ENGINE_BIN } : {}), IMPECCABLE_QUESTION_DISABLED: '1', IMPECCABLE_TELEMETRY_CHANNEL: 'test' },
+      env: { ...shellEnv, ...(ENGINE_BIN ? { PROCABLE_BIN: ENGINE_BIN } : {}), PROCABLE_QUESTION_DISABLED: '1', PROCABLE_TELEMETRY_CHANNEL: 'test' },
     });
     let stdout = '';
     let stderr = '';
@@ -252,7 +252,7 @@ function defaultSimulatedAnswer(question) {
 }
 
 export function makeTools(workspace, extraEnv = {}, simulatedUser = {}, { contextOnlyBash = false, denyBash = false } = {}) {
-  const referenceDir = path.join(workspace, '.claude/skills/impeccable/reference');
+  const referenceDir = path.join(workspace, '.claude/skills/procable/reference');
   const references = fs.readdirSync(referenceDir, { recursive: true })
     .filter((file) => file.endsWith('.md'))
     .map((file) => ({ file: file.split(path.sep).join('/'), content: fs.readFileSync(path.join(referenceDir, file), 'utf8').trim() }));
@@ -279,8 +279,8 @@ export function makeTools(workspace, extraEnv = {}, simulatedUser = {}, { contex
   const tools = {
     bash: tool({
       description: contextOnlyBash
-        ? 'Only `.claude/skills/impeccable/scripts/impeccable context` with an optional `--target <workspace-relative path>` is allowed here. Use read/list for files and references; write remains available for requested edits.'
-        : 'Run a bash command in the workspace root. Use this to invoke skill commands (e.g. `.claude/skills/impeccable/scripts/impeccable context`).',
+        ? 'Only `.claude/skills/procable/scripts/procable context` with an optional `--target <workspace-relative path>` is allowed here. Use read/list for files and references; write remains available for requested edits.'
+        : 'Run a bash command in the workspace root. Use this to invoke skill commands (e.g. `.claude/skills/procable/scripts/procable context`).',
       inputSchema: z.object({
         command: z.string().describe('The bash command to execute.'),
       }),
@@ -297,7 +297,7 @@ export function makeTools(workspace, extraEnv = {}, simulatedUser = {}, { contex
         // Routing tests need the real context loader, not a general-purpose
         // shell on the host. Reject before execution (still record attempts).
         if (contextOnlyBash && !isContextOnlyCommand(workspace, command)) {
-          const out = 'Error: only `.claude/skills/impeccable/scripts/impeccable context` with an optional workspace-relative `--target` is allowed. Use read/list for files; references live at .claude/skills/impeccable/reference/.';
+          const out = 'Error: only `.claude/skills/procable/scripts/procable context` with an optional workspace-relative `--target` is allowed. Use read/list for files; references live at .claude/skills/procable/reference/.';
           trace.bashOutputs.push(out);
           return out;
         }
@@ -305,7 +305,7 @@ export function makeTools(workspace, extraEnv = {}, simulatedUser = {}, { contex
         const res = await execBash(workspace, command, 20_000, extraEnv);
         call.mutatedPaths = changedPaths(before, snapshotWorkspaceFiles(workspace));
         call.loadedFiles = references.filter(({ content }) => content && res.stdout.includes(content))
-          .map(({ file }) => `.claude/skills/impeccable/reference/${file}`);
+          .map(({ file }) => `.claude/skills/procable/reference/${file}`);
         const head = `exit=${res.exitCode}`;
         const body = (res.stdout ? `stdout:\n${res.stdout}` : '') + (res.stderr ? `\nstderr:\n${res.stderr}` : '');
         const out = `${head}\n${body}${res.truncated ? '\n[output truncated]' : ''}`;
@@ -372,7 +372,7 @@ export function makeTools(workspace, extraEnv = {}, simulatedUser = {}, { contex
     }),
     ask_user_question: tool({
       description:
-        'Ask the user 1-4 structured questions and wait for answers. Use this for required Impeccable init, visual-world selection, and task-concept checkpoints instead of asking in prose.',
+        'Ask the user 1-4 structured questions and wait for answers. Use this for required Procable init, visual-world selection, and task-concept checkpoints instead of asking in prose.',
       inputSchema: z.object({
         questions: z.array(z.object({
           header: z.string().optional(),
@@ -419,7 +419,7 @@ export function makeTools(workspace, extraEnv = {}, simulatedUser = {}, { contex
 // cap sits just under the 900s per-test timeout so a genuine slow-but-correct
 // run is never killed. The timer is unref'd (it must not keep the loop alive
 // after a healthy turn) and cleared on completion.
-const TURN_TIMEOUT_MS = Number(process.env.IMPECCABLE_SKILL_BEHAVIOR_TURN_TIMEOUT_MS) || 840_000;
+const TURN_TIMEOUT_MS = Number(process.env.PROCABLE_SKILL_BEHAVIOR_TURN_TIMEOUT_MS) || 840_000;
 export async function runTurn({ workspace, model, userPrompt, priorMessages = [], maxSteps = 8, env = {}, simulatedUser = {}, timeoutMs = TURN_TIMEOUT_MS, contextOnlyBash = false, denyBash = false, stopAfter, additionalTools, environment = '' }) {
   const { tools, trace } = makeTools(workspace, env, simulatedUser, { contextOnlyBash, denyBash });
   if (additionalTools) Object.assign(tools, additionalTools(trace));
@@ -427,7 +427,7 @@ export async function runTurn({ workspace, model, userPrompt, priorMessages = []
     ...priorMessages,
     { role: 'user', content: userPrompt },
   ];
-  const traceDir = process.env.IMPECCABLE_SKILL_BEHAVIOR_TRACE_DIR;
+  const traceDir = process.env.PROCABLE_SKILL_BEHAVIOR_TRACE_DIR;
   const tracePath = traceDir && path.join(traceDir, `${path.basename(workspace)}-${crypto.randomUUID()}.json`);
   const saveTrace = (details) => {
     if (!tracePath) return;

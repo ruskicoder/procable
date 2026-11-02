@@ -13,7 +13,7 @@ const SCRIPT = join(REPO_ROOT, 'skill/scripts/live-browser-ignores.js');
 function loadIgnoresApi() {
   const source = readFileSync(SCRIPT, 'utf-8');
   const factory = vm.runInThisContext(
-    `(function (window) {\n${source}\nreturn window.__IMPECCABLE_LIVE_IGNORES__;\n})`,
+    `(function (window) {\n${source}\nreturn window.__PROCABLE_LIVE_IGNORES__;\n})`,
     { filename: SCRIPT },
   );
   return factory({});
@@ -83,7 +83,7 @@ describe('live-browser-ignores resolver', () => {
   });
 
   it('never applies an unscoped wildcard entry, matching the CLI', () => {
-    // isIgnoredFindingValue in cli/lib/impeccable-config.mjs returns false
+    // isIgnoredFindingValue in cli/lib/procable-config.mjs returns false
     // for a wildcard entry with no files; project-wide suppression is
     // ignoreRules' job.
     const out = resolve({

@@ -1,11 +1,11 @@
 //! wasm exports for the visual-contrast subsystem (`browser-bundle/35-visual.js`
-//! calls these; the decisions live in `impeccable_core::browser::visual`).
+//! calls these; the decisions live in `procable_core::browser::visual`).
 //! JSON in / JSON out; typed scalars where the signature is small. Element
 //! arguments are probe handles.
 
 use crate::dom_source::with_dom;
-use impeccable_core::browser::visual as vc;
-use impeccable_core::color::Rgba;
+use procable_core::browser::visual as vc;
+use procable_core::color::Rgba;
 use serde_json::{json, Value};
 use wasm_bindgen::prelude::*;
 
@@ -39,7 +39,7 @@ pub fn collect_visual_contrast_candidates(options_json: &str) -> String {
 /// `isRenderedForBrowserRule(el)`.
 #[wasm_bindgen]
 pub fn is_rendered_for_browser_rule(el: u32) -> bool {
-    with_dom(|dom| impeccable_core::browser::element_checks::is_rendered_for_browser_rule(dom, el))
+    with_dom(|dom| procable_core::browser::element_checks::is_rendered_for_browser_rule(dom, el))
 }
 
 /// `blendRgba(fg, bg)`: colors as `{r,g,b,a}` JSON or `null`.
@@ -56,7 +56,7 @@ pub fn vc_blend(fg_json: &str, bg_json: &str) -> String {
 /// `textSamplePoints(rect)` for the live viewport: `[{x,y}]`.
 #[wasm_bindgen]
 pub fn vc_text_sample_points(left: f64, top: f64, width: f64, height: f64) -> String {
-    let rect = impeccable_core::browser::Rect::from_xywh(left, top, width, height);
+    let rect = procable_core::browser::Rect::from_xywh(left, top, width, height);
     let pts = with_dom(|d| vc::text_sample_points(&rect, d.inner_width(), d.inner_height()));
     Value::Array(pts.iter().map(|(x, y)| json!({ "x": x, "y": y })).collect()).to_string()
 }

@@ -1,4 +1,4 @@
-# Impeccable 4.4.0 release candidate
+# Procable 4.4.0 release candidate
 
 Comp-led work now asks the user to review the produced component kit before page assembly, then the assembled first viewport before completion. The shared browser interface covers raster assets and rendered HTML/CSS/SVG, individual approval and repair feedback, missing regions, unchanged approvals across rounds, and current/previous comparison.
 

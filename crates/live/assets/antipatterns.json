@@ -96,7 +96,7 @@
     "id": "hard-offset-shadow",
     "name": "Hard offset shadow",
     "category": "quality",
-    "description": "A visible, unblurred shadow displaced by at least 4px can belong to an intentional neobrutalist direction. Check whether it fits the intended design; this is a review prompt, not evidence of AI authorship or a request to remove it automatically. Waive intentional uses with data-impeccable-ignore=\"hard-offset-shadow\".",
+    "description": "A visible, unblurred shadow displaced by at least 4px can belong to an intentional neobrutalist direction. Check whether it fits the intended design; this is a review prompt, not evidence of AI authorship or a request to remove it automatically. Waive intentional uses with data-procable-ignore=\"hard-offset-shadow\".",
     "severity": "advisory"
   },
   {

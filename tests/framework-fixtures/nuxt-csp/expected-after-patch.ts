@@ -2,9 +2,9 @@
 // After the append-string CSP patch is applied, nuxt.config.ts should look
 // like this.
 
-// Dev-only allowance so impeccable live mode can load. Empty string in any
+// Dev-only allowance so procable live mode can load. Empty string in any
 // non-development environment.
-const __impeccableLiveDev =
+const __procableLiveDev =
   process.env.NODE_ENV === 'development' ? ' http://localhost:8400' : '';
 
 export default defineNuxtConfig({
@@ -15,10 +15,10 @@ export default defineNuxtConfig({
       headers: {
         'Content-Security-Policy':
           "default-src 'self'; " +
-          `script-src 'self' 'unsafe-inline' 'unsafe-eval'${__impeccableLiveDev}; ` +
+          `script-src 'self' 'unsafe-inline' 'unsafe-eval'${__procableLiveDev}; ` +
           "style-src 'self' 'unsafe-inline'; " +
           "img-src 'self' data: blob:; " +
-          `connect-src 'self'${__impeccableLiveDev}; ` +
+          `connect-src 'self'${__procableLiveDev}; ` +
           "frame-ancestors 'self';",
         'X-Frame-Options': 'SAMEORIGIN',
       },

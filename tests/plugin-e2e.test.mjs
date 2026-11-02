@@ -38,8 +38,8 @@ import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLUGIN_DIR = path.join(REPO_ROOT, 'plugin');
-const MARKETPLACE_NAME = 'impeccable-e2e';
-const PLUGIN_REF = `impeccable@${MARKETPLACE_NAME}`;
+const MARKETPLACE_NAME = 'procable-e2e';
+const PLUGIN_REF = `procable@${MARKETPLACE_NAME}`;
 
 // On Windows the claude CLI is a .cmd shim, which Node refuses to spawn
 // without a shell, so commands there go through one with every argument
@@ -86,19 +86,19 @@ describe('committed plugin subtree loads in a real Claude Code', { skip }, () =>
     });
 
   before(() => {
-    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-plugin-e2e-'));
+    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-plugin-e2e-'));
     configDir = path.join(workDir, 'claude-config');
     fs.mkdirSync(configDir, { recursive: true });
     const marketplaceDir = path.join(workDir, 'marketplace');
     fs.mkdirSync(path.join(marketplaceDir, '.claude-plugin'), { recursive: true });
-    fs.cpSync(PLUGIN_DIR, path.join(marketplaceDir, 'impeccable'), { recursive: true });
+    fs.cpSync(PLUGIN_DIR, path.join(marketplaceDir, 'procable'), { recursive: true });
     fs.writeFileSync(
       path.join(marketplaceDir, '.claude-plugin', 'marketplace.json'),
       JSON.stringify({
         name: MARKETPLACE_NAME,
-        owner: { name: 'impeccable plugin E2E' },
+        owner: { name: 'procable plugin E2E' },
         plugins: [
-          { name: 'impeccable', source: './impeccable', description: 'committed ./plugin subtree' },
+          { name: 'procable', source: './procable', description: 'committed ./plugin subtree' },
         ],
       }, null, 2),
     );
@@ -127,9 +127,9 @@ describe('committed plugin subtree loads in a real Claude Code', { skip }, () =>
     assert.match(detailsOutput, /Component inventory/);
   });
 
-  it('parses and loads the impeccable skill', () => {
+  it('parses and loads the procable skill', () => {
     assert.equal(componentCount('Skills'), 1);
-    assert.match(detailsOutput, /Skills\s+\(1\)\s+impeccable/);
+    assert.match(detailsOutput, /Skills\s+\(1\)\s+procable/);
   });
 
   it('loads every shipped agent via auto-discovery (PR #494 regression)', () => {

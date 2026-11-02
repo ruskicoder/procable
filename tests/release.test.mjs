@@ -47,7 +47,7 @@ function git(cwd, ...args) {
 // published engine assets, and the engine source guard needs an engine tag the
 // fixture does not have. Most scenarios exercise neither, so both start off;
 // the scenarios for each guard switch it back on through `env`.
-const ENGINE_GUARDS_OFF = { IMPECCABLE_SKIP_ENGINE_CHECK: '1', IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK: '1' };
+const ENGINE_GUARDS_OFF = { PROCABLE_SKIP_ENGINE_CHECK: '1', PROCABLE_SKIP_ENGINE_SOURCE_CHECK: '1' };
 
 function runRelease(cwd, ...args) {
   return runReleaseWith({}, cwd, ...args);
@@ -80,7 +80,7 @@ describe('release.mjs guards', () => {
   };
 
   before(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-release-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-release-'));
     bareDir = path.join(root, 'origin.git');
     workDir = path.join(root, 'work');
     execFileSync('git', ['init', '--bare', bareDir]);
@@ -98,12 +98,12 @@ describe('release.mjs guards', () => {
     for (const dep of ['check-engine-release.mjs', 'fetch-engine.mjs', 'sign-bundle.mjs', 'bundle-signing-keys.json']) {
       fs.copyFileSync(path.join(REPO_ROOT, 'scripts', dep), path.join(workDir, 'scripts', dep));
     }
-    write('.claude-plugin/plugin.json', JSON.stringify({ name: 'impeccable', version: '1.2.3' }));
-    write('.claude-plugin/marketplace.json', JSON.stringify({ plugins: [{ name: 'impeccable', version: '1.2.3' }] }));
+    write('.claude-plugin/plugin.json', JSON.stringify({ name: 'procable', version: '1.2.3' }));
+    write('.claude-plugin/marketplace.json', JSON.stringify({ plugins: [{ name: 'procable', version: '1.2.3' }] }));
     write('package.json', JSON.stringify({
-      name: 'impeccable',
+      name: 'procable',
       version: '9.9.9',
-      optionalDependencies: { '@impeccable/cli-darwin-arm64': '0.1.0', '@impeccable/cli-linux-x64': '0.1.0' },
+      optionalDependencies: { '@procable/cli-darwin-arm64': '0.1.0', '@procable/cli-linux-x64': '0.1.0' },
     }));
     write('ENGINE_VERSION', '0.1.0\n');
     write('extension/manifest.json', JSON.stringify({ version: '2.0.0' }));
@@ -159,7 +159,7 @@ describe('release.mjs guards', () => {
     git(workDir, 'push', 'origin', 'main');
     const { code, stderr } = runRelease(workDir, 'engine');
     assert.notEqual(code, 0);
-    assert.match(stderr, /pins @impeccable\/cli-darwin-arm64@0\.1\.0.*expected 0\.2\.0/);
+    assert.match(stderr, /pins @procable\/cli-darwin-arm64@0\.1\.0.*expected 0\.2\.0/);
   });
 
   it('engine: refuses when the tag already exists on origin', () => {
@@ -173,7 +173,7 @@ describe('release.mjs guards', () => {
 
   // The engine source guard runs; the asset probe stays off unless a scenario
   // clears it too.
-  const SOURCE_GUARD_ON = { IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK: '' };
+  const SOURCE_GUARD_ON = { PROCABLE_SKIP_ENGINE_SOURCE_CHECK: '' };
   // Annotated and pushed, as `release.mjs engine` makes it.
   const tagEngine = () => {
     git(workDir, 'tag', '-a', 'engine-v0.1.0', '-m', 'Engine 0.1.0');
@@ -196,7 +196,7 @@ describe('release.mjs guards', () => {
 
   it('skill: refuses before the asset probe when crates/ changed since the engine tag', () => {
     moveEngineSourcePastTag();
-    const { code, stdout, stderr } = runReleaseWith({ ...SOURCE_GUARD_ON, IMPECCABLE_SKIP_ENGINE_CHECK: '' }, workDir, 'skill');
+    const { code, stdout, stderr } = runReleaseWith({ ...SOURCE_GUARD_ON, PROCABLE_SKIP_ENGINE_CHECK: '' }, workDir, 'skill');
     assert.equal(code, 1);
     assert.match(stderr, /Refusing to release Skill 1\.2\.3: the engine source changed since engine-v0\.1\.0/);
     assert.match(stderr, /· crates\/cli\/src\/main\.rs/);
@@ -231,7 +231,7 @@ describe('release.mjs guards', () => {
     moveEngineSourcePastTag();
     const { code, stdout } = runRelease(workDir, 'skill');
     assert.equal(code, 0, stdout);
-    assert.match(stdout, /Skipping engine source guard \(IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK=1\)/);
+    assert.match(stdout, /Skipping engine source guard \(PROCABLE_SKIP_ENGINE_SOURCE_CHECK=1\)/);
   });
 
   it('skill: refuses when origin has no engine tag', () => {
@@ -263,7 +263,7 @@ describe('release.mjs guards', () => {
     moveEngineSourcePastTag();
     // The fixture has no extension changelog entry, so reaching that refusal
     // proves the run went past where the source guard would have stopped it.
-    const { stdout, stderr } = runReleaseWith({ ...SOURCE_GUARD_ON, IMPECCABLE_SKIP_ENGINE_CHECK: '' }, workDir, 'extension');
+    const { stdout, stderr } = runReleaseWith({ ...SOURCE_GUARD_ON, PROCABLE_SKIP_ENGINE_CHECK: '' }, workDir, 'extension');
     assert.match(stderr, /No changelog entry found for "Extension v2\.0\.0"/);
     assert.doesNotMatch(stdout, /engine source/);
   });
@@ -289,9 +289,9 @@ describe('release.mjs guards', () => {
     git(workDir, 'push', 'origin', 'main');
     assert.throws(() => execFileSync(process.execPath, ['scripts/release.mjs', 'skill'], {
       cwd: workDir, encoding: 'utf8', stdio: 'pipe',
-      env: { ...process.env, ...ENGINE_GUARDS_OFF, IMPECCABLE_SIGNING_KEY_REF: '' },
+      env: { ...process.env, ...ENGINE_GUARDS_OFF, PROCABLE_SIGNING_KEY_REF: '' },
     }), error => {
-      assert.match(error.stderr, /Set IMPECCABLE_SIGNING_KEY_REF/);
+      assert.match(error.stderr, /Set PROCABLE_SIGNING_KEY_REF/);
       assert.doesNotMatch(error.stdout, /Creating annotated tag|Creating GitHub release/);
       return true;
     });
@@ -341,7 +341,7 @@ describe('release.mjs guards', () => {
     const tweetMatch = stdout.match(/--- Tweet \((\d+)\/280 chars\)[^\n]*---\n([\s\S]*?)\n--- end tweet ---/);
     assert.ok(tweetMatch, `no tweet block in output:\n${stdout}`);
     assert.ok(Number(tweetMatch[1]) <= 280);
-    assert.match(tweetMatch[2], /Impeccable v1\.2\.3 is out\./);
+    assert.match(tweetMatch[2], /Procable v1\.2\.3 is out\./);
     assert.match(tweetMatch[2], /releases\/tag\/skill-v1\.2\.3/);
     assert.match(tweetMatch[2], /• Loader contract pinned/);
   });
@@ -392,7 +392,7 @@ describe('release.mjs guards', () => {
   });
 
   it('refuses when plugin.json and marketplace.json disagree', () => {
-    write('.claude-plugin/marketplace.json', JSON.stringify({ plugins: [{ name: 'impeccable', version: '1.0.0' }] }));
+    write('.claude-plugin/marketplace.json', JSON.stringify({ plugins: [{ name: 'procable', version: '1.0.0' }] }));
     git(workDir, 'add', '-A');
     git(workDir, 'commit', '-m', 'mismatch');
     git(workDir, 'push', 'origin', 'main');

@@ -1,6 +1,6 @@
 //! What each detector rule costs the edit hook, per edit, in milliseconds.
 //!
-//!     cargo run --release -p impeccable-html --example rule_cost -- \
+//!     cargo run --release -p procable-html --example rule_cost -- \
 //!         [--runs 9] [--out rule-cost.json] <file-or-dir>...
 //!
 //! The hook (`crates/hook/src/hook.rs`, `run_hook`) is a new process on every
@@ -14,7 +14,7 @@
 //! This measures exactly that. For every sample it starts itself again as a
 //! fresh process (`--one <file>`), runs the file's engine the way the hook
 //! does (inline ignores on, no design system, no rule pack) with the
-//! engines' own profiler switched on (`impeccable_detect::profiler`), and
+//! engines' own profiler switched on (`procable_detect::profiler`), and
 //! reports the timed units. Runs are interleaved across files so drift on the
 //! machine spreads over every file instead of landing on one.
 //!
@@ -33,10 +33,10 @@ use std::process::Command;
 use std::rc::Rc;
 use std::time::Instant;
 
-use impeccable_detect::detect_text::{detect_text, TextOptions};
-use impeccable_detect::engines::{HtmlEngine, ScanOptions};
-use impeccable_detect::profiler::DetectorProfile;
-use impeccable_html::StaticHtmlEngine;
+use procable_detect::detect_text::{detect_text, TextOptions};
+use procable_detect::engines::{HtmlEngine, ScanOptions};
+use procable_detect::profiler::DetectorProfile;
+use procable_html::StaticHtmlEngine;
 use serde_json::{json, Value};
 
 /// `crates/hook/src/hook_lib.rs` `ALLOWED_EXTS`: the files the hook scans.

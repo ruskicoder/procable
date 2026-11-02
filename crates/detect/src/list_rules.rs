@@ -1,6 +1,6 @@
-//! `impeccable detect --list-rules`: every rule in the registry (`all_antipatterns()`, built-ins plus any installed rule pack), no scan.
+//! `procable detect --list-rules`: every rule in the registry (`all_antipatterns()`, built-ins plus any installed rule pack), no scan.
 
-use impeccable_core::registry::{all_antipatterns, Antipattern};
+use procable_core::registry::{all_antipatterns, Antipattern};
 use serde_json::{json, Value};
 
 /// Rules in registry order, optionally narrowed by `--scope` and

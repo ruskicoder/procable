@@ -1,9 +1,9 @@
-//! Small helpers the live modules share on top of `impeccable_context::{jsp,
+//! Small helpers the live modules share on top of `procable_context::{jsp,
 //! util}`: raw-order readdir, a pid liveness probe, JS `Date.parse` for ISO
 //! stamps, base64, sha256, `encodeURIComponent`.
 
-pub use impeccable_context::jsp;
-pub use impeccable_context::util::{
+pub use procable_context::jsp;
+pub use procable_context::util::{
     exists, is_dir, is_file, iso_now, json_compact, json_pretty, now_ms, safe_read, Env,
 };
 use serde_json::{Map, Value};
@@ -57,7 +57,7 @@ pub fn dir_entry_count(dir: &str) -> Option<usize> {
 
 /// `process.kill(pid, 0)`: `Ok(())` when the signal could be sent, otherwise
 /// the errno name (`ESRCH`, `EPERM`, ...). Shared with the other crates.
-pub use impeccable_common::proc::{kill0, pid_reachable};
+pub use procable_common::proc::{kill0, pid_reachable};
 
 /// `Date.parse(s)` for the ISO 8601 forms these scripts write
 /// (`YYYY-MM-DDTHH:MM:SS(.sss)Z`, an optional `±HH:MM` offset, or a bare
@@ -302,19 +302,19 @@ pub fn obj() -> Map<String, Value> {
 }
 
 /// `console.log(x)`: x + '\n' on stdout.
-pub fn println(io: &mut impeccable_common::Io, s: &str) {
+pub fn println(io: &mut procable_common::Io, s: &str) {
     io.out(s);
     io.out("\n");
 }
 
-pub fn eprintln(io: &mut impeccable_common::Io, s: &str) {
+pub fn eprintln(io: &mut procable_common::Io, s: &str) {
     io.err(s);
     io.err("\n");
 }
 
 /// A JS number for a serde Value: integral values print without `.0`.
 pub fn js_num(v: f64) -> Value {
-    impeccable_context::util::js_num(v)
+    procable_context::util::js_num(v)
 }
 
 /// JS `Number(x)` over a JSON value: numbers pass, numeric strings parse,
@@ -326,7 +326,7 @@ pub fn js_number(v: Option<&Value>) -> Option<f64> {
         Some(Value::Bool(b)) => Some(if *b { 1.0 } else { 0.0 }),
         Some(Value::Number(n)) => n.as_f64(),
         Some(Value::String(s)) => {
-            let n = impeccable_core::js::string_to_number(s);
+            let n = procable_core::js::string_to_number(s);
             if n.is_nan() {
                 None
             } else {

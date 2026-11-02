@@ -1,5 +1,5 @@
 //! The `detect` feature: the two file-scanning engines as JSON-in / JSON-out
-//! wasm exports, for hosts that cannot exec the `impeccable` binary
+//! wasm exports, for hosts that cannot exec the `procable` binary
 //! (Cloudflare Workers, other wasm sandboxes).
 //!
 //! Both take the same options object, all keys optional:
@@ -11,7 +11,7 @@
 //! }
 //! ```
 //!
-//! - `inlineIgnores` (default `true`): apply the `impeccable-disable` waivers
+//! - `inlineIgnores` (default `true`): apply the `procable-disable` waivers
 //!   found in the source, exactly as the CLI does. `false` reports waived
 //!   findings too.
 //! - `designSystem`: the DESIGN.md inputs, not a pre-normalized object (the
@@ -33,7 +33,7 @@
 //! an error: it falls back to the defaults, like the CLI ignoring an
 //! unreadable config.
 //!
-//! A rule pack ([`impeccable_core::rule_pack`]) reaches these exports through
+//! A rule pack ([`procable_core::rule_pack`]) reaches these exports through
 //! [`crate::set_rule_pack`] and [`set_static_rule_pack`], which a downstream
 //! wasm crate calls from Rust before its own exports run. There is no
 //! JS-facing setter: a pack is compiled in, not passed at the boundary.
@@ -41,9 +41,9 @@
 use std::path::Path;
 use std::sync::OnceLock;
 
-use impeccable_detect::design_system::{normalize_design_system, DesignSystem};
-use impeccable_detect::detect_text::{detect_text, TextOptions};
-use impeccable_html::{detect_html_source, DesignSystemHook, DetectHtmlOptions, StaticRulePack};
+use procable_detect::design_system::{normalize_design_system, DesignSystem};
+use procable_detect::detect_text::{detect_text, TextOptions};
+use procable_html::{detect_html_source, DesignSystemHook, DetectHtmlOptions, StaticRulePack};
 use serde_json::Value;
 use wasm_bindgen::prelude::*;
 
@@ -67,7 +67,7 @@ struct Options {
     design_system: Option<DesignSystem>,
     /// `tokens`: `{ "--name": "value" }`, custom properties the caller read
     /// from the project's other stylesheets.
-    tokens: Option<impeccable_core::checks::css_scan::CustomProps>,
+    tokens: Option<procable_core::checks::css_scan::CustomProps>,
 }
 
 fn parse_options(options_json: &str) -> Options {
@@ -91,7 +91,7 @@ fn parse_options(options_json: &str) -> Options {
         ))
     });
     let tokens = parsed.get("tokens").and_then(Value::as_object).map(|map| {
-        let mut tokens = impeccable_core::checks::css_scan::CustomProps::new();
+        let mut tokens = procable_core::checks::css_scan::CustomProps::new();
         for (name, value) in map {
             if let (true, Some(value)) = (name.starts_with("--"), value.as_str()) {
                 tokens.set(name, value.to_string());
@@ -106,11 +106,11 @@ fn parse_options(options_json: &str) -> Options {
     }
 }
 
-fn findings_json(findings: &[impeccable_core::findings::Finding]) -> String {
+fn findings_json(findings: &[procable_core::findings::Finding]) -> String {
     serde_json::to_string(findings).unwrap_or_else(|_| "[]".into())
 }
 
-/// The text/source engine (`impeccable detect` on anything but HTML): CSS,
+/// The text/source engine (`procable detect` on anything but HTML): CSS,
 /// JSX, TSX, Vue, Svelte, Astro, and plain source. `file_path` names the file
 /// in the findings and picks the matchers by extension.
 #[wasm_bindgen]
@@ -139,12 +139,12 @@ pub fn detect_text_json(content: &str, file_path: &str, options_json: &str) -> S
 pub fn detect_html_source_json(html: &str, file_path: &str, options_json: &str) -> String {
     let options = parse_options(options_json);
     let analyzers = |content: &str, path: &str| {
-        impeccable_detect::detect_text::run_text_content_analyzers(content, path, None)
+        procable_detect::detect_text::run_text_content_analyzers(content, path, None)
     };
     let hook = options
         .design_system
         .as_ref()
-        .map(|ds| impeccable_html::DetectDesignSystemHook { design_system: ds });
+        .map(|ds| procable_html::DetectDesignSystemHook { design_system: ds });
     let findings = detect_html_source(
         html,
         Path::new(file_path),
@@ -171,6 +171,6 @@ pub fn detect_html_source_json(html: &str, file_path: &str, options_json: &str) 
 /// codebase is how the two drift apart.
 #[wasm_bindgen]
 pub fn immediate_tier_rules_json() -> String {
-    serde_json::to_string(impeccable_core::registry::IMMEDIATE_TIER_RULES)
+    serde_json::to_string(procable_core::registry::IMMEDIATE_TIER_RULES)
         .unwrap_or_else(|_| "[]".into())
 }

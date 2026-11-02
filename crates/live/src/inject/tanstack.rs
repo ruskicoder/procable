@@ -1,5 +1,5 @@
 //! JS: live/tanstack-adapter.mjs + live/frameworks/tanstack-start.mjs. A
-//! dev-only managed component under `src/impeccable/` mounted from the root
+//! dev-only managed component under `src/procable/` mounted from the root
 //! route file.
 
 use super::detect_utils::{file_exists, has_any_dependency};
@@ -10,10 +10,10 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Value};
 
-pub const TANSTACK_MARKER_OPEN: &str = "{/* impeccable-live-tanstack-start */}";
-pub const TANSTACK_MARKER_CLOSE: &str = "{/* impeccable-live-tanstack-end */}";
-pub const TANSTACK_COMPONENT_DIR: &str = "src/impeccable";
-pub const TANSTACK_COMPONENT_BASENAME: &str = "ImpeccableLiveRoot";
+pub const TANSTACK_MARKER_OPEN: &str = "{/* procable-live-tanstack-start */}";
+pub const TANSTACK_MARKER_CLOSE: &str = "{/* procable-live-tanstack-end */}";
+pub const TANSTACK_COMPONENT_DIR: &str = "src/procable";
+pub const TANSTACK_COMPONENT_BASENAME: &str = "ProcableLiveRoot";
 
 const ROOT_ROUTE_CANDIDATES: [&str; 6] = [
     "src/routes/__root.tsx",
@@ -80,7 +80,7 @@ pub fn apply_tanstack_live_adapter(
         return json!({
             "file": project.component_file,
             "error": "tanstack_component_conflict",
-            "hint": format!("{} already exists and is not managed by Impeccable Live", project.component_file),
+            "hint": format!("{} already exists and is not managed by Procable Live", project.component_file),
         });
     }
     let _ = write_file(&component_abs, &component_body);
@@ -129,18 +129,18 @@ pub fn remove_tanstack_live_adapter(cwd: &str, project: &TanStackProject) -> Val
 static SCRIPTS_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"<Scripts\b").unwrap());
 static IMPORT_LINE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?m)^import\b[^\n]*\n").unwrap());
 static MANAGED_IMPORT_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"(?m)^import ImpeccableLiveRoot from '[^']*';[ \t]*\r?\n").unwrap());
+    Lazy::new(|| Regex::new(r"(?m)^import ProcableLiveRoot from '[^']*';[ \t]*\r?\n").unwrap());
 
 /// JS: patchTanStackRoot(content, componentImport)
 pub fn patch_tanstack_root(content: &str, component_import: &str) -> String {
     let mut out = content.to_string();
-    let import_statement = format!("import ImpeccableLiveRoot from '{}';", component_import);
+    let import_statement = format!("import ProcableLiveRoot from '{}';", component_import);
     if !out.contains(&import_statement) {
         out = insert_after_last_import(&out, &import_statement);
     }
     if !out.contains(TANSTACK_MARKER_OPEN) {
         let block = format!(
-            "{}\n        <ImpeccableLiveRoot />\n        {}\n        ",
+            "{}\n        <ProcableLiveRoot />\n        {}\n        ",
             TANSTACK_MARKER_OPEN, TANSTACK_MARKER_CLOSE
         );
         if let Some(m) = SCRIPTS_RE.find(&out) {
@@ -156,7 +156,7 @@ pub fn patch_tanstack_root(content: &str, component_import: &str) -> String {
 /// JS: unpatchTanStackRoot(content)
 pub fn unpatch_tanstack_root(content: &str) -> String {
     let block_re = Regex::new(&format!(
-        "{}\\s*<ImpeccableLiveRoot\\s*/>\\s*{}\\r?\\n?[ \\t]*",
+        "{}\\s*<ProcableLiveRoot\\s*/>\\s*{}\\r?\\n?[ \\t]*",
         crate::util::escape_regex(TANSTACK_MARKER_OPEN),
         crate::util::escape_regex(TANSTACK_MARKER_CLOSE)
     ))
@@ -168,17 +168,17 @@ pub fn unpatch_tanstack_root(content: &str) -> String {
 /// JS: buildTanStackLiveRootComponent(port, token)
 pub fn build_tanstack_live_root_component(port: i64, token: Option<&str>) -> String {
     format!(
-        "/* impeccable-live-tanstack-start */
+        "/* procable-live-tanstack-start */
 import {{ useEffect }} from 'react';
 
 const LIVE_SRC = '{src}';
-const LIVE_SELECTOR = 'script[data-impeccable-live-tanstack]';
+const LIVE_SELECTOR = 'script[data-procable-live-tanstack]';
 
-// Dev-only mount for Impeccable Live. TanStack Start server-renders the root
+// Dev-only mount for Procable Live. TanStack Start server-renders the root
 // document, so this appends the live-mode bundle from the client after
 // hydration (mirrors the Nuxt/SvelteKit adapters). Renders nothing on the
 // server, so there is no hydration mismatch.
-export default function ImpeccableLiveRoot() {{
+export default function ProcableLiveRoot() {{
   useEffect(() => {{
     if (typeof document === 'undefined') return;
     const expected = new URL(LIVE_SRC, window.location.href).href;
@@ -189,8 +189,8 @@ export default function ImpeccableLiveRoot() {{
     script = document.createElement('script');
     script.src = LIVE_SRC;
     script.async = true;
-    script.setAttribute('data-impeccable-live-tanstack', '');
-    script.setAttribute('data-impeccable-live-script', 'true');
+    script.setAttribute('data-procable-live-tanstack', '');
+    script.setAttribute('data-procable-live-script', 'true');
     document.head.appendChild(script);
 
     return () => {{
@@ -206,7 +206,7 @@ export default function ImpeccableLiveRoot() {{
 }
 
 fn is_managed_component(content: &str) -> bool {
-    content.contains("impeccable-live-tanstack")
+    content.contains("procable-live-tanstack")
 }
 
 static EXT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\.(tsx|ts|jsx|js)$").unwrap());
@@ -244,7 +244,7 @@ fn insert_after_last_import(content: &str, import_statement: &str) -> String {
 /// JS: tanstackStart.inject.artifacts({ project })
 pub fn tanstack_artifacts(project: &TanStackProject) -> Vec<Value> {
     vec![
-        json!({ "kind": "created", "path": project.component_file, "marker": "impeccable-live-tanstack", "pruneTo": "src" }),
+        json!({ "kind": "created", "path": project.component_file, "marker": "procable-live-tanstack", "pruneTo": "src" }),
         json!({ "kind": "patched", "path": project.root_route, "patch": "tanstack-root", "markers": [TANSTACK_MARKER_OPEN] }),
     ]
 }

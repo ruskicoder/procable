@@ -9,7 +9,7 @@ const ICON_ATTRS: &str = r#"width="20" height="20" viewBox="0 0 24 24" fill="non
 /// (value, label, icon body between `<svg ...>` and `</svg>`)
 const COMMANDS: [(&str, &str, &str); 12] = [
     (
-        "impeccable",
+        "procable",
         "Freeform",
         r#"<path d="M4 20l4-1L18 9l-3-3L5 16z"/><path d="M14 7l3 3"/>"#,
     ),
@@ -88,7 +88,7 @@ pub fn live_commands() -> Value {
 
 /// JS: VISUAL_ACTIONS (palette order).
 pub const VISUAL_ACTIONS: [&str; 12] = [
-    "impeccable",
+    "procable",
     "bolder",
     "quieter",
     "distill",
@@ -120,7 +120,7 @@ pub const VARIANT_PROGRESS_CHECKPOINT_REASONS: [&str; 2] = ["variants_progress",
 /// JS: LIVE_CHROME_MOUNT_CONTRACT
 pub const LIVE_CHROME_MOUNT_CONTRACT: [&str; 4] = ["root", "transport", "state", "actions"];
 
-const LIVE_UI_PREFIX: &str = "impeccable-live";
+const LIVE_UI_PREFIX: &str = "procable-live";
 
 const SURFACES: [(&str, &[&str]); 14] = [
     (

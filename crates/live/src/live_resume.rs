@@ -1,11 +1,11 @@
-//! JS: live-resume.mjs -> `impeccable live-resume`. The active durable
+//! JS: live-resume.mjs -> `procable live-resume`. The active durable
 //! session checkpoint and the next safe agent action; also the hint helpers
 //! `live-status` shares.
 
 use crate::roots::enter_live_root;
 use crate::session::create_live_session_store;
 use crate::util::{json_pretty, println};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
 
 fn manual_apply_reply_command(self_cmd: &str, id: Option<&str>) -> String {
@@ -16,11 +16,11 @@ fn manual_apply_reply_command(self_cmd: &str, id: Option<&str>) -> String {
     )
 }
 
-/// How this binary is spelled in printed agent commands (IMPECCABLE_SELF or
-/// the plain `impeccable` verb).
+/// How this binary is spelled in printed agent commands (PROCABLE_SELF or
+/// the plain `procable` verb).
 pub fn self_cmd(io: &Io) -> String {
     let cwd = io.cwd.to_string_lossy().into_owned();
-    impeccable_context::provider::detect(&io.env, &cwd).self_cmd
+    procable_context::provider::detect(&io.env, &cwd).self_cmd
 }
 
 fn truthy(v: Option<&Value>) -> bool {
@@ -56,13 +56,13 @@ pub fn manual_apply_resume_hint(event: Option<&Map<String, Value>>, self_cmd: &s
     if let Some(n) = finite(summary.get("opCount")) {
         parts.push(format!(
             "{} op(s)",
-            impeccable_core::js::number_to_string(n)
+            procable_core::js::number_to_string(n)
         ));
     }
     if let Some(n) = finite(summary.get("entryCount")) {
         parts.push(format!(
             "{} entr{}",
-            impeccable_core::js::number_to_string(n),
+            procable_core::js::number_to_string(n),
             if n == 1.0 { "y" } else { "ies" }
         ));
     }
@@ -91,7 +91,7 @@ fn str_of(v: Option<&Value>) -> String {
         Some(Value::String(s)) => s.clone(),
         Some(Value::Number(n)) => n
             .as_f64()
-            .map(impeccable_core::js::number_to_string)
+            .map(procable_core::js::number_to_string)
             .unwrap_or_else(|| n.to_string()),
         Some(Value::Bool(b)) => b.to_string(),
         Some(Value::Array(a)) => a
@@ -268,7 +268,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
 fn resume_cli(argv: &[String], io: &mut Io) -> i32 {
     let args = parse_args(argv);
     if args.help {
-        println(io, "Usage: impeccable live-resume [--id SESSION_ID]\n\nPrint the active durable session checkpoint and the next safe agent action.");
+        println(io, "Usage: procable live-resume [--id SESSION_ID]\n\nPrint the active durable session checkpoint and the next safe agent action.");
         return 0;
     }
     let cwd = io.cwd.to_string_lossy().into_owned();

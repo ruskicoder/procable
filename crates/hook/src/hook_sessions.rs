@@ -7,7 +7,7 @@
 //! So the first time a session writes a root's cache, the per-edit pass also
 //! records that root here:
 //!
-//! `~/.impeccable/hook-sessions/<sha256(session id)>/<sha256(root)>`
+//! `~/.procable/hook-sessions/<sha256(session id)>/<sha256(root)>`
 //!
 //! The file holds the root path. One file per (session, root) means writers
 //! never read-modify-write a shared list, so parallel first edits each land
@@ -35,7 +35,7 @@ use std::time::{Duration, SystemTime};
 use crate::hook_claim::{private_file_mode, ensure_safe_dir, is_claim_name, is_safe_dir, safe_user_dir, sha256_hex, user_dir};
 use crate::hook_lib::Runtime;
 
-const OVERRIDE_ENV: &str = "IMPECCABLE_HOOK_SESSION_DIR";
+const OVERRIDE_ENV: &str = "PROCABLE_HOOK_SESSION_DIR";
 const DIR_NAME: &str = "hook-sessions";
 
 /// A session dir no edit has added a root to for this long is removed. A

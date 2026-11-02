@@ -1,0 +1,4 @@
+interface:
+  display_name: Procable
+  short_description: Use when the user wants to design, redesign, shape, critique, audit, polish, simplify,...
+  default_prompt: Use Procable to redesign, critique, audit, or polish this frontend.

@@ -28,7 +28,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const engineRoot = path.resolve(here, '../../..');
 // The fixtures and puppeteer live in this repo; --public points at another
 // checkout (an older one, for A/B against the pre-Rust engine).
-const publicRepo = path.resolve(flag('--public') || process.env.IMPECCABLE_PUBLIC_REPO || engineRoot);
+const publicRepo = path.resolve(flag('--public') || process.env.PROCABLE_PUBLIC_REPO || engineRoot);
 const require = createRequire(path.join(publicRepo, 'package.json'));
 const puppeteer = require('puppeteer');
 
@@ -76,7 +76,7 @@ async function scanWith({ browser, worker }, url, opts = {}) {
   await page.setViewport({ width: 1280, height: 800 });
   const errs = [];
   page.on('pageerror', (e) => errs.push(e.message));
-  page.on('console', (m) => { if (m.type() === 'error' || /impeccable/.test(m.text())) errs.push(`[console] ${m.text().slice(0, 200)}`); });
+  page.on('console', (m) => { if (m.type() === 'error' || /procable/.test(m.text())) errs.push(`[console] ${m.text().slice(0, 200)}`); });
   await page.goto(url, { waitUntil: 'networkidle0', timeout: 90000 });
   await page.bringToFront();
   const t0 = Date.now();
@@ -189,7 +189,7 @@ if (has('--messages')) {
       });
       setTimeout(resolve, 20000);
     });
-    const portP = chrome.runtime.connect({ name: `impeccable-panel-${tab.id}` });
+    const portP = chrome.runtime.connect({ name: `procable-panel-${tab.id}` });
     portP.onMessage.addListener((m) => {
       if (m.action === 'state') got.panelState = { injected: m.injected, findings: (m.findings || []).length };
       if (m.action === 'findings') { got.panelFindings = m.findings.length; if (got.toggled === null) chrome.runtime.sendMessage({ action: 'toggle-overlays', tabId: tab.id }); }
@@ -207,9 +207,9 @@ if (has('--messages')) {
     return out;
   }, url);
   const overlays = await page.evaluate(() => ({
-    overlays: document.querySelectorAll('.impeccable-overlay:not(.impeccable-banner)').length,
-    hidden: document.body.classList.contains('impeccable-hidden'),
-    noWindowApi: typeof window.impeccableDetect === 'undefined',
+    overlays: document.querySelectorAll('.procable-overlay:not(.procable-banner)').length,
+    hidden: document.body.classList.contains('procable-hidden'),
+    noWindowApi: typeof window.procableDetect === 'undefined',
   }));
   const ok = result.got.updated > 0 && result.got.panelFindings > 0 && result.got.toggled === false && result.state.overlaysVisible === false && overlays.overlays > 0 && overlays.hidden && overlays.noWindowApi;
   if (!ok) failures++;

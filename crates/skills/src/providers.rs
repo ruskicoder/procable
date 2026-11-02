@@ -1,6 +1,6 @@
 //! Provider (harness) directories, aliases, global-skill layouts, harness
 //! detection, and the install-tree scans. JS: skills.mjs top section plus
-//! `findProjectRoot` / `findInstalledProviders` / `findImpeccableProviders` /
+//! `findProjectRoot` / `findInstalledProviders` / `findProcableProviders` /
 //! `findLinkedProviders` / `resolveUpdateTarget` / `getSkillsVersion`.
 
 use crate::util::{self, jsp, Env};
@@ -106,7 +106,7 @@ pub fn devin_global_config_dir(env: &Env, _cwd: &str, home: &str) -> String {
     jsp::join(&[home, ".config", "devin"])
 }
 
-pub use impeccable_context::hermes::hermes_global_home;
+pub use procable_context::hermes::hermes_global_home;
 
 /// JS: dshGlobalHome(home): honor $DSH_HOME only when it sits under `home`
 /// (resolved against cwd like `path.resolve`), mirroring hermesGlobalHome.
@@ -218,7 +218,7 @@ impl Sys {
     pub fn get_skills_version(&self, root: &str, scope: Option<Scope>) -> Option<String> {
         for d in PROVIDER_DIRS {
             for skills_dir in self.provider_skills_dir_candidates(root, d, scope) {
-                let skill_md = jsp::join(&[&skills_dir, "impeccable", "SKILL.md"]);
+                let skill_md = jsp::join(&[&skills_dir, "procable", "SKILL.md"]);
                 if !util::exists(&skill_md) {
                     continue;
                 }
@@ -232,12 +232,12 @@ impl Sys {
     }
 
     /// JS: isAlreadyInstalled(root, scope): the first provider dir holding an
-    /// impeccable skill (canonical, prefixed, or legacy `teach-`).
+    /// procable skill (canonical, prefixed, or legacy `teach-`).
     pub fn is_already_installed(&self, root: &str, scope: Option<Scope>) -> Option<&'static str> {
         for d in PROVIDER_DIRS {
             for skills_dir in self.existing_skills_dirs(root, d, scope) {
                 if let Some(entries) = util::read_dir_names(&skills_dir) {
-                    if entries.iter().any(|e| is_impeccable_skill_name(e)) {
+                    if entries.iter().any(|e| is_procable_skill_name(e)) {
                         return Some(d);
                     }
                 }
@@ -246,23 +246,23 @@ impl Sys {
         None
     }
 
-    /// JS: migrateUnprefixImpeccable(root, scope)
-    pub fn migrate_unprefix_impeccable(&self, root: &str, scope: Option<Scope>) -> usize {
+    /// JS: migrateUnprefixProcable(root, scope)
+    pub fn migrate_unprefix_procable(&self, root: &str, scope: Option<Scope>) -> usize {
         let mut migrated = 0;
         for d in PROVIDER_DIRS {
             for skills_dir in self.existing_skills_dirs(root, d, scope) {
                 let Some(entries) = util::read_dir_names(&skills_dir) else { continue };
                 for name in entries {
-                    if name == "impeccable" || name == "teach-impeccable" {
+                    if name == "procable" || name == "teach-procable" {
                         continue;
                     }
-                    if !name.ends_with("-impeccable") {
+                    if !name.ends_with("-procable") {
                         continue;
                     }
                     if !is_real_skill_dir(&skills_dir, &name) {
                         continue;
                     }
-                    let dest = jsp::join(&[&skills_dir, "impeccable"]);
+                    let dest = jsp::join(&[&skills_dir, "procable"]);
                     util::rm_rf(&dest);
                     if util::rename(&jsp::join(&[&skills_dir, &name]), &dest).is_ok() {
                         migrated += 1;
@@ -289,13 +289,13 @@ impl Sys {
         found
     }
 
-    /// JS: findImpeccableProviders(root, scope)
-    pub fn find_impeccable_providers(&self, root: &str, scope: Option<Scope>) -> Vec<&'static str> {
+    /// JS: findProcableProviders(root, scope)
+    pub fn find_procable_providers(&self, root: &str, scope: Option<Scope>) -> Vec<&'static str> {
         let mut found = Vec::new();
         for d in PROVIDER_DIRS {
             for skills_dir in self.existing_skills_dirs(root, d, scope) {
                 let Some(entries) = util::read_dir_names(&skills_dir) else { continue };
-                if entries.iter().any(|e| is_impeccable_skill_name(e)) {
+                if entries.iter().any(|e| is_procable_skill_name(e)) {
                     found.push(*d);
                     break;
                 }
@@ -312,7 +312,7 @@ impl Sys {
             .filter(|provider| {
                 self.provider_skills_dir_candidates(root, provider, scope)
                     .iter()
-                    .any(|skills_dir| util::is_symlink(&jsp::join(&[skills_dir, "impeccable"])))
+                    .any(|skills_dir| util::is_symlink(&jsp::join(&[skills_dir, "procable"])))
             })
             .collect()
     }
@@ -431,9 +431,9 @@ impl Sys {
         let project_providers = if home_rooted {
             Vec::new()
         } else {
-            self.find_impeccable_providers(project_root, Some(Scope::Project))
+            self.find_procable_providers(project_root, Some(Scope::Project))
         };
-        let user_providers = self.find_impeccable_providers(&home, Some(Scope::User));
+        let user_providers = self.find_procable_providers(&home, Some(Scope::User));
         match explicit_scope {
             Some(Scope::User) => {
                 return if user_providers.is_empty() {
@@ -568,9 +568,9 @@ fn unique_paths(paths: Vec<String>) -> Vec<String> {
     out
 }
 
-/// `e === 'impeccable' || e.endsWith('-impeccable') || e === 'teach-impeccable' || e.endsWith('-teach-impeccable')`
-fn is_impeccable_skill_name(e: &str) -> bool {
-    e == "impeccable" || e.ends_with("-impeccable") || e == "teach-impeccable" || e.ends_with("-teach-impeccable")
+/// `e === 'procable' || e.endsWith('-procable') || e === 'teach-procable' || e.endsWith('-teach-procable')`
+fn is_procable_skill_name(e: &str) -> bool {
+    e == "procable" || e.ends_with("-procable") || e == "teach-procable" || e.ends_with("-teach-procable")
 }
 
 /// JS: isSkillDir(skillsDir, name)

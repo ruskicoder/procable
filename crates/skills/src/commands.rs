@@ -3,7 +3,7 @@
 //! / `update` / `run` plus the install-plan prompts
 //! (`chooseInstallPlan` and friends) and `decideHookInstall`.
 
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::Value;
 
 use crate::bundle;
@@ -20,19 +20,19 @@ use crate::{Flow, R};
 const SUBCOMMAND_HELP: &[(&str, &str)] = &[
     (
         "install",
-        "Usage: impeccable install [options]\n\nInstall compiled Impeccable skills into project or user-level harness folders.\n\nOptions:\n  -y, --yes              Accept detected defaults without prompting\n  --providers=<names>    Comma-separated harnesses to install\n  --scope=<scope>        Install scope: project or global\n  --project              Install into the current project\n  --user, --global       Install at the user level\n  --no-hooks             Install skills without provider hook manifests\n  --force                Replace an existing installation\n  -h, --help             Show this help message",
+        "Usage: procable install [options]\n\nInstall compiled Procable skills into project or user-level harness folders.\n\nOptions:\n  -y, --yes              Accept detected defaults without prompting\n  --providers=<names>    Comma-separated harnesses to install\n  --scope=<scope>        Install scope: project or global\n  --project              Install into the current project\n  --user, --global       Install at the user level\n  --no-hooks             Install skills without provider hook manifests\n  --force                Replace an existing installation\n  -h, --help             Show this help message",
     ),
     (
         "link",
-        "Usage: impeccable link [options]\n\nLink Impeccable skills from a local checkout or submodule.\n\nOptions:\n  --source=<path>        Source checkout (default: .impeccable)\n  --providers=<names>    Comma-separated harnesses to link\n  -y, --yes              Accept detected defaults without prompting\n  --force                Replace existing skill folders with links\n  -h, --help             Show this help message",
+        "Usage: procable link [options]\n\nLink Procable skills from a local checkout or submodule.\n\nOptions:\n  --source=<path>        Source checkout (default: .procable)\n  --providers=<names>    Comma-separated harnesses to link\n  -y, --yes              Accept detected defaults without prompting\n  --force                Replace existing skill folders with links\n  -h, --help             Show this help message",
     ),
     (
         "update",
-        "Usage: impeccable update [options]\n\nUpdate an existing Impeccable skill installation.\n\nOptions:\n  -y, --yes              Accept detected defaults without prompting\n  --scope=<scope>        Update scope: project or global\n  --project              Update the current project installation\n  --user, --global       Update the user-level installation\n  --no-hooks             Update skills without changing hook manifests\n  --force                Replace installed skill files\n  -h, --help             Show this help message",
+        "Usage: procable update [options]\n\nUpdate an existing Procable skill installation.\n\nOptions:\n  -y, --yes              Accept detected defaults without prompting\n  --scope=<scope>        Update scope: project or global\n  --project              Update the current project installation\n  --user, --global       Update the user-level installation\n  --no-hooks             Update skills without changing hook manifests\n  --force                Replace installed skill files\n  -h, --help             Show this help message",
     ),
     (
         "check",
-        "Usage: impeccable check [options]\n\nCheck whether installed Impeccable skills are up to date.\n\nOptions:\n  -h, --help             Show this help message",
+        "Usage: procable check [options]\n\nCheck whether installed Procable skills are up to date.\n\nOptions:\n  -h, --help             Show this help message",
     ),
 ];
 
@@ -57,7 +57,7 @@ pub fn run(args: &[String], io: &mut Io) -> R<()> {
         "check" => check(io),
         other => {
             io.err(&format!("Unknown skills command: {other}\n"));
-            io.err("Run 'impeccable --help' for available commands.\n");
+            io.err("Run 'procable --help' for available commands.\n");
             Err(Flow::Exit(1))
         }
     }
@@ -94,7 +94,7 @@ fn show_help(io: &mut Io) -> R<()> {
     // list from impeccable.style.
     out(io, "\n  procable skills\n");
     out(io, "  procable runs offline. The prompt-orchestrator installer places the skill, its hooks and the engine.");
-    out(io, "  `install` and `update` read a local bundle from IMPECCABLE_BUNDLE_PATH; nothing is downloaded.\n");
+    out(io, "  `install` and `update` read a local bundle from PROCABLE_BUNDLE_PATH; nothing is downloaded.\n");
     for (sub, help) in SUBCOMMAND_HELP {
         let first = help.lines().find(|l| !l.trim().is_empty()).unwrap_or("").trim();
         out(io, &format!("  {sub:<10} {first}"));
@@ -129,11 +129,11 @@ fn check(io: &mut Io) -> R<()> {
         None
     };
     if sys.is_already_installed(&root, scope).is_none() {
-        out(io, "Impeccable is not installed in this project.");
-        out(io, "Run `npx impeccable install` to install.");
+        out(io, "Procable is not installed in this project.");
+        out(io, "Run `npx procable install` to install.");
         return Err(Flow::Exit(0));
     }
-    let providers = sys.find_impeccable_providers(&root, scope);
+    let providers = sys.find_procable_providers(&root, scope);
     out(io, "Checking for updates...\n");
     let result = (|| -> Result<bool, String> {
         let bundle_dir = bundle::download_and_extract_bundle(&sys)?;
@@ -148,7 +148,7 @@ fn check(io: &mut Io) -> R<()> {
         }
         Ok(false) => {
             out(io, "Updates available.");
-            out(io, "Run `npx impeccable update` to update.");
+            out(io, "Run `npx procable update` to update.");
         }
         Err(e) => {
             err(io, &format!("Could not check for updates: {e}"));
@@ -179,7 +179,7 @@ fn print_install_intro(prompt: &Prompt, io: &mut Io) {
     if !prompt.interactive() {
         return;
     }
-    out(io, &format!("{} {}", prompt.accent(&prompt.bold("impeccable")), prompt.dim("install")));
+    out(io, &format!("{} {}", prompt.accent(&prompt.bold("procable")), prompt.dim("install")));
     out(io, "");
 }
 
@@ -422,7 +422,7 @@ fn report_hook_targets(sys: &Sys, io: &mut Io, written: &[String], wanted: &[&'s
         out(io, &format!("Installed hooks into: {}", hook_paths_line(sys, written)));
     }
     if wanted.contains(&".hermes") && hook_manifest::hermes_plugin_installed(sys) && !hook_manifest::hermes_plugin_enabled(sys) {
-        out(io, "Enable the Hermes plugin once: hermes plugins enable impeccable-design-hook (a running gateway reloads it; otherwise restart Hermes).");
+        out(io, "Enable the Hermes plugin once: hermes plugins enable procable-design-hook (a running gateway reloads it; otherwise restart Hermes).");
     }
 }
 
@@ -492,7 +492,7 @@ fn link(flags: &[String], io: &mut Io) -> R<()> {
     if !yes {
         out(io, &format!("Source checkout: {}", source.checkout_root));
         out(io, &format!("Target harness folder(s): {}", targets.join(", ")));
-        let ans = prompt.ask(io, &format!("Link impeccable skills into {} folder(s)? (Y/n) ", targets.len()))?;
+        let ans = prompt.ask(io, &format!("Link procable skills into {} folder(s)? (Y/n) ", targets.len()))?;
         if ans == "n" || ans == "no" {
             out(io, "Aborted. Re-run with --providers=<names> to choose explicitly (e.g. --providers=claude,cursor).");
             return Err(Flow::Exit(0));
@@ -536,7 +536,7 @@ fn link(flags: &[String], io: &mut Io) -> R<()> {
     if result.skipped > 0 {
         parts.push(format!("{} skipped", result.skipped));
     }
-    out(io, &format!("Linked impeccable into: {} ({}).", targets.join(", "), parts.join(", ")));
+    out(io, &format!("Linked procable into: {} ({}).", targets.join(", "), parts.join(", ")));
     out(io, "Update with `git submodule update --remote` from your project root, then rerun this command if new skills are added.\n");
     Ok(())
 }
@@ -581,7 +581,7 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
     };
 
     if let (Some(existing), true) = (existing, !force && missing_selected_targets.len() < targets.len()) {
-        out(io, &format!("Impeccable skills are already installed (found in {existing}/)."));
+        out(io, &format!("Procable skills are already installed (found in {existing}/)."));
         let selected_installed: Vec<&'static str> = targets.iter().copied().filter(|p| installed_targets.contains(p)).collect();
         let linked_targets = sys.find_linked_providers(&install_root, &selected_installed, scope_opt);
         let copy_targets: Vec<&'static str> = selected_installed.iter().copied().filter(|p| !linked_targets.contains(p)).collect();
@@ -591,7 +591,7 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
         let outcome: Result<(), String> = (|| {
             if !linked_targets.is_empty() {
                 out(io, &format!("Linked skills found in: {}", linked_targets.join(", ")));
-                out(io, "Update the source checkout with `git submodule update --remote`, then rerun `npx impeccable link --source=.impeccable` if new skills are added.");
+                out(io, "Update the source checkout with `git submodule update --remote`, then rerun `npx procable link --source=.procable` if new skills are added.");
                 if !copy_targets.is_empty() {
                     out(io, &format!("Continuing with copied installs in: {}\n", copy_targets.join(", ")));
                 }
@@ -626,7 +626,7 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
             let bdir = bundle_dir.clone().unwrap_or_default();
 
             if !update_check_skipped && !copy_targets.is_empty() && !bundle::is_up_to_date(&sys, &install_root, &copy_targets, &bdir, scope_opt, scope_opt)? {
-                sys.migrate_unprefix_impeccable(&install_root, scope_opt);
+                sys.migrate_unprefix_procable(&install_root, scope_opt);
                 let refreshed = bundle::refresh_provider_skills(&sys, &bdir, &install_root, &copy_targets, scope_opt)?;
                 updated = refreshed.len();
                 let agents = bundle::copy_provider_agents(&sys, &bdir, &install_root, &copy_targets, scope_opt)?;
@@ -646,7 +646,7 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
                     return Err(EXIT_1.to_string());
                 }
                 out(io, &format!(
-                    "Installed impeccable into: {} ({})",
+                    "Installed procable into: {} ({})",
                     missing_selected_targets.join(", "),
                     if scope == Scope::User { "global" } else { "project" }
                 ));
@@ -709,7 +709,7 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
 
     let want_hooks = install_hooks && decide_hook_install(&sys, &mut prompt, io, &hook_root, &targets, yes)?;
 
-    out(io, "\nDownloading impeccable skills...");
+    out(io, "\nDownloading procable skills...");
     let bundle_dir = match bundle::download_and_extract_bundle(&sys) {
         Ok(d) => d,
         Err(e) => {
@@ -718,7 +718,7 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
         }
     };
 
-    sys.migrate_unprefix_impeccable(&install_root, scope_opt);
+    sys.migrate_unprefix_procable(&install_root, scope_opt);
 
     let outcome: Result<(Vec<String>, Vec<bundle::AgentResult>, Vec<String>), String> = (|| {
         let written = bundle::copy_provider_skills(&sys, &bundle_dir, &install_root, &targets, scope_opt)?;
@@ -746,14 +746,14 @@ fn install(flags: &[String], io: &mut Io) -> R<()> {
         return Err(Flow::Exit(1));
     }
     out(io, &format!(
-        "Installed impeccable into: {} ({})",
+        "Installed procable into: {} ({})",
         targets.join(", "),
         if scope == Scope::User { "global" } else { "project" }
     ));
     install_engine_binaries(&sys, io, &written);
     bundle::report_provider_agents(&sys, io, &agent_results);
     report_hook_targets(&sys, io, &hook_targets, if want_hooks { &targets } else { &[] });
-    out(io, "\nDone! Now type /impeccable init in your AI coding agent's chat (not in this terminal) to set up design context.\n");
+    out(io, "\nDone! Now type /procable init in your AI coding agent's chat (not in this terminal) to set up design context.\n");
     Ok(())
 }
 
@@ -786,18 +786,18 @@ fn update(flags: &[String], io: &mut Io) -> R<()> {
                 } else {
                     format!("this project ({project_root})")
                 };
-                out(io, &format!("No impeccable skill folders found at the {where_}."));
+                out(io, &format!("No procable skill folders found at the {where_}."));
             }
-            None => out(io, "No impeccable skill folders found in this project or at the user level."),
+            None => out(io, "No procable skill folders found in this project or at the user level."),
         }
-        out(io, "Run `npx impeccable install` to install first.");
+        out(io, "Run `npx procable install` to install first.");
         return Err(Flow::Exit(1));
     };
 
     let (root, scope, agent_scope, providers, scope_label) = match target {
         UpdateTarget::Resolved { root, scope, agent_scope, providers, scope_label } => (root, scope, agent_scope, providers, scope_label),
         UpdateTarget::Ambiguous { project_providers, user_providers } => {
-            out(io, "Impeccable is installed both here and at the user level:");
+            out(io, "Procable is installed both here and at the user level:");
             out(io, &format!("  project    {project_root}  ({})", project_providers.join(", ")));
             out(io, &format!("  user level {}  ({})", sys.format_path_for_display(&home), user_providers.join(", ")));
             let mut pick_user = false;
@@ -826,7 +826,7 @@ fn update(flags: &[String], io: &mut Io) -> R<()> {
 
     if !linked_providers.is_empty() {
         out(io, &format!("Linked skills found in: {}", linked_providers.join(", ")));
-        out(io, "Update the source checkout with `git submodule update --remote`, then rerun `npx impeccable link --source=.impeccable` if new skills are added.");
+        out(io, "Update the source checkout with `git submodule update --remote`, then rerun `npx procable link --source=.procable` if new skills are added.");
         if copy_providers.is_empty() {
             return Err(Flow::Exit(0));
         }
@@ -898,9 +898,9 @@ fn update(flags: &[String], io: &mut Io) -> R<()> {
     }
 
     let outcome: R<()> = (|| {
-        let migrated = sys.migrate_unprefix_impeccable(&root, scope);
+        let migrated = sys.migrate_unprefix_procable(&root, scope);
         if migrated > 0 {
-            out(io, "Migrated a prefixed install back to /impeccable (the i- prefix is no longer used).");
+            out(io, "Migrated a prefixed install back to /procable (the i- prefix is no longer used).");
         }
         let refreshed = bundle::refresh_provider_skills(&sys, &tmp_dir, &root, &copy_providers, scope).map_err(Flow::Throw)?;
         let agents = bundle::copy_provider_agents(&sys, &tmp_dir, &root, &copy_providers, agent_scope).map_err(Flow::Throw)?;
@@ -949,7 +949,7 @@ mod offline_install_tests {
 
     use crate::bundle::{test_seam, BundleError};
     use crate::engine_binary::platform_tag;
-    use impeccable_common::Io;
+    use procable_common::Io;
 
     struct Fixture {
         root: String,
@@ -965,7 +965,7 @@ mod offline_install_tests {
 
     fn fixture(name: &str) -> Fixture {
         let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        let root = std::env::temp_dir().join(format!("impeccable-{name}-{}-{nanos}", std::process::id())).to_string_lossy().into_owned();
+        let root = std::env::temp_dir().join(format!("procable-{name}-{}-{nanos}", std::process::id())).to_string_lossy().into_owned();
         let project = format!("{root}/project");
         let home = format!("{root}/home");
         let tmp = format!("{root}/tmp");
@@ -997,14 +997,14 @@ mod offline_install_tests {
     fn install_existing(fx: &Fixture) -> Option<String> {
         let (os, arch) = platform_tag()?;
         let bundle = format!("{}/bundle", fx.root);
-        let skill = format!("{bundle}/.claude/skills/impeccable");
+        let skill = format!("{bundle}/.claude/skills/procable");
         std::fs::create_dir_all(format!("{skill}/scripts/bin/{os}-{arch}")).unwrap();
-        std::fs::write(format!("{skill}/SKILL.md"), "---\nname: impeccable\nversion: 9.9.9\n---\n# impeccable\n").unwrap();
+        std::fs::write(format!("{skill}/SKILL.md"), "---\nname: procable\nversion: 9.9.9\n---\n# procable\n").unwrap();
         // A staged engine binary keeps install_engine_binaries off the network.
-        std::fs::write(format!("{skill}/scripts/bin/{os}-{arch}/impeccable"), "#!/bin/sh\nexit 0\n").unwrap();
-        let (code, stdout, stderr) = run(fx, &[("IMPECCABLE_BUNDLE_PATH", &bundle)]);
+        std::fs::write(format!("{skill}/scripts/bin/{os}-{arch}/procable"), "#!/bin/sh\nexit 0\n").unwrap();
+        let (code, stdout, stderr) = run(fx, &[("PROCABLE_BUNDLE_PATH", &bundle)]);
         assert_eq!(code, 0, "seed install failed.\nstdout:\n{stdout}\nstderr:\n{stderr}");
-        Some(format!("{}/.claude/skills/impeccable/SKILL.md", fx.project))
+        Some(format!("{}/.claude/skills/procable/SKILL.md", fx.project))
     }
 
     #[test]
@@ -1044,6 +1044,6 @@ mod offline_install_tests {
         assert_eq!(code, 1, "stdout:\n{stdout}\nstderr:\n{stderr}");
         assert!(stderr.contains("Download failed: Could not download skill bundle: Network Error"), "{stderr}");
         assert!(!stderr.contains("verify"), "{stderr}");
-        assert!(!std::path::Path::new(&format!("{}/.claude/skills/impeccable", fx.project)).exists());
+        assert!(!std::path::Path::new(&format!("{}/.claude/skills/procable", fx.project)).exists());
     }
 }

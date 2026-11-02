@@ -48,8 +48,8 @@ jobs:
         env:
           PREFIXES: ${{ inputs.prefixes }}
         run: |
-          bin="$(ls target/release/impeccable target/release/procable 2>/dev/null | head -1)"
-          export IMPECCABLE_BIN="$GITHUB_WORKSPACE/$bin" PROCABLE_BIN="$GITHUB_WORKSPACE/$bin"
+          bin="$(ls target/release/procable target/release/procable 2>/dev/null | head -1)"
+          export PROCABLE_BIN="$GITHUB_WORKSPACE/$bin" PROCABLE_BIN="$GITHUB_WORKSPACE/$bin"
           for p in $PREFIXES; do node tests/oracle/record.mjs --bin "$p"; done
           node tests/oracle/run.mjs
       - name: Commit the recorded goldens

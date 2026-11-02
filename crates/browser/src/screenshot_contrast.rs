@@ -4,13 +4,13 @@
 //! canvas, this port decodes the PNGs with the `png` crate and runs the same
 //! arithmetic (channel-delta gate ≥ 10, `toFixed(1)` in the snippet). Which of
 //! the changed pixels answer for the text, and when the set answers nothing,
-//! are decisions in `impeccable_core::browser::visual`.
+//! are decisions in `procable_core::browser::visual`.
 
 use base64::Engine as _;
-use impeccable_core::browser::visual::{
+use procable_core::browser::visual::{
     self, GlyphPixel, PixelContrastOutcome, GLYPH_MIN_PIXELS,
 };
-use impeccable_core::js::{math_max, number_to_string};
+use procable_core::js::{math_max, number_to_string};
 use serde_json::{json, Value};
 
 use crate::cdp::{CdpResult, Page};
@@ -30,7 +30,7 @@ fn num(v: Option<&Value>) -> f64 {
         Some(Value::Number(n)) => n.as_f64().unwrap_or(0.0),
         Some(Value::Bool(true)) => 1.0,
         Some(Value::String(s)) => {
-            let n = impeccable_core::js::string_to_number(s);
+            let n = procable_core::js::string_to_number(s);
             if n.is_nan() {
                 0.0
             } else {
@@ -125,7 +125,7 @@ fn luminance(r: f64, g: f64, b: f64) -> f64 {
         if v <= 0.03928 {
             v / 12.92
         } else {
-            impeccable_core::js::math_pow((v + 0.055) / 1.055, 2.4)
+            procable_core::js::math_pow((v + 0.055) / 1.055, 2.4)
         }
     };
     0.2126 * convert(r) + 0.7152 * convert(g) + 0.0722 * convert(b)
@@ -227,7 +227,7 @@ pub struct RawFinding {
     pub snippet: String,
     /// The per-finding severity, `advisory` for decorative text or a
     /// verdict just under its bar
-    /// ([`impeccable_core::browser::visual::visual_contrast_severity`]).
+    /// ([`procable_core::browser::visual::visual_contrast_severity`]).
     pub severity: Option<String>,
 }
 
@@ -413,7 +413,7 @@ const BRING_INTO_VIEW_JS: &str = r#"(async (el) => {
   const moved = window.scrollX !== sx || window.scrollY !== sy
     || saved.some(([p, t, l]) => p.scrollTop !== t || p.scrollLeft !== l);
   if (!moved) return { moved: false };
-  window.__impeccableContrastRestore = () => {
+  window.__procableContrastRestore = () => {
     for (const [p, t, l] of saved) {
       if (p.scrollTop !== t || p.scrollLeft !== l) p.scrollTo({ top: t, left: l, behavior: 'instant' });
     }
@@ -424,7 +424,7 @@ const BRING_INTO_VIEW_JS: &str = r#"(async (el) => {
   return { moved: true, x: r.left + window.scrollX, y: r.top + window.scrollY, width: r.width, height: r.height };
 })"#;
 
-const RESTORE_SCROLL_JS: &str = "(() => { const restore = window.__impeccableContrastRestore; delete window.__impeccableContrastRestore; if (restore) restore(); })()";
+const RESTORE_SCROLL_JS: &str = "(() => { const restore = window.__procableContrastRestore; delete window.__procableContrastRestore; if (restore) restore(); })()";
 
 /// Whether a clip reaches where a beyond-viewport capture paints nothing:
 /// below the document's content box (allowing the 2px pad and the rounding a
@@ -571,7 +571,7 @@ fn measure_candidate(
     };
     Ok(PixelMeasure { measured: true, finding: Some(RawFinding {
         id: "low-contrast",
-        severity: impeccable_core::browser::visual::visual_contrast_severity(
+        severity: procable_core::browser::visual::visual_contrast_severity(
             candidate, measured, threshold,
         ),
         snippet: pixel_contrast_snippet(
@@ -595,7 +595,7 @@ fn hidden_reading(
     keep_halo: bool,
 ) -> CdpResult<Option<ContrastMetrics>> {
     let token = format!(
-        "impeccable-contrast-{}-{}",
+        "procable-contrast-{}-{}",
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_millis())
@@ -615,32 +615,32 @@ fn hidden_reading(
         r#"(({{ selector, match, token, backgroundClipText, keepHalo }}) => {{
     const el = ({PICK_CANDIDATE_JS})(selector, match);
     if (!el) return false;
-    let style = document.getElementById('impeccable-visual-contrast-hide-style');
+    let style = document.getElementById('procable-visual-contrast-hide-style');
     if (!style) {{
       style = document.createElement('style');
-      style.id = 'impeccable-visual-contrast-hide-style';
+      style.id = 'procable-visual-contrast-hide-style';
       style.textContent = [
-        '[data-impeccable-visual-contrast-target] {{',
+        '[data-procable-visual-contrast-target] {{',
         '  color: transparent !important;',
         '  -webkit-text-fill-color: transparent !important;',
         '  -webkit-text-stroke-color: transparent !important;',
         '}}',
-        '[data-impeccable-visual-contrast-target]:not([data-impeccable-keep-halo="true"]) {{',
+        '[data-procable-visual-contrast-target]:not([data-procable-keep-halo="true"]) {{',
         '  text-shadow: none !important;',
         '}}',
-        'text[data-impeccable-visual-contrast-target], tspan[data-impeccable-visual-contrast-target] {{',
+        'text[data-procable-visual-contrast-target], tspan[data-procable-visual-contrast-target] {{',
         '  fill: transparent !important;',
         '  stroke: transparent !important;',
         '}}',
-        '[data-impeccable-visual-contrast-target][data-impeccable-bgclip-text="true"] {{',
+        '[data-procable-visual-contrast-target][data-procable-bgclip-text="true"] {{',
         '  background-image: none !important;',
         '}}',
       ].join('\n');
       document.head.appendChild(style);
     }}
-    el.setAttribute('data-impeccable-visual-contrast-target', token);
-    if (backgroundClipText) el.setAttribute('data-impeccable-bgclip-text', 'true');
-    if (keepHalo) el.setAttribute('data-impeccable-keep-halo', 'true');
+    el.setAttribute('data-procable-visual-contrast-target', token);
+    if (backgroundClipText) el.setAttribute('data-procable-bgclip-text', 'true');
+    if (keepHalo) el.setAttribute('data-procable-keep-halo', 'true');
     return true;
   }})({})"#,
         json!({ "selector": selector, "match": candidate.get("match").cloned().unwrap_or(Value::Null), "token": token, "backgroundClipText": bgclip, "keepHalo": keep_halo })
@@ -653,11 +653,11 @@ fn hidden_reading(
     // finally: remove the marker attributes (errors swallowed).
     let cleanup_expr = format!(
         r#"(({{ token }}) => {{
-      for (const el of document.querySelectorAll('[data-impeccable-visual-contrast-target]')) {{
-        if (el.getAttribute('data-impeccable-visual-contrast-target') !== token) continue;
-        el.removeAttribute('data-impeccable-visual-contrast-target');
-        el.removeAttribute('data-impeccable-bgclip-text');
-        el.removeAttribute('data-impeccable-keep-halo');
+      for (const el of document.querySelectorAll('[data-procable-visual-contrast-target]')) {{
+        if (el.getAttribute('data-procable-visual-contrast-target') !== token) continue;
+        el.removeAttribute('data-procable-visual-contrast-target');
+        el.removeAttribute('data-procable-bgclip-text');
+        el.removeAttribute('data-procable-keep-halo');
       }}
     }})({})"#,
         json!({ "token": token })
@@ -668,7 +668,7 @@ fn hidden_reading(
 }
 
 /// The pixel pass's snippet. The verdict and the median print against the
-/// threshold ([`impeccable_core::color::ratio_label`]), so a verdict just
+/// threshold ([`procable_core::color::ratio_label`]), so a verdict just
 /// under the bar never reads as the bar itself.
 pub(crate) fn pixel_contrast_snippet(
     measured: f64,
@@ -680,8 +680,8 @@ pub(crate) fn pixel_contrast_snippet(
     let bar = num(Some(threshold));
     format!(
         "pixel contrast {}:1 median {}:1 (need {}:1) on {}{}",
-        impeccable_core::color::ratio_label(measured, bar),
-        impeccable_core::color::ratio_label(median, bar),
+        procable_core::color::ratio_label(measured, bar),
+        procable_core::color::ratio_label(median, bar),
         js_string(threshold),
         reason_label,
         text_label
@@ -719,7 +719,7 @@ fn rand_token() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use impeccable_core::js::to_fixed;
+    use procable_core::js::to_fixed;
 
     /// The halo is kept for a second reading only where the core found it
     /// separates the ink, and never for outlined text.
@@ -733,7 +733,7 @@ mod tests {
         assert!(!may_keep_halo(&json!({ "haloSeparates": true }), &outlined));
         // The first reading hides every shadow, as it always did.
         let src = include_str!("screenshot_contrast.rs");
-        assert!(src.contains("'[data-impeccable-visual-contrast-target]:not([data-impeccable-keep-halo=\"true\"]) {{',"));
+        assert!(src.contains("'[data-procable-visual-contrast-target]:not([data-procable-keep-halo=\"true\"]) {{',"));
         assert!(src.contains("'  text-shadow: none !important;',"));
     }
 

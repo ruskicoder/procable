@@ -1,4 +1,4 @@
-//! JS: live-discard-manual-edits.mjs -> `impeccable
+//! JS: live-discard-manual-edits.mjs -> `procable
 //! live-discard-manual-edits`. Drops pending manual edits from the buffer
 //! without touching source files.
 
@@ -6,14 +6,14 @@ use crate::event_validation::truthy;
 use crate::live_commit_manual_edits::arg_val;
 use crate::manual_edits::buffer::{read_buffer, remove_entries, truncate_buffer};
 use crate::util::{json_compact, println};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
 
 pub fn run(args: &[String], io: &mut Io) -> i32 {
     if args.iter().any(|a| a == "--help" || a == "-h") {
         println(
             io,
-            "Usage: impeccable live-discard-manual-edits [--page-url=<url>]",
+            "Usage: procable live-discard-manual-edits [--page-url=<url>]",
         );
         return 0;
     }

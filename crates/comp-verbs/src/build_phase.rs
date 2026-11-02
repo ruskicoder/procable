@@ -9,12 +9,12 @@
 
 use std::path::{Path, PathBuf};
 
-use impeccable_common::Io;
-use impeccable_comp::hero::{
+use procable_common::Io;
+use procable_comp::hero::{
     chrome_strip_check, invented_ink, plate_clip_check, svg_illustrations, text_region_check, Chosen, Region,
 };
-use impeccable_comp::png_io;
-use impeccable_comp::raster::{self as r, Image};
+use procable_comp::png_io;
+use procable_comp::raster::{self as r, Image};
 use regex::Regex;
 use serde_json::{json, Map, Value};
 
@@ -27,12 +27,12 @@ use crate::util::{self, arg, flag, round, to_fixed};
 
 pub const PHASES: [&str; 8] =
     ["comps", "spec", "plates", "hero", "sections", "motion", "responsive", "review"];
-const MOCKS_DIR: &str = ".impeccable/mocks";
+const MOCKS_DIR: &str = ".procable/mocks";
 const HERO_MIN: f64 = 0.72;
 const RESPONSIVE_MIN: f64 = 0.65;
 const PLATE_MIN: f64 = 0.4;
 const PLATE_STRUCTURE_MIN: f64 = 0.4;
-const HERO_REPRO: &str = ".impeccable/review/hero-repro.png";
+const HERO_REPRO: &str = ".procable/review/hero-repro.png";
 const INVENTED_MIN: f64 = 0.04;
 
 fn state_path() -> String {
@@ -58,9 +58,9 @@ fn abs(io: &Io, p: &str) -> PathBuf {
 }
 
 pub(crate) fn self_cmd(io: &Io) -> String {
-    let value = io.env.get("IMPECCABLE_SELF").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| "impeccable".to_string());
+    let value = io.env.get("PROCABLE_SELF").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| "procable".to_string());
     // The skill launcher exports a raw filename; the npm shim exports a
-    // command prefix such as `npx impeccable`. Quote only a complete filename,
+    // command prefix such as `npx procable`. Quote only a complete filename,
     // resolving relative launchers against the same cwd as the printed command.
     if abs(io, &value).is_file()
         && !value.bytes().all(|b| b.is_ascii_alphanumeric() || matches!(b, b'/' | b'.' | b'_' | b'-' | b':') || (cfg!(windows) && b == b'\\'))
@@ -68,7 +68,7 @@ pub(crate) fn self_cmd(io: &Io) -> String {
         if cfg!(windows) {
             // cmd.exe treats single quotes as literal filename characters;
             // a quoted .cmd launcher also needs PowerShell's call operator.
-            return impeccable_common::launcher::with_call_operator(&value, format!("\"{value}\""));
+            return procable_common::launcher::with_call_operator(&value, format!("\"{value}\""));
         }
         return format!("'{}'", value.replace('\'', "'\\''"));
     }
@@ -89,7 +89,7 @@ fn load_raster(io: &Io, p: &str) -> Result<Image, String> {
 fn read_build_path(io: &Io) -> Option<String> {
     let mut value = None;
     for name in ["config.json", "config.local.json"] {
-        let p = abs(io, &format!(".impeccable/{name}"));
+        let p = abs(io, &format!(".procable/{name}"));
         if let Ok(raw) = std::fs::read_to_string(&p) {
             if let Ok(v) = serde_json::from_str::<Value>(&raw) {
                 match v.get("buildPath").and_then(Value::as_str) {
@@ -111,30 +111,30 @@ fn load_state(io: &Io) -> Option<Value> {
 /// The build state records the direction's seed key, the key the roll API
 /// saw, and timestamps, so it is runtime state: its directory keeps a
 /// `.gitignore` naming `state.json` (and only that, the rest of
-/// `.impeccable/build/` being left to the project).
+/// `.procable/build/` being left to the project).
 fn save_state(io: &Io, state: &Value) {
     let p = abs(io, &state_path());
     if let Some(parent) = p.parent() {
         let _ = std::fs::create_dir_all(parent);
-        impeccable_common::git::ensure_dir_ignored(&parent.to_string_lossy(), &["state.json"]);
+        procable_common::git::ensure_dir_ignored(&parent.to_string_lossy(), &["state.json"]);
     }
     let _ = std::fs::write(p, util::json_pretty(state));
 }
 
 /// The seed reference the state records for `--direction`: a reference
 /// (`seed:` + 16 lowercase hex) or `none` as given, a raw seed key as the
-/// reference the shared locator gives it (`impeccable_common::seed::
+/// reference the shared locator gives it (`procable_common::seed::
 /// reference_for_key`, the same answer concept-seed printed for that key),
 /// so the build state never holds the key the roll API saw. With no
 /// reference to give (no salt on this machine) a raw key becomes `none`,
 /// never an unsalted hash. The direction is only ever shown, never
 /// resolved, so nothing is lost.
 fn seed_reference(io: &Io, v: &str) -> String {
-    if v == "none" || impeccable_common::seed::parse_reference(v).is_some() {
+    if v == "none" || procable_common::seed::parse_reference(v).is_some() {
         return v.to_string();
     }
     let home = io.home().map(|h| h.to_string_lossy().into_owned()).unwrap_or_default();
-    impeccable_common::seed::reference_for_key(&home, &io.cwd.to_string_lossy(), io.env("IMPECCABLE_SEED_SALT"), v).unwrap_or_else(|| "none".to_string())
+    procable_common::seed::reference_for_key(&home, &io.cwd.to_string_lossy(), io.env("PROCABLE_SEED_SALT"), v).unwrap_or_else(|| "none".to_string())
 }
 
 fn new_state(comp: Option<&str>, breakpoint: Option<&str>, artifact: Option<&str>, direction: Option<&str>) -> Value {
@@ -294,8 +294,8 @@ fn decision_comp(state: &Value) -> Option<String> {
 }
 
 /// The comp round's options: the recorded decision comp first, wherever it
-/// sits, then the comps directly in `.impeccable/mocks/`. Any other decision
-/// comp under `.impeccable/mocks/decision/` never counts.
+/// sits, then the comps directly in `.procable/mocks/`. Any other decision
+/// comp under `.procable/mocks/decision/` never counts.
 fn list_comps(io: &Io, state: &Value) -> Vec<CompEntry> {
     let dir = abs(io, MOCKS_DIR);
     let chosen = decision_comp(state);
@@ -615,7 +615,7 @@ fn gate_plates_for(io: &Io, spec: &Value, only_id: Option<&str>) -> Gate {
         // similarity while preserving this direct provenance evidence; a new
         // prompt tag does not turn those reference pixels into generated art.
         if !is_texture {
-            if let Some(origin) = img.text.get("impeccable:crop-of") {
+            if let Some(origin) = img.text.get("procable:crop-of") {
                 reasons.push(format!(
                     "plate {file} records a comp crop ({origin}); generate a production plate from the crop as reference"
                 ));
@@ -666,9 +666,9 @@ fn gate_plates_for(io: &Io, spec: &Value, only_id: Option<&str>) -> Gate {
                     px_w,
                     rr.pointer("/px/h").and_then(Value::as_f64).unwrap_or(0.0),
                 );
-                let same = impeccable_comp::metrics::structure_score(&raw, &r::resize(&img.image, raw.width as f64, raw.height as f64), 256);
-                let copied_pixels = impeccable_comp::source_pixels::is_transformed_copy(&raw, &img.image)
-                    || impeccable_comp::source_pixels::is_transformed_copy(refimg, &img.image);
+                let same = procable_comp::metrics::structure_score(&raw, &r::resize(&img.image, raw.width as f64, raw.height as f64), 256);
+                let copied_pixels = procable_comp::source_pixels::is_transformed_copy(&raw, &img.image)
+                    || procable_comp::source_pixels::is_transformed_copy(refimg, &img.image);
                 if copied_pixels {
                     reasons.push(format!(
                         "plate {file} is the comp crop of region {id} (registered RGB pixels match after resampling and a small translation): a crop of the comp is never a plate; regenerate the plate using the crop only as a reference"
@@ -799,7 +799,7 @@ fn regex_hex() -> &'static regex::Regex {
 // ---- source-file walk / referenced plates ---------------------------------
 
 fn source_files(io: &Io, limit: usize) -> Vec<String> {
-    let skip: std::collections::HashSet<&str> = ["node_modules", ".git", "dist", "build", "out", ".next", ".svelte-kit", ".impeccable", "coverage"].into_iter().collect();
+    let skip: std::collections::HashSet<&str> = ["node_modules", ".git", "dist", "build", "out", ".next", ".svelte-kit", ".procable", "coverage"].into_iter().collect();
     use once_cell::sync::Lazy;
     static EXTS: Lazy<regex::Regex> = Lazy::new(|| regex::Regex::new(r"(?i)\.(html?|css|scss|jsx?|tsx?|svelte|vue|astro|mdx?|php|erb|hbs)$").unwrap());
     let mut out: Vec<String> = Vec::new();
@@ -1063,7 +1063,7 @@ fn write_scaffold(io: &Io, spec: &Value) -> Scaffold {
     }
     vars.push("}".into());
     let mut css_lines: Vec<String> = Vec::new();
-    css_lines.push("/* Impeccable scaffold: the measured layout of the approved comp as custom properties. Generated by build-phase.mjs scaffold; regenerate after comp-spec.mjs --regions changes. Bind these to your own markup; positions are % of the comp frame so they scale with it. */".into());
+    css_lines.push("/* Procable scaffold: the measured layout of the approved comp as custom properties. Generated by build-phase.mjs scaffold; regenerate after comp-spec.mjs --regions changes. Bind these to your own markup; positions are % of the comp frame so they scale with it. */".into());
     css_lines.extend(vars);
     css_lines.push(String::new());
     css_lines.push(format!(".comp-frame {{ position: relative; width: 100%; aspect-ratio: {w} / {h}; overflow: hidden; }}"));
@@ -1266,7 +1266,7 @@ fn prepare_native_capture(
     renderer: Option<&dyn EntryRenderer>,
     stage: EntryStage,
 ) -> Result<Option<NativeCapture>, Gate> {
-    if io.env("IMPECCABLE_NATIVE_CAPTURE") != Some("1")
+    if io.env("PROCABLE_NATIVE_CAPTURE") != Some("1")
         && state["capturePolicy"] != "native-html-v1"
     {
         return Ok(None);
@@ -1299,7 +1299,7 @@ fn prepare_native_capture(
         })
         .map_err(|e| Gate::fail(vec![format!("native entry capture unavailable: {e}")]))?;
     let directory = format!(
-        ".impeccable/review/native/{}",
+        ".procable/review/native/{}",
         match stage {
             EntryStage::Hero => "hero",
             EntryStage::Responsive => "responsive",
@@ -2392,7 +2392,7 @@ fn responsive_loop_verdict(state: &mut Value, gate: &Gate, viewport_accepted: bo
         return None;
     }
     let lead = format!("The responsive gate has failed {RESPONSIVE_ATTEMPTS} attempts in a row.");
-    let side = gate.side_by_side.as_deref().unwrap_or(".impeccable/review/diff/desktop/side-by-side.png");
+    let side = gate.side_by_side.as_deref().unwrap_or(".procable/review/diff/desktop/side-by-side.png");
     if viewport_accepted {
         return Some(format!("{lead} The user already accepted a first viewport, so that review is closed. Stop iterating: show the user {side} with the regions below, and ask them to choose between restoring those regions at desktop width and keeping the desktop first viewport as it renders. Keeping it downgrades the comp at desktop width, so it takes their words saying so, quoted in {s} build-phase advance --force --reason (for example: the user said: \"the comp does not need to match at desktop width\"); force refuses any other reason. Until they answer, this phase stays open; a finish recorded over it is an unfinished build, not a fix round."));
     }
@@ -2400,9 +2400,9 @@ fn responsive_loop_verdict(state: &mut Value, gate: &Gate, viewport_accepted: bo
 }
 
 /// The `{path, sha256}` rows of the manifest the last native responsive capture
-/// bound (`.impeccable/review/native/responsive/inputs.json`).
+/// bound (`.procable/review/native/responsive/inputs.json`).
 fn native_capture_inputs(io: &Io) -> Option<Vec<Value>> {
-    let bytes = std::fs::read(abs(io, ".impeccable/review/native/responsive/inputs.json")).ok()?;
+    let bytes = std::fs::read(abs(io, ".procable/review/native/responsive/inputs.json")).ok()?;
     let report: Value = serde_json::from_slice(&bytes).ok()?;
     let files = report.pointer("/manifest/files")?.as_array()?;
     files.iter().map(|f| Some(json!({"path": f.get("path")?.as_str()?, "sha256": f.get("sha256")?.as_str()?}))).collect()
@@ -2447,8 +2447,8 @@ fn gate_responsive(io: &Io, state: &mut Value, min: f64, out_dir: &str, artifact
 fn gate_responsive_inner(io: &Io, state: &mut Value, min: f64, out_dir: &str, native: Option<&NativeCapture>) -> Gate {
     let native_desktop=native.map(|n|n.path("desktop"));
     let native_mobile=native.map(|n|n.path("mobile"));
-    let desktop = native_desktop.as_deref().unwrap_or(".impeccable/review/desktop.png");
-    let mobile = native_mobile.as_deref().unwrap_or(".impeccable/review/mobile.png");
+    let desktop = native_desktop.as_deref().unwrap_or(".procable/review/desktop.png");
+    let mobile = native_mobile.as_deref().unwrap_or(".procable/review/mobile.png");
     let mut reasons = Vec::new();
     if !abs(io, desktop).exists() {
         reasons.push(format!("no {desktop}: capture the page at a common desktop width (1440 wide, full page) into that path"));
@@ -2717,9 +2717,9 @@ fn run_gate(io: &Io, state: &mut Value, phase: &str, opts: &GateOpts, organic_sc
         "hero" => {
             let build_path = opts.build_path.clone().unwrap_or_else(|| HERO_REPRO.to_string());
             let min = opts.min.unwrap_or(HERO_MIN);
-            gate_hero(io, state, &build_path, min, ".impeccable/review/diff/hero", opts.artifact.as_deref(), organic_scan, renderer)
+            gate_hero(io, state, &build_path, min, ".procable/review/diff/hero", opts.artifact.as_deref(), organic_scan, renderer)
         }
-        "responsive" => gate_responsive(io, state, opts.min.unwrap_or(RESPONSIVE_MIN), ".impeccable/review/diff/desktop", opts.artifact.as_deref(), renderer),
+        "responsive" => gate_responsive(io, state, opts.min.unwrap_or(RESPONSIVE_MIN), ".procable/review/diff/desktop", opts.artifact.as_deref(), renderer),
         // No measurement here, but the build still stands on the approved comp.
         _ => match comp_refusal(io) { Some(why) => Gate::fail(vec![why]), None => Gate::ok("no mechanical gate".into()) },
     }
@@ -2732,23 +2732,23 @@ fn plan_review_refusal(io: &Io) -> Option<String> {
     // A spec with no plate and no code region to decide on has nothing to review;
     // `component-review plan` says so and writes no packet, so demanding an
     // acceptance here would deadlock the build on a review that cannot exist.
-    if !impeccable_context::component_review::plan::spec_needs_review(&io.cwd) {
+    if !procable_context::component_review::plan::spec_needs_review(&io.cwd) {
         return None;
     }
     let s = self_cmd(io);
-    if let Some(tool) = io.env("IMPECCABLE_COMPONENT_REVIEW_TOOL") {
-        let Some(named) = io.env("IMPECCABLE_COMPONENT_REVIEW_SESSIONS") else {
+    if let Some(tool) = io.env("PROCABLE_COMPONENT_REVIEW_TOOL") {
+        let Some(named) = io.env("PROCABLE_COMPONENT_REVIEW_SESSIONS") else {
             // A harness defect, not something the agent can repair: say so rather than invite it to set the variable.
             return Some(format!("The plan and asset review runs in the host ({tool}), but this host does not name its review sessions, so no acceptance can be verified. This is a harness configuration problem: stop and report it; do not set environment variables to work around it."));
         };
         let sessions: Vec<PathBuf> = std::env::split_paths(named).filter(|p| !p.as_os_str().is_empty()).collect();
         if sessions.is_empty() {
-            return Some(format!("The plan and asset review is not accepted for this build. Call {tool} with manifest_path .impeccable/review/components.json (after `{s} component-review plan`) and wait for the user's decisions; page work waits until then."));
+            return Some(format!("The plan and asset review is not accepted for this build. Call {tool} with manifest_path .procable/review/components.json (after `{s} component-review plan`) and wait for the user's decisions; page work waits until then."));
         }
-        return impeccable_context::component_review::plan::gate_hosted(&sessions, &io.cwd, &s, tool).err();
+        return procable_context::component_review::plan::gate_hosted(&sessions, &io.cwd, &s, tool).err();
     }
     let Some(home) = io.home() else { return Some("the plan and asset review store needs a home directory".into()) };
-    impeccable_context::component_review::plan::gate(&home.join(".impeccable/component-reviews"), &io.cwd, &s).err()
+    procable_context::component_review::plan::gate(&home.join(".procable/component-reviews"), &io.cwd, &s).err()
 }
 
 /// The plan review as the hero phase sees it. A plates advance forced with a quoted
@@ -2761,10 +2761,10 @@ fn hero_plan_review_refusal(io: &Io, state: &Value) -> Option<String> {
 /// Whether the user accepted an assembled first viewport for this build, in the local
 /// review store or in the sessions a host names.
 fn first_viewport_accepted(io: &Io) -> bool {
-    let sessions: Vec<PathBuf> = io.env("IMPECCABLE_COMPONENT_REVIEW_SESSIONS")
+    let sessions: Vec<PathBuf> = io.env("PROCABLE_COMPONENT_REVIEW_SESSIONS")
         .map(|named| std::env::split_paths(named).filter(|p| !p.as_os_str().is_empty()).collect()).unwrap_or_default();
-    let store = io.home().map(|h| h.join(".impeccable/component-reviews"));
-    impeccable_context::component_review::plan::first_viewport_accepted(store.as_deref(), &sessions, &io.cwd)
+    let store = io.home().map(|h| h.join(".procable/component-reviews"));
+    procable_context::component_review::plan::first_viewport_accepted(store.as_deref(), &sessions, &io.cwd)
 }
 
 /// JS: forceAllowed(reason).
@@ -2909,7 +2909,7 @@ fn advance(io: &Io, state: &mut Value, force: bool, reason: Option<&str>, opts: 
 
 /// What `finish --disposition ship` does with the current files, per capture policy.
 fn ship_recheck(io: &Io, state: &Value) -> &'static str {
-    if state["capturePolicy"] == "native-html-v1" || io.env("IMPECCABLE_NATIVE_CAPTURE") == Some("1") {
+    if state["capturePolicy"] == "native-html-v1" || io.env("PROCABLE_NATIVE_CAPTURE") == Some("1") {
         "ship re-captures the current files natively and must pass the responsive gate again"
     } else {
         "ship refuses while the frontend files differ from the responsive screenshots, so recapture desktop and mobile and advance responsive first"
@@ -2949,9 +2949,9 @@ fn next_instruction(io: &Io, state: &Value) -> String {
             "Measure the comp: {s} comp-spec --comp {comp} --grid, open {}, write regions.json (every illustration, photo, texture as its own plate region; every text block its own text region), run {s} comp-spec --comp {comp} --regions regions.json. Then measure the type: {s} font-match --measure <id> for each text region (cap height, width class, weight class) and {s} font-match --rank <lead text region> --text \"<its first words>\" to choose the headline face by metrics (the USE line is the CSS; with no browser it records the catalog's nearest face, which is the choice; do not install one, and do not write a chosen face into the spec by hand). Then {s} build-phase advance.",
             format!("{BUILD_DIR}/comp-grid.png")
         ),
-        "plates" => format!("Produce every plate in the spec ({s} comp-spec --print lists them). For each illustration, photo, or figure, run {s} comp-spec --crop <id> --out <crop.png> and save {s} comp-spec --plate-prompt <id> to a prompt file. For an isolated figure or object on the page ground, add --background transparent to that plate-prompt command. Prefer the harness image tool with the crop as reference and that prompt; request native transparent PNG for cutouts. With the API fallback, run {s} generate-image --ref <crop.png> --prompt-file <prompt.txt> --out <plate.png> --size <WxH> --quality high; add --background transparent for cutouts. Create the output directory first and choose a supported size matching the region's aspect at least 1.5x its pixel size. generate-image embeds the prompt; after a harness generation run {s} embed-prompt <plate.png> --prompt-file <prompt.txt>. Preserve white paint, fine edges, and interior holes; verify alpha and inspect the cutout on light and dark grounds. Do not chroma-key native transparent output. Keep photos and textures opaque. Place cutouts with a plain <img> over the page's own ground; inspect glass and other translucent material carefully. Textures (paper, cloth, grain): crop a clean patch from {s} comp-spec --crop <id> --raw and mirror-tile it to the plate size; generate only when no clean patch exists. The gate scores a texture against its whole region box, so draw its region around clean ground. Keep candidate crops in separate files. Test each with {s} build-phase check-plate <id> --candidate <png> --json; this does not replace the selected asset or advance state. Inspect the candidate before explicitly selecting it at the spec plate path. Then {s} build-phase advance scores all selected plates against their comp regions. A pass does not replace visual inspection of placement, scale, and alpha. Score the plates before the review opens: once advance reports nothing but the pending review, run {s} component-review plan, then {s} component-review capture --manifest .impeccable/review/components.json and {s} component-review serve --session <session>, and wait for the user: advance also waits until they accept this plan and asset review for the current spec. A plate replaced after they accept needs a new round. Write no page code before this passes."),
+        "plates" => format!("Produce every plate in the spec ({s} comp-spec --print lists them). For each illustration, photo, or figure, run {s} comp-spec --crop <id> --out <crop.png> and save {s} comp-spec --plate-prompt <id> to a prompt file. For an isolated figure or object on the page ground, add --background transparent to that plate-prompt command. Prefer the harness image tool with the crop as reference and that prompt; request native transparent PNG for cutouts. With the API fallback, run {s} generate-image --ref <crop.png> --prompt-file <prompt.txt> --out <plate.png> --size <WxH> --quality high; add --background transparent for cutouts. Create the output directory first and choose a supported size matching the region's aspect at least 1.5x its pixel size. generate-image embeds the prompt; after a harness generation run {s} embed-prompt <plate.png> --prompt-file <prompt.txt>. Preserve white paint, fine edges, and interior holes; verify alpha and inspect the cutout on light and dark grounds. Do not chroma-key native transparent output. Keep photos and textures opaque. Place cutouts with a plain <img> over the page's own ground; inspect glass and other translucent material carefully. Textures (paper, cloth, grain): crop a clean patch from {s} comp-spec --crop <id> --raw and mirror-tile it to the plate size; generate only when no clean patch exists. The gate scores a texture against its whole region box, so draw its region around clean ground. Keep candidate crops in separate files. Test each with {s} build-phase check-plate <id> --candidate <png> --json; this does not replace the selected asset or advance state. Inspect the candidate before explicitly selecting it at the spec plate path. Then {s} build-phase advance scores all selected plates against their comp regions. A pass does not replace visual inspection of placement, scale, and alpha. Score the plates before the review opens: once advance reports nothing but the pending review, run {s} component-review plan, then {s} component-review capture --manifest .procable/review/components.json and {s} component-review serve --session <session>, and wait for the user: advance also waits until they accept this plan and asset review for the current spec. A plate replaced after they accept needs a new round. Write no page code before this passes."),
         "hero" => format!(
-            "Run {s} build-phase scaffold first: it writes the measured layout as CSS custom properties (.impeccable/build/scaffold/layout.css, --r-<id>-x/y/w/h in % of the comp, plus cap height, font-size, family, and weight where measured) and a reference page with every region at its box. Bind those numbers to your own markup (an element per region, its box from the properties); the reference is a check, not the page, and overlapping boxes are overlapping boxes. Build only the first viewport at {}. Copy the comp's words verbatim in this phase (headline, labels, table cells, footer): the user approved that comp with those words, and rewriting is a later, stated decision, never a silent one here. Set every text region's font-size from its measured cap height and its face from the ranking. Plates first: place every plate at its spec box ({s} comp-spec --print lists boxes as percentages of the viewport) with object-fit: cover before writing a line of text or a control, capture into {HERO_REPRO}, and run {s} build-phase record hero (not advance) once so you see the plate regions read as match before text exists; then lay the semantic layer (text, controls, rules) over the plates from the spec's palette and boxes, capture, advance. When it fails, open the region crops it lists first, in order, then fix; do not build past the hero until it passes.",
+            "Run {s} build-phase scaffold first: it writes the measured layout as CSS custom properties (.procable/build/scaffold/layout.css, --r-<id>-x/y/w/h in % of the comp, plus cap height, font-size, family, and weight where measured) and a reference page with every region at its box. Bind those numbers to your own markup (an element per region, its box from the properties); the reference is a check, not the page, and overlapping boxes are overlapping boxes. Build only the first viewport at {}. Copy the comp's words verbatim in this phase (headline, labels, table cells, footer): the user approved that comp with those words, and rewriting is a later, stated decision, never a silent one here. Set every text region's font-size from its measured cap height and its face from the ranking. Plates first: place every plate at its spec box ({s} comp-spec --print lists boxes as percentages of the viewport) with object-fit: cover before writing a line of text or a control, capture into {HERO_REPRO}, and run {s} build-phase record hero (not advance) once so you see the plate regions read as match before text exists; then lay the semantic layer (text, controls, rules) over the plates from the spec's palette and boxes, capture, advance. When it fails, open the region crops it lists first, in order, then fix; do not build past the hero until it passes.",
             bp.unwrap_or("the comp size")
         ),
         "sections" => format!("Build the remaining sections inside the spec system (same corner language, rules, and palette; nothing the comp does not show). The hero passed with the comp's words verbatim; from here, content beyond the comp is yours to author at full fidelity, and any change to words the comp showed is a stated decision in your report, never silent. Then {s} build-phase advance."),
@@ -2960,10 +2960,10 @@ fn next_instruction(io: &Io, state: &Value) -> String {
             // The desktop frame keeps the comp's aspect at 1440 wide.
             let frame = bp.and_then(|b| b.split_once('x')).and_then(|(w, h)| Some((w.parse::<f64>().ok()?, h.parse::<f64>().ok()?)))
                 .filter(|(w, h)| *w > 0. && *h > 0.).map(|(w, h)| format!("1440x{}", (h * 1440. / w).ceil() as i64)).unwrap_or_else(|| "1440 wide at the comp's aspect".into());
-            let compared = if state["capturePolicy"] == "native-html-v1" || io.env("IMPECCABLE_NATIVE_CAPTURE") == Some("1") {
+            let compared = if state["capturePolicy"] == "native-html-v1" || io.env("PROCABLE_NATIVE_CAPTURE") == Some("1") {
                 format!("The gate renders the page itself, a {frame} desktop first viewport and a 390-wide mobile frame, and diffs that desktop first viewport against the comp (scaled to the comp's width); captures you save are for your own inspection.")
             } else {
-                format!("Capture desktop.png (1440 wide, full page) and mobile.png (390 wide, full page) into .impeccable/review/; the gate diffs the first viewport of desktop.png (its top {frame}, scaled to the comp's width) against the comp.")
+                format!("Capture desktop.png (1440 wide, full page) and mobile.png (390 wide, full page) into .procable/review/; the gate diffs the first viewport of desktop.png (its top {frame}, scaled to the comp's width) against the comp.")
             };
             format!("Build the other viewports (mobile first if the surface is mobile). The first viewport must hold at common desktop widths (1280 to 1600), not only at the comp's exact size: fluid columns, no fixed-px grid that wraps 96px narrower, and sizes that scale with the viewport so nothing the comp shows in the first viewport is pushed below it. Settle or disable entrance motion before capturing (an element mid-animation reads as missing). {compared} Then {s} build-phase advance. When it fails, open the region crops it lists first; after three failed attempts it names the route to the user instead of more edits.")
         }
@@ -2982,21 +2982,21 @@ mod transparency_guidance_tests {
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let (io, _) = Io::captured("", dir.clone(), Default::default());
-        let (pinned, _) = Io::captured("", dir.clone(), [("IMPECCABLE_SEED_SALT".to_string(), "test-salt".to_string())].into_iter().collect());
+        let (pinned, _) = Io::captured("", dir.clone(), [("PROCABLE_SEED_SALT".to_string(), "test-salt".to_string())].into_iter().collect());
         assert_eq!(seed_reference(&pinned, "seed:0123456789abcdef"), "seed:0123456789abcdef");
         let r = seed_reference(&pinned, "3f9a1c2e");
-        assert_eq!(r, impeccable_common::seed::reference("test-salt", "3f9a1c2e"), "the reference concept-seed prints");
+        assert_eq!(r, procable_common::seed::reference("test-salt", "3f9a1c2e"), "the reference concept-seed prints");
         assert_eq!(seed_reference(&pinned, "none"), "none");
         // No salt on this machine: a raw key is recorded as no seed, never as an unsalted hash.
         let bad_home = dir.join("bad-home");
-        std::fs::create_dir_all(bad_home.join(".impeccable")).unwrap();
-        std::fs::write(bad_home.join(".impeccable/seed-salt"), "corrupt").unwrap();
+        std::fs::create_dir_all(bad_home.join(".procable")).unwrap();
+        std::fs::write(bad_home.join(".procable/seed-salt"), "corrupt").unwrap();
         let (nosalt, _) = Io::captured("", dir.clone(), [("HOME".to_string(), bad_home.to_string_lossy().into_owned()), ("USERPROFILE".to_string(), bad_home.to_string_lossy().into_owned())].into_iter().collect());
         assert_eq!(seed_reference(&nosalt, "3f9a1c2e"), "none");
         assert!(r.starts_with("seed:") && r.len() == 21 && !r.contains("3f9a1c2e"), "{r}");
         save_state(&io, &new_state(None, None, None, Some("seed-1")));
-        let ignore = dir.join(".impeccable/build/.gitignore");
-        let expected = format!("{}\nstate.json\n", impeccable_common::git::RUNTIME_IGNORE_HEADER);
+        let ignore = dir.join(".procable/build/.gitignore");
+        let expected = format!("{}\nstate.json\n", procable_common::git::RUNTIME_IGNORE_HEADER);
         assert_eq!(std::fs::read_to_string(&ignore).unwrap(), expected);
         save_state(&io, &new_state(None, None, None, Some("seed-1")));
         assert_eq!(std::fs::read_to_string(&ignore).unwrap(), expected);
@@ -3013,10 +3013,10 @@ mod transparency_guidance_tests {
             "plate":"selected.png","px":{"x":0,"y":0,"w":64,"h":64},"palette":[{"hex":"#14466e"}]}]}).to_string();
         for (path, data) in [("comp.png",bytes.as_slice()),("candidate.png",bytes.as_slice()),
             ("selected.png",b"selected asset must survive".as_slice()),(SPEC_PATH,spec.as_bytes()),
-            (".impeccable/build/state.json",b"{\"phase\":\"plates\",\"attempts\":7}".as_slice())] {
+            (".procable/build/state.json",b"{\"phase\":\"plates\",\"attempts\":7}".as_slice())] {
             std::fs::write(dir.join(path),data).unwrap();
         }
-        let before = ["comp.png","candidate.png","selected.png",SPEC_PATH,".impeccable/build/state.json"]
+        let before = ["comp.png","candidate.png","selected.png",SPEC_PATH,".procable/build/state.json"]
             .map(|path| (path,std::fs::read(dir.join(path)).unwrap()));
         let (mut io, output) = Io::captured("",dir.clone(),Default::default());
         assert_eq!(run(&["check-plate","ground","--candidate","candidate.png","--json"].map(String::from), &mut io, &no_organic_scan),0);
@@ -3188,7 +3188,7 @@ mod transparency_guidance_tests {
         let (io, _) = Io::captured(
             "",
             dir.clone(),
-            [("IMPECCABLE_NATIVE_CAPTURE".into(), "1".into())].into(),
+            [("PROCABLE_NATIVE_CAPTURE".into(), "1".into())].into(),
         );
         let mut state = json!({"artifact":"index.html","comp":"comp.png"});
         let result = prepare_native_capture(
@@ -3206,7 +3206,7 @@ mod transparency_guidance_tests {
 
     #[test]
     fn plate_gate_scores_sparse_and_partial_alpha_on_the_sampled_ground() {
-        let dir = std::env::temp_dir().join(format!("impeccable-plate-alpha-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-plate-alpha-{}", std::process::id()));
         std::fs::create_dir_all(dir.join(BUILD_DIR)).unwrap();
         let (io, _) = Io::captured("", dir.clone(), Default::default());
         let spec = json!({"comp": "comp.png", "regions": [{
@@ -3242,27 +3242,27 @@ mod transparency_guidance_tests {
 
     #[test]
     fn missing_plate_guidance_uses_the_configured_launcher() {
-        let dir = std::env::temp_dir().join(format!("impeccable-plate-launcher-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-plate-launcher-{}", std::process::id()));
         std::fs::create_dir_all(dir.join(BUILD_DIR)).unwrap();
         std::fs::write(dir.join(SPEC_PATH), json!({"comp":"comp.png","regions": [{"id": "art", "medium": "raster", "plate": "missing.png"}]}).to_string()).unwrap();
         std::fs::write(dir.join("comp.png"), png_io::encode_png(&r::create_image(8,8,[255,255,255,255]), &[]).unwrap()).unwrap();
-        let env = [("IMPECCABLE_SELF".into(), "/custom/impeccable".into())].into();
+        let env = [("PROCABLE_SELF".into(), "/custom/procable".into())].into();
         let (io, _) = Io::captured("", dir.clone(), env);
         let reasons = gate_plates(&io).reasons.join("\n");
         std::fs::remove_dir_all(dir).unwrap();
-        assert!(reasons.contains("/custom/impeccable comp-spec --crop art"), "{reasons}");
-        assert!(reasons.contains("/custom/impeccable generate-image --ref"), "{reasons}");
+        assert!(reasons.contains("/custom/procable comp-spec --crop art"), "{reasons}");
+        assert!(reasons.contains("/custom/procable generate-image --ref"), "{reasons}");
     }
 
     #[test]
     fn launcher_paths_are_quoted_but_command_prefixes_are_preserved() {
-        let dir = std::env::temp_dir().join(format!("impeccable-launcher-quoting-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-launcher-quoting-{}", std::process::id()));
         std::fs::create_dir_all(dir.join("my tools")).unwrap();
-        let relative = if cfg!(windows) { "my tools/impeccable.cmd" } else { "my tools/impeccable" };
+        let relative = if cfg!(windows) { "my tools/procable.cmd" } else { "my tools/procable" };
         let launcher = dir.join(relative);
         std::fs::write(&launcher, "").unwrap();
         for value in [relative.to_string(), launcher.to_string_lossy().into_owned()] {
-            let env = [("IMPECCABLE_SELF".into(), value.clone())].into();
+            let env = [("PROCABLE_SELF".into(), value.clone())].into();
             let (io, _) = Io::captured("", dir.clone(), env);
             // Windows spells the quoted .cmd launcher as a PowerShell call
             // on a literal string (#744); sh quotes the path in single quotes.
@@ -3271,8 +3271,8 @@ mod transparency_guidance_tests {
             let next = next_instruction(&io, &json!({"phase": "plates"}));
             assert!(next.contains(&format!("{expected} generate-image --ref")), "{next}");
         }
-        for value in ["impeccable", "npx impeccable", "bunx impeccable", "npx --yes impeccable"] {
-            let env = [("IMPECCABLE_SELF".into(), value.into())].into();
+        for value in ["procable", "npx procable", "bunx procable", "npx --yes procable"] {
+            let env = [("PROCABLE_SELF".into(), value.into())].into();
             let (io, _) = Io::captured("", dir.clone(), env);
             assert_eq!(self_cmd(&io), value);
         }
@@ -3283,12 +3283,12 @@ mod transparency_guidance_tests {
     #[cfg(unix)]
     fn printed_launcher_path_survives_shell_parsing() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("impeccable-launcher-shell-{}", std::process::id()));
-        let launcher = dir.join("user's $assets `literal`/impeccable");
+        let dir = std::env::temp_dir().join(format!("procable-launcher-shell-{}", std::process::id()));
+        let launcher = dir.join("user's $assets `literal`/procable");
         std::fs::create_dir_all(launcher.parent().unwrap()).unwrap();
         std::fs::write(&launcher, "#!/bin/sh\nprintf '%s\\n' \"$@\"\n").unwrap();
         std::fs::set_permissions(&launcher, std::fs::Permissions::from_mode(0o755)).unwrap();
-        let env = [("IMPECCABLE_SELF".into(), launcher.to_string_lossy().into_owned())].into();
+        let env = [("PROCABLE_SELF".into(), launcher.to_string_lossy().into_owned())].into();
         let (io, _) = Io::captured("", dir.clone(), env);
         let command = format!("{} generate-image --background transparent", self_cmd(&io));
         let output = std::process::Command::new("/bin/sh").arg("-c").arg(command).current_dir(&dir).output().unwrap();
@@ -3348,7 +3348,7 @@ fn render_status(io: &Io, state: &Value) -> String {
 
 // ---- CLI -------------------------------------------------------------------
 
-/// `impeccable build-phase <cmd> ...`
+/// `procable build-phase <cmd> ...`
 pub fn run(argv: &[String], io: &mut Io, organic_scan: OrganicScan) -> i32 {
     run_with_renderer(argv,io,organic_scan,None)
 }
@@ -3397,7 +3397,7 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
     }
     if cmd == "completion" {
         let state = load_state(io);
-        let session_id = arg(argv, "session-id").or_else(|| io.env("IMPECCABLE_SESSION_ID"))
+        let session_id = arg(argv, "session-id").or_else(|| io.env("PROCABLE_SESSION_ID"))
             .or_else(|| io.env("CODEX_THREAD_ID"));
         let report = crate::completion::report(&io.cwd, state.as_ref(), session_id);
         io.out(&format!("{}\n", util::json_pretty(&report)));
@@ -3433,7 +3433,7 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
         let _ = std::fs::remove_file(abs(io, &format!("{BUILD_DIR}/pending.json")));
         let build_path = read_build_path(io);
         if direction.is_some() && comp.is_none() && build_path.as_deref() == Some("code") {
-            io.out("CODE-LED (from .impeccable config): no comp round and no phase gates. Write the direction contract (reference/new-work.md section 5), build, and finish per section 7. The chosen decision comp, if any, rides to the finish review as the critique reference.\n");
+            io.out("CODE-LED (from .procable config): no comp round and no phase gates. Write the direction contract (reference/new-work.md section 5), build, and finish per section 7. The chosen decision comp, if any, rides to the finish review as the critique reference.\n");
             return 0;
         }
         let mut breakpoint = arg(argv, "breakpoint").map(String::from);
@@ -3469,11 +3469,11 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
         let direction_ref = direction.map(|d| seed_reference(io, d));
         let mut state = new_state(comp, breakpoint.as_deref(), arg(argv, "artifact"), direction_ref.as_deref());
         if let Some(d) = chosen_decision { state["decisionComp"] = json!(d); }
-        if io.env("IMPECCABLE_NATIVE_CAPTURE")==Some("1") {state["capturePolicy"]=json!("native-html-v1");}
+        if io.env("PROCABLE_NATIVE_CAPTURE")==Some("1") {state["capturePolicy"]=json!("native-html-v1");}
         // Session identity is transport metadata, never guessed from a project
         // path or an earlier build. Old/unidentified states remain unscoped.
         if let Some(session_id) = arg(argv, "session-id")
-            .or_else(|| io.env("IMPECCABLE_SESSION_ID"))
+            .or_else(|| io.env("PROCABLE_SESSION_ID"))
             .or_else(|| io.env("CODEX_THREAD_ID"))
             .filter(|s| !s.is_empty())
         {
@@ -3538,7 +3538,7 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
             }
             let build_path = arg(argv, "build").unwrap_or(HERO_REPRO).to_string();
             let min = arg(argv, "min").map(|m| util::parse_f64(m, HERO_MIN)).unwrap_or(HERO_MIN);
-            let gate = gate_hero(io, &mut state, &build_path, min, ".impeccable/review/diff/hero", None, organic_scan, renderer);
+            let gate = gate_hero(io, &mut state, &build_path, min, ".procable/review/diff/hero", None, organic_scan, renderer);
             let records = state.pointer("/phases/hero/records").and_then(Value::as_i64).unwrap_or(0) + 1;
             if let Some(h) = state.pointer_mut("/phases/hero").and_then(|v| v.as_object_mut()) {
                 h.insert("records".into(), json!(records));
@@ -3651,7 +3651,7 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
                 return 2;
             }
             if disposition == "ship" && state["capturePolicy"] != "native-html-v1"
-                && io.env("IMPECCABLE_NATIVE_CAPTURE") != Some("1") {
+                && io.env("PROCABLE_NATIVE_CAPTURE") != Some("1") {
                 let current = crate::completion::input_hash(&io.cwd);
                 if current.is_none() || state["responsiveInputSha256"].as_str() != current.as_deref() {
                     state["phase"] = json!("responsive");
@@ -3666,9 +3666,9 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
             // must cover a fresh native comparison of the final page, not merely
             // a new hash alongside historical gates or model-supplied screenshots.
             if disposition == "ship" && (state["capturePolicy"] == "native-html-v1"
-                || io.env("IMPECCABLE_NATIVE_CAPTURE") == Some("1")) {
+                || io.env("PROCABLE_NATIVE_CAPTURE") == Some("1")) {
                 let gate = gate_responsive(io, &mut state, RESPONSIVE_MIN,
-                    ".impeccable/review/diff/desktop", arg(argv, "artifact"), renderer);
+                    ".procable/review/diff/desktop", arg(argv, "artifact"), renderer);
                 let at = now();
                 let responsive = &mut state["phases"]["responsive"];
                 responsive["attempts"] = json!(responsive["attempts"].as_u64().unwrap_or(0) + 1);
@@ -3711,7 +3711,7 @@ pub fn run_with_renderer(argv: &[String],io: &mut Io,organic_scan: OrganicScan,r
                         state["finish"] = json!({"disposition":"fix", "at":now(), "phaseAtFinish":phase,
                             "reason":"final native capture manifest unavailable"});
                         save_state(io, &state);
-                        io.err("build-phase: finish --disposition ship refused: the final native capture's input manifest (.impeccable/review/native/responsive/inputs.json) is missing or unreadable, so the finish cannot bind the files it checked. Run finish --disposition ship again; if it is refused again, report that the native capture left no manifest.\n");
+                        io.err("build-phase: finish --disposition ship refused: the final native capture's input manifest (.procable/review/native/responsive/inputs.json) is missing or unreadable, so the finish cannot bind the files it checked. Run finish --disposition ship again; if it is refused again, report that the native capture left no manifest.\n");
                         return 2;
                     }
                 }

@@ -1,7 +1,7 @@
 //! Shared helpers for the comp-fidelity verb orchestrators: JS-faithful arg
 //! parsing, number-to-JSON, `toFixed`, ISO timestamps, and small fs helpers.
 
-use impeccable_comp::jsnum;
+use procable_comp::jsnum;
 use serde_json::Value;
 
 /// `arg('name')`: the token after `--name`, unless it is another flag.

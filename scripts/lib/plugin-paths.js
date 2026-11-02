@@ -6,7 +6,7 @@ import { generateYamlFrontmatter, parseFrontmatter } from './utils.js';
  * Rewrite project-relative script paths for the plugin subtree (issue #523).
  *
  * The ./plugin subtree is a verbatim copy of the dist/claude-code output,
- * where {{scripts_path}} resolves to `.claude/skills/impeccable/scripts`,
+ * where {{scripts_path}} resolves to `.claude/skills/procable/scripts`,
  * a path relative to the user's project. Run from the plugin cache, that
  * path points at whatever the project has installed: a plugin-only user
  * gets MODULE_NOT_FOUND, and a dual-install user silently runs the
@@ -24,8 +24,8 @@ import { generateYamlFrontmatter, parseFrontmatter } from './utils.js';
  */
 
 // The resolved {{scripts_path}} in dist/claude-code output, fixed by the
-// Claude Code transformer's configDir (.claude) + skill name (impeccable).
-export const CLAUDE_PROJECT_SCRIPTS_PATH = '.claude/skills/impeccable/scripts';
+// Claude Code transformer's configDir (.claude) + skill name (procable).
+export const CLAUDE_PROJECT_SCRIPTS_PATH = '.claude/skills/procable/scripts';
 
 export const PLUGIN_SCRIPTS_PATH = '${CLAUDE_SKILL_DIR}/scripts';
 
@@ -33,7 +33,7 @@ export const PLUGIN_SCRIPTS_PATH = '${CLAUDE_SKILL_DIR}/scripts';
 // declares allowed-tools; non-interactive hosts (`claude -p`) cannot provide
 // it and the skill silently degrades (issue #736). The plugin copy drops the
 // key via structured frontmatter rewrite, not regex.
-export const PROJECT_ALLOWED_TOOLS_LINE = `  - Bash(${CLAUDE_PROJECT_SCRIPTS_PATH}/impeccable *)\n`;
+export const PROJECT_ALLOWED_TOOLS_LINE = `  - Bash(${CLAUDE_PROJECT_SCRIPTS_PATH}/procable *)\n`;
 
 function stripAllowedToolsFrontmatter(content) {
   const { frontmatter, body } = parseFrontmatter(content);
@@ -48,10 +48,10 @@ function stripAllowedToolsFrontmatter(content) {
 // fix). SKILL.md receives host substitution; references need the directory
 // resolved by the assistant, so spell out that boundary in the entrypoint.
 const SETUP_FALLBACK_TEXT =
-  'That base directory resolves every `.claude/skills/impeccable/scripts/impeccable <verb>` command in this skill and its references, ' +
-  'and `.claude/skills/impeccable/scripts` is the fallback only when the runtime reports no base directory.';
+  'That base directory resolves every `.claude/skills/procable/scripts/procable <verb>` command in this skill and its references, ' +
+  'and `.claude/skills/procable/scripts` is the fallback only when the runtime reports no base directory.';
 const SETUP_PLUGIN_TEXT =
-  'Every `"${CLAUDE_SKILL_DIR}/scripts/impeccable" <verb>` command in this skill and its references resolves against that base directory. ' +
+  'Every `"${CLAUDE_SKILL_DIR}/scripts/procable" <verb>` command in this skill and its references resolves against that base directory. ' +
   'In reference files, replace the skill-base-dir placeholder with this directory before running commands; it is not a shell variable.';
 
 // Agent files are subagent system prompts: a spawned agent never loads
@@ -65,7 +65,7 @@ const SETUP_PLUGIN_TEXT =
 // rather than rewritten.) Grok Build reads this same subtree with its own
 // substitution behavior, so the embed instruction carries a sidecar
 // fallback for any harness that hands the agent the unexpanded literal.
-export const PLUGIN_AGENT_SCRIPTS_PATH = '${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts';
+export const PLUGIN_AGENT_SCRIPTS_PATH = '${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts';
 
 // Appended as its own sentence after the agent's embed instruction so
 // behavior is defined even where the variable reaches the agent
@@ -92,18 +92,18 @@ export function rewritePluginMarkdown(content, { isSkillEntrypoint = true } = {}
     // carries natively (Setup step 1). Runs after the path replacement so
     // one pattern covers both origins; already-quoted forms don't match.
     .replace(/node (\$\{CLAUDE_SKILL_DIR\}|<skill-base-dir>)\/scripts\/([^\s`"]+)/g, 'node "$1/scripts/$2"')
-    // The engine launcher is the command itself (`${CLAUDE_SKILL_DIR}/scripts/impeccable <verb>`,
-    // or `impeccable.cmd` on a Windows shell without sh), so the launcher path
+    // The engine launcher is the command itself (`${CLAUDE_SKILL_DIR}/scripts/procable <verb>`,
+    // or `procable.cmd` on a Windows shell without sh), so the launcher path
     // is what gets quoted; the verb and its arguments follow unquoted.
     .replace(
-      /(?<!["\w/])(\$\{CLAUDE_SKILL_DIR\}|<skill-base-dir>)\/scripts\/impeccable(\.cmd)?(?=[\s`])/g,
+      /(?<!["\w/])(\$\{CLAUDE_SKILL_DIR\}|<skill-base-dir>)\/scripts\/procable(\.cmd)?(?=[\s`])/g,
       (_, dir, cmd) => quoteLauncher(dir, Boolean(cmd)),
     );
 }
 
 /**
  * Spell a quoted launcher path as a command (issue #744). The sh launcher is
- * `"<dir>/scripts/impeccable"`. The `.cmd` launcher also gets PowerShell's call
+ * `"<dir>/scripts/procable"`. The `.cmd` launcher also gets PowerShell's call
  * operator: PowerShell parses a quoted string followed by an argument as an
  * expression and fails with `Unexpected token 'context'`, so `& "…"` is the
  * only quoted form that runs there. The `&` is safe because the `.cmd` spelling
@@ -112,7 +112,7 @@ export function rewritePluginMarkdown(content, { isSkillEntrypoint = true } = {}
  * quotes launcher paths (plugin, VS Code, Cursor plugin).
  */
 export function quoteLauncher(dir, windowsCmd = false) {
-  return windowsCmd ? `& "${dir}/scripts/impeccable.cmd"` : `"${dir}/scripts/impeccable"`;
+  return windowsCmd ? `& "${dir}/scripts/procable.cmd"` : `"${dir}/scripts/procable"`;
 }
 
 /**
@@ -125,14 +125,14 @@ export function rewritePluginAgentMarkdown(content) {
   return content
     .replaceAll(CLAUDE_PROJECT_SCRIPTS_PATH, PLUGIN_AGENT_SCRIPTS_PATH)
     .replace(
-      /node \$\{CLAUDE_PLUGIN_ROOT\}\/skills\/impeccable\/scripts\/([^\s`"]+)/g,
-      'node "${CLAUDE_PLUGIN_ROOT}/skills/impeccable/scripts/$1"',
+      /node \$\{CLAUDE_PLUGIN_ROOT\}\/skills\/procable\/scripts\/([^\s`"]+)/g,
+      'node "${CLAUDE_PLUGIN_ROOT}/skills/procable/scripts/$1"',
     )
     // Anchors on the command this rewrite just produced plus the rest of
     // its sentence, so the fallback lands as the following sentence rather
     // than splicing into the middle of one.
     .replace(
-      /(`node "\$\{CLAUDE_PLUGIN_ROOT\}\/skills\/impeccable\/scripts\/embed-prompt\.mjs"[^`]*`[^.]*\.)/g,
+      /(`node "\$\{CLAUDE_PLUGIN_ROOT\}\/skills\/procable\/scripts\/embed-prompt\.mjs"[^`]*`[^.]*\.)/g,
       `$1${AGENT_EMBED_FALLBACK}`,
     );
 }
@@ -178,9 +178,9 @@ export function verifyPluginSkillRewrite(skillMdPath) {
       'scripts/lib/plugin-paths.js (issue #523); update SETUP_FALLBACK_TEXT to the new wording.',
     );
   }
-  if (/(?<!& )"\$\{CLAUDE_SKILL_DIR\}\/scripts\/impeccable\.cmd"/.test(content)) {
+  if (/(?<!& )"\$\{CLAUDE_SKILL_DIR\}\/scripts\/procable\.cmd"/.test(content)) {
     throw new Error(
-      `Plugin rewrite drift: ${skillMdPath} quotes the impeccable.cmd launcher without PowerShell's ` +
+      `Plugin rewrite drift: ${skillMdPath} quotes the procable.cmd launcher without PowerShell's ` +
       'call operator. A quoted path followed by a verb fails to parse in PowerShell (issue #744); ' +
       'every quoted .cmd spelling must go through quoteLauncher in scripts/lib/plugin-paths.js.',
     );
@@ -199,7 +199,7 @@ export function verifyPluginSkillRewrite(skillMdPath) {
       'the skill (issue #736); update the removal in scripts/lib/plugin-paths.js.',
     );
   }
-  if (/Bash\((?:node |[^)]*scripts\/impeccable)/.test(content)) {
+  if (/Bash\((?:node |[^)]*scripts\/procable)/.test(content)) {
     throw new Error(
       `Plugin rewrite drift: ${skillMdPath} still pre-approves an engine launcher or node script path. ` +
       'A stray Bash(...) entry survived the allowed-tools removal in ' +

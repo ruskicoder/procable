@@ -11,7 +11,7 @@ use std::time::Duration;
 /// SvelteKit, Nuxt, CRA, Angular, and the usual static servers.
 const DEFAULT_PORTS: &[u16] = &[5173, 3000, 4321, 8080, 4173, 3001, 5174, 8000, 4200, 5000, 1234];
 
-/// Candidate origins, in probe order. `IMPECCABLE_DEV_URL_CANDIDATES`
+/// Candidate origins, in probe order. `PROCABLE_DEV_URL_CANDIDATES`
 /// (comma-separated) replaces the default list, for tests and unusual hosts.
 pub fn candidates(env_override: Option<&str>) -> Vec<String> {
     if let Some(list) = env_override {

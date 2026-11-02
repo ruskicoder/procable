@@ -52,7 +52,7 @@ describe('createFakeAgent — insert mode', () => {
     assert.equal(output.variants.length, 3);
     assert.match(output.variants[0].innerHtml, /inserted-strip/);
     assert.doesNotMatch(output.variants[0].innerHtml, /<h1\b/);
-    assert.match(output.scopedCss, /@scope \(\[data-impeccable-variant="1"\]\)/);
+    assert.match(output.scopedCss, /@scope \(\[data-procable-variant="1"\]\)/);
     assert.match(output.scopedCss, /\.inserted-copy/);
   });
 });

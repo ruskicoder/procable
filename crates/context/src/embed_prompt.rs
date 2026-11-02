@@ -1,12 +1,12 @@
-//! JS: embed-prompt.mjs -> `impeccable embed-prompt`
+//! JS: embed-prompt.mjs -> `procable embed-prompt`
 
 use crate::jsp;
 use crate::util::{exists, iso_now, json_pretty, read_dir_names, utf16_len};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{Map, Value};
 use std::io::Read;
 
-const KEYWORD: &[u8] = b"impeccable:prompt";
+const KEYWORD: &[u8] = b"procable:prompt";
 
 fn crc32(data: &[u8]) -> u32 {
     let mut table = [0u32; 256];

@@ -142,15 +142,15 @@ fn crop_command_reports_invalid_reference_and_preserves_raw_diagnostic() {
     assert_eq!(crate::comp_spec::run(&raw_args, &mut io), 0);
     let raw = png_io::decode_png(&std::fs::read(ws.path.join("crop.png")).unwrap()).unwrap();
     assert_eq!(raw.image.data, comp.data);
-    assert_eq!(raw.text.get("impeccable:crop-of").unwrap(), "comp.png#art");
-    assert!(!raw.text.contains_key("impeccable:reference-audit"));
+    assert_eq!(raw.text.get("procable:crop-of").unwrap(), "comp.png#art");
+    assert!(!raw.text.contains_key("procable:reference-audit"));
 
     spec["regions"][1]["container"] = json!(true);
     ws.write(SPEC_PATH, util::json_pretty(&spec).as_bytes());
     assert_eq!(crate::comp_spec::run(&args, &mut io), 0);
     let prepared = png_io::decode_png(&std::fs::read(ws.path.join("crop.png")).unwrap()).unwrap();
     assert_eq!(prepared.image.data, comp.data);
-    let audit: Value = serde_json::from_str(prepared.text.get("impeccable:reference-audit").unwrap()).unwrap();
+    let audit: Value = serde_json::from_str(prepared.text.get("procable:reference-audit").unwrap()).unwrap();
     assert_eq!(audit["ignoredContainers"], json!(["nav"]));
     assert_eq!(audit["remainingPixels"], 256);
 }
@@ -464,8 +464,8 @@ fn responsive_rejects_a_contradicted_control_even_above_the_overall_bar() {
     let mut state = json!({"comp":"comp.png","phases":{}});
     for (image, accepted) in [(&comp, true), (&changed, false)] {
         let png = png_io::encode_png(image, &[]).unwrap();
-        ws.write(".impeccable/review/desktop.png", &png);
-        ws.write(".impeccable/review/mobile.png", &png);
+        ws.write(".procable/review/desktop.png", &png);
+        ws.write(".procable/review/mobile.png", &png);
         let gate = gate_responsive(&ws.io(), &mut state, RESPONSIVE_MIN, "diff", None, None);
         let report: Value = serde_json::from_slice(&std::fs::read(ws.path.join("diff/report.json")).unwrap()).unwrap();
         assert!(report["overall"].as_f64().unwrap() >= RESPONSIVE_MIN);
@@ -535,8 +535,8 @@ fn missing_comp_cannot_approve_plates() {
 fn responsive_revalidates_legacy_or_changed_plate_receipts() {
     let (ws, mut state) = simple_hero_workspace();
     let bytes = std::fs::read(ws.path.join("comp.png")).unwrap();
-    ws.write(".impeccable/review/desktop.png", &bytes);
-    ws.write(".impeccable/review/mobile.png", &bytes);
+    ws.write(".procable/review/desktop.png", &bytes);
+    ws.write(".procable/review/mobile.png", &bytes);
     let region = json!({"id":"art","kind":"plate","medium":"raster","plate":"removed.png",
         "box":{"x":0,"y":0,"w":1,"h":1},"px":{"x":0,"y":0,"w":100,"h":100}});
     ws.write(
@@ -592,8 +592,8 @@ fn responsive_failures_replace_previous_success_evidence() {
     for failure in ["missing-comp", "crop-write"] {
         let (ws, mut state) = simple_hero_workspace();
         let image = std::fs::read(ws.path.join("comp.png")).unwrap();
-        ws.write(".impeccable/review/desktop.png", &image);
-        ws.write(".impeccable/review/mobile.png", &image);
+        ws.write(".procable/review/desktop.png", &image);
+        ws.write(".procable/review/mobile.png", &image);
         let good = gate_responsive(&ws.io(), &mut state, RESPONSIVE_MIN, "diff", None, None);
         assert!(good.ok, "{:?}", good.reasons);
         let report: Value =
@@ -632,8 +632,8 @@ fn failed_preflight_clears_complete_evidence_for_both_gates() {
     for responsive in [false, true] {
         let (ws, mut state) = simple_hero_workspace();
         let image = std::fs::read(ws.path.join("comp.png")).unwrap();
-        ws.write(".impeccable/review/desktop.png", &image);
-        ws.write(".impeccable/review/mobile.png", &image);
+        ws.write(".procable/review/desktop.png", &image);
+        ws.write(".procable/review/mobile.png", &image);
         let run = |state: &mut Value| if responsive {
             gate_responsive(&ws.io(), state, RESPONSIVE_MIN, "diff", None, None)
         } else {
@@ -707,8 +707,8 @@ fn transformed_comp_crop_cannot_become_a_plate_by_drifting_below_similarity_thre
     // of a perceptual-similarity threshold or a new embedded generation prompt.
     let transformed = r::create_image(64, 64, [30, 100, 60, 255]);
     ws.write("plate.png", &png_io::encode_png(&transformed, &[
-        ("impeccable:crop-of".into(), "comp.png#photo".into()),
-        ("impeccable:prompt".into(), "A freshly generated photograph".into()),
+        ("procable:crop-of".into(), "comp.png#photo".into()),
+        ("procable:prompt".into(), "A freshly generated photograph".into()),
     ]).unwrap());
     ws.write(SPEC_PATH, util::json_pretty(&json!({"comp":"comp.png","regions":[
         {"id":"photo","kind":"plate","medium":"raster","plate":"plate.png",
@@ -726,8 +726,8 @@ fn caller_supplied_fake_metadata_cannot_bypass_the_crop_check() {
     r::fill_rect(&mut reference, 2., 3., 10., 20., [20., 70., 140., 255.]);
     ws.write("comp.png", &png_io::encode_png(&reference, &[]).unwrap());
     ws.write("plate.png", &png_io::encode_png(&reference, &[
-        ("impeccable:fake".into(), "1".into()),
-        ("impeccable:prompt".into(), "A generated production plate".into()),
+        ("procable:fake".into(), "1".into()),
+        ("procable:prompt".into(), "A generated production plate".into()),
     ]).unwrap());
     ws.write(SPEC_PATH, util::json_pretty(&json!({"comp":"comp.png","regions":[
         {"id":"photo","kind":"plate","medium":"raster","plate":"plate.png",
@@ -743,7 +743,7 @@ fn stripped_blurred_shifted_comp_pixels_cannot_pass_with_a_generation_prompt() {
     let ws=Workspace::new();
     ws.write("comp.png", include_bytes!("../../../comp/tests/fixtures/comp-copy/reference.png"));
     let changed=png_io::decode_png(include_bytes!("../../../comp/tests/fixtures/comp-copy/transformed.png")).unwrap().image;
-    ws.write("plate.png", &png_io::encode_png(&changed,&[("impeccable:prompt".into(),"High resolution photography".into())]).unwrap());
+    ws.write("plate.png", &png_io::encode_png(&changed,&[("procable:prompt".into(),"High resolution photography".into())]).unwrap());
     ws.write(SPEC_PATH,util::json_pretty(&json!({"comp":"comp.png","regions":[
         {"id":"photo","kind":"plate","medium":"raster","plate":"plate.png","px":{"x":0,"y":0,"w":128,"h":96}}
     ]})).as_bytes());
@@ -796,9 +796,9 @@ fn automatic_bands_are_a_draft_not_a_build_spec() {
     let mut io=ws.io();
     let args=["--comp","comp.png","--auto"].map(String::from);
     assert_eq!(crate::comp_spec::run(&args,&mut io),0,"auto must produce a usable draft even on a busy comp");
-    let draft=ws.path.join(".impeccable/build/regions.draft.json");
+    let draft=ws.path.join(".procable/build/regions.draft.json");
     assert!(draft.exists());
-    assert_eq!(crate::comp_spec::run(&["--comp","comp.png","--regions",".impeccable/build/regions.draft.json"].map(String::from),&mut io),1);
+    assert_eq!(crate::comp_spec::run(&["--comp","comp.png","--regions",".procable/build/regions.draft.json"].map(String::from),&mut io),1);
     assert!(!ws.path.join(SPEC_PATH).exists());
     assert!(!gate_spec(&io,&json!({"comp":"comp.png"})).ok);
     ws.write(SPEC_PATH,&std::fs::read(&draft).unwrap());
@@ -833,7 +833,7 @@ fn undrafted_bands_and_unknown_kinds_are_not_an_element_map() {
     ws.write("comp.png", &png_io::encode_png(&image, &[]).unwrap());
     let mut io = ws.io();
     assert_eq!(crate::comp_spec::run(&["--comp", "comp.png", "--auto"].map(String::from), &mut io), 0);
-    let mut draft: Value = serde_json::from_slice(&std::fs::read(ws.path.join(".impeccable/build/regions.draft.json")).unwrap()).unwrap();
+    let mut draft: Value = serde_json::from_slice(&std::fs::read(ws.path.join(".procable/build/regions.draft.json")).unwrap()).unwrap();
     draft.as_object_mut().unwrap().remove("draft");
     draft["allowUncovered"] = json!(true);
     ws.write("regions.json", draft.to_string().as_bytes());
@@ -904,7 +904,7 @@ fn page_work_waits_for_the_plan_and_asset_review_of_the_current_spec() {
     };
     let (io, _) = io_with(&[]);
     let why = plan_review_refusal(&io).expect("no review exists yet");
-    assert!(why.contains("not accepted") && why.contains("impeccable component-review plan"), "{why}");
+    assert!(why.contains("not accepted") && why.contains("procable component-review plan"), "{why}");
     // advance from plates carries the refusal with the plate readings.
     let mut state = json!({"phase":"plates","comp":"comp.png","phases":{"plates":{"attempts":0},"hero":{}}});
     let opts = GateOpts { build_path: None, min: None, artifact: None };
@@ -912,11 +912,11 @@ fn page_work_waits_for_the_plan_and_asset_review_of_the_current_spec() {
     assert!(!result.ok && result.reasons.iter().any(|r| r.contains("plan and asset review")), "{:?}", result.reasons);
     assert_eq!(state["phase"], "plates");
     // record hero refuses before measuring anything.
-    write(".impeccable/build/state.json", br#"{"phase":"hero","startedAt":"s","phases":{"hero":{}}}"#);
+    write(".procable/build/state.json", br#"{"phase":"hero","startedAt":"s","phases":{"hero":{}}}"#);
     let (mut io, captured) = io_with(&[]);
     assert_eq!(run(&["record", "hero"].map(String::from), &mut io, &no_organic_scan), 1);
     let err = String::from_utf8(captured.stderr.borrow().clone()).unwrap();
-    assert!(err.contains("record hero refused") && err.contains("component-review capture --manifest .impeccable/review/components.json"), "{err}");
+    assert!(err.contains("record hero refused") && err.contains("component-review capture --manifest .procable/review/components.json"), "{err}");
     // advance from hero applies the same check, so a spec change after the plates closed cannot slip past it.
     let mut state = json!({"phase":"hero","comp":"comp.png","phases":{"plates":{"status":"closed"},"hero":{"attempts":0}}});
     let result = advance(&io, &mut state, false, None, &opts, &no_organic_scan, None);
@@ -927,26 +927,26 @@ fn page_work_waits_for_the_plan_and_asset_review_of_the_current_spec() {
     let result = advance(&io, &mut forced, false, None, &opts, &no_organic_scan, None);
     assert!(!result.reasons.iter().any(|r| r.contains("plan and asset review")), "{:?}", result.reasons);
     // A hosted session fails closed: no named sessions, or sessions without an accepted review.
-    let (hosted, _) = io_with(&[("IMPECCABLE_COMPONENT_REVIEW_TOOL", "component_review")]);
+    let (hosted, _) = io_with(&[("PROCABLE_COMPONENT_REVIEW_TOOL", "component_review")]);
     let why = plan_review_refusal(&hosted).unwrap();
     assert!(why.contains("harness configuration problem") && why.contains("do not set environment variables"), "{why}");
-    let (hosted, _) = io_with(&[("IMPECCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("IMPECCABLE_COMPONENT_REVIEW_SESSIONS", "")]);
+    let (hosted, _) = io_with(&[("PROCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("PROCABLE_COMPONENT_REVIEW_SESSIONS", "")]);
     let why = plan_review_refusal(&hosted).unwrap();
-    assert!(why.contains("is not accepted for this build") && why.contains("Call component_review") && !why.contains("IMPECCABLE_COMPONENT_REVIEW_SESSIONS"), "{why}");
-    let (hosted, _) = io_with(&[("IMPECCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("IMPECCABLE_COMPONENT_REVIEW_PENDING", "0")]);
+    assert!(why.contains("is not accepted for this build") && why.contains("Call component_review") && !why.contains("PROCABLE_COMPONENT_REVIEW_SESSIONS"), "{why}");
+    let (hosted, _) = io_with(&[("PROCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("PROCABLE_COMPONENT_REVIEW_PENDING", "0")]);
     assert!(plan_review_refusal(&hosted).is_some(), "the retired pending flag opens nothing");
     let empty = ws.path.join("host-session");
     std::fs::create_dir_all(&empty).unwrap();
-    let (hosted, _) = io_with(&[("IMPECCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("IMPECCABLE_COMPONENT_REVIEW_SESSIONS", empty.to_str().unwrap())]);
+    let (hosted, _) = io_with(&[("PROCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("PROCABLE_COMPONENT_REVIEW_SESSIONS", empty.to_str().unwrap())]);
     assert!(plan_review_refusal(&hosted).is_some());
     // A spec with nothing to decide has no review to wait for.
     write(SPEC_PATH, br#"{"comp":"comp.png","regions":[{"id":"copy","kind":"text","note":"Body","box":{"x":0,"y":0,"w":1,"h":1}}]}"#);
     assert!(plan_review_refusal(&io_with(&[]).0).is_none());
     // The hosted gate reads the same spec: no host acceptance is demanded for a review
     // `component-review plan` refuses to write, with the sessions empty or unnamed.
-    let (hosted, _) = io_with(&[("IMPECCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("IMPECCABLE_COMPONENT_REVIEW_SESSIONS", "")]);
+    let (hosted, _) = io_with(&[("PROCABLE_COMPONENT_REVIEW_TOOL", "component_review"), ("PROCABLE_COMPONENT_REVIEW_SESSIONS", "")]);
     assert!(plan_review_refusal(&hosted).is_none());
-    let (hosted, _) = io_with(&[("IMPECCABLE_COMPONENT_REVIEW_TOOL", "component_review")]);
+    let (hosted, _) = io_with(&[("PROCABLE_COMPONENT_REVIEW_TOOL", "component_review")]);
     assert!(plan_review_refusal(&hosted).is_none());
 }
 
@@ -1241,7 +1241,7 @@ fn menu_workspace() -> Workspace {
     ws.write(SPEC_PATH, util::json_pretty(&json!({"comp":"comp.png","regions":[
         {"id":"menu","kind":"chrome","medium":"semantic","note":"ruled menu rows","box":{"x":0.54,"y":0.1,"w":0.42,"h":0.78},"px":{"x":216,"y":36,"w":168,"h":281}},
         {"id":"sign-off","kind":"text","medium":"semantic","note":"sign-off line","type":{},"box":{"x":0.555,"y":0.9111,"w":0.35,"h":0.0611},"px":{"x":222,"y":328,"w":140,"h":22}}]})).as_bytes());
-    ws.write(".impeccable/review/mobile.png", &png_io::encode_png(&menu_page(0.0, 360, true), &[]).unwrap());
+    ws.write(".procable/review/mobile.png", &png_io::encode_png(&menu_page(0.0, 360, true), &[]).unwrap());
     ws
 }
 
@@ -1250,7 +1250,7 @@ fn responsive_calls_a_region_pushed_below_the_first_viewport_displaced_not_missi
     let ws = menu_workspace();
     let mut state = json!({"comp":"comp.png","phases":{}});
     // A full-page desktop capture: the sign-off is there, 40px lower, past the frame.
-    ws.write(".impeccable/review/desktop.png", &png_io::encode_png(&menu_page(40.0, 480, true), &[]).unwrap());
+    ws.write(".procable/review/desktop.png", &png_io::encode_png(&menu_page(40.0, 480, true), &[]).unwrap());
     let gate = gate_responsive(&ws.io(), &mut state, 0.1, "diff", None, None);
     assert!(!gate.ok);
     let reason = gate.reasons.iter().find(|r| r.contains("sign-off")).unwrap();
@@ -1265,12 +1265,12 @@ fn responsive_calls_a_region_pushed_below_the_first_viewport_displaced_not_missi
     assert_eq!(region["displacement"]["dy"], 40.0);
     assert_eq!(region["blocking"], true);
     // A native frame is the first viewport alone: the column above says where it went.
-    ws.write(".impeccable/review/desktop.png", &png_io::encode_png(&menu_page(40.0, 360, true), &[]).unwrap());
+    ws.write(".procable/review/desktop.png", &png_io::encode_png(&menu_page(40.0, 360, true), &[]).unwrap());
     let gate = gate_responsive(&ws.io(), &mut state, 0.1, "diff", None, None);
     let reason = gate.reasons.iter().find(|r| r.contains("sign-off")).unwrap();
     assert!(reason.contains("is displaced, not missing: the content above it in its column sits about"), "{reason}");
     // Gone is still missing.
-    ws.write(".impeccable/review/desktop.png", &png_io::encode_png(&menu_page(0.0, 360, false), &[]).unwrap());
+    ws.write(".procable/review/desktop.png", &png_io::encode_png(&menu_page(0.0, 360, false), &[]).unwrap());
     let gate = gate_responsive(&ws.io(), &mut state, 0.1, "diff", None, None);
     assert!(gate.reasons.iter().any(|r| r == "at desktop width, region sign-off is missing"), "{:?}", gate.reasons);
     assert_eq!(gate.worst_crops[0]["verdict"], "missing");
@@ -1288,8 +1288,8 @@ fn a_missing_control_does_not_borrow_its_identical_neighbour() {
     icon(&mut desktop, 100.);
     let png = |i: &Image| png_io::encode_png(i, &[]).unwrap();
     ws.write("comp.png", &png(&comp));
-    ws.write(".impeccable/review/desktop.png", &png(&desktop));
-    ws.write(".impeccable/review/mobile.png", &png(&desktop));
+    ws.write(".procable/review/desktop.png", &png(&desktop));
+    ws.write(".procable/review/mobile.png", &png(&desktop));
     ws.write(SPEC_PATH, util::json_pretty(&json!({"comp":"comp.png","regions":[
         {"id":"first","kind":"control","medium":"semantic","note":"first icon control","box":{"x":0.19,"y":0.49,"w":0.16,"h":0.09},"px":{"x":38,"y":98,"w":32,"h":18}},
         {"id":"second","kind":"control","medium":"semantic","note":"second icon control","box":{"x":0.19,"y":0.61,"w":0.16,"h":0.09},"px":{"x":38,"y":122,"w":32,"h":18}}]})).as_bytes());
@@ -1306,7 +1306,7 @@ fn a_missing_control_does_not_borrow_its_identical_neighbour() {
     icon(&mut desktop, 124.);
     bars(&mut desktop, 148.);
     ws.write("comp.png", &png(&comp));
-    ws.write(".impeccable/review/desktop.png", &png(&desktop));
+    ws.write(".procable/review/desktop.png", &png(&desktop));
     let gate = gate_responsive(&ws.io(), &mut state, 0.1, "diff", None, None);
     let report: Value = serde_json::from_slice(&std::fs::read(ws.path.join("diff/report.json")).unwrap()).unwrap();
     assert!(!gate.reasons.iter().any(|r| r.contains("region first is missing")), "{:?} {}", gate.reasons, report["regions"]);
@@ -1321,7 +1321,7 @@ fn responsive_reads_a_region_shifted_inside_the_first_viewport_as_drift() {
     for k in 0..6 {
         r::fill_rect(&mut moved, 230.0 + k as f64 * 22.0, 306.0, 14.0, 18.0, [20.0, 20.0, 20.0, 255.0]);
     }
-    ws.write(".impeccable/review/desktop.png", &png_io::encode_png(&moved, &[]).unwrap());
+    ws.write(".procable/review/desktop.png", &png_io::encode_png(&moved, &[]).unwrap());
     let gate = gate_responsive(&ws.io(), &mut state, 0.1, "diff", None, None);
     assert!(gate.ok, "{:?}", gate.reasons);
     assert!(gate.advisories.iter().any(|a| a.starts_with("(advisory, still inside the first viewport) at desktop width, region sign-off sits about 24px higher")), "{:?}", gate.advisories);
@@ -1344,8 +1344,8 @@ fn a_present_plate_off_its_box_at_desktop_width_is_drift_not_missing() {
     // The plate renders 16px lower and to the right of its box: present, shifted.
     let mut desktop = reviewed_hero(false, false);
     r::blit(&mut desktop, &r::crop(&comp, 10., 10., 60., 60.), 26., 26.);
-    ws.write(".impeccable/review/desktop.png", &png(&desktop));
-    ws.write(".impeccable/review/mobile.png", &png(&desktop));
+    ws.write(".procable/review/desktop.png", &png(&desktop));
+    ws.write(".procable/review/mobile.png", &png(&desktop));
     let gate = gate_responsive(&io, &mut state, 0.1, "diff", None, None);
     assert!(!gate.reasons.iter().any(|r| r.contains("art is missing")), "{:?}", gate.reasons);
     let report: Value = serde_json::from_slice(&std::fs::read(ws.path.join("diff/report.json")).unwrap()).unwrap();
@@ -1421,8 +1421,8 @@ fn the_approved_screenshot_is_compared_at_the_desktop_frame_size() {
 #[test]
 fn responsive_failures_print_crops_and_escalate_after_three_attempts() {
     let ws = menu_workspace();
-    ws.write(".impeccable/review/desktop.png", &png_io::encode_png(&menu_page(40.0, 480, true), &[]).unwrap());
-    ws.write(".impeccable/build/state.json", util::json_pretty(&json!({"comp":"comp.png","phase":"responsive","phases":{"responsive":{"status":"open","attempts":0,"notes":[]}}})).as_bytes());
+    ws.write(".procable/review/desktop.png", &png_io::encode_png(&menu_page(40.0, 480, true), &[]).unwrap());
+    ws.write(".procable/build/state.json", util::json_pretty(&json!({"comp":"comp.png","phase":"responsive","phases":{"responsive":{"status":"open","attempts":0,"notes":[]}}})).as_bytes());
     let advance = || {
         let (mut io, out) = Io::captured("", ws.path.clone(), Default::default());
         let code = run(&["advance".to_string(), "--min".into(), "0.1".into()], &mut io, &no_organic_scan);
@@ -1431,13 +1431,13 @@ fn responsive_failures_print_crops_and_escalate_after_three_attempts() {
     };
     let (code, first) = advance();
     assert_eq!(code, 2);
-    assert!(first.contains("LOOK FIRST") && first.contains(".impeccable/review/diff/desktop/regions/sign-off.png   sign-off: displaced"), "{first}");
+    assert!(first.contains("LOOK FIRST") && first.contains(".procable/review/diff/desktop/regions/sign-off.png   sign-off: displaced"), "{first}");
     assert!(first.contains("A region scored displaced is present but pushed out of the first viewport"), "{first}");
     assert!(!first.contains("failed 3 attempts"), "{first}");
     advance();
     let (_, third) = advance();
     assert!(third.contains("- The responsive gate has failed 3 attempts in a row. Stop iterating and present the first-viewport review"), "{third}");
-    let state: Value = serde_json::from_slice(&std::fs::read(ws.path.join(".impeccable/build/state.json")).unwrap()).unwrap();
+    let state: Value = serde_json::from_slice(&std::fs::read(ws.path.join(".procable/build/state.json")).unwrap()).unwrap();
     assert_eq!(state["phases"]["responsive"]["history"].as_array().unwrap().len(), 3);
     assert_eq!(state["phases"]["responsive"]["status"], "open");
 }
@@ -1447,9 +1447,9 @@ fn responsive_escalation_after_acceptance_routes_to_the_user_not_a_new_review() 
     let mut state = json!({"phases":{"responsive":{}}});
     let mut gate = Gate::fail(vec!["at desktop width, region sign-off is displaced, not missing".into()]);
     gate.score = Some(0.8);
-    for _ in 0..2 { assert!(responsive_loop_verdict(&mut state, &gate, true, "impeccable").is_none()); }
-    let third = responsive_loop_verdict(&mut state, &gate, true, "impeccable").unwrap();
-    assert!(third.contains("already accepted a first viewport") && third.contains("impeccable build-phase advance --force --reason") && third.contains("not a fix round"), "{third}");
+    for _ in 0..2 { assert!(responsive_loop_verdict(&mut state, &gate, true, "procable").is_none()); }
+    let third = responsive_loop_verdict(&mut state, &gate, true, "procable").unwrap();
+    assert!(third.contains("already accepted a first viewport") && third.contains("procable build-phase advance --force --reason") && third.contains("not a fix round"), "{third}");
     assert!(!third.contains("present the first-viewport review"), "{third}");
     // The example it gives is a reason force accepts.
     let example = third.split("for example: ").nth(1).unwrap().split(')').next().unwrap();
@@ -1458,8 +1458,8 @@ fn responsive_escalation_after_acceptance_routes_to_the_user_not_a_new_review() 
     let mut passed = Gate::fail(vec![]);
     passed.ok = true;
     passed.score = Some(0.9);
-    assert!(responsive_loop_verdict(&mut state, &passed, true, "impeccable").is_none());
-    assert!(responsive_loop_verdict(&mut state, &gate, true, "impeccable").is_none());
+    assert!(responsive_loop_verdict(&mut state, &passed, true, "procable").is_none());
+    assert!(responsive_loop_verdict(&mut state, &gate, true, "procable").is_none());
 }
 
 #[test]
@@ -1632,7 +1632,7 @@ fn native_ship_is_refused_when_the_final_capture_leaves_no_manifest() {
 fn screenshot_policy_finish_binds_no_capture_manifest() {
     let ws = Workspace::new();
     ws.write("index.html", b"<main>Finished</main>");
-    ws.write(".impeccable/review/native/responsive/inputs.json", br#"{"manifest":{"files":[{"path":"index.html","sha256":"stale"}]}}"#);
+    ws.write(".procable/review/native/responsive/inputs.json", br#"{"manifest":{"files":[{"path":"index.html","sha256":"stale"}]}}"#);
     let mut io = ws.io();
     let mut state = json!({"phase":"review", "artifact":"index.html", "phases":{}});
     for phase in PHASES { state["phases"][phase] = json!({"status":"closed"}); }
@@ -1659,7 +1659,7 @@ fn review_next_says_ship_rechecks_and_a_later_edit_needs_ship_again() {
 
 // ---- approved comp as a fixed reference ------------------------------------
 
-const APPROVED: &str = ".impeccable/mocks/comp-1.png";
+const APPROVED: &str = ".procable/mocks/comp-1.png";
 
 fn approved_comp_image() -> Image {
     let mut comp = r::create_image(300, 100, [20, 70, 110, 255]);
@@ -1667,11 +1667,11 @@ fn approved_comp_image() -> Image {
     comp
 }
 
-fn captured(ws: &Workspace) -> (Io, impeccable_common::Captured) {
+fn captured(ws: &Workspace) -> (Io, procable_common::Captured) {
     Io::captured("", ws.path.clone(), Default::default())
 }
 
-fn out_err(c: &impeccable_common::Captured) -> String {
+fn out_err(c: &procable_common::Captured) -> String {
     format!("{}{}", String::from_utf8_lossy(&c.stdout.borrow()), String::from_utf8_lossy(&c.stderr.borrow()))
 }
 
@@ -1700,7 +1700,7 @@ fn approval_keeps_a_copy_and_the_spec_binds_the_same_pixels() {
     let record: Value = serde_json::from_slice(&std::fs::read(ws.path.join(crate::approved_comp::RECORD_PATH)).unwrap()).unwrap();
     let spec = load_spec(&ws.path.join(SPEC_PATH)).unwrap();
     assert_eq!(record["pixelSha256"], spec["compSha256"]);
-    assert_eq!(std::fs::read(ws.path.join(".impeccable/build/approved-comp.png")).unwrap(), std::fs::read(ws.path.join(APPROVED)).unwrap());
+    assert_eq!(std::fs::read(ws.path.join(".procable/build/approved-comp.png")).unwrap(), std::fs::read(ws.path.join(APPROVED)).unwrap());
     // A metadata-only rewrite (embed-prompt) is not an edit.
     ws.write(APPROVED, &png_io::encode_png(&approved_comp_image(), &[("prompt".into(), "comp prompt".into())]).unwrap());
     let io = ws.io();
@@ -1802,10 +1802,10 @@ fn a_spec_for_another_comp_never_replaces_the_build_record() {
     let io = ws.io();
     let other = json!({"comp": "other.png", "compSha256": crate::approved_comp::file_pixel_sha256(&io, "other.png")});
     // An independent spec for another file is not the build's business ...
-    assert_eq!(crate::approved_comp::issue_at(&io, &other, "other-spec.json", "impeccable"), None);
+    assert_eq!(crate::approved_comp::issue_at(&io, &other, "other-spec.json", "procable"), None);
     // ... but the build's spec measured on another file is refused.
-    let why = crate::approved_comp::issue_at(&io, &other, SPEC_PATH, "impeccable").unwrap();
-    assert!(why.contains("measures other.png, but the approved comp is .impeccable/mocks/comp-1.png"), "{why}");
+    let why = crate::approved_comp::issue_at(&io, &other, SPEC_PATH, "procable").unwrap();
+    assert!(why.contains("measures other.png, but the approved comp is .procable/mocks/comp-1.png"), "{why}");
     assert_eq!(std::fs::read(ws.path.join(crate::approved_comp::RECORD_PATH)).unwrap(), record);
     let mut state = load_state(&io).unwrap();
     ws.write(SPEC_PATH, util::json_pretty(&json!({"comp":"other.png","compSha256":other["compSha256"],"regions":[]})).as_bytes());
@@ -1820,7 +1820,7 @@ fn restore_comp_puts_the_approved_pixels_back_and_the_gates_measure_again() {
     composite_into_comp(&ws);
     let (mut io, c) = captured(&ws);
     assert_eq!(run(&["restore-comp"].map(String::from), &mut io, &no_organic_scan), 0);
-    assert!(out_err(&c).starts_with(&format!("RESTORED {APPROVED} from .impeccable/build/approved-comp.png")), "{}", out_err(&c));
+    assert!(out_err(&c).starts_with(&format!("RESTORED {APPROVED} from .procable/build/approved-comp.png")), "{}", out_err(&c));
     assert_eq!(std::fs::read(ws.path.join(APPROVED)).unwrap(), approved_bytes);
     let kept: Vec<_> = std::fs::read_dir(ws.path.join(BUILD_DIR)).unwrap().filter_map(|e| e.ok())
         .map(|e| e.file_name().to_string_lossy().to_string()).filter(|n| n.starts_with("edited-comp-")).collect();
@@ -1839,7 +1839,7 @@ fn comps_gate_keeps_the_approved_comp_and_a_new_round_forgets_it() {
     let mut io = ws.io();
     assert_eq!(run(&["start", "--direction", "seed", "--artifact", "index.html"].map(String::from), &mut io, &no_organic_scan), 0);
     for (i, color) in [[20u8, 70, 110, 255], [90, 20, 20, 255], [10, 90, 10, 255]].iter().enumerate() {
-        let file = format!(".impeccable/mocks/comp-{}.png", i + 1);
+        let file = format!(".procable/mocks/comp-{}.png", i + 1);
         ws.write(&file, &png_io::encode_png(&r::create_image(40, 20, *color), &[]).unwrap());
         ws.write(&format!("{file}.json"), format!(r#"{{"prompt":"comp {i}","approved":{}}}"#, i == 0).as_bytes());
     }
@@ -1865,8 +1865,8 @@ fn comps_gate_keeps_the_approved_comp_and_a_new_round_forgets_it() {
 
 #[test]
 fn chosen_decision_comp_is_option_one_and_becomes_the_approved_reference() {
-    const CHOSEN: &str = ".impeccable/mocks/decision/assigned.png";
-    const OTHER: &str = ".impeccable/mocks/decision/pick.png";
+    const CHOSEN: &str = ".procable/mocks/decision/assigned.png";
+    const OTHER: &str = ".procable/mocks/decision/pick.png";
     let ws = Workspace::new();
     for (file, color) in [(CHOSEN, [20u8, 70, 110, 255]), (OTHER, [200, 200, 20, 255])] {
         ws.write(file, &png_io::encode_png(&r::create_image(40, 20, color), &[]).unwrap());
@@ -1876,7 +1876,7 @@ fn chosen_decision_comp_is_option_one_and_becomes_the_approved_reference() {
     let mut io = ws.io();
     assert_eq!(run(&["start", "--direction", "seed"].map(String::from), &mut io, &no_organic_scan), 0);
     let gate = gate_comps(&io, &load_state(&io).unwrap());
-    assert!(gate.reasons[0].starts_with("0 comps under .impeccable/mocks;"), "{:?}", gate.reasons);
+    assert!(gate.reasons[0].starts_with("0 comps under .procable/mocks;"), "{:?}", gate.reasons);
     // --decision-comp goes with --direction only, and must exist.
     let (mut io, c) = captured(&ws);
     assert_eq!(run(&["start", "--reset", "--comp", CHOSEN, "--decision-comp", CHOSEN].map(String::from), &mut io, &no_organic_scan), 1);
@@ -1884,7 +1884,7 @@ fn chosen_decision_comp_is_option_one_and_becomes_the_approved_reference() {
     let (mut io, c) = captured(&ws);
     assert_eq!(run(&["start", "--reset", "--decision-comp", CHOSEN].map(String::from), &mut io, &no_organic_scan), 1);
     assert!(out_err(&c).contains("goes with --direction and never with --comp"), "{}", out_err(&c));
-    assert_eq!(run(&["start", "--reset", "--direction", "seed", "--decision-comp", ".impeccable/mocks/decision/none.png"].map(String::from), &mut io, &no_organic_scan), 1);
+    assert_eq!(run(&["start", "--reset", "--direction", "seed", "--decision-comp", ".procable/mocks/decision/none.png"].map(String::from), &mut io, &no_organic_scan), 1);
 
     let mut io = ws.io();
     assert_eq!(run(&["start", "--reset", "--direction", "seed", "--decision-comp", CHOSEN].map(String::from), &mut io, &no_organic_scan), 0);
@@ -1893,9 +1893,9 @@ fn chosen_decision_comp_is_option_one_and_becomes_the_approved_reference() {
     assert!(next_instruction(&io, &state).contains(&format!("The chosen decision comp {CHOSEN} is compositional option one")));
     // The chosen decision comp counts as option one; the unrelated one never does.
     let gate = gate_comps(&io, &state);
-    assert!(gate.reasons[0].starts_with(&format!("1 comp (the chosen decision comp {CHOSEN} as option one, the others directly under .impeccable/mocks);")), "{:?}", gate.reasons);
+    assert!(gate.reasons[0].starts_with(&format!("1 comp (the chosen decision comp {CHOSEN} as option one, the others directly under .procable/mocks);")), "{:?}", gate.reasons);
     for (i, color) in [[90u8, 20, 20, 255], [10, 90, 10, 255]].iter().enumerate() {
-        let file = format!(".impeccable/mocks/comp-{}.png", i + 2);
+        let file = format!(".procable/mocks/comp-{}.png", i + 2);
         ws.write(&file, &png_io::encode_png(&r::create_image(40, 20, *color), &[]).unwrap());
         ws.write(&format!("{file}.json"), br#"{"prompt":"variation"}"#);
     }
@@ -1907,12 +1907,12 @@ fn chosen_decision_comp_is_option_one_and_becomes_the_approved_reference() {
     // A deleted option one is not forgotten: three root comps cannot close the round without it.
     let kept = std::fs::read(ws.path.join(CHOSEN)).unwrap();
     std::fs::remove_file(ws.path.join(CHOSEN)).unwrap();
-    ws.write(".impeccable/mocks/comp-4.png", &png_io::encode_png(&r::create_image(40, 20, [5, 5, 5, 255]), &[]).unwrap());
-    ws.write(".impeccable/mocks/comp-4.png.json", br#"{"prompt":"replacement","approved":true}"#);
+    ws.write(".procable/mocks/comp-4.png", &png_io::encode_png(&r::create_image(40, 20, [5, 5, 5, 255]), &[]).unwrap());
+    ws.write(".procable/mocks/comp-4.png.json", br#"{"prompt":"replacement","approved":true}"#);
     let gate = gate_comps(&io, &state);
     assert!(!gate.ok && gate.reasons[0].starts_with(&format!("the chosen decision comp {CHOSEN} is missing")), "{:?}", gate.reasons);
-    std::fs::remove_file(ws.path.join(".impeccable/mocks/comp-4.png")).unwrap();
-    std::fs::remove_file(ws.path.join(".impeccable/mocks/comp-4.png.json")).unwrap();
+    std::fs::remove_file(ws.path.join(".procable/mocks/comp-4.png")).unwrap();
+    std::fs::remove_file(ws.path.join(".procable/mocks/comp-4.png.json")).unwrap();
     ws.write(CHOSEN, &kept);
     // The user keeps option one: the comps gate closes on it where it stands.
     ws.write(&format!("{CHOSEN}.json"), br#"{"prompt":"decision comp","approved":true}"#);
@@ -1926,7 +1926,7 @@ fn chosen_decision_comp_is_option_one_and_becomes_the_approved_reference() {
     assert_eq!(std::fs::read(ws.path.join(record["copy"].as_str().unwrap())).unwrap(), std::fs::read(ws.path.join(CHOSEN)).unwrap());
     // The decision comp is now the fixed reference: an edit is refused and restore-comp puts it back.
     ws.write(CHOSEN, &png_io::encode_png(&r::create_image(40, 20, [0, 0, 0, 255]), &[]).unwrap());
-    assert!(crate::approved_comp::issue_for_comp(&io, CHOSEN, "impeccable").is_some());
+    assert!(crate::approved_comp::issue_for_comp(&io, CHOSEN, "procable").is_some());
     assert_eq!(run(&["restore-comp"].map(String::from), &mut io, &no_organic_scan), 0);
     assert_eq!(crate::approved_comp::file_pixel_sha256(&io, CHOSEN).as_deref(), record["pixelSha256"].as_str());
 }

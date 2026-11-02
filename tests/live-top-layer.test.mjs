@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const HOST = '#impeccable-live-top-layer';
+const HOST = '#procable-live-top-layer';
 
 const PAGE = `
   <button id="open" onclick="d.showModal()">Open</button>
@@ -53,9 +53,9 @@ beforeEach(async () => {
   await page.setContent(PAGE);
   await page.addScriptTag({ path: join(ROOT, 'skill/scripts/live-browser-dom.js') });
   await page.evaluate(() => {
-    const h = window.__IMPECCABLE_LIVE_DOM__.createLiveBrowserDomHelpers({ prefix: 'impeccable-live', document });
+    const h = window.__PROCABLE_LIVE_DOM__.createLiveBrowserDomHelpers({ prefix: 'procable-live', document });
     const bar = document.createElement('div');
-    bar.id = 'impeccable-live-bar';
+    bar.id = 'procable-live-bar';
     bar.style.cssText = 'position: fixed; left: 20px; bottom: 20px; width: 160px; height: 40px; z-index: 100005';
     bar.textContent = 'Live bar';
     bar.onclick = () => { window.clicks = (window.clicks || 0) + 1; };
@@ -79,32 +79,32 @@ const parentOf = (selector) => page.evaluate((s) => document.querySelector(s).pa
 
 describe('live chrome under a modal dialog', () => {
   it('stays clickable while a modal is open and returns to body on close', async () => {
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 1);
 
     await click('#open');
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 2);
     assert.equal(await page.evaluate(() => {
-      const r = document.getElementById('impeccable-live-bar').getBoundingClientRect();
+      const r = document.getElementById('procable-live-bar').getBoundingClientRect();
       return document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2).id;
-    }), 'impeccable-live-bar');
-    assert.equal(await parentOf('#impeccable-live-bar'), 'impeccable-live-top-layer');
+    }), 'procable-live-bar');
+    assert.equal(await parentOf('#procable-live-bar'), 'procable-live-top-layer');
     assert.equal(await parentOf(HOST), 'd');
 
     // Chrome mounted while the modal is open lands in the same host.
     await page.evaluate(() => {
       const el = document.createElement('div');
-      el.id = 'impeccable-live-late';
+      el.id = 'procable-live-late';
       window.live.uiAppend(el);
     });
-    assert.equal(await parentOf('#impeccable-live-late'), 'impeccable-live-top-layer');
+    assert.equal(await parentOf('#procable-live-late'), 'procable-live-top-layer');
 
     await click('#close');
-    assert.equal(await page.evaluate(() => document.querySelector('#impeccable-live-top-layer')), null);
-    assert.equal(await page.evaluate(() => document.getElementById('impeccable-live-bar').parentNode === document.body), true);
-    assert.equal(await page.evaluate(() => document.getElementById('impeccable-live-late').parentNode === document.body), true);
-    await click('#impeccable-live-bar');
+    assert.equal(await page.evaluate(() => document.querySelector('#procable-live-top-layer')), null);
+    assert.equal(await page.evaluate(() => document.getElementById('procable-live-bar').parentNode === document.body), true);
+    assert.equal(await page.evaluate(() => document.getElementById('procable-live-late').parentNode === document.body), true);
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 3);
   });
 
@@ -112,13 +112,13 @@ describe('live chrome under a modal dialog', () => {
     await page.evaluate(() => d.showModal());
     await page.evaluate(() => d2.showModal());
     assert.equal(await parentOf(HOST), 'd2');
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 1);
 
     // Rewriting `open` on the lower modal does not raise it.
     await page.evaluate(() => d.setAttribute('open', ''));
     assert.equal(await parentOf(HOST), 'd2');
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 2);
 
     await page.evaluate(() => d2.close());
@@ -128,7 +128,7 @@ describe('live chrome under a modal dialog', () => {
   it('stays above a modal closed and reopened in one task', async () => {
     await page.evaluate(() => d.showModal());
     await page.evaluate(() => { d.close(); d.showModal(); });
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 1);
   });
 
@@ -139,7 +139,7 @@ describe('live chrome under a modal dialog', () => {
       if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) d.close();
     }));
     await page.evaluate(() => d.showModal());
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 1);
     assert.equal(await page.evaluate(() => d.open), true);
   });
@@ -148,12 +148,12 @@ describe('live chrome under a modal dialog', () => {
     // Opened against document order, so document order would pick e3, then e2.
     await page.evaluate(() => { window.stopWatch(); e3.showModal(); e1.showModal(); e2.showModal(); window.live.watchModalDialogs(); });
     assert.equal(await parentOf(HOST), 'e2');
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 1);
 
     await page.evaluate(() => e2.close());
     assert.equal(await parentOf(HOST), 'e1');
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await clicks(), 2);
   });
 
@@ -161,7 +161,7 @@ describe('live chrome under a modal dialog', () => {
     await page.evaluate(() => d.showModal());
     const copy = await page.evaluate(() => {
       const clone = window.live.cloneWithoutChrome(d);
-      return { host: d.contains(window.live.topLayerHost), parked: !!clone.querySelector('[id^="impeccable-live"]'), text: clone.textContent };
+      return { host: d.contains(window.live.topLayerHost), parked: !!clone.querySelector('[id^="procable-live"]'), text: clone.textContent };
     });
     assert.equal(copy.host, true);
     assert.equal(copy.parked, false);
@@ -174,14 +174,14 @@ describe('live chrome under a modal dialog', () => {
     assert.equal(await parentOf(HOST), 'd');
 
     await page.evaluate(() => d.remove());
-    assert.equal(await page.evaluate(() => document.getElementById('impeccable-live-bar').parentNode === document.body), true);
-    assert.equal(await page.evaluate(() => document.querySelector('#impeccable-live-top-layer')), null);
+    assert.equal(await page.evaluate(() => document.getElementById('procable-live-bar').parentNode === document.body), true);
+    assert.equal(await page.evaluate(() => document.querySelector('#procable-live-top-layer')), null);
   });
 
   it('mounts detect outlines for targets inside the modal in the host', async () => {
     await page.addScriptTag({ path: join(ROOT, 'browser-bundle/40-overlay.js') });
     await page.evaluate(() => {
-      window.overlay = createImpeccableOverlay({ extensionMode: true, antipatterns: [{ id: 'x', name: 'X', category: 'slop' }] });
+      window.overlay = createProcableOverlay({ extensionMode: true, antipatterns: [{ id: 'x', name: 'X', category: 'slop' }] });
       for (const id of ['inside', 'outside']) {
         window.overlay.highlight(document.getElementById(id), [{ type: 'x', detail: id }]);
       }
@@ -196,11 +196,11 @@ describe('live chrome under a modal dialog', () => {
     // and still lines up with its target on a scrolled page.
     await page.evaluate(() => { scrollTo(0, 300); d.showModal(); });
     await page.waitForFunction(
-      () => window.overlay.overlays.some((o) => o.parentNode.id === 'impeccable-live-top-layer' && o.style.display !== 'none'),
+      () => window.overlay.overlays.some((o) => o.parentNode.id === 'procable-live-top-layer' && o.style.display !== 'none'),
       null,
       { timeout: 5000 },
     );
-    assert.equal(await outlineParent('inside'), 'impeccable-live-top-layer');
+    assert.equal(await outlineParent('inside'), 'procable-live-top-layer');
     assert.equal(await outlineParent('outside'), 'body');
     const [outline, target] = await page.evaluate(() => {
       const o = window.overlay.overlays.find((el) => el._targetEl.id === 'inside').getBoundingClientRect();
@@ -214,7 +214,7 @@ describe('live chrome under a modal dialog', () => {
       window.overlay.highlight(document.getElementById('inside'), [{ type: 'x', detail: 'again' }]);
       return window.overlay.overlays.at(-1).parentNode.id;
     });
-    assert.equal(direct, 'impeccable-live-top-layer');
+    assert.equal(direct, 'procable-live-top-layer');
 
     // A modal opened above takes the host, but an outline for the dialog
     // underneath stays under that modal, and returns when it closes.
@@ -222,7 +222,7 @@ describe('live chrome under a modal dialog', () => {
     assert.equal(await parentOf(HOST), 'd2');
     assert.equal(await outlineParent('inside'), 'body');
     await page.evaluate(() => d2.close());
-    assert.equal(await outlineParent('inside'), 'impeccable-live-top-layer');
+    assert.equal(await outlineParent('inside'), 'procable-live-top-layer');
   });
 
   // The execCommand clipboard fallback (plain-HTTP origins, issue #1055)
@@ -233,16 +233,16 @@ describe('live chrome under a modal dialog', () => {
     await page.evaluate(() => {
       window.copies = [];
       document.addEventListener('copy', () => {
-        const ta = document.getElementById('impeccable-live-clipboard');
+        const ta = document.getElementById('procable-live-clipboard');
         window.copies.push({ text: String(getSelection()) || ta?.value.slice(ta.selectionStart, ta.selectionEnd) || '', parent: ta?.parentElement?.id || null });
       });
-      document.getElementById('impeccable-live-bar').onclick = () => {
+      document.getElementById('procable-live-bar').onclick = () => {
         window.copied = window.live.copyTextViaSelection('oklch(62% 0.18 250)');
       };
     });
-    await click('#impeccable-live-bar');
+    await click('#procable-live-bar');
     assert.equal(await page.evaluate(() => window.copied), true);
-    assert.deepEqual(await page.evaluate(() => window.copies), [{ text: 'oklch(62% 0.18 250)', parent: 'impeccable-live-top-layer' }]);
-    assert.equal(await page.evaluate(() => document.getElementById('impeccable-live-clipboard')), null, 'the textarea is removed afterwards');
+    assert.deepEqual(await page.evaluate(() => window.copies), [{ text: 'oklch(62% 0.18 250)', parent: 'procable-live-top-layer' }]);
+    assert.equal(await page.evaluate(() => document.getElementById('procable-live-clipboard')), null, 'the textarea is removed afterwards');
   });
 });

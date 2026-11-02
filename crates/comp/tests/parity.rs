@@ -5,12 +5,12 @@
 //! Pixel-level parity is proven by CRC32 of decoded/produced RGBA (and the f32
 //! diff-map) buffers; scores and fingerprints are compared value-for-value.
 
-use impeccable_comp::font_fingerprint as ff;
-use impeccable_comp::font_index as fi;
-use impeccable_comp::hero;
-use impeccable_comp::metrics as m;
-use impeccable_comp::raster::{self as r, rgb, Image};
-use impeccable_comp::{crc32, crc32_f32, png_io};
+use procable_comp::font_fingerprint as ff;
+use procable_comp::font_index as fi;
+use procable_comp::hero;
+use procable_comp::metrics as m;
+use procable_comp::raster::{self as r, rgb, Image};
+use procable_comp::{crc32, crc32_f32, png_io};
 use serde_json::Value;
 use std::path::PathBuf;
 
@@ -280,7 +280,7 @@ fn font_index_parity() {
     }
 
     // Full index (candidate ranking) — needs the catalog JSON from the public repo.
-    let pubrepo = std::env::var("IMPECCABLE_PUBLIC_REPO")
+    let pubrepo = std::env::var("PROCABLE_PUBLIC_REPO")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."));
     let idx_path = pubrepo.join("skill/scripts/data/font-index.json");

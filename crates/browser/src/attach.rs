@@ -1,4 +1,4 @@
-//! `impeccable detect --cdp`: scan a page of a Chromium-based app that is
+//! `procable detect --cdp`: scan a page of a Chromium-based app that is
 //! already running (Electron, NW.js, CEF, WebView2) through its DevTools
 //! endpoint, with the URL scan's passes and output.
 //!
@@ -29,8 +29,8 @@ use std::io::{Read, Write};
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 
-use impeccable_detect::cdp_endpoint::{is_loopback_host, CdpEndpoint};
-use impeccable_detect::engines::{EngineError, ScanOptions, UrlScan};
+use procable_detect::cdp_endpoint::{is_loopback_host, CdpEndpoint};
+use procable_detect::engines::{EngineError, ScanOptions, UrlScan};
 use serde_json::Value;
 
 use crate::cdp::{connect_tcp, Browser, Page, Viewport};
@@ -251,14 +251,14 @@ pub fn browser_ws_url(endpoint: &CdpEndpoint) -> Result<String, String> {
 /// - `requestAnimationFrame` fires on the next frame or after 100ms,
 ///   whichever comes first, so a frame wait never hangs on a window that
 ///   paints no frames.
-/// - Once [`RESTORE_JS`] sets `__impeccableAttachCancelled`, neither calls
+/// - Once [`RESTORE_JS`] sets `__procableAttachCancelled`, neither calls
 ///   anything back, so an async pass still running page-side stops at its
 ///   next wait instead of scrolling the restored page.
 ///
 /// The page's own globals are untouched: these are the isolated world's.
 pub const PREPARE_JS: &str = r#"(() => {
   const g = globalThis;
-  if (!g.__impeccableAttachShim) {
+  if (!g.__procableAttachShim) {
     const nativeSetTimeout = g.setTimeout.bind(g);
     const nativeClearTimeout = g.clearTimeout.bind(g);
     const nativeRaf = g.requestAnimationFrame.bind(g);
@@ -287,7 +287,7 @@ pub const PREPARE_JS: &str = r#"(() => {
     g.setTimeout = (cb, ms, ...args) => {
       const id = ++next;
       const wait = Math.max(0, Number(ms) || 0);
-      const run = () => { if (!g.__impeccableAttachCancelled && typeof cb === 'function') cb(...args); };
+      const run = () => { if (!g.__procableAttachCancelled && typeof cb === 'function') cb(...args); };
       if (document.visibilityState === 'hidden') {
         live.set(id, null);
         spin(id, wait, run);
@@ -303,12 +303,12 @@ pub const PREPARE_JS: &str = r#"(() => {
     };
     g.requestAnimationFrame = (cb) => {
       let done = false;
-      const fire = () => { if (!done) { done = true; if (!g.__impeccableAttachCancelled) cb(performance.now()); } };
+      const fire = () => { if (!done) { done = true; if (!g.__procableAttachCancelled) cb(performance.now()); } };
       nativeRaf(fire);
       g.setTimeout(fire, 100);
       return 0;
     };
-    g.__impeccableAttachShim = true;
+    g.__procableAttachShim = true;
   }
   const scrolled = [];
   const walk = (root) => {
@@ -318,12 +318,12 @@ pub const PREPARE_JS: &str = r#"(() => {
     }
   };
   walk(document);
-  g.__impeccableAttachCancelled = false;
-  g.__impeccableAttach = {
+  g.__procableAttachCancelled = false;
+  g.__procableAttach = {
     x: window.scrollX,
     y: window.scrollY,
     scrolled,
-    hideStyle: !!document.getElementById('impeccable-visual-contrast-hide-style'),
+    hideStyle: !!document.getElementById('procable-visual-contrast-hide-style'),
   };
   return { hidden: document.visibilityState === 'hidden', scrollers: scrolled.length };
 })()"#;
@@ -331,14 +331,14 @@ pub const PREPARE_JS: &str = r#"(() => {
 /// Put back what [`PREPARE_JS`] recorded: first cancel the scan's waits,
 /// then every scroller at its old position (a scroller the scan moved off 0
 /// back to 0), the window last, the videos the pixel pass paused
-/// (`__impeccablePausedMedia`) playing again unless they have ended, and the
+/// (`__procablePausedMedia`) playing again unless they have ended, and the
 /// pixel pass's style element and marker attributes gone. Then the scan's
 /// own globals go, so the isolated world holds no references to the page's
 /// elements.
 pub const RESTORE_JS: &str = r#"(() => {
   const g = globalThis;
-  g.__impeccableAttachCancelled = true;
-  const saved = g.__impeccableAttach;
+  g.__procableAttachCancelled = true;
+  const saved = g.__procableAttach;
   const out = { restored: false };
   if (saved) {
     const was = new Map(saved.scrolled.map(([el, top, left]) => [el, [top, left]]));
@@ -357,29 +357,29 @@ pub const RESTORE_JS: &str = r#"(() => {
     };
     walk(document);
     window.scrollTo({ left: saved.x, top: saved.y, behavior: 'instant' });
-    for (const m of g.__impeccablePausedMedia || []) {
+    for (const m of g.__procablePausedMedia || []) {
       if (!m.paused || m.ended || !m.isConnected) continue;
       try { const p = m.play(); if (p && typeof p.catch === 'function') p.catch(() => {}); } catch (e) {}
     }
     if (!saved.hideStyle) {
-      const style = document.getElementById('impeccable-visual-contrast-hide-style');
+      const style = document.getElementById('procable-visual-contrast-hide-style');
       if (style) style.remove();
     }
     out.restored = true;
     out.scroll = [window.scrollX, window.scrollY];
     out.wanted = [saved.x, saved.y];
   }
-  for (const el of document.querySelectorAll('[data-impeccable-visual-contrast-target], [data-impeccable-bgclip-text]')) {
-    el.removeAttribute('data-impeccable-visual-contrast-target');
-    el.removeAttribute('data-impeccable-bgclip-text');
+  for (const el of document.querySelectorAll('[data-procable-visual-contrast-target], [data-procable-bgclip-text]')) {
+    el.removeAttribute('data-procable-visual-contrast-target');
+    el.removeAttribute('data-procable-bgclip-text');
   }
-  for (const key of ['__impeccableSnapshot', '__impCap', '__impIO', '__impeccableContrastRestore', '__impeccableVisualScrollSaved', '__impeccablePausedMedia', '__impeccableAttach']) {
+  for (const key of ['__procableSnapshot', '__impCap', '__impIO', '__procableContrastRestore', '__procableVisualScrollSaved', '__procablePausedMedia', '__procableAttach']) {
     try { delete g[key]; } catch (e) {}
   }
   return out;
 })()"#;
 
-/// `impeccable detect --cdp`: attach, scan the chosen page as it stands, put
+/// `procable detect --cdp`: attach, scan the chosen page as it stands, put
 /// it back, detach.
 pub fn detect_cdp(
     endpoint: &CdpEndpoint,

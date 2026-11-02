@@ -5,7 +5,7 @@
  * process that started it:
  *
  *   1. a direct child (`node skill/scripts/live-server.mjs --port=N`, or
- *      `$IMPECCABLE_BIN live-server --port=N` once the engine is Rust), stopped
+ *      `$PROCABLE_BIN live-server --port=N` once the engine is Rust), stopped
  *      by an HTTP `/stop` call in an `after()` hook;
  *   2. a detached daemon (`live-server --background`, or a full `live` boot),
  *      which is orphaned to pid 1 by design and stopped by the `stop` verb.
@@ -14,7 +14,7 @@
  * `node:test` timeout that skips the `after()` hook. This module is the safety
  * net. It identifies servers by an environment marker the runner exports, so a
  * sweep can only ever match a server this repo's test harness started; nothing
- * is matched by port, by name alone, or by "looks like impeccable".
+ * is matched by port, by name alone, or by "looks like procable".
  *
  * Every marker value is an opaque token: a random run or process id, or a hash
  * of the checkout path. None of them is a path, and none can contain
@@ -38,29 +38,29 @@ import path from 'node:path';
 const MARKER_VALUE_RE = /^[A-Za-z0-9_-]+$/;
 
 /** Env var carrying the id of one suite command. Descendants inherit it. */
-export const RUN_ID_ENV = 'IMPECCABLE_TEST_RUN_ID';
+export const RUN_ID_ENV = 'PROCABLE_TEST_RUN_ID';
 /**
  * Env var carrying the id of one test process. `node --test` runs files
  * concurrently and they all inherit the same run id, so a per-process id is
  * what lets one file's reaper kill that file's servers and not its siblings'.
  */
-export const PROC_ID_ENV = 'IMPECCABLE_TEST_PROC_ID';
+export const PROC_ID_ENV = 'PROCABLE_TEST_PROC_ID';
 /**
  * Env var carrying a hash of the checkout, so a cleanup can be scoped to it.
  * The value is `repoMarker()`, not the path: two checkouts whose paths share a
  * prefix get unrelated hashes, and no filesystem path can leak into matching.
  */
-export const REPO_ENV = 'IMPECCABLE_TEST_REPO';
+export const REPO_ENV = 'PROCABLE_TEST_REPO';
 /**
  * The checkout path in readable form, for a human looking at `ps -E` output or
  * a stuck process. **Never used for matching**, and nothing should start: it is
  * the one marker-adjacent value that can contain whitespace.
  */
-export const REPO_PATH_ENV = 'IMPECCABLE_TEST_REPO_PATH';
+export const REPO_PATH_ENV = 'PROCABLE_TEST_REPO_PATH';
 
 /**
  * A command line belonging to a live server. Matches the Node script
- * (`.../live-server.mjs`) and the engine verb (`.../impeccable live-server`).
+ * (`.../live-server.mjs`) and the engine verb (`.../procable live-server`).
  */
 // `ps -E` prints every process's whole environment. On a laptop with a thousand
 // processes that passes Node's default 1 MiB `maxBuffer`, at which point
@@ -74,8 +74,8 @@ const LIVE_SERVER_RE = /(^|[\s/\\])live-server(\.mjs|\.exe)?(\s|$)/;
 /**
  * A stable, opaque id for one checkout: the first 16 hex characters of the
  * sha256 of its real path. Symlinked and `/private`-prefixed spellings of the
- * same directory resolve to the same marker; `/work/impeccable` and
- * `/work/impeccable-copy` do not share a prefix.
+ * same directory resolve to the same marker; `/work/procable` and
+ * `/work/procable-copy` do not share a prefix.
  */
 export function repoMarker(repoRoot) {
   // path.resolve first so a trailing slash or a `.` segment cannot change the
@@ -105,11 +105,11 @@ export function makeProcId() {
  * @param {object} opts
  * Every marker is an environment entry the harness itself exported. There is
  * deliberately no fallback that matches a command line under the checkout: a
- * developer running `impeccable live` in this repo has exactly that command
+ * developer running `procable live` in this repo has exactly that command
  * line, and a cleanup must never be able to kill their session.
  *
- * @param {string} [opts.runId]  match `IMPECCABLE_TEST_RUN_ID=<runId>` exactly.
- * @param {string} [opts.procId] match `IMPECCABLE_TEST_PROC_ID=<procId>` exactly.
+ * @param {string} [opts.runId]  match `PROCABLE_TEST_RUN_ID=<runId>` exactly.
+ * @param {string} [opts.procId] match `PROCABLE_TEST_PROC_ID=<procId>` exactly.
  * @param {string} [opts.repo]   a checkout path; matched as its `repoMarker()`
  *                               hash, never as the path itself.
  * @returns {{pid:number, command:string}[]}

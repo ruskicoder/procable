@@ -1,16 +1,16 @@
 //! The approved comp as a fixed reference.
 //!
 //! Every comp-led gate measures against the comp the user approved. The comp
-//! sits at an editable path under `.impeccable/mocks/`, so an agent can edit it
+//! sits at an editable path under `.procable/mocks/`, so an agent can edit it
 //! (composite its own plates into it, regenerate it) until the reference matches
 //! the work, and then re-run `comp-spec` to move the spec's `compSha256` along
 //! with it. This module keeps the approved pixels out of reach of that loop:
 //!
 //! - when a comp is approved (`build-phase start --comp`, the comps gate
 //!   closing, or the first spec written for the build's comp) the engine keeps a
-//!   byte copy at `.impeccable/build/approved-comp.<ext>` and records its pixel
+//!   byte copy at `.procable/build/approved-comp.<ext>` and records its pixel
 //!   hash (the same identity `comp-spec` writes as `compSha256`) in
-//!   `.impeccable/build/approved-comp.json`;
+//!   `.procable/build/approved-comp.json`;
 //! - every entry point that measures against the comp calls [`issue`] first and
 //!   refuses, without measuring, when the comp's pixels no longer match;
 //! - `build-phase restore-comp` puts the kept copy back.
@@ -23,15 +23,15 @@
 
 use std::path::{Path, PathBuf};
 
-use impeccable_common::Io;
-use impeccable_comp::png_io;
-use impeccable_comp::raster::Image;
+use procable_common::Io;
+use procable_comp::png_io;
+use procable_comp::raster::Image;
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 use crate::comp_spec::{BUILD_DIR, SPEC_PATH};
 
-pub const RECORD_PATH: &str = ".impeccable/build/approved-comp.json";
+pub const RECORD_PATH: &str = ".procable/build/approved-comp.json";
 const COPY_STEM: &str = "approved-comp";
 
 /// The comp identity `comp-spec` records as `compSha256`: dimensions plus
@@ -144,7 +144,7 @@ pub fn issue_at(io: &Io, spec: &Value, spec_path: &str, s: &str) -> Option<Strin
     if same_file(io, spec_path, SPEC_PATH) { build_issue(io, spec, s) } else { issue(io, spec, s) }
 }
 
-/// [`issue`] for the build's own spec (`.impeccable/build/spec.json`): it must
+/// [`issue`] for the build's own spec (`.procable/build/spec.json`): it must
 /// also measure the recorded approved comp, not another file (a composite
 /// saved under a new name and re-specced is not the build's reference).
 pub fn build_issue(io: &Io, spec: &Value, s: &str) -> Option<String> {
@@ -277,14 +277,14 @@ pub fn restore(io: &Io) -> (String, i32) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use impeccable_comp::raster as r;
+    use procable_comp::raster as r;
 
     fn ws() -> (Io, PathBuf) {
         static NEXT: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-        let dir = std::env::temp_dir().join(format!("impeccable-approved-comp-{}-{}", std::process::id(),
+        let dir = std::env::temp_dir().join(format!("procable-approved-comp-{}-{}", std::process::id(),
             NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
         let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join(".impeccable/mocks")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/mocks")).unwrap();
         let (io, _) = Io::captured("", dir.clone(), Default::default());
         (io, dir)
     }
@@ -293,7 +293,7 @@ mod tests {
         png_io::encode_png(&r::create_image(8, 8, color), &[]).unwrap()
     }
 
-    const COMP: &str = ".impeccable/mocks/comp-1.png";
+    const COMP: &str = ".procable/mocks/comp-1.png";
 
     #[test]
     fn unchanged_comp_passes_and_a_metadata_rewrite_keeps_the_identity() {
@@ -301,10 +301,10 @@ mod tests {
         std::fs::write(dir.join(COMP), png([10, 20, 30, 255])).unwrap();
         let record = keep(&io, COMP).unwrap().unwrap();
         let spec = json!({"comp": COMP, "compSha256": record["pixelSha256"]});
-        assert_eq!(issue(&io, &spec, "impeccable"), None);
+        assert_eq!(issue(&io, &spec, "procable"), None);
         let tagged = png_io::encode_png(&r::create_image(8, 8, [10, 20, 30, 255]), &[("prompt".into(), "x".into())]).unwrap();
         std::fs::write(dir.join(COMP), tagged).unwrap();
-        assert_eq!(issue(&io, &spec, "impeccable"), None);
+        assert_eq!(issue(&io, &spec, "procable"), None);
     }
 
     #[test]
@@ -316,15 +316,15 @@ mod tests {
         let spec = json!({"comp": COMP, "compSha256": expected});
         std::fs::write(dir.join(COMP), png([200, 20, 30, 255])).unwrap();
         let actual = file_pixel_sha256(&io, COMP).unwrap();
-        let why = issue(&io, &spec, "impeccable").unwrap();
+        let why = issue(&io, &spec, "procable").unwrap();
         assert!(why.contains(&expected) && why.contains(&actual), "{why}");
         assert!(why.contains("never edit it, composite into it, or regenerate it"), "{why}");
-        assert!(why.contains("impeccable build-phase restore-comp"), "{why}");
+        assert!(why.contains("procable build-phase restore-comp"), "{why}");
         let (message, code) = restore(&io);
         assert_eq!(code, 0, "{message}");
         assert_eq!(file_pixel_sha256(&io, COMP).unwrap(), expected);
-        assert!(dir.join(format!(".impeccable/build/edited-comp-{}.png", &actual[..12])).exists());
-        assert_eq!(issue(&io, &spec, "impeccable"), None);
+        assert!(dir.join(format!(".procable/build/edited-comp-{}.png", &actual[..12])).exists());
+        assert_eq!(issue(&io, &spec, "procable"), None);
         assert_eq!(restore(&io).1, 0);
     }
 
@@ -334,7 +334,7 @@ mod tests {
         std::fs::write(dir.join(COMP), png([10, 20, 30, 255])).unwrap();
         let record = keep(&io, COMP).unwrap().unwrap();
         let spec = json!({"comp": COMP, "compSha256": "0".repeat(64)});
-        let why = issue(&io, &spec, "impeccable").unwrap();
+        let why = issue(&io, &spec, "procable").unwrap();
         assert!(why.contains("not the approved comp") && why.contains(record["pixelSha256"].as_str().unwrap()), "{why}");
     }
 
@@ -344,17 +344,17 @@ mod tests {
         std::fs::write(dir.join(COMP), png([10, 20, 30, 255])).unwrap();
         let hash = file_pixel_sha256(&io, COMP).unwrap();
         let spec = json!({"comp": COMP, "compSha256": hash});
-        assert_eq!(issue(&io, &spec, "impeccable"), None);
+        assert_eq!(issue(&io, &spec, "procable"), None);
         assert!(!dir.join(RECORD_PATH).exists(), "a spec at another path never pins the reference");
-        assert_eq!(build_issue(&io, &spec, "impeccable"), None);
-        assert!(dir.join(RECORD_PATH).exists() && dir.join(".impeccable/build/approved-comp.png").exists());
+        assert_eq!(build_issue(&io, &spec, "procable"), None);
+        assert!(dir.join(RECORD_PATH).exists() && dir.join(".procable/build/approved-comp.png").exists());
         forget(&io);
         std::fs::write(dir.join(COMP), png([1, 2, 3, 255])).unwrap();
-        let why = issue(&io, &spec, "impeccable").unwrap();
+        let why = issue(&io, &spec, "procable").unwrap();
         assert!(why.contains("No intact engine copy"), "{why}");
         assert_eq!(restore(&io).1, 1);
         // No recorded identity at all: nothing to check against.
-        assert_eq!(issue(&io, &json!({"comp": COMP}), "impeccable"), None);
+        assert_eq!(issue(&io, &json!({"comp": COMP}), "procable"), None);
     }
 
     #[test]
@@ -362,7 +362,7 @@ mod tests {
         let (io, dir) = ws();
         std::fs::write(dir.join(COMP), png([10, 20, 30, 255])).unwrap();
         keep(&io, COMP).unwrap().unwrap();
-        std::fs::write(dir.join(".impeccable/build/approved-comp.png"), png([9, 9, 9, 255])).unwrap();
+        std::fs::write(dir.join(".procable/build/approved-comp.png"), png([9, 9, 9, 255])).unwrap();
         std::fs::write(dir.join(COMP), png([200, 20, 30, 255])).unwrap();
         assert_eq!(restore(&io).1, 2);
         assert_eq!(file_pixel_sha256(&io, COMP), Some(pixel_sha256(&r::create_image(8, 8, [200, 20, 30, 255]))));

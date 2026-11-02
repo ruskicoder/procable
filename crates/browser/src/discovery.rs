@@ -3,7 +3,7 @@
 //! first, then bundled); the binary downloads nothing, so it discovers an
 //! installed browser instead. Order:
 //!
-//! 1. `IMPECCABLE_BROWSER` (explicit override)
+//! 1. `PROCABLE_BROWSER` (explicit override)
 //! 2. `PUPPETEER_EXECUTABLE_PATH` (what puppeteer honors)
 //! 3. `CHROME_PATH` (chrome-launcher convention)
 //! 4. Per-OS standard locations: Google Chrome, Chromium, Microsoft Edge,
@@ -15,13 +15,13 @@ use std::path::{Path, PathBuf};
 
 /// Env keys consulted, in order.
 pub const ENV_KEYS: [&str; 3] = [
-    "IMPECCABLE_BROWSER",
+    "PROCABLE_BROWSER",
     "PUPPETEER_EXECUTABLE_PATH",
     "CHROME_PATH",
 ];
 
 /// Message when nothing is found (rendered by detect as `Error: ${message}`).
-pub const NOT_FOUND_MESSAGE: &str = "No Chrome, Chromium, Edge, or Brave installation found for URL scanning. Install Google Chrome, or point IMPECCABLE_BROWSER at a Chromium-based browser executable.";
+pub const NOT_FOUND_MESSAGE: &str = "No Chrome, Chromium, Edge, or Brave installation found for URL scanning. Install Google Chrome, or point PROCABLE_BROWSER at a Chromium-based browser executable.";
 
 /// Locate a browser executable, honoring env overrides then standard paths.
 /// An env override that names a missing file is reported instead of being
@@ -151,15 +151,15 @@ mod tests {
     fn env_override_wins_and_missing_override_errors() {
         let mut env = HashMap::new();
         env.insert(
-            "IMPECCABLE_BROWSER".to_string(),
+            "PROCABLE_BROWSER".to_string(),
             "/definitely/missing".to_string(),
         );
         let err = find_browser(&env).unwrap_err();
         assert!(err.contains("/definitely/missing"));
-        assert!(err.contains("IMPECCABLE_BROWSER"));
+        assert!(err.contains("PROCABLE_BROWSER"));
         let me = std::env::current_exe().unwrap();
         env.insert(
-            "IMPECCABLE_BROWSER".to_string(),
+            "PROCABLE_BROWSER".to_string(),
             me.to_string_lossy().to_string(),
         );
         assert_eq!(find_browser(&env).unwrap(), me);

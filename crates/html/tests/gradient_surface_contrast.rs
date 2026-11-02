@@ -3,11 +3,11 @@
 //! glyph, the gradient named as the source, and the ink's alpha and the
 //! opacity of the boxes around it blended before scoring.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::Path;
 
 fn repo_root() -> std::path::PathBuf {
-    std::env::var("IMPECCABLE_PUBLIC_REPO")
+    std::env::var("PROCABLE_PUBLIC_REPO")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }
@@ -120,7 +120,7 @@ body{
     assert!(snippets.is_empty(), "{snippets:?}");
     // A paren inside a quoted URL does not end the image or hide the colour.
     for value in ["url('a(1.png') #000", "url('x)red.png') #000"] {
-        let color = impeccable_html::cascade::expand_static_declaration("background", value)
+        let color = procable_html::cascade::expand_static_declaration("background", value)
             .into_iter()
             .find(|(k, _)| k == "backgroundColor")
             .map(|(_, v)| v);

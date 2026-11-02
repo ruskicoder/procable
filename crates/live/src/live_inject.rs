@@ -1,6 +1,6 @@
-//! JS: live-inject.mjs -> `impeccable live-inject`. Insert / remove / check
+//! JS: live-inject.mjs -> `procable live-inject`. Insert / remove / check
 //! the live script tag (or framework adapter) named by
-//! `.impeccable/live/config.json`.
+//! `.procable/live/config.json`.
 
 use crate::config::{resolve_files, validate_config, LiveConfig};
 use crate::gitignore::ensure_live_git_ignores;
@@ -15,18 +15,18 @@ use crate::journal::{
 use crate::paths::resolve_live_config_path;
 use crate::roots::enter_live_root;
 use crate::util::{eprintln, exists, json_compact, jsp, println, read_json, safe_read, write_file};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
 
-const HELP: &str = "Usage: impeccable live-inject [options]
+const HELP: &str = "Usage: procable live-inject [options]
 
 Insert or remove the live mode script tag in the project's HTML entry point.
-Reads configuration from .impeccable/live/config.json.
+Reads configuration from .procable/live/config.json.
 
 Modes:
   --port PORT   Insert script tag pointing at http://localhost:PORT/live.js
   --remove      Remove the script tag (if present)
-  --check       Print whether .impeccable/live/config.json exists and its content
+  --check       Print whether .procable/live/config.json exists and its content
 
 Output (JSON):
   { ok, file, inserted|removed, config? }";
@@ -187,7 +187,7 @@ pub fn inject_cli(args: &[String], io: &mut Io) -> i32 {
         .cloned()
         .filter(|t| !t.is_empty());
     if token.is_none() {
-        if let Some(info) = read_json(&jsp::join(&[&cwd, ".impeccable", "live", "server.json"])) {
+        if let Some(info) = read_json(&jsp::join(&[&cwd, ".procable", "live", "server.json"])) {
             let t = info
                 .get("token")
                 .filter(|v| crate::inject::detect_utils::truthy(v));
@@ -211,7 +211,7 @@ pub fn inject_cli(args: &[String], io: &mut Io) -> i32 {
     let (healed, _) = heal_inject_journal(&cwd, &keep);
 
     let git_ignore = ensure_live_git_ignores(&cwd, &framework_ignore_patterns(resolved.as_ref()));
-    if let Some(m) = read_json(&jsp::join(&[&cwd, ".impeccable", "live", "roots.json"])) {
+    if let Some(m) = read_json(&jsp::join(&[&cwd, ".procable", "live", "roots.json"])) {
         if let Some(repo_root) = m
             .get("repoRoot")
             .and_then(|r| r.as_str())
@@ -321,7 +321,7 @@ pub fn inject_cli(args: &[String], io: &mut Io) -> i32 {
 
 /// JS: parseInt(v, 10) → finite number or None.
 fn parse_int_prefix(v: &str) -> Option<i64> {
-    let f = impeccable_core::js::parse_int(v, 10);
+    let f = procable_core::js::parse_int(v, 10);
     if f.is_finite() {
         Some(f as i64)
     } else {

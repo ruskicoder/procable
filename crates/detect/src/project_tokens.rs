@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use impeccable_core::checks::css_scan::{collect_css_custom_props, CustomProps};
+use procable_core::checks::css_scan::{collect_css_custom_props, CustomProps};
 
 use crate::file_system::SKIP_DIRS;
 use crate::jsp;
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn tokens_come_from_every_sheet_in_the_project() {
-        let dir = std::env::temp_dir().join(format!("impeccable-tokens-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-tokens-{}", std::process::id()));
         let root = dir.to_string_lossy().into_owned();
         std::fs::create_dir_all(dir.join("design-system")).unwrap();
         std::fs::create_dir_all(dir.join("app/src")).unwrap();
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn an_apps_own_tokens_beat_a_sibling_apps_and_shared_ones_still_resolve() {
-        let dir = std::env::temp_dir().join(format!("impeccable-tokens-{}-monorepo", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-tokens-{}-monorepo", std::process::id()));
         let root = dir.to_string_lossy().into_owned();
         std::fs::create_dir_all(dir.join(".git")).unwrap();
         std::fs::create_dir_all(dir.join("packages/ui")).unwrap();
@@ -238,7 +238,7 @@ mod tests {
 
     #[test]
     fn a_package_above_the_checkout_is_not_a_root() {
-        let dir = std::env::temp_dir().join(format!("impeccable-tokens-{}-above", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-tokens-{}-above", std::process::id()));
         std::fs::create_dir_all(dir.join("site/.git")).unwrap();
         std::fs::write(dir.join("package.json"), "{}").unwrap();
         let file = dir.join("site/templates/table.html").to_string_lossy().into_owned();

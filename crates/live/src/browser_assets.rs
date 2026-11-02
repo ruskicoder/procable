@@ -4,7 +4,7 @@
 //! installed skill can never disagree. The `/detect.js` fallback is the
 //! in-page detector bundle, a tracked generated file under `../assets/`
 //! (`cargo xtask bundle` writes it). When a skill directory with the part
-//! files is available (`IMPECCABLE_SKILL_DIR`), the parts are re-read from disk
+//! files is available (`PROCABLE_SKILL_DIR`), the parts are re-read from disk
 //! on every request like the JS, so edits land on the next tab reload.
 
 use crate::util::{exists, jsp, safe_read, Env};
@@ -36,7 +36,7 @@ pub const LIVE_BROWSER_SCRIPT_PARTS: [(&str, &str, &str); 4] = [
 
 /// The scripts dir the JS resolved parts against, when a skill dir is known.
 pub fn scripts_dir(env: &Env, cwd: &str) -> Option<String> {
-    impeccable_context::provider::detect(env, cwd)
+    procable_context::provider::detect(env, cwd)
         .skill_dir
         .map(|d| jsp::join(&[&d, "scripts"]))
 }
@@ -59,7 +59,7 @@ pub fn read_live_browser_script_parts(
                         out.push((*name, *file, String::from_utf8_lossy(&bytes).into_owned()))
                     }
                     Err(e) => {
-                        return Err(impeccable_context::util::node_read_error(&path, &e));
+                        return Err(procable_context::util::node_read_error(&path, &e));
                     }
                 }
             }
@@ -84,48 +84,48 @@ pub fn assemble_live_browser_script(
     live_bar_hidden: bool,
 ) -> String {
     let mut out = String::new();
-    out.push_str(&format!("window.__IMPECCABLE_TOKEN__ = '{}';\n", token));
-    out.push_str(&format!("window.__IMPECCABLE_PORT__ = {};\n", port));
+    out.push_str(&format!("window.__PROCABLE_TOKEN__ = '{}';\n", token));
+    out.push_str(&format!("window.__PROCABLE_PORT__ = {};\n", port));
     // The generate lane's helper-wide bar preference, known before the
     // overlay mounts anything, so the bar is never drawn and then hidden.
     // A plain helper serves exactly the script it always served.
     if live_bar_hidden {
-        out.push_str("window.__IMPECCABLE_LIVE_BAR_HIDDEN__ = true;\n");
+        out.push_str("window.__PROCABLE_LIVE_BAR_HIDDEN__ = true;\n");
     }
     out.push_str(&format!(
-        "window.__IMPECCABLE_APP_ROOT__ = {};\n",
+        "window.__PROCABLE_APP_ROOT__ = {};\n",
         serde_json::to_string(&Value::String(app_root.to_string())).unwrap_or_default()
     ));
     out.push_str(&format!(
-        "window.__IMPECCABLE_COMMAND_PREFIX__ = {};\n",
+        "window.__PROCABLE_COMMAND_PREFIX__ = {};\n",
         serde_json::to_string(&Value::String(command_prefix.to_string())).unwrap_or_default()
     ));
     out.push_str(&format!(
-        "window.__IMPECCABLE_VOCAB__ = {};\n",
+        "window.__PROCABLE_VOCAB__ = {};\n",
         serde_json::to_string(&live_commands()).unwrap_or_default()
     ));
     out.push_str(&format!(
-        "window.__IMPECCABLE_LIVE_UI_SURFACES__ = {};\n",
+        "window.__PROCABLE_LIVE_UI_SURFACES__ = {};\n",
         serde_json::to_string(&live_ui_surfaces()).unwrap_or_default()
     ));
     out.push_str(&format!(
-        "window.__IMPECCABLE_LIVE_MOUNT_CONTRACT__ = {};\n",
+        "window.__PROCABLE_LIVE_MOUNT_CONTRACT__ = {};\n",
         serde_json::to_string(&json!(LIVE_CHROME_MOUNT_CONTRACT)).unwrap_or_default()
     ));
     // Project detector waivers ({ ignoreRules, ignoreValues, ignoreFiles,
-    // roots, pageFiles }), read from .impeccable config by the live server.
+    // roots, pageFiles }), read from .procable config by the live server.
     // live-browser-ignores.js resolves them against the page when a detect
     // scan starts, so the overlay filters the same findings the CLI and the
     // edit hook do (issue #639).
     out.push_str(&format!(
-        "window.__IMPECCABLE_PROJECT_IGNORES__ = {};\n",
+        "window.__PROCABLE_PROJECT_IGNORES__ = {};\n",
         serde_json::to_string(project_ignores).unwrap_or_default()
     ));
     let body: Vec<String> = parts
         .iter()
         .map(|(name, file, source)| {
             format!(
-                "// --- impeccable live script part: {} ({}) ---\n{}",
+                "// --- procable live script part: {} ({}) ---\n{}",
                 name, file, source
             )
         })
@@ -166,7 +166,7 @@ pub fn load_detect_script(env: &Env, cwd: &str) -> String {
     candidates.push(jsp::join(&[
         cwd,
         "node_modules",
-        "impeccable",
+        "procable",
         "cli",
         "engine",
         "detect-antipatterns-browser.js",

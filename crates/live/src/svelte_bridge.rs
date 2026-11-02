@@ -35,7 +35,7 @@ impl Drop for Bridge {
 
 impl Bridge {
     fn spawn(app_root: &str) -> Option<Bridge> {
-        let mut child = Command::new(impeccable_common::proc::node_exe())
+        let mut child = Command::new(procable_common::proc::node_exe())
             .args(["--input-type=module", "-e", HELPER_JS, "--", app_root])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())

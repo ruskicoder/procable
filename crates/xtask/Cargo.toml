@@ -10,4 +10,4 @@ name = "xtask"
 path = "src/main.rs"
 
 [dependencies]
-impeccable-bundle = { workspace = true }
+procable-bundle = { workspace = true }

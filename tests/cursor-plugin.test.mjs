@@ -10,8 +10,8 @@ import { collectPluginVersions } from '../scripts/lib/validate-plugin-versions.j
 import { readSourceFiles } from '../scripts/lib/utils.js';
 import { createTransformer, PROVIDERS } from '../scripts/lib/transformers/index.js';
 
-const scripts = '.cursor/skills/impeccable/scripts';
-const sample = `---\nname: impeccable\ndescription: Design\n---\nRun \`${scripts}/impeccable context\`, and \`${scripts}\` is the fallback only when the runtime reports no base directory. Windows: \`${scripts}/impeccable.cmd context\`.\n`;
+const scripts = '.cursor/skills/procable/scripts';
+const sample = `---\nname: procable\ndescription: Design\n---\nRun \`${scripts}/procable context\`, and \`${scripts}\` is the fallback only when the runtime reports no base directory. Windows: \`${scripts}/procable.cmd context\`.\n`;
 
 describe('Cursor native plugin', () => {
   let root;
@@ -21,16 +21,16 @@ describe('Cursor native plugin', () => {
     fs.writeFileSync(file, content);
   };
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-cursor-plugin-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-cursor-plugin-'));
     write('.claude-plugin/plugin.json', JSON.stringify({ version: '4.2.2', homepage: 'https://impeccable.style', repository: 'https://github.com/pbakaus/impeccable' }));
     write('scripts/lib/assets/plugin-icon.png', 'icon');
     write('docs/CURSOR-PLUGIN.md', 'Readme');
     write('LICENSE', 'license');
-    write('dist/cursor/.cursor/skills/impeccable/SKILL.md', sample);
-    write('dist/cursor/.cursor/skills/impeccable/reference/polish.md', sample);
-    write('dist/cursor/.cursor/skills/impeccable/scripts/impeccable', '#!/bin/sh\nprintf "%s\\n" "$PWD" "$1"\ncat\nexit 2\n');
-    fs.chmodSync(path.join(root, 'dist/cursor/.cursor/skills/impeccable/scripts/impeccable'), 0o755);
-    write('dist/cursor/.cursor/agents/impeccable-asset-producer.md', sample);
+    write('dist/cursor/.cursor/skills/procable/SKILL.md', sample);
+    write('dist/cursor/.cursor/skills/procable/reference/polish.md', sample);
+    write('dist/cursor/.cursor/skills/procable/scripts/procable', '#!/bin/sh\nprintf "%s\\n" "$PWD" "$1"\ncat\nexit 2\n');
+    fs.chmodSync(path.join(root, 'dist/cursor/.cursor/skills/procable/scripts/procable'), 0o755);
+    write('dist/cursor/.cursor/agents/procable-asset-producer.md', sample);
   });
   afterEach(() => fs.rmSync(root, { recursive: true, force: true }));
 
@@ -41,16 +41,16 @@ describe('Cursor native plugin', () => {
     assert.equal(manifest.skills, './skills/');
     assert.equal(manifest.agents, './agents/');
     for (const rel of [manifest.logo, manifest.hooks, 'README.md', 'LICENSE']) assert.ok(fs.existsSync(path.join(output, rel)));
-    for (const rel of ['skills/impeccable/SKILL.md', 'skills/impeccable/reference/polish.md', 'agents/impeccable-asset-producer.md']) {
+    for (const rel of ['skills/procable/SKILL.md', 'skills/procable/reference/polish.md', 'agents/procable-asset-producer.md']) {
       const text = fs.readFileSync(path.join(output, rel), 'utf8');
       assert.doesNotMatch(text, /\.cursor\/skills|fallback only/);
-      assert.match(text, /"<skill-base-dir>\/scripts\/impeccable" context/);
-      assert.match(text, /& "<skill-base-dir>\/scripts\/impeccable\.cmd" context/);
-      assert.doesNotMatch(text, /& "<skill-base-dir>\/scripts\/impeccable"/);
+      assert.match(text, /"<skill-base-dir>\/scripts\/procable" context/);
+      assert.match(text, /& "<skill-base-dir>\/scripts\/procable\.cmd" context/);
+      assert.doesNotMatch(text, /& "<skill-base-dir>\/scripts\/procable"/);
     }
-    assert.match(fs.readFileSync(path.join(output, 'agents/impeccable-asset-producer.md'), 'utf8'), /supplied in the handoff/);
-    assert.equal(fs.statSync(path.join(output, 'skills/impeccable/scripts/impeccable')).mode & 0o111, 0o111);
-    assert.equal(fs.readFileSync(path.join(root, 'dist/cursor/.cursor/skills/impeccable/SKILL.md'), 'utf8'), sample);
+    assert.match(fs.readFileSync(path.join(output, 'agents/procable-asset-producer.md'), 'utf8'), /supplied in the handoff/);
+    assert.equal(fs.statSync(path.join(output, 'skills/procable/scripts/procable')).mode & 0o111, 0o111);
+    assert.equal(fs.readFileSync(path.join(root, 'dist/cursor/.cursor/skills/procable/SKILL.md'), 'utf8'), sample);
     write('dist/cursor-plugin/stale.txt', 'stale');
     stageCursorPlugin(root, path.join(root, 'dist'));
     assert.equal(fs.existsSync(path.join(output, 'stale.txt')), false);
@@ -67,7 +67,7 @@ describe('Cursor native plugin', () => {
     const result = spawnSync('sh', ['-c', command], { cwd: root, input: '{"tool_name":"Edit"}\n', encoding: 'utf8' });
     assert.equal(result.status, 2, result.stderr);
     assert.equal(result.stdout, `${fs.realpathSync(root)}\nhook\n{"tool_name":"Edit"}\n`);
-    assert.match(buildCursorHooksManifest().hooks.postToolUse[0].command, /\.cursor\/skills\/impeccable/);
+    assert.match(buildCursorHooksManifest().hooks.postToolUse[0].command, /\.cursor\/skills\/procable/);
   });
 
   it('does not add path prose to agents that do not use scripts', () => {
@@ -77,7 +77,7 @@ describe('Cursor native plugin', () => {
   it('detects version drift in both staged and tracked Cursor artifacts', () => {
     for (const prefix of ['cursor-plugin', 'dist/cursor-plugin']) {
       write(`${prefix}/.cursor-plugin/plugin.json`, JSON.stringify({ version: '0.0.1' }));
-      write(`${prefix}/skills/impeccable/SKILL.md`, '---\nversion: 0.0.1\n---\n');
+      write(`${prefix}/skills/procable/SKILL.md`, '---\nversion: 0.0.1\n---\n');
     }
     assert.equal(collectPluginVersions(root).mismatches.length, 4);
   });
@@ -105,7 +105,7 @@ describe('Cursor native plugin', () => {
     for (const rel of fs.readdirSync(output, { recursive: true }).filter(file => file.endsWith('.md'))) {
       const filename = path.join(output, rel);
       const text = fs.readFileSync(filename, 'utf8');
-      assert.doesNotMatch(text, /\.cursor\/skills\/impeccable\/scripts|\{\{scripts_path\}\}|fallback only when/);
+      assert.doesNotMatch(text, /\.cursor\/skills\/procable\/scripts|\{\{scripts_path\}\}|fallback only when/);
       for (const match of text.matchAll(/\]\(([^)\s]+)\)/g)) {
         if (!/^(reference|scripts)\//.test(match[1])) continue;
         assert.ok(fs.existsSync(path.resolve(path.dirname(filename), match[1].split('#')[0])), `${rel}: ${match[1]}`);
@@ -113,8 +113,8 @@ describe('Cursor native plugin', () => {
       }
     }
     assert.ok(links > 20);
-    assert.equal(fs.existsSync(path.join(output, 'skills/impeccable/scripts/bin')), false);
-    const entrypoint = fs.readFileSync(path.join(output, 'skills/impeccable/SKILL.md'), 'utf8');
-    assert.match(entrypoint, /Run `"<skill-base-dir>\/scripts\/impeccable" context` once per session/);
+    assert.equal(fs.existsSync(path.join(output, 'skills/procable/scripts/bin')), false);
+    const entrypoint = fs.readFileSync(path.join(output, 'skills/procable/SKILL.md'), 'utf8');
+    assert.match(entrypoint, /Run `"<skill-base-dir>\/scripts\/procable" context` once per session/);
   });
 });

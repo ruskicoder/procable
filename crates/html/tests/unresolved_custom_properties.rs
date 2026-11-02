@@ -1,4 +1,4 @@
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::cell::RefCell;
 use std::path::Path;
 

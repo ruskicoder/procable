@@ -10,8 +10,8 @@
 //! hand-edited signed-number cases (see `cascade::rules`, "Signed numbers
 //! keep their space").
 
-use impeccable_html::cascade::rules::{collect_static_css_rules, CssRule};
-use impeccable_html::cascade::values::unwrap_css_at_layer;
+use procable_html::cascade::rules::{collect_static_css_rules, CssRule};
+use procable_html::cascade::values::unwrap_css_at_layer;
 use serde_json::Value;
 
 fn rules_to_json(rules: &[CssRule]) -> Value {

@@ -127,7 +127,7 @@ pub struct SourceTraits {
     pub inject_script_attrs: &'static str,
 }
 
-const DEFAULT_STYLE_TAG: &str = "<style data-impeccable-css=\"SESSION_ID\">";
+const DEFAULT_STYLE_TAG: &str = "<style data-procable-css=\"SESSION_ID\">";
 
 /// JS: resolveSourceTraits(filePath)
 pub fn resolve_source_traits(file_path: &str) -> SourceTraits {
@@ -158,7 +158,7 @@ pub fn resolve_source_traits(file_path: &str) -> SourceTraits {
         ".astro" => SourceTraits {
             framework: Some(FrameworkName::Astro),
             style_mode: "astro-global-prefixed",
-            style_tag: "<style is:inline data-impeccable-css=\"SESSION_ID\">",
+            style_tag: "<style is:inline data-procable-css=\"SESSION_ID\">",
             inject_script_attrs: "is:inline ",
             ..base
         },

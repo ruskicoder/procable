@@ -1,6 +1,6 @@
 # Framework fixtures
 
-Representative project shapes for exercising live mode against different framework conventions. Each fixture is a small directory tree that the test harness copies into a temp git repo, then drives the engine binary's `live-inject`, `live-wrap`, `live-accept`, and `detect-csp` verbs against (via `tests/lib/engine-bin.mjs`: `IMPECCABLE_BIN` or `skill/scripts/bin/<os>-<arch>/`, filled by `bun run fetch:engine`; the sweeps skip without a binary).
+Representative project shapes for exercising live mode against different framework conventions. Each fixture is a small directory tree that the test harness copies into a temp git repo, then drives the engine binary's `live-inject`, `live-wrap`, `live-accept`, and `detect-csp` verbs against (via `tests/lib/engine-bin.mjs`: `PROCABLE_BIN` or `skill/scripts/bin/<os>-<arch>/`, filled by `bun run fetch:engine`; the sweeps skip without a binary).
 
 Fixtures can also opt into a **runtime E2E** pass that actually installs dependencies, boots the framework dev server, and drives a Playwright browser to verify the live handshake. See the `runtime` block below.
 
@@ -18,7 +18,7 @@ Fixtures can also opt into a **runtime E2E** pass that actually installs depende
 ```json
 {
   "name": "human-readable label",
-  "config": { ...contents for .impeccable/live/config.json ... },
+  "config": { ...contents for .procable/live/config.json ... },
   "sourceFiles": ["paths that is-generated should classify as source (false)"],
   "generatedFiles": ["paths that is-generated should classify as generated (true)"],
   "wrapCases": [
@@ -52,7 +52,7 @@ Fixtures can also opt into a **runtime E2E** pass that actually installs depende
     "stateProbe": {
       "textSelector": "[data-testid='open-count']",
       "expectedText": "3 offen",
-      "windowProperty": "__impeccableStatefulMounts",
+      "windowProperty": "__procableStatefulMounts",
       "expectedWindowValue": 1,
       "expectWindowUnchanged": true
     },
@@ -103,9 +103,9 @@ The `runtime` block is optional. Fixtures without it only run the static checks 
 
 1. Stages the fixture into a tmp repo.
 2. Runs `runtime.install` to install real deps.
-3. Starts `impeccable live-server --background` and runs `impeccable live-inject --port` against it.
+3. Starts `procable live-server --background` and runs `procable live-inject --port` against it.
 4. Spawns `runtime.devCommand` and scrapes the port from stdout using `runtime.readyPattern` (the first capture group must be the port).
-5. Opens Playwright Chromium at the dev URL and asserts `window.__IMPECCABLE_LIVE_INIT__ === true` (the browser-side handshake oracle) within `runtime.readyTimeoutMs`.
+5. Opens Playwright Chromium at the dev URL and asserts `window.__PROCABLE_LIVE_INIT__ === true` (the browser-side handshake oracle) within `runtime.readyTimeoutMs`.
 6. Runs a **Steer smoke** step (unless `runtime.steer === false`): submit a message in the global Steer bar, wait for the fake agent to reply `steer_done`, assert the bar unlocks and a `data-e2e-steer` marker lands in source + DOM. Then continues with pick → Go → cycle → accept.
 7. Tears everything down (Playwright close, dev server SIGTERM, live-server stop, tmp rm).
 
@@ -114,9 +114,9 @@ The `runtime` block is optional. Fixtures without it only run the static checks 
 Optional, defaults to `.`. Set it when the served app is **not** the repo root, the shape live mode has to resolve on its own (a CLI package at the root with the site in `website/`, for example). With `appDir` set, the harness:
 
 - stages `files/` and runs `git init` at the tmp root, as always;
-- writes `.impeccable/live/config.json` under `<tmp>/<appDir>/`, and treats every fixture-relative path in `fixture.json` (`steer.sourceFile`, manual-edit `expectedSourceFile`, and so on) as relative to that app dir;
+- writes `.procable/live/config.json` under `<tmp>/<appDir>/`, and treats every fixture-relative path in `fixture.json` (`steer.sourceFile`, manual-edit `expectedSourceFile`, and so on) as relative to that app dir;
 - runs `runtime.install` and `runtime.devCommand` with the app dir as cwd;
-- boots through `impeccable live` **from the tmp root** instead of calling `live-server` and `live-inject` directly, so the run exercises the engine's root resolution rather than assuming it. The parsed boot payload is exposed as `session.liveBoot`, and `tests/live-e2e.test.mjs` asserts on `roots.appRoot`, `roots.contextRoot`, the persisted `roots.json`, and the repo-root pointer.
+- boots through `procable live` **from the tmp root** instead of calling `live-server` and `live-inject` directly, so the run exercises the engine's root resolution rather than assuming it. The parsed boot payload is exposed as `session.liveBoot`, and `tests/live-e2e.test.mjs` asserts on `roots.appRoot`, `roots.contextRoot`, the persisted `roots.json`, and the repo-root pointer.
 
 The session object carries both paths: `session.tmp` is the repo root (use it for git and for artifact capture) and `session.appRoot` is the app. They are the same directory for every fixture without `appDir`.
 
@@ -150,7 +150,7 @@ variants land, and (outside component previews) after accept.
 ### Extra scenarios
 
 Beyond the core cycle, a fixture opts into scenarios by declaring their config.
-Each one is also gated by `IMPECCABLE_E2E_SCENARIOS`:
+Each one is also gated by `PROCABLE_E2E_SCENARIOS`:
 
 | Scenario name | Enabled by | What it proves |
 |---|---|---|
@@ -165,15 +165,15 @@ preActions: the reload discards that state, and re-creating it races the
 preview mount.
 
 These scenarios assert on deterministic content, so they skip under
-`IMPECCABLE_E2E_AGENT=llm`.
+`PROCABLE_E2E_AGENT=llm`.
 
 One gotcha: `tests/framework-fixtures.test.mjs` stages the same fixture flat and writes the live config at the tmp root, so `config.files` has to resolve from both the repo root and the app root. A glob (`"**/index.html"`) satisfies both; a literal `"index.html"` only works from the app root and makes the static sweep report `file_not_found`.
 
 Useful runtime E2E filters:
 
-- `IMPECCABLE_E2E_ONLY=<fixture>[,<fixture>]` scopes the run to selected fixture names.
-- `IMPECCABLE_E2E_SCENARIOS=core` runs only the main click → Go → cycle → accept path; omit it or use `all` to include manual edit, annotation, exit, params, and the component failure-injection probes. Names: `core`, `manual`, `annotations`, `exit`, `missed-done`, `params`, `mount-failure`, `republish`, `storage-loss`.
-- `IMPECCABLE_E2E_TEST_TIMEOUT_MS`, `IMPECCABLE_E2E_INSTALL_TIMEOUT_MS`, and `IMPECCABLE_E2E_DEV_READY_TIMEOUT_MS` tighten CI smoke timeouts without changing fixture metadata.
+- `PROCABLE_E2E_ONLY=<fixture>[,<fixture>]` scopes the run to selected fixture names.
+- `PROCABLE_E2E_SCENARIOS=core` runs only the main click → Go → cycle → accept path; omit it or use `all` to include manual edit, annotation, exit, params, and the component failure-injection probes. Names: `core`, `manual`, `annotations`, `exit`, `missed-done`, `params`, `mount-failure`, `republish`, `storage-loss`.
+- `PROCABLE_E2E_TEST_TIMEOUT_MS`, `PROCABLE_E2E_INSTALL_TIMEOUT_MS`, and `PROCABLE_E2E_DEV_READY_TIMEOUT_MS` tighten CI smoke timeouts without changing fixture metadata.
 
 Optional `runtime.steer` fields:
 

@@ -26,7 +26,7 @@ let base;
 
 before(async () => {
   server = http.createServer((req, res) => {
-    if (req.url.startsWith('/npm/@impeccable%2fcli-') && req.url.endsWith(`/${VERSION}`)) {
+    if (req.url.startsWith('/npm/@procable%2fcli-') && req.url.endsWith(`/${VERSION}`)) {
       res.writeHead(200);
       res.end('{}');
       return;
@@ -49,7 +49,7 @@ before(async () => {
 after(() => new Promise((resolve) => server.close(resolve)));
 
 function stageRoot() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-check-release-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-check-release-'));
   fs.mkdirSync(path.join(root, 'skill', 'scripts'), { recursive: true });
   return { root, manifest: path.join(root, 'skill', 'scripts', 'engine-checksums.txt') };
 }
@@ -92,7 +92,7 @@ describe('engine checksum manifest', () => {
 });
 
 describe('fetch-engine verification', () => {
-  // A target other than this host's, so IMPECCABLE_BIN never short-circuits the download.
+  // A target other than this host's, so PROCABLE_BIN never short-circuits the download.
   const target = ENGINE_TARGETS.find((t) => t !== currentTarget());
   const line = (sum) => `# test\n${VERSION} ${assetName(target)} ${sum}\n`;
   const fetchWith = (manifestText) => {

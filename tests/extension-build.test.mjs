@@ -156,7 +156,7 @@ describe('extension DevTools packaging', () => {
 
     assert.match(
       source,
-      /chrome\.devtools\.panels\.create\(\s*['"]Impeccable['"],\s*['"]\/icons\/icon-32\.png['"],\s*['"]\/devtools\/panel\.html['"]\s*\)/s,
+      /chrome\.devtools\.panels\.create\(\s*['"]Procable['"],\s*['"]\/icons\/icon-32\.png['"],\s*['"]\/devtools\/panel\.html['"]\s*\)/s,
       'Firefox resolves DevTools URLs relative to devtools.html unless they start at the extension root',
     );
     assert.match(source, /sidebar\.setPage\(['"]\/devtools\/sidebar\.html['"]\)/);

@@ -3,7 +3,7 @@
  *
  * The shim is the last resort in the binary lookup, and it caches what it
  * fetches, so it has to fail closed the same way the skill launcher
- * (`skill/scripts/impeccable`) and `impeccable install`
+ * (`skill/scripts/procable`) and `procable install`
  * (`crates/skills/src/engine_binary.rs`) do: the digest comes from
  * `skill/scripts/engine-checksums.txt`, never from the release server. No line
  * for the version and asset refuses before any request, a payload that
@@ -16,7 +16,7 @@
  * Two things keep these cases honest about which lookup arm they exercise.
  * First, the shim runs from a staged copy (`<tmp>/cli/bin/cli.js` beside a
  * copy of the repo's package.json) with no node_modules anywhere under it, so
- * `require.resolve('@impeccable/cli-<os>-<arch>')` fails the way it does on a
+ * `require.resolve('@procable/cli-<os>-<arch>')` fails the way it does on a
  * machine without the optional dependency. Those platform packages are a
  * release prerequisite, so a test run from the repo would otherwise start
  * resolving them and pass without ever reaching the download. Second, the
@@ -41,7 +41,7 @@ const PKG_PATH = path.join(REPO, 'package.json');
 const VERSION = fs.readFileSync(path.join(REPO, 'skill', 'scripts', 'VERSION'), 'utf8').trim();
 const TARGET = `${{ darwin: 'darwin', linux: 'linux', win32: 'windows' }[process.platform] || process.platform}`
   + `-${{ arm64: 'arm64', x64: 'x64' }[process.arch] || process.arch}`;
-const ASSET = `impeccable-${TARGET}${process.platform === 'win32' ? '.exe' : ''}`;
+const ASSET = `procable-${TARGET}${process.platform === 'win32' ? '.exe' : ''}`;
 const ASSET_PATH = `/engine-v${VERSION}/${ASSET}`;
 
 // A stand-in engine binary: a script that prints its argv so a successful
@@ -81,7 +81,7 @@ beforeEach(() => { requests = []; });
  * above it.
  */
 function stageShim(line = `${VERSION} ${ASSET} ${DIGEST}`) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-shim-'));
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-shim-'));
   fs.mkdirSync(path.join(dir, 'cli', 'bin'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'skill', 'scripts'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'skill', 'scripts', 'engine-checksums.txt'), `# test manifest\n\n${line}\n`);
@@ -112,7 +112,7 @@ function run(shim, args, env) {
  * binary that is unstamped, or stamped with `stamp` and aged `stampAge` ms.
  * `nodeOptions` and `exe` let a case pose as another platform.
  */
-async function runShim(args = ['engine-probe'], { line, cached, stamp, stampAge = 0, exe = 'impeccable', nodeOptions } = {}) {
+async function runShim(args = ['engine-probe'], { line, cached, stamp, stampAge = 0, exe = 'procable', nodeOptions } = {}) {
   const { dir, shim } = stageShim(line);
   if (cached) {
     const bin = path.join(dir, 'bin', VERSION, exe);
@@ -126,8 +126,8 @@ async function runShim(args = ['engine-probe'], { line, cached, stamp, stampAge 
       }
     }
   }
-  const env = { ...process.env, IMPECCABLE_HOME: dir, IMPECCABLE_DOWNLOAD_BASE: base };
-  delete env.IMPECCABLE_BIN;
+  const env = { ...process.env, PROCABLE_HOME: dir, PROCABLE_DOWNLOAD_BASE: base };
+  delete env.PROCABLE_BIN;
   if (nodeOptions) env.NODE_OPTIONS = nodeOptions;
   return { ...(await run(shim, args, env)), home: dir };
 }
@@ -149,7 +149,7 @@ function cacheEntries(home) {
 }
 
 describe('npm shim cache verification (offline)', { skip: process.platform === 'win32' ? 'posix only' : false }, () => {
-  const cachedEntries = [path.join(VERSION, 'impeccable'), path.join(VERSION, 'impeccable.verified')];
+  const cachedEntries = [path.join(VERSION, 'procable'), path.join(VERSION, 'procable.verified')];
 
   it('hashes an unstamped cached binary once, stamps it and never downloads', async () => {
     const res = await runShim(['hi'], { cached: PAYLOAD });
@@ -166,7 +166,7 @@ describe('npm shim cache verification (offline)', { skip: process.platform === '
       assert.match(res.stdout, /fake-engine hi/);
       assert.deepEqual(requests, []);
       assert.deepEqual(cacheEntries(res.home), cachedEntries);
-      assert.equal(fs.readFileSync(path.join(res.home, 'bin', VERSION, 'impeccable.verified'), 'utf8').trim(), `${DIGEST} ${PAYLOAD.length}`);
+      assert.equal(fs.readFileSync(path.join(res.home, 'bin', VERSION, 'procable.verified'), 'utf8').trim(), `${DIGEST} ${PAYLOAD.length}`);
     });
   }
 
@@ -206,15 +206,15 @@ describe('npm shim cache verification (offline)', { skip: process.platform === '
   it('accepts the x64 digest for a cached engine on Windows on ARM, like the launchers', async () => {
     const posing = "Object.defineProperty(process,'platform',{value:'win32'});Object.defineProperty(process,'arch',{value:'arm64'});";
     const res = await runShim(['hi'], {
-      line: `${VERSION} impeccable-windows-x64.exe ${DIGEST}`,
+      line: `${VERSION} procable-windows-x64.exe ${DIGEST}`,
       cached: PAYLOAD,
-      exe: 'impeccable.exe',
+      exe: 'procable.exe',
       nodeOptions: `--import=data:text/javascript,${encodeURIComponent(posing)}`,
     });
     assert.equal(res.status, 0, res.stderr);
     assert.match(res.stdout, /fake-engine hi/);
     assert.deepEqual(requests, []);
-    assert.equal(fs.readFileSync(path.join(res.home, 'bin', VERSION, 'impeccable.exe.verified'), 'utf8').trim(), `${DIGEST} ${PAYLOAD.length}`);
+    assert.equal(fs.readFileSync(path.join(res.home, 'bin', VERSION, 'procable.exe.verified'), 'utf8').trim(), `${DIGEST} ${PAYLOAD.length}`);
   });
 
   it('answers --version and -v from its own package.json without touching a binary', async () => {
@@ -228,12 +228,12 @@ describe('npm shim cache verification (offline)', { skip: process.platform === '
     }
   });
 
-  it('prefers IMPECCABLE_BIN and never downloads', async () => {
+  it('prefers PROCABLE_BIN and never downloads', async () => {
     const { dir, shim } = stageShim();
     const bin = path.join(dir, 'preinstalled');
     fs.writeFileSync(bin, '#!/bin/sh\necho "preinstalled $*"\n', { mode: 0o755 });
     const res = await run(shim, ['hi'], {
-      ...process.env, IMPECCABLE_HOME: dir, IMPECCABLE_DOWNLOAD_BASE: base, IMPECCABLE_BIN: bin,
+      ...process.env, PROCABLE_HOME: dir, PROCABLE_DOWNLOAD_BASE: base, PROCABLE_BIN: bin,
     });
     assert.equal(res.status, 0, res.stderr);
     assert.match(res.stdout, /preinstalled hi/);

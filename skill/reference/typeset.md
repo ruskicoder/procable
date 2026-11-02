@@ -24,7 +24,7 @@ When a sub-agent tool is available and permitted, run these independently; other
 2. **Mechanical scan:** run:
 
 ```bash
-{{scripts_path}}/impeccable detect --json --scope type [target files or dirs]
+{{scripts_path}}/procable detect --json --scope type [target files or dirs]
 ```
 
 Also inspect dynamic or arbitrary font values the detector cannot interpret. Synthesize both assessments before editing, noting what each caught alone. A clean scan is a floor, not proof of good typography.
@@ -77,7 +77,7 @@ After Matthew Butterick's *Practical Typography*, paraphrased; where his numbers
 
 Answer each item with rendered or source evidence, then rerun the scan. Do not substitute a bare “yes” for verification.
 
-When the hierarchy holds, hand off to `{{command_prefix}}impeccable polish`.
+When the hierarchy holds, hand off to `{{command_prefix}}procable polish`.
 
 ## Live-mode signature params
 

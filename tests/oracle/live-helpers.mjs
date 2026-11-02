@@ -7,7 +7,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { REPO_ROOT } from './lib.mjs';
 
-export const LIVE_FILES = ['.impeccable/**', '.gitignore', '.gitfake/**', 'node_modules/.impeccable-live/**'];
+export const LIVE_FILES = ['.procable/**', '.gitignore', '.gitfake/**', 'node_modules/.procable-live/**'];
 
 /**
  * A `.git` FILE pointing at a non-repo gitdir. Marks the git boundary for
@@ -42,16 +42,16 @@ export function writeJournal(ws, id, events) {
   const lines = events.map((event, i) => JSON.stringify({
     seq: i + 1, id, type: event.type, ts: `2026-08-01T10:0${i % 10}:00.000Z`, event: { id, ...event },
   }));
-  write(ws, `.impeccable/live/sessions/${id}.jsonl`, lines.join('\n') + '\n');
+  write(ws, `.procable/live/sessions/${id}.jsonl`, lines.join('\n') + '\n');
 }
 
 export function writeBuffer(ws, entries) {
-  write(ws, '.impeccable/live/pending-manual-edits.json', JSON.stringify({ version: 1, entries }, null, 2) + '\n');
+  write(ws, '.procable/live/pending-manual-edits.json', JSON.stringify({ version: 1, entries }, null, 2) + '\n');
 }
 
 export function lockPathFor(ws, relFile) {
   const hash = crypto.createHash('sha256').update(path.resolve(ws, relFile)).digest('hex').slice(0, 24);
-  return `.impeccable/live/locks/${hash}.lock`;
+  return `.procable/live/locks/${hash}.lock`;
 }
 
 /** Fake-agent params, one kind per variant. */
@@ -63,18 +63,18 @@ export const PARAMS = {
 
 export function scopedCss(tag) {
   return [
-    '@scope ([data-impeccable-variant="1"]) {',
+    '@scope ([data-procable-variant="1"]) {',
     `  :scope > ${tag} {`,
     '    font-weight: 300;',
     '    color: oklch(var(--p-lightness, 0.5) 0.25 25);',
     '  }',
     '}',
-    '@scope ([data-impeccable-variant="2"]) {',
+    '@scope ([data-procable-variant="2"]) {',
     `  :scope > ${tag} { font-weight: 900; }`,
     `  :scope[data-p-face="serif"] > ${tag} { font-family: ui-serif, serif; }`,
     `  :scope[data-p-face="mono"]  > ${tag} { font-family: ui-monospace, monospace; }`,
     '}',
-    '@scope ([data-impeccable-variant="3"]) {',
+    '@scope ([data-procable-variant="3"]) {',
     `  :scope > ${tag} { font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }`,
     `  :scope[data-p-italic] > ${tag} { font-style: italic; }`,
     '}',
@@ -91,13 +91,13 @@ export function variantsBlock({ id, tag, inner, indent, jsx = false }) {
   const c = jsx ? '*/}' : '-->';
   const css = scopedCss(tag).split('\n').map((l) => indent + '    ' + l);
   const style = jsx
-    ? [indent + '  <style data-impeccable-css="' + id + '">{`', ...css, indent + '  `}</style>']
-    : [indent + '  <style data-impeccable-css="' + id + '">', ...css, indent + '  </style>'];
+    ? [indent + '  <style data-procable-css="' + id + '">{`', ...css, indent + '  `}</style>']
+    : [indent + '  <style data-procable-css="' + id + '">', ...css, indent + '  </style>'];
   const blocks = [1, 2, 3].map((n) => {
     const hide = n === 1 ? '' : jsx ? " style={{display: 'none'}}" : ' style="display: none"';
     return [
       indent + '  ' + o + ' Variant ' + n + ' ' + c,
-      indent + '  <div data-impeccable-variant="' + n + '"' + hide + " data-impeccable-params='" + JSON.stringify(PARAMS[n]) + "'>",
+      indent + '  <div data-procable-variant="' + n + '"' + hide + " data-procable-params='" + JSON.stringify(PARAMS[n]) + "'>",
       indent + '    ' + inner,
       indent + '  </div>',
     ].join('\n');
@@ -113,29 +113,29 @@ export function wrappedBlock({ id, count = 3, tag, inner, original, indent, jsx 
   const variants = variantsBlock({ id, tag, inner, indent, jsx });
   if (jsx) {
     return [
-      indent + '<div data-impeccable-variants="' + id + '" data-impeccable-variant-count="' + count + '" ' + styleContents + '>',
-      indent + '  ' + o + ' impeccable-variants-start ' + id + ' ' + c,
+      indent + '<div data-procable-variants="' + id + '" data-procable-variant-count="' + count + '" ' + styleContents + '>',
+      indent + '  ' + o + ' procable-variants-start ' + id + ' ' + c,
       indent + '  ' + o + ' Original ' + c,
-      indent + '  <div data-impeccable-variant="original">',
+      indent + '  <div data-procable-variant="original">',
       indent + '    ' + original,
       indent + '  </div>',
       indent + '  ' + o + ' Variants: insert below this line ' + c,
       variants,
-      indent + '  ' + o + ' impeccable-variants-end ' + id + ' ' + c,
+      indent + '  ' + o + ' procable-variants-end ' + id + ' ' + c,
       indent + '</div>',
     ].join('\n');
   }
   return [
-    indent + o + ' impeccable-variants-start ' + id + ' ' + c,
-    indent + '<div data-impeccable-variants="' + id + '" data-impeccable-variant-count="' + count + '" ' + styleContents + '>',
+    indent + o + ' procable-variants-start ' + id + ' ' + c,
+    indent + '<div data-procable-variants="' + id + '" data-procable-variant-count="' + count + '" ' + styleContents + '>',
     indent + '  ' + o + ' Original ' + c,
-    indent + '  <div data-impeccable-variant="original">',
+    indent + '  <div data-procable-variant="original">',
     indent + '    ' + original,
     indent + '  </div>',
     indent + '  ' + o + ' Variants: insert below this line ' + c,
     variants,
     indent + '</div>',
-    indent + o + ' impeccable-variants-end ' + id + ' ' + c,
+    indent + o + ' procable-variants-end ' + id + ' ' + c,
   ].join('\n');
 }
 
@@ -159,14 +159,14 @@ export function stageWrappedAstro(ws, id = 'ab12cd34') {
   const original = '<h1 class="hero-title">Astro Fixture</h1>';
   const indent = '    ';
   const css = [
-    '[data-impeccable-variant="1"] > h1 { font-weight: 300; color: oklch(var(--p-lightness, 0.5) 0.25 25); }',
-    '[data-impeccable-variant="2"] > h1 { font-weight: 900; }',
-    '[data-impeccable-variant="2"][data-p-face="serif"] > h1 { font-family: ui-serif, serif; }',
-    '[data-impeccable-variant="3"] > h1 { font-weight: 600; text-transform: uppercase; }',
+    '[data-procable-variant="1"] > h1 { font-weight: 300; color: oklch(var(--p-lightness, 0.5) 0.25 25); }',
+    '[data-procable-variant="2"] > h1 { font-weight: 900; }',
+    '[data-procable-variant="2"][data-p-face="serif"] > h1 { font-family: ui-serif, serif; }',
+    '[data-procable-variant="3"] > h1 { font-weight: 600; text-transform: uppercase; }',
   ];
   const block = wrappedBlock({ id, tag: 'h1', inner: original, original, indent })
-    .replace(/<style data-impeccable-css="[^"]*">[\s\S]*?<\/style>/, [
-      '<style is:inline data-impeccable-css="' + id + '">',
+    .replace(/<style data-procable-css="[^"]*">[\s\S]*?<\/style>/, [
+      '<style is:inline data-procable-css="' + id + '">',
       ...css.map((l) => indent + '    ' + l),
       indent + '  </style>',
     ].join('\n'));

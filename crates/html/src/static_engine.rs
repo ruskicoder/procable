@@ -1,5 +1,5 @@
-//! The `impeccable detect` adapter for the static HTML engine: implements
-//! `impeccable_detect::engines::HtmlEngine` over [`crate::engine::detect_html`],
+//! The `procable detect` adapter for the static HTML engine: implements
+//! `procable_detect::engines::HtmlEngine` over [`crate::engine::detect_html`],
 //! wiring the three pieces `detectHtml` borrows from other JS modules:
 //!
 //! - the design-system trio (`checkSourceDesignSystem` and
@@ -15,17 +15,17 @@
 
 use std::path::Path;
 
-use impeccable_core::findings::Finding;
-use impeccable_core::js;
-use impeccable_core::js_ext_b::slice_utf16_prefix;
-use impeccable_detect::design_system::{
+use procable_core::findings::Finding;
+use procable_core::js;
+use procable_core::js_ext_b::slice_utf16_prefix;
+use procable_detect::design_system::{
     check_source_design_system, css_color_label, extract_radius_tokens, is_allowed_color_raw,
     is_allowed_font, is_allowed_radius_raw, is_transparent_css, make_design_finding,
     merge_design_system_findings, primary_font, DesignSystem, STATIC_DESIGN_SKIP_TAGS,
 };
-use impeccable_detect::detect_text::run_text_content_analyzers;
-use impeccable_detect::engines::{EngineError, HtmlEngine, ScanOptions};
-use impeccable_detect::profiler::{DetectorProfile, ProfileEvent as DetectProfileEvent};
+use procable_detect::detect_text::run_text_content_analyzers;
+use procable_detect::engines::{EngineError, HtmlEngine, ScanOptions};
+use procable_detect::profiler::{DetectorProfile, ProfileEvent as DetectProfileEvent};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -35,10 +35,10 @@ use crate::engine::{detect_html, DesignSystemHook, DetectHtmlOptions};
 use crate::profile::{ProfileEvent, ProfileSink};
 use crate::quality::pf0;
 
-/// The static HTML engine as `impeccable detect` sees it.
+/// The static HTML engine as `procable detect` sees it.
 ///
 /// `static_rule_pack` is the rule pack's static-document hook, set by
-/// whichever binary builds `Engines`; the `impeccable` binary leaves it
+/// whichever binary builds `Engines`; the `procable` binary leaves it
 /// `None`. The pack's engine-wide hooks travel on `ScanOptions` instead,
 /// because `detect` owns those options and cannot name this crate's trait.
 #[derive(Debug, Default, Clone, Copy)]
@@ -152,7 +152,7 @@ impl DesignSystemHook for DetectDesignSystemHook<'_> {
     }
 
     fn drop_switched_off(&self, findings: &mut Vec<Finding>) {
-        impeccable_detect::design_system::drop_declared_purple_findings(findings, Some(self.design_system));
+        procable_detect::design_system::drop_declared_purple_findings(findings, Some(self.design_system));
     }
 }
 
