@@ -2,7 +2,7 @@
 
 procable is an offline, cleaned fork of [Impeccable](https://github.com/pbakaus/impeccable), maintained by
 [ruskicoder](https://github.com/ruskicoder) for [prompt-orchestrator](https://github.com/ruskicoder/system-prompts).
-It keeps Impeccable's design vocabulary for coding agents (steer with `polish` and `bolder`, review with
+It keeps upstream Impeccable's design vocabulary for coding agents (steer with `polish` and `bolder`, review with
 `critique`, `audit` and `a11y`, catch AI slop with the design hook) and changes three things:
 
 - **Fully offline once installed.** No telemetry, no update checks, no hosted design catalog, no image API,
