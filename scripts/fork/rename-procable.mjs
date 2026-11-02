@@ -37,7 +37,7 @@ const PROTECT = [
   /Impeccable by Paul Bakaus/g,
   /github\.com\/pbakaus\/impeccable/g,
   /pbakaus\/impeccable/g,
-  /impeccable\.style/g,
+  /impeccable\.style/gi,
   /\b[Uu]pstream Impeccable\b/g,
 ];
 const MAP = [
