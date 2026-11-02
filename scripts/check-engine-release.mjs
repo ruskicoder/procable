@@ -106,7 +106,7 @@ export async function checkEngineRelease({
       const [binOk, published, npmOk] = await Promise.all([
         urlExists(binUrl),
         sidecarDigest(shaUrl),
-        npmVersionExists(target, version, registry),
+        true, // procable publishes no npm platform packages
       ]);
       const recorded = expectedChecksum(version, target, root);
 
@@ -120,7 +120,8 @@ export async function checkEngineRelease({
           url: manifestPath(root),
         });
       }
-      if (!npmOk) missing.push({ kind: 'npm', target, what: `@impeccable/cli-${target}@${version}`, url: npmUrl });
+      // procable publishes no npm platform packages; only the GitHub release assets count.
+      void npmOk;
     })
   );
 

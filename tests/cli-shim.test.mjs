@@ -38,11 +38,9 @@ import { after, before, beforeEach, describe, it } from 'node:test';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PKG_PATH = path.join(REPO, 'package.json');
-const VERSION = JSON.parse(fs.readFileSync(PKG_PATH, 'utf8'))
-  .optionalDependencies['@impeccable/cli-darwin-arm64'];
+const VERSION = fs.readFileSync(path.join(REPO, 'skill', 'scripts', 'VERSION'), 'utf8').trim();
 const TARGET = `${{ darwin: 'darwin', linux: 'linux', win32: 'windows' }[process.platform] || process.platform}`
   + `-${{ arm64: 'arm64', x64: 'x64' }[process.arch] || process.arch}`;
-const PLATFORM_PKG = `@impeccable/cli-${TARGET}`;
 const ASSET = `impeccable-${TARGET}${process.platform === 'win32' ? '.exe' : ''}`;
 const ASSET_PATH = `/engine-v${VERSION}/${ASSET}`;
 
@@ -87,6 +85,7 @@ function stageShim(line = `${VERSION} ${ASSET} ${DIGEST}`) {
   fs.mkdirSync(path.join(dir, 'cli', 'bin'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'skill', 'scripts'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'skill', 'scripts', 'engine-checksums.txt'), `# test manifest\n\n${line}\n`);
+  fs.writeFileSync(path.join(dir, 'skill', 'scripts', 'VERSION'), `${VERSION}\n`);
   fs.copyFileSync(PKG_PATH, path.join(dir, 'package.json'));
   fs.copyFileSync(path.join(REPO, 'cli', 'bin', 'cli.js'), path.join(dir, 'cli', 'bin', 'cli.js'));
   return { dir, shim: path.join(dir, 'cli', 'bin', 'cli.js') };
@@ -242,29 +241,4 @@ describe('npm shim cache verification (offline)', { skip: process.platform === '
     assert.deepEqual(cacheEntries(dir), []);
   });
 
-  // The precedence the download cases above depend on being absent: with the
-  // optional dependency installed, the shim never reaches the cache or the
-  // download. Those packages ship with every engine release, so a shim run
-  // from a tree that has them takes this arm instead.
-  it('prefers an installed platform package and never downloads', async () => {
-    const { dir, shim } = stageShim();
-    const pkgDir = path.join(dir, 'node_modules', PLATFORM_PKG);
-    fs.mkdirSync(path.join(pkgDir, 'bin'), { recursive: true });
-    fs.writeFileSync(
-      path.join(pkgDir, 'package.json'),
-      `${JSON.stringify({ name: PLATFORM_PKG, version: VERSION }, null, 2)}\n`,
-    );
-    fs.writeFileSync(
-      path.join(pkgDir, 'bin', 'impeccable'),
-      '#!/bin/sh\necho "from-platform-package $*"\n',
-      { mode: 0o755 },
-    );
-    const env = { ...process.env, IMPECCABLE_HOME: dir, IMPECCABLE_DOWNLOAD_BASE: base };
-    delete env.IMPECCABLE_BIN;
-    const res = await run(shim, ['hi'], env);
-    assert.equal(res.status, 0, res.stderr);
-    assert.match(res.stdout, /from-platform-package hi/);
-    assert.deepEqual(requests, []);
-    assert.deepEqual(cacheEntries(dir), []);
-  });
 });

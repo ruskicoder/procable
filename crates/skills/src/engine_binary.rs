@@ -8,7 +8,8 @@ use impeccable_common::Io;
 use crate::providers::Sys;
 use crate::util::{self, jsp};
 
-pub const DEFAULT_DOWNLOAD_BASE: &str = "https://github.com/pbakaus/impeccable/releases/download";
+/// Where the fork publishes engine binaries; used to name assets, never fetched at runtime.
+pub const DEFAULT_DOWNLOAD_BASE: &str = "https://github.com/ruskicoder/procable/releases/download";
 
 /// The `<os>-<arch>` tag the launcher computes (`darwin|linux|windows` x
 /// `arm64|x64`); `None` on a platform without a release asset.
@@ -132,7 +133,7 @@ mod tests {
     fn asset_naming_matches_launcher() {
         assert_eq!(
             asset_url(DEFAULT_DOWNLOAD_BASE, "1.2.3", "darwin", "arm64"),
-            "https://github.com/pbakaus/impeccable/releases/download/engine-v1.2.3/impeccable-darwin-arm64"
+            "https://github.com/ruskicoder/procable/releases/download/engine-v1.2.3/impeccable-darwin-arm64"
         );
         assert_eq!(asset_url("http://x/", "1", "windows", "x64"), "http://x/engine-v1/impeccable-windows-x64.exe");
         // The sibling binary path is joined with the host's path semantics

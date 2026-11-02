@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 // `impeccable` npm shim: finds the platform binary and execs it with argv.
-// Order: $IMPECCABLE_BIN, the @impeccable/cli-<os>-<arch> optional dependency,
-// then the version-pinned user cache (~/.impeccable/bin/<version>/). procable
+// Order: $IMPECCABLE_BIN, then the version-pinned user cache (~/.impeccable/bin/<version>/). procable
 // runs offline: the shim never downloads an engine. A cached binary is
 // verified against skill/scripts/engine-checksums.txt (shipped in the
 // package); a <binary>.verified stamp holding the manifest digest and the
@@ -21,13 +20,13 @@ const OS = { darwin: 'darwin', linux: 'linux', win32: 'windows' }[process.platfo
 const ARCH = { arm64: 'arm64', x64: 'x64' }[process.arch] || process.arch;
 const TARGET = `${OS}-${ARCH}`;
 const EXE = OS === 'windows' ? 'impeccable.exe' : 'impeccable';
-const PLATFORM_PKG = `@impeccable/cli-${TARGET}`;
-// The engine version travels as the pinned optionalDependency range.
-const VERSION = String(pkg.optionalDependencies?.[PLATFORM_PKG] || Object.values(pkg.optionalDependencies || {})[0] || '').replace(/^[^\d]*/, '');
+const SKILL_SCRIPTS = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'skill', 'scripts');
+// The engine version is the one the skill pins (skill/scripts/VERSION).
+const VERSION = (() => { try { return fs.readFileSync(path.join(SKILL_SCRIPTS, 'VERSION'), 'utf8').trim(); } catch { return ''; } })();
 const CACHE_ROOT = process.env.IMPECCABLE_HOME || path.join(os.homedir(), '.impeccable');
 const CACHED = path.join(CACHE_ROOT, 'bin', VERSION, EXE);
 const ASSET = `impeccable-${TARGET}${OS === 'windows' ? '.exe' : ''}`;
-const MANIFEST = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'skill', 'scripts', 'engine-checksums.txt');
+const MANIFEST = path.join(SKILL_SCRIPTS, 'engine-checksums.txt');
 const STAMP = `${CACHED}.verified`;
 
 function exists(p) { try { return !!p && fs.statSync(p).isFile(); } catch { return false; } }
@@ -50,14 +49,9 @@ function expectedDigest(wanted = ASSET) {
   } catch { /* no manifest: nothing verifies */ }
   return '';
 }
-function fromPackage() {
-  try { return path.join(path.dirname(require.resolve(`${PLATFORM_PKG}/package.json`)), 'bin', EXE); } catch { return null; }
-}
 async function locate() {
   const envBin = process.env.IMPECCABLE_BIN;
   if (exists(envBin)) return envBin;
-  const fromPkg = fromPackage();
-  if (exists(fromPkg)) return fromPkg;
   if (exists(CACHED)) {
     // Windows on ARM runs x64 binaries, and the launchers fall back to that asset.
     const accepted = [expectedDigest(), TARGET === 'windows-arm64' && expectedDigest('impeccable-windows-x64.exe')].filter(Boolean);
@@ -85,7 +79,7 @@ const bin = await locate();
 if (!bin) {
   process.stderr.write(
     `procable: no engine binary for ${TARGET}. procable runs offline and does not download its engine. `
-    + `Reinstall with the prompt-orchestrator installer, install ${PLATFORM_PKG}@${VERSION}, or set IMPECCABLE_BIN.\n`,
+    + `Reinstall with the prompt-orchestrator installer, or set IMPECCABLE_BIN.\n`,
   );
   process.exit(127);
 }
