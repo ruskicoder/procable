@@ -1,0 +1,53 @@
+name: record-oracle
+# procable: re-records oracle goldens from a release build of this branch and
+# commits them back to the branch for review. Run it only for cases whose output
+# a procable change altered on purpose, then read the golden diff before merging.
+on:
+  workflow_dispatch:
+    inputs:
+      prefixes:
+        description: 'Space-separated case-id prefixes to record (empty records nothing)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: record-oracle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - run: bun install
+      - run: rustup show
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Build the engine from source
+        run: cargo build --release -p "$(grep -m1 '^name' crates/cli/Cargo.toml | cut -d'"' -f2)"
+      - name: Record the requested cases
+        env:
+          PREFIXES: ${{ inputs.prefixes }}
+        run: |
+          bin="$(ls target/release/impeccable target/release/procable 2>/dev/null | head -1)"
+          export IMPECCABLE_BIN="$GITHUB_WORKSPACE/$bin" PROCABLE_BIN="$GITHUB_WORKSPACE/$bin"
+          for p in $PREFIXES; do node tests/oracle/record.mjs --bin "$p"; done
+          node tests/oracle/run.mjs
+      - name: Commit the recorded goldens
+        env:
+          PREFIXES: ${{ inputs.prefixes }}
+        run: |
+          git config user.name "Do Dang Khoa"
+          git config user.email "149188141+ruskicoder@users.noreply.github.com"
+          git add tests/oracle
+          if git diff --cached --quiet; then echo "no golden changes"; exit 0; fi
+          git commit -m "Re-record oracle goldens: $PREFIXES"
+          git push
