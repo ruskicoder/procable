@@ -4,6 +4,6 @@
   "exit": 0,
   "signal": null,
   "files": {
-    ".procable/questions/k1.hand.json": "{\"id\":\"<HAND_ID>\",\"digest\":\"a1070f747b6c93b5\",\"comps\":[\".procable/mocks/decision/a.png\",\".procable/mocks/decision/b.png\"],\"pre\":{},\"startedAt\": <EPOCH>}"
+    ".procable/questions/k1.hand.json": "{\"id\":\"<HAND_ID>\",\"digest\":\"9afd2f6528b50ca2\",\"comps\":[\".procable/mocks/decision/a.png\",\".procable/mocks/decision/b.png\"],\"pre\":{},\"startedAt\": <EPOCH>}"
   }
 }
