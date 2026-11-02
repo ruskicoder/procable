@@ -33,6 +33,8 @@ const BINARY_EXT = /\.(png|jpe?g|gif|webp|avif|ico|icns|woff2?|ttf|otf|eot|zip|g
 
 // Upstream references that must survive the rename verbatim.
 const PROTECT = [
+  /\[Impeccable\]\(https:\/\/github\.com\/pbakaus\/impeccable\)/g,
+  /Impeccable by Paul Bakaus/g,
   /github\.com\/pbakaus\/impeccable/g,
   /pbakaus\/impeccable/g,
   /impeccable\.style/g,
