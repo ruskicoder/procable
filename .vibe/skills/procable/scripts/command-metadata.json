@@ -35,6 +35,10 @@
     "description": "Run technical quality checks across accessibility, performance, theming, responsive design, and anti-patterns. Generates a scored report with P0-P3 severity ratings and actionable plan. Use when the user wants an accessibility check, performance audit, or technical quality review.",
     "argumentHint": "[area (feature, page, component...)]"
   },
+  "a11y": {
+    "description": "WCAG 2.2 AA accessibility audit and fixes: four passes, the six new 2.2 criteria, component checks, evidence rules and a manual-review list.",
+    "argumentHint": "[target]"
+  },
   "bolder": {
     "description": "Amplify safe or boring designs to make them more visually interesting and stimulating. Increases impact while maintaining usability. Use when the user says the design looks bland, generic, too safe, lacks personality, or wants more visual impact and character.",
     "argumentHint": "[target]"

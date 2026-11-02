@@ -39,7 +39,7 @@ The first argument is the action. Defaults to `status`.
 ## Flow
 
 1. Resolve the action from the user's argument. If no action was given, default to `status`.
-2. Invoke the admin script and pass the user's output through verbatim:
+2. Invoke the admin script and quote its output verbatim inside your reply (the host's reply format still applies):
 
    ```bash
    .opencode/skills/procable/scripts/procable hooks <action> [args...]
@@ -48,14 +48,14 @@ The first argument is the action. Defaults to `status`.
 3. If `<action>` is `off`, follow up with a one-line note: "Done. New edits will not trigger the design hook in this project until you run `/procable hooks on`."
 4. If `<action>` is `on`, follow up with: "Done. The design hook will fire after the next Edit/Write on a UI file." On Hermes Agent, `on` cannot install or enable the plugin: if `procable context` reported `MANUAL_DETECTOR_REQUIRED`, tell the user to run `npx procable install` and then `hermes plugins enable procable-design-hook` instead.
 5. If `<action>` is `ignore-value`, `ignore-file`, or `ignore-rule`, just print the script output. The default scope is shared `.procable/config.json`; add `--local` only when the user explicitly asks for a private exception.
-6. If `<action>` is `status`, just print the script output. Do not add commentary unless the user asked a follow-up question.
+6. If `<action>` is `status`, quote the script output. Add nothing beyond the host's reply format unless the user asked a follow-up question.
 
 ## Triage findings
 
 The hook itself never writes ignore config; every exception goes through `procable hooks`. Triage each finding into one of three outcomes:
 
 - **Real design problem**: fix it. Never add an ignore to skip a fix or to push a blocked write through.
-- **Confident false positive or sanctioned exception**: persist the narrowest ignore yourself and disclose it in your reply. The bar is evidence you can name: an intentional demo or fixture, documentation of bad design, literal or domain-appropriate motion (a ball that bounces), or a choice the user already confirmed. Put that evidence in `--reason` as `"<who decided: evidence>"`; write "user confirmed" only when the user actually did.
+- **Confident false positive or sanctioned exception**: persist the narrowest ignore yourself and list it, with its reason, in the report of that reply. Never leave one unreported. The bar is evidence you can name: an intentional demo or fixture, documentation of bad design, literal or domain-appropriate motion (a ball that bounces), or a choice the user already confirmed. Put that evidence in `--reason` as `"<who decided: evidence>"`; write "user confirmed" only when the user actually did.
 - **Unsure**: leave the finding standing and ask the user in one line. Ask once; a one-line question costs less than the hook re-firing on every later edit.
 
 Self-serve stops at `ignore-value`. `ignore-file` and `ignore-rule` silence too much to add on your own judgment; ask the user first.

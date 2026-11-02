@@ -101,76 +101,11 @@ procable %*
 exit /b %errorlevel%
 
 :download
-rem Last resort: fetch this version's binary from the release channel into
-rem the version-pinned user cache, verify it, then run it. Never inside
-rem another launcher's probe: fail fast and quiet instead.
+rem procable runs offline: the launcher never downloads an engine. The
+rem prompt-orchestrator installer ships it at %bin%; PROCABLE_BIN or a
+rem binary on PATH also work.
 if defined PROCABLE_LAUNCHER_PROBE exit /b 127
-if not defined version goto fail
-call :read_expected
-if not defined expected if not defined expected_x64 goto no_checksum
-where curl.exe >nul 2>nul
-if errorlevel 1 goto curl_missing
-if not defined PROCABLE_DOWNLOAD_BASE set "PROCABLE_DOWNLOAD_BASE=https://github.com/pbakaus/impeccable/releases/download"
-if exist "%PROCABLE_HOME%\bin\%version%\" goto cache_ready
-mkdir "%PROCABLE_HOME%\bin\%version%" >nul 2>nul
-if errorlevel 1 goto cache_directory_failed
-:cache_ready
-rem Stage the download in a directory only this run owns, as the sh launcher
-rem does with .procable.part.$$: concurrent first runs (parallel hooks, two
-rem agents) must never write, hash or move each other's files. mkdir fails
-rem when the name exists, so it claims the name atomically. RANDOM alone is
-rem not enough because cmd seeds it from the clock in whole seconds; the
-rem timestamp and the retry on collision keep same-second runs apart. A cache
-rem directory that refuses every mkdir is reported as unwritable.
-set "attempt=0"
-:claim_staging
-set /a attempt+=1
-if %attempt% GTR 20 goto cache_write_failed
-set "stamp=%TIME: =0%"
-set "stamp=%stamp::=%"
-set "stamp=%stamp:.=%"
-set "stamp=%stamp:,=%"
-set "staging=%PROCABLE_HOME%\bin\%version%\.procable.part.%stamp%-%RANDOM%%RANDOM%"
-mkdir "%staging%" >nul 2>nul
-if errorlevel 1 goto claim_staging
-set "part=%staging%\procable.exe"
-rem Redirection failures do not reliably update ERRORLEVEL in cmd.exe;
-rem branch on the command's failure directly.
-(type nul >"%part%") 2>nul || goto staging_write_failed
-set "url=%PROCABLE_DOWNLOAD_BASE%/engine-v%version%/%asset%"
-if not defined expected goto fetch_x64
-curl.exe -fsSL -o "%part%" "%url%" >nul 2>nul
-if not errorlevel 1 goto verify
-:fetch_x64
-if not defined expected_x64 goto download_failed
-set "asset=procable-windows-x64.exe"
-set "expected=%expected_x64%"
-set "url=%PROCABLE_DOWNLOAD_BASE%/engine-v%version%/%asset%"
-curl.exe -fsSL -o "%part%" "%url%" >nul 2>nul
-if errorlevel 1 goto download_failed
-
-:verify
-call :check_download
-if errorlevel 1 exit /b 127
-rem Mirrors the sh launcher and fails closed: a freshly downloaded binary
-rem runs only after its hash matches the digest read from engine-checksums.txt.
-rem An empty certutil result refuses the download instead of running an
-rem unverified binary.
-call :sha256 "%part%" "%staging%\hash.txt"
-call :check_download
-if errorlevel 1 exit /b 127
-if not defined actual goto verify_refuse
-if /I "%actual%"=="%expected%" goto place
-call :discard_staging
-echo procable: checksum mismatch downloading %url% 1>&2
-exit /b 127
-
-:verify_refuse
-call :check_download
-if errorlevel 1 exit /b 127
-call :discard_staging
-echo procable: cannot verify %url% (certutil could not hash it); refusing the unverified download 1>&2
-exit /b 127
+goto fail
 
 :read_expected
 rem Sets expected (and, on ARM64, expected_x64: Windows on ARM runs x64
@@ -202,50 +137,6 @@ set "actual=%actual: =%"
 del "%~2" >nul 2>nul
 exit /b 0
 
-:check_download
-set "download_file=%~1"
-if not defined download_file set "download_file=%part%"
-if not exist "%download_file%" goto download_missing
-for %%f in ("%download_file%") do if %%~zf==0 goto download_empty
-exit /b 0
-
-:download_missing
-call :discard_staging
-echo procable: download completed but the file was removed before execution: %url%; check your antivirus quarantine or logs. Refusing to continue; do not disable protection. 1>&2
-exit /b 127
-
-:download_empty
-del "%download_file%" >nul 2>nul
-call :discard_staging
-echo procable: downloaded file is empty: %url%; refusing the unverified download 1>&2
-exit /b 127
-
-:discard_staging
-rem Removes this run's staging directory and whatever is left in it. Never
-rem touches another run's staging directory or the cached binary.
-if defined staging rd /s /q "%staging%" >nul 2>nul
-exit /b 0
-
-:place
-call :check_download
-if errorlevel 1 exit /b 127
-move /y "%part%" "%cached%" >nul 2>nul
-if errorlevel 1 goto place_failed
-call :discard_staging
-call :check_download "%cached%"
-if errorlevel 1 exit /b 127
-for %%f in ("%cached%") do set "size=%%~zf"
-(>"%cached%.verified" echo %actual% %size%) 2>nul
-set "run=%cached%"
-goto run
-
-:place_failed
-call :check_download
-if errorlevel 1 exit /b 127
-call :discard_staging
-echo procable: could not cache the verified download: %url% 1>&2
-exit /b 127
-
 :run
 "%run%" %*
 exit /b %errorlevel%
@@ -271,36 +162,8 @@ for /f "usebackq tokens=2" %%v in ("%probe_tmp%") do if not defined probe_versio
 del "%probe_tmp%" >nul 2>nul
 exit /b 0
 
-:no_checksum
-echo procable: no checksum for engine %version% (%asset%) in "%manifest%"; refusing the unverified download 1>&2
-exit /b 127
-
-:cache_directory_failed
-echo procable: engine %version% is not installed; cannot create cache directory: "%PROCABLE_HOME%\bin\%version%" 1>&2
-goto setup_failed
-
-:staging_write_failed
-call :discard_staging
-
-:cache_write_failed
-echo procable: engine %version% is not installed; cannot write to cache directory: "%PROCABLE_HOME%\bin\%version%" 1>&2
-goto setup_failed
-
-:curl_missing
-echo procable: cannot download engine %version%; curl.exe is unavailable. 1>&2
-goto setup_failed
-
-:download_failed
-call :discard_staging
-echo procable: could not download engine %version% from %url%; check network access and the release URL. 1>&2
-
-:setup_failed
-echo Engine %version% setup needs network access and write permission to "%PROCABLE_HOME%\bin\%version%". 1>&2
-echo Run this launcher ("%~f0") with engine-probe in a terminal that has those permissions, then retry the original command. 1>&2
-echo Alternatively, set PROCABLE_HOME to a writable cache location, or PROCABLE_BIN to a preinstalled engine binary. 1>&2
-exit /b 127
 
 :fail
 echo procable: no engine binary found (looked in %bin%, %cached%, PATH). 1>&2
-echo Download procable-windows-%arch%.exe from https://github.com/pbakaus/impeccable/releases (tag engine-v%version%) and save it as %cached%, or set PROCABLE_BIN to a preinstalled engine binary. Docs: https://impeccable.style 1>&2
+echo procable runs offline and does not download its engine. Reinstall with the prompt-orchestrator installer, or set PROCABLE_BIN to a procable engine binary. 1>&2
 exit /b 127

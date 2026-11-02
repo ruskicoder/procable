@@ -10,6 +10,8 @@ Run comprehensive checks across 5 dimensions. Score each dimension 0-4 using the
 
 ### 1. Accessibility (A11y)
 
+For a criterion-by-criterion WCAG 2.2 AA pass with fixes, run `a11y` ([a11y.md](a11y.md)); this section scores accessibility as one dimension of five.
+
 **Check for**:
 - **Contrast issues**: Text contrast ratios < 4.5:1, or < 3:1 for large text (or 7:1 for AAA)
 - **Motion sensitivity**: `prefers-reduced-motion` needs an intentional alternative that preserves state change and hierarchy; flag a global `0.01ms` kill that destroys useful feedback, flashing above threshold, and motion that blocks focus, reading, or task completion

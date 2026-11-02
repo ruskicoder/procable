@@ -1,13 +1,13 @@
 {
   "name": "procable",
   "version": "1.0.0",
-  "description": "Design fluency for frontend development. 1 skill with 24 commands (/procable polish, /procable audit, /procable critique, etc.) and curated anti-pattern detection.",
+  "description": "Design fluency for frontend development. 1 skill with 25 commands (/procable polish, /procable audit, /procable critique, etc.) and curated anti-pattern detection.",
   "author": {
-    "name": "Paul Bakaus",
-    "email": "paul@paulbakaus.com"
+    "name": "Do Dang Khoa",
+    "url": "https://github.com/ruskicoder"
   },
-  "homepage": "https://impeccable.style",
-  "repository": "https://github.com/pbakaus/impeccable",
+  "homepage": "https://github.com/ruskicoder/procable",
+  "repository": "https://github.com/ruskicoder/procable",
   "license": "MIT",
   "keywords": [
     "design",
