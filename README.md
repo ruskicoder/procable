@@ -53,12 +53,12 @@ Then name a command and a target:
 
 Or just describe what you want: `/impeccable redo this hero section`. Narrow targets get better results; a single section reviewed closely beats a whole page at a glance. Pin a command you use often with `/impeccable pin audit` to get `/audit` as its own shortcut.
 
-### 24 commands
+### 25 commands
 
 | | Commands |
 |---|---|
 | **Steer** | `bolder` amplifies safe designs · `quieter` tones down loud ones · `distill` removes what the page doesn't need · `colorize` brings color to a gray interface · `typeset` fixes fonts, hierarchy, and sizing · `layout` fixes spacing and rhythm · `animate` adds transitions and interaction feedback · `delight` adds personality · `overdrive` goes for shaders, spring physics, and scroll-driven effects |
-| **Review** | `critique` is a scored UX review · `audit` is a technical quality report |
+| **Review** | `critique` is a scored UX review · `audit` is a technical quality report · `a11y` is a WCAG 2.2 AA pass with fixes |
 | **Finish** | `polish` is the final pass before shipping · `harden` covers errors, i18n, overflow, and edge cases · `clarify` rewrites unclear copy · `adapt` handles screen sizes and devices · `optimize` fixes loading and rendering performance · `onboard` designs first-run flows and empty states |
 | **Iterate live** | `live` lets you pick an element in the browser and cycle through variants · `generate` produces variants of a named element without manual picking |
 | **Plan and set up** | `shape` plans UX before code · `init` writes `PRODUCT.md` · `document` writes `DESIGN.md` · `extract` pulls repeated patterns into your design system |
