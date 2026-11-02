@@ -159,7 +159,7 @@ export async function recordEngineChecksums({
 function report(result) {
   const { ok, version, base, missing } = result;
   if (ok) {
-    console.log(`✓ engine v${version} release is complete: all ${ENGINE_TARGETS.length} binaries + .sha256 + npm platform packages are published, and engine-checksums.txt matches.`);
+    console.log(`✓ engine v${version} release is complete: all ${ENGINE_TARGETS.length} binaries + .sha256 are published, and engine-checksums.txt matches.`);
     console.log(`  release base: ${base}`);
     return;
   }

@@ -2,3 +2,8 @@
 # The launchers, the npm shim, `procable install` and scripts/fetch-engine.mjs verify
 # every engine download against this file. Written by
 # `node scripts/check-engine-release.mjs --record` after each engine release.
+0.2.0 procable-darwin-arm64 27165d881f22d6047f3d41c6468ea62e52d80078879712e599787a2dfd9c1727
+0.2.0 procable-darwin-x64 2911e584e98ce5dba92180af1a31da69d1d0d382d6cc896c1672ceba84f0b66b
+0.2.0 procable-linux-x64 012f1bf8ddce817cd80ae708aa9c4b2aa7aafe5f18de06c16b1d0c032def4107
+0.2.0 procable-linux-arm64 3ede476410c86f324ec41a7e98a11c65b7f5cbeb410a16a38cc07b8f970a74a2
+0.2.0 procable-windows-x64.exe b4361083e7eeb4cc8875de098c6ab19d237508bb7443a468e0820eeefeba63d8
