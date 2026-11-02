@@ -8,7 +8,7 @@
 
 use std::io::Read;
 
-use impeccable_common::Io;
+use procable_common::Io;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use sha2::{Digest, Sha256};
@@ -57,7 +57,7 @@ const CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 const IDLE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
 
 fn download_agent(connect: std::time::Duration, idle: std::time::Duration) -> ureq::AgentBuilder {
-    impeccable_context::http::agent_builder()
+    procable_context::http::agent_builder()
         .timeout_connect(connect)
         .timeout_read(idle)
         .timeout_write(idle)
@@ -333,7 +333,7 @@ fn extract_zip_from<R: Read + std::io::Seek>(reader: R, target_dir: &str, cwd: &
         // Preserve the zip's unix mode (std::fs::write drops it), and make
         // the launcher and staged engine binaries executable even when the
         // zip carries no unix modes (a zip built on Windows): a 0644
-        // `scripts/impeccable` fails every hook and Setup call with
+        // `scripts/procable` fails every hook and Setup call with
         // "Permission denied".
         #[cfg(unix)]
         {
@@ -341,7 +341,7 @@ fn extract_zip_from<R: Read + std::io::Seek>(reader: R, target_dir: &str, cwd: &
             let mode = entry.unix_mode().unwrap_or(0) & 0o7777;
             if mode != 0 {
                 let _ = std::fs::set_permissions(&dest, std::fs::Permissions::from_mode(mode));
-            } else if entry_path.ends_with("scripts/impeccable") || entry_path.contains("scripts/bin/") {
+            } else if entry_path.ends_with("scripts/procable") || entry_path.contains("scripts/bin/") {
                 let _ = std::fs::set_permissions(&dest, std::fs::Permissions::from_mode(0o755));
             }
         }
@@ -357,16 +357,16 @@ pub fn download_and_extract_bundle(sys: &Sys) -> Result<String, BundleError> {
     if let Some(forced) = test_seam::take() {
         return forced;
     }
-    if let Some(local) = sys.env.get("IMPECCABLE_BUNDLE_PATH").filter(|v| !v.is_empty()) {
+    if let Some(local) = sys.env.get("PROCABLE_BUNDLE_PATH").filter(|v| !v.is_empty()) {
         return copy_or_extract_local_bundle(sys, local).map_err(BundleError::Local);
     }
     // procable runs offline: no bundle is ever downloaded. The installer
-    // points IMPECCABLE_BUNDLE_PATH at the bundle it ships.
+    // points PROCABLE_BUNDLE_PATH at the bundle it ships.
     Err(BundleError::Download(OFFLINE_BUNDLE_MESSAGE.to_string()))
 }
 
-/// Why a bundle cannot come from anywhere but IMPECCABLE_BUNDLE_PATH.
-pub const OFFLINE_BUNDLE_MESSAGE: &str = "procable runs offline and downloads nothing; set IMPECCABLE_BUNDLE_PATH to a local bundle (the prompt-orchestrator installer does this)";
+/// Why a bundle cannot come from anywhere but PROCABLE_BUNDLE_PATH.
+pub const OFFLINE_BUNDLE_MESSAGE: &str = "procable runs offline and downloads nothing; set PROCABLE_BUNDLE_PATH to a local bundle (the prompt-orchestrator installer does this)";
 
 /// Lets in-crate command tests stand in for the network: the next
 /// `download_and_extract_bundle` on this thread returns the forced result.
@@ -400,7 +400,7 @@ pub enum BundleError {
     /// Staging, saving, reading back or extracting the bundle on this machine failed
     /// (disk space, permissions, an entry the extractor refuses).
     Unpack(String),
-    /// An `IMPECCABLE_BUNDLE_PATH` bundle could not be read.
+    /// An `PROCABLE_BUNDLE_PATH` bundle could not be read.
     Local(String),
 }
 
@@ -464,7 +464,7 @@ fn download_and_extract_signed_bundle(
 ) -> Result<String, BundleError> {
     use BundleError::{Download, Unpack, Verify};
     let tmp = util::tmpdir(&sys.env);
-    let staging = util::mkdtemp(&jsp::join(&[&tmp, "impeccable-update-"])).map_err(Unpack)?;
+    let staging = util::mkdtemp(&jsp::join(&[&tmp, "procable-update-"])).map_err(Unpack)?;
     let tmp_zip = jsp::join(&[&staging, "bundle.zip"]);
     let tmp_signature = jsp::join(&[&staging, "bundle.sig.json"]);
     let result = (|| -> Result<(), BundleError> {
@@ -510,7 +510,7 @@ fn copy_or_extract_local_bundle(sys: &Sys, source_value: &str) -> Result<String,
         return Err(format!("Local bundle not found: {source}"));
     }
     let tmp = util::tmpdir(&sys.env);
-    let staging = util::mkdtemp(&jsp::join(&[&tmp, "impeccable-local-bundle-"]))?;
+    let staging = util::mkdtemp(&jsp::join(&[&tmp, "procable-local-bundle-"]))?;
     let result = (|| -> Result<(), String> {
         if util::is_dir(&source) {
             util::copy_dir(&source, &staging)
@@ -616,7 +616,7 @@ pub fn is_up_to_date(sys: &Sys, root: &str, providers: &[&str], bundle_dir: &str
                 }
             }
         }
-        // Provider command artifacts (OpenCode's `commands/impeccable.md`) are
+        // Provider command artifacts (OpenCode's `commands/procable.md`) are
         // part of "current" too: an install whose skills match but whose
         // bridge is missing or drifted must refresh, otherwise
         // reinstall/update report success while the slash command stays
@@ -824,7 +824,7 @@ struct AgentArtifact {
 
 fn agent_artifact(provider: &str) -> Option<AgentArtifact> {
     match provider {
-        // Claude Code's agents live at `.claude/agents/impeccable-*.md`;
+        // Claude Code's agents live at `.claude/agents/procable-*.md`;
         // project agents take precedence over user agents (upstream 7b945856).
         ".claude" => Some(AgentArtifact {
             ext: ".md",
@@ -929,7 +929,7 @@ pub fn report_provider_agents(sys: &Sys, io: &mut Io, results: &[AgentResult]) {
                 sys.format_path_for_display(&result.user_dir),
                 result.shadowed.join(", ")
             ));
-            io.err("Run `npx impeccable update --user` to refresh them, or remove them so the project agents apply.\n");
+            io.err("Run `npx procable update --user` to refresh them, or remove them so the project agents apply.\n");
         }
     }
 }
@@ -941,7 +941,7 @@ pub struct LinkSource {
 
 /// JS: resolveLinkSource(sourceValue, root)
 pub fn resolve_link_source(source_value: Option<&str>, root: &str) -> Result<LinkSource, String> {
-    let source_path = source_value.unwrap_or(".impeccable");
+    let source_path = source_value.unwrap_or(".procable");
     let checkout_root = if jsp::is_absolute(source_path) {
         source_path.to_string()
     } else {
@@ -1076,7 +1076,7 @@ mod tests {
     fn tmp_dir(tag: &str) -> String {
         static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let dir = std::env::temp_dir().join(format!(
-            "impeccable-bundle-{tag}-{}-{}",
+            "procable-bundle-{tag}-{}-{}",
             std::process::id(),
             SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         ));
@@ -1206,14 +1206,14 @@ mod tests {
             assert!(error.to_string().starts_with("Could not download skill bundle: "), "{case}: {error}");
             util::rm_rf(&root);
         }
-        let unwritable = Sys::new([("TMPDIR".into(), "/nonexistent/impeccable".into()), ("TEMP".into(), "/nonexistent/impeccable".into())].into(), "/".into());
+        let unwritable = Sys::new([("TMPDIR".into(), "/nonexistent/procable".into()), ("TEMP".into(), "/nonexistent/procable".into())].into(), "/".into());
         let mut fetch = |_: &str| -> Result<FetchResponse, String> { panic!("staging fails before any request") };
         let error = download_remote_bundle(&unwritable, &mut fetch, Ok(Default::default())).unwrap_err();
         assert!(matches!(error, BundleError::Unpack(_)), "{error}");
         let mut fetch = |_: &str| -> Result<FetchResponse, String> {
             Ok(FetchResponse { status: 200, location: None, body: Box::new(std::io::Cursor::new(b"zip".to_vec())) })
         };
-        let error = download_file_capped("https://example.com/b.zip", "/nonexistent/impeccable/b.zip", &mut fetch, MAX_DOWNLOAD_BYTES).unwrap_err();
+        let error = download_file_capped("https://example.com/b.zip", "/nonexistent/procable/b.zip", &mut fetch, MAX_DOWNLOAD_BYTES).unwrap_err();
         assert!(matches!(error, BundleError::Unpack(_)), "a failed save is not a download failure: {error}");
         assert!(!BundleError::Local("Local bundle not found: x".into()).is_fatal_over_existing_install());
         assert!(!BundleError::Download("connection refused".into()).is_fatal_over_existing_install());
@@ -1260,9 +1260,9 @@ mod tests {
         let key = Ed25519KeyPair::from_seed_unchecked(&[7; 32]).unwrap();
         let hex = |bytes: &[u8]| bytes.iter().map(|b| format!("{b:02x}")).collect::<String>();
         let keys = [("test-only".into(), hex(key.public_key().as_ref()))].into();
-        let zip = zip_bytes(&[(".claude/skills/impeccable/SKILL.md", b"verified skill")]);
+        let zip = zip_bytes(&[(".claude/skills/procable/SKILL.md", b"verified skill")]);
         let digest = format!("{:x}", Sha256::digest(&zip));
-        let payload = format!("impeccable-skill-bundle-v1\ntest-only\nskill-v4.2.0\nuniversal.zip\n{}\n{digest}\n", zip.len());
+        let payload = format!("procable-skill-bundle-v1\ntest-only\nskill-v4.2.0\nuniversal.zip\n{}\n{digest}\n", zip.len());
         let signature = serde_json::to_vec(&serde_json::json!({
             "schema": 1, "keyId": "test-only", "version": "4.2.0", "artifact": "universal.zip",
             "size": zip.len(), "sha256": digest, "signature": hex(key.sign(payload.as_bytes()).as_ref()),
@@ -1302,7 +1302,7 @@ mod tests {
             let result = download_and_extract_signed_bundle(&sys, &mut fetch, &keys);
             if case == "valid" {
                 let staging = result.unwrap();
-                assert_eq!(std::fs::read_to_string(format!("{staging}/.claude/skills/impeccable/SKILL.md")).unwrap(), "verified skill");
+                assert_eq!(std::fs::read_to_string(format!("{staging}/.claude/skills/procable/SKILL.md")).unwrap(), "verified skill");
                 assert!(!util::exists(&format!("{staging}/bundle.zip")));
                 assert!(!util::exists(&format!("{staging}/bundle.sig.json")));
                 util::rm_rf(&staging);

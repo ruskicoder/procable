@@ -1,4 +1,4 @@
-//! JS: live-accept.mjs -> `impeccable live-accept` / `accept`. Deterministic
+//! JS: live-accept.mjs -> `procable live-accept` / `accept`. Deterministic
 //! accept/discard of variant sessions: HTML/JSX wrapper carbonize, the
 //! Svelte component inline path, receipts, source locks, buffer scrub.
 
@@ -13,15 +13,15 @@ use crate::svelte_component::{
 };
 use crate::util::{eprintln, iso_now, json_compact, json_pretty, jsp, println, safe_read, Env};
 use crate::wrap_common::{arg_val, leading_ws, min_leading_spaces, slice_chars};
-use impeccable_common::Io;
-use impeccable_core::js::{trim, trim_start, WS};
+use procable_common::Io;
+use procable_core::js::{trim, trim_start, WS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Map, Value};
 
 const ACCEPT_LOCK_WAIT_MS: f64 = 1000.0;
 
-const HELP: &str = "Usage: impeccable live-accept [options]
+const HELP: &str = "Usage: procable live-accept [options]
 
 Deterministic accept/discard for live variant sessions.
 
@@ -621,8 +621,8 @@ struct MarkerBlock {
 
 /// JS: findMarkerBlock(id, lines)
 fn find_marker_block(id: &str, lines: &[String]) -> Option<MarkerBlock> {
-    let start_pattern = format!("impeccable-variants-start {}", id);
-    let end_pattern = format!("impeccable-variants-end {}", id);
+    let start_pattern = format!("procable-variants-start {}", id);
+    let end_pattern = format!("procable-variants-end {}", id);
     let mut start: Option<usize> = None;
     let mut end: Option<usize> = None;
     for (i, line) in lines.iter().enumerate() {
@@ -719,7 +719,7 @@ fn build_carbonize_replacement(
     let push_body = |lines: &mut Vec<String>, body_indent: &str| {
         let body_restored = reindent_content(restored, indent, &format!("{}  ", body_indent));
         lines.push(format!(
-            "{}{} impeccable-carbonize-start {} {}",
+            "{}{} procable-carbonize-start {} {}",
             body_indent, co, id, cc
         ));
         lines.push(format!(
@@ -739,7 +739,7 @@ fn build_carbonize_replacement(
         if let Some(pv) = param_values {
             if !pv.is_empty() {
                 lines.push(format!(
-                    "{}{} impeccable-param-values {}: {} {}",
+                    "{}{} procable-param-values {}: {} {}",
                     body_indent,
                     co,
                     id,
@@ -749,11 +749,11 @@ fn build_carbonize_replacement(
             }
         }
         lines.push(format!(
-            "{}{} impeccable-carbonize-end {} {}",
+            "{}{} procable-carbonize-end {} {}",
             body_indent, co, id, cc
         ));
         lines.push(format!(
-            "{}<div data-impeccable-variant=\"{}\" {}>",
+            "{}<div data-procable-variant=\"{}\" {}>",
             body_indent, variant_num, variant_style_attr
         ));
         lines.extend(body_restored);
@@ -761,7 +761,7 @@ fn build_carbonize_replacement(
     };
     if is_jsx {
         lines.push(format!(
-            "{}<div data-impeccable-carbonize=\"{}\" style={{{{ display: \"contents\" }}}}>",
+            "{}<div data-procable-carbonize=\"{}\" style={{{{ display: \"contents\" }}}}>",
             indent, id
         ));
         push_body(&mut lines, &format!("{}  ", indent));
@@ -815,7 +815,7 @@ fn handle_accept_unlocked(
     let original_content = extract_original(lines, &block).unwrap_or_default();
     let css_content = extract_css(lines, &block, id);
     let variant_text = variant_content.join("\n");
-    let has_helper_attrs = variant_text.contains("data-impeccable-variant");
+    let has_helper_attrs = variant_text.contains("data-procable-variant");
     let needs_carbonize = css_content.is_some() || has_helper_attrs;
     let restored = deindent_content(&variant_content, &indent);
     let mut bake_skipped: Option<String> = None;
@@ -875,11 +875,11 @@ fn handle_accept_unlocked(
 }
 
 /// JS: readSourceShadowPreviewMeta(content, id) → whether the wrapper carries
-/// `data-impeccable-preview="source-shadow"` (the only bit accept acts on).
+/// `data-procable-preview="source-shadow"` (the only bit accept acts on).
 fn read_source_shadow_preview_meta(content: &str, id: &str) -> bool {
-    // /<[^>]+data-impeccable-variants=(["'])ID\1[^>]*>/
+    // /<[^>]+data-procable-variants=(["'])ID\1[^>]*>/
     let chars: Vec<char> = content.chars().collect();
-    let needle: Vec<char> = "data-impeccable-variants=".chars().collect();
+    let needle: Vec<char> = "data-procable-variants=".chars().collect();
     let mut i = 0;
     let mut tag: Option<String> = None;
     while i + needle.len() <= chars.len() {
@@ -921,16 +921,16 @@ fn read_source_shadow_preview_meta(content: &str, id: &str) -> bool {
         i += 1;
     }
     let Some(tag) = tag else { return false };
-    let preview = read_html_attr(&tag, "data-impeccable-preview");
+    let preview = read_html_attr(&tag, "data-procable-preview");
     if preview.as_deref() != Some("source-shadow") {
         return false;
     }
-    let source_file = read_html_attr(&tag, "data-impeccable-source-file");
-    let start = read_html_attr(&tag, "data-impeccable-source-start")
-        .map(|s| impeccable_core::js::string_to_number(&s))
+    let source_file = read_html_attr(&tag, "data-procable-source-file");
+    let start = read_html_attr(&tag, "data-procable-source-start")
+        .map(|s| procable_core::js::string_to_number(&s))
         .unwrap_or(0.0);
-    let end = read_html_attr(&tag, "data-impeccable-source-end")
-        .map(|s| impeccable_core::js::string_to_number(&s))
+    let end = read_html_attr(&tag, "data-procable-source-end")
+        .map(|s| procable_core::js::string_to_number(&s))
         .unwrap_or(0.0);
     let sf_ok = source_file.map(|s| !s.is_empty()).unwrap_or(false);
     sf_ok && start.is_finite() && end.is_finite()
@@ -942,16 +942,16 @@ fn read_html_attr(tag: &str, name: &str) -> Option<String> {
     let needle: Vec<char> = name.chars().collect();
     let mut i = 0;
     while i + 1 + needle.len() <= chars.len() {
-        if impeccable_core::js::is_js_whitespace(chars[i])
+        if procable_core::js::is_js_whitespace(chars[i])
             && chars[i + 1..i + 1 + needle.len()] == needle[..]
         {
             let mut j = i + 1 + needle.len();
-            while j < chars.len() && impeccable_core::js::is_js_whitespace(chars[j]) {
+            while j < chars.len() && procable_core::js::is_js_whitespace(chars[j]) {
                 j += 1;
             }
             if j < chars.len() && chars[j] == '=' {
                 j += 1;
-                while j < chars.len() && impeccable_core::js::is_js_whitespace(chars[j]) {
+                while j < chars.len() && procable_core::js::is_js_whitespace(chars[j]) {
                     j += 1;
                 }
                 if let Some((content, _)) = crate::accept_css::quoted_lazy(&chars, j, &|_, _| true)
@@ -973,10 +973,10 @@ fn decode_html_attr(value: &str) -> String {
         .replace("&amp;", "&")
 }
 
-/// JS: isVariantEndMarkerLine(line, id): `impeccable-variants-end\s+ID(?:\s|--|\*/|$)`
+/// JS: isVariantEndMarkerLine(line, id): `procable-variants-end\s+ID(?:\s|--|\*/|$)`
 fn is_variant_end_marker_line(line: &str, id: &str) -> bool {
     let re = Regex::new(&format!(
-        r"impeccable-variants-end{ws}+{id}(?:{ws}|--|\*/|$)",
+        r"procable-variants-end{ws}+{id}(?:{ws}|--|\*/|$)",
         ws = WS,
         id = regex::escape(id)
     ))
@@ -988,7 +988,7 @@ fn is_variant_end_marker_line(line: &str, id: &str) -> bool {
 fn has_variant_wrapper_attr(line: &str, id: &str) -> bool {
     let e = regex::escape(id);
     let re = Regex::new(&format!(
-        r#"data-impeccable-variants{ws}*={ws}*(?:"{id}"|'{id}'|\{{["']{id}["']\}})"#,
+        r#"data-procable-variants{ws}*={ws}*(?:"{id}"|'{id}'|\{{["']{id}["']\}})"#,
         ws = WS,
         id = e
     ))
@@ -1136,24 +1136,24 @@ fn trim_surrounding_blank_lines(lines: Vec<String>) -> Vec<String> {
 }
 
 /// JS: extractOriginal(lines, block), with the missing slot kept apart from
-/// an empty one: `None` when the block has no `data-impeccable-variant="original"`
+/// an empty one: `None` when the block has no `data-procable-variant="original"`
 /// element at all.
 fn extract_original(lines: &[String], block: &MarkerBlock) -> Option<Vec<String>> {
     let text = strip_style_and_join(lines, block);
-    extract_inner_by_attr(&text, "data-impeccable-variant=\"original\"")
+    extract_inner_by_attr(&text, "data-procable-variant=\"original\"")
         .map(|inner| trim_surrounding_blank_lines(inner.split('\n').map(String::from).collect()))
 }
 
-const ORIGINAL_MISSING: &str = "Original not found: the variants wrapper has no data-impeccable-variant=\"original\" slot, so the element it replaced cannot be restored from it.";
+const ORIGINAL_MISSING: &str = "Original not found: the variants wrapper has no data-procable-variant=\"original\" slot, so the element it replaced cannot be restored from it.";
 
 static INSERT_MODE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(&format!(r#"data-impeccable-mode{ws}*={ws}*(?:"insert"|'insert')"#, ws = WS)).unwrap()
+    Regex::new(&format!(r#"data-procable-mode{ws}*={ws}*(?:"insert"|'insert')"#, ws = WS)).unwrap()
 });
 
 /// The original slot's content for discard, or `None` (refuse, write nothing)
 /// when a wrapper that replaced an element has none (#875): restoring "nothing" there
 /// deletes the element while reporting success. An insert wrapper
-/// (`data-impeccable-mode="insert"`) replaced nothing and legitimately has no
+/// (`data-procable-mode="insert"`) replaced nothing and legitimately has no
 /// slot, so it restores to nothing.
 fn original_or_refuse(
     id: &str,
@@ -1175,12 +1175,12 @@ fn original_or_refuse(
         .then(Vec::new)
 }
 
-/// The whole opening tag that carries `data-impeccable-variants="<id>"`,
+/// The whole opening tag that carries `data-procable-variants="<id>"`,
 /// from its `<` to its `>`, across line breaks.
 fn wrapper_open_tag<'a>(text: &'a str, id: &str) -> Option<&'a str> {
     let e = regex::escape(id);
     let re = Regex::new(&format!(
-        r#"data-impeccable-variants{ws}*={ws}*(?:"{id}"|'{id}'|\{{["']{id}["']\}})"#,
+        r#"data-procable-variants{ws}*={ws}*(?:"{id}"|'{id}'|\{{["']{id}["']\}})"#,
         ws = WS,
         id = e
     ))
@@ -1200,7 +1200,7 @@ fn extract_variant(
     let text = strip_style_and_join(lines, block);
     let inner = extract_inner_by_attr(
         &text,
-        &format!("data-impeccable-variant=\"{}\"", variant_num),
+        &format!("data-procable-variant=\"{}\"", variant_num),
     )?;
     let result = trim_surrounding_blank_lines(inner.split('\n').map(String::from).collect());
     if result.is_empty() {
@@ -1215,7 +1215,7 @@ static STYLE_SAME_LINE_RE: Lazy<Regex> =
 
 /// JS: extractCss(lines, block, id)
 fn extract_css(lines: &[String], block: &MarkerBlock, id: &str) -> Option<Vec<String>> {
-    let style_attr = format!("data-impeccable-css=\"{}\"", id);
+    let style_attr = format!("data-procable-css=\"{}\"", id);
     let mut in_style = false;
     let mut content: Vec<String> = Vec::new();
     for line in &lines[block.start..=block.end.min(lines.len() - 1)] {
@@ -1274,7 +1274,7 @@ fn strip_jsx_template_lines(content: &[String]) -> Option<Vec<String>> {
     }
     let last_idx = out.len() - 1;
     let last_trim = out[last_idx]
-        .trim_end_matches(impeccable_core::js::is_js_whitespace)
+        .trim_end_matches(procable_core::js::is_js_whitespace)
         .to_string();
     if last_trim == "`}" {
         out.pop();
@@ -1318,10 +1318,10 @@ fn deindent_content(content: &[String], base_indent: &str) -> Vec<String> {
 
 /// JS: findSessionFile(id, cwd) → (file, content, lines)
 fn find_session_file(id: &str, cwd: &str) -> Option<(String, String, Vec<String>)> {
-    let skip: [&str; 5] = ["node_modules", ".git", ".impeccable", "dist", "build"];
+    let skip: [&str; 5] = ["node_modules", ".git", ".procable", "dist", "build"];
     let extensions = resolve_live_template_extensions(cwd);
     let file = find_source_file(
-        &format!("impeccable-variants-start {}", id),
+        &format!("procable-variants-start {}", id),
         cwd,
         &extensions,
         &skip,
@@ -1343,7 +1343,7 @@ mod discard_tests {
             .map(|d| d.as_nanos())
             .unwrap_or(0);
         let dir = std::env::temp_dir().join(format!(
-            "impeccable-discard-{}-{nanos}",
+            "procable-discard-{}-{nanos}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&dir);
@@ -1351,20 +1351,20 @@ mod discard_tests {
         let file = dir.join("Login.tsx");
         let src = [
             "      </div>",
-            "      <div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"3\" style={{ display: \"contents\" }}>",
-            "        {/* impeccable-variants-start ab12cd34 */}",
-            "        <style data-impeccable-css=\"ab12cd34\">{`",
-            "          @scope ([data-impeccable-variant=\"1\"]) { :scope > .x { color: red; } }",
+            "      <div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"3\" style={{ display: \"contents\" }}>",
+            "        {/* procable-variants-start ab12cd34 */}",
+            "        <style data-procable-css=\"ab12cd34\">{`",
+            "          @scope ([data-procable-variant=\"1\"]) { :scope > .x { color: red; } }",
             "        `}</style>",
             "        {/* Original */}",
-            "        <div data-impeccable-variant=\"original\">",
+            "        <div data-procable-variant=\"original\">",
             "          <Bar title=\"Log in\" />",
             "        </div>",
             "        {/* Variants: insert below this line */}",
-            "        <div data-impeccable-variant=\"1\">",
+            "        <div data-procable-variant=\"1\">",
             "          <Bar title=\"Log in\" />",
             "        </div>",
-            "        {/* impeccable-variants-end ab12cd34 */}",
+            "        {/* procable-variants-end ab12cd34 */}",
             "      </div>",
             "    </AuthPage>",
         ];
@@ -1391,7 +1391,7 @@ mod original_slot_tests {
             .map(|d| d.as_nanos())
             .unwrap_or(0);
         let dir = std::env::temp_dir().join(format!(
-            "impeccable-original-slot-{}-{nanos}",
+            "procable-original-slot-{}-{nanos}",
             std::process::id()
         ));
         std::fs::create_dir_all(&dir).unwrap();
@@ -1405,13 +1405,13 @@ mod original_slot_tests {
     // The hand-written fallback scaffold live.md used to show: no original slot.
     const NO_ORIGINAL: &[&str] = &[
         "<main>",
-        "  <!-- impeccable-variants-start ab12cd34 -->",
-        "  <div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"1\" style=\"display: contents\">",
-        "    <div data-impeccable-variant=\"1\">",
+        "  <!-- procable-variants-start ab12cd34 -->",
+        "  <div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"1\" style=\"display: contents\">",
+        "    <div data-procable-variant=\"1\">",
         "      <h1 class=\"hero\">Bolder</h1>",
         "    </div>",
         "  </div>",
-        "  <!-- impeccable-variants-end ab12cd34 -->",
+        "  <!-- procable-variants-end ab12cd34 -->",
         "</main>",
     ];
 
@@ -1434,26 +1434,26 @@ mod original_slot_tests {
         let _ = std::fs::remove_dir_all(&dir);
         assert!(result.is_ok(), "{:?}", result.err());
         assert!(out.contains("<h1 class=\"hero\">Bolder</h1>"), "{out}");
-        assert!(!out.contains("impeccable-variants-start"), "{out}");
+        assert!(!out.contains("procable-variants-start"), "{out}");
     }
 
     #[test]
     fn an_empty_original_slot_still_restores_to_empty() {
         let src = [
             "<main>",
-            "  <!-- impeccable-variants-start ab12cd34 -->",
-            "  <div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"1\" style=\"display: contents\">",
-            "    <div data-impeccable-variant=\"original\"></div>",
-            "    <div data-impeccable-variant=\"1\"><p>New</p></div>",
+            "  <!-- procable-variants-start ab12cd34 -->",
+            "  <div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"1\" style=\"display: contents\">",
+            "    <div data-procable-variant=\"original\"></div>",
+            "    <div data-procable-variant=\"1\"><p>New</p></div>",
             "  </div>",
-            "  <!-- impeccable-variants-end ab12cd34 -->",
+            "  <!-- procable-variants-end ab12cd34 -->",
             "</main>",
         ];
         let (dir, path, lines) = scratch("index.html", &src);
         handle_discard_unlocked("ab12cd34", &lines, &path).unwrap();
         let out = std::fs::read_to_string(&path).unwrap();
         let _ = std::fs::remove_dir_all(&dir);
-        assert!(!out.contains("impeccable-variants"), "{out}");
+        assert!(!out.contains("procable-variants"), "{out}");
     }
 
     #[test]
@@ -1462,14 +1462,14 @@ mod original_slot_tests {
         // this replace wrapper; neither may exempt it from the refusal.
         let src = [
             "<main>",
-            "  <!-- impeccable-variants-start ab12cd34 -->",
-            "  <div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"1\" style=\"display: contents\">",
-            "    <style data-impeccable-css=\"ab12cd34\">[data-impeccable-mode=\"insert\"] { outline: 0; }</style>",
-            "    <div data-impeccable-variant=\"1\">",
-            "      <div data-impeccable-variants=\"ef56ab78\" data-impeccable-mode=\"insert\" data-impeccable-variant-count=\"1\"></div>",
+            "  <!-- procable-variants-start ab12cd34 -->",
+            "  <div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"1\" style=\"display: contents\">",
+            "    <style data-procable-css=\"ab12cd34\">[data-procable-mode=\"insert\"] { outline: 0; }</style>",
+            "    <div data-procable-variant=\"1\">",
+            "      <div data-procable-variants=\"ef56ab78\" data-procable-mode=\"insert\" data-procable-variant-count=\"1\"></div>",
             "    </div>",
             "  </div>",
-            "  <!-- impeccable-variants-end ab12cd34 -->",
+            "  <!-- procable-variants-end ab12cd34 -->",
             "</main>",
         ];
         let (dir, path, lines) = scratch("index.html", &src);
@@ -1484,16 +1484,16 @@ mod original_slot_tests {
     fn an_insert_wrapper_split_over_lines_still_discards() {
         let src = [
             "<main>",
-            "  <!-- impeccable-variants-start ab12cd34 -->",
+            "  <!-- procable-variants-start ab12cd34 -->",
             "  <div",
-            "    data-impeccable-variants=\"ab12cd34\"",
-            "    data-impeccable-mode=\"insert\"",
-            "    data-impeccable-variant-count=\"1\"",
+            "    data-procable-variants=\"ab12cd34\"",
+            "    data-procable-mode=\"insert\"",
+            "    data-procable-variant-count=\"1\"",
             "    style=\"display: contents\"",
             "  >",
-            "    <div data-impeccable-variant=\"1\"><p>New</p></div>",
+            "    <div data-procable-variant=\"1\"><p>New</p></div>",
             "  </div>",
-            "  <!-- impeccable-variants-end ab12cd34 -->",
+            "  <!-- procable-variants-end ab12cd34 -->",
             "</main>",
         ];
         let (dir, path, lines) = scratch("index.html", &src);
@@ -1507,11 +1507,11 @@ mod original_slot_tests {
     fn an_insert_wrapper_has_no_original_and_discards_to_nothing() {
         let src = [
             "<main>",
-            "  <!-- impeccable-variants-start ab12cd34 -->",
-            "  <div data-impeccable-variants=\"ab12cd34\" data-impeccable-mode=\"insert\" data-impeccable-variant-count=\"1\" style=\"display: contents\">",
-            "    <div data-impeccable-variant=\"1\"><p>New</p></div>",
+            "  <!-- procable-variants-start ab12cd34 -->",
+            "  <div data-procable-variants=\"ab12cd34\" data-procable-mode=\"insert\" data-procable-variant-count=\"1\" style=\"display: contents\">",
+            "    <div data-procable-variant=\"1\"><p>New</p></div>",
             "  </div>",
-            "  <!-- impeccable-variants-end ab12cd34 -->",
+            "  <!-- procable-variants-end ab12cd34 -->",
             "</main>",
         ];
         let (dir, path, lines) = scratch("index.html", &src);
@@ -1529,25 +1529,25 @@ mod carbonize_tests {
     fn wrapped(style_open: &str) -> Vec<String> {
         [
             "  <main>",
-            "    <!-- impeccable-variants-start ab12cd34 -->",
-            "    <div data-impeccable-variants=\"ab12cd34\" data-impeccable-variant-count=\"2\" style=\"display: contents\">",
+            "    <!-- procable-variants-start ab12cd34 -->",
+            "    <div data-procable-variants=\"ab12cd34\" data-procable-variant-count=\"2\" style=\"display: contents\">",
             "      <!-- Original -->",
-            "      <div data-impeccable-variant=\"original\">",
+            "      <div data-procable-variant=\"original\">",
             "        <h1 class=\"hero-title\">Title</h1>",
             "      </div>",
             "      <!-- Variants: insert below this line -->",
             style_open,
-            "        [data-impeccable-variant=\"1\"] > h1 { font-weight: 300; }",
-            "        [data-impeccable-variant=\"2\"] > h1 { font-weight: 900; }",
+            "        [data-procable-variant=\"1\"] > h1 { font-weight: 300; }",
+            "        [data-procable-variant=\"2\"] > h1 { font-weight: 900; }",
             "      </style>",
-            "      <div data-impeccable-variant=\"1\">",
+            "      <div data-procable-variant=\"1\">",
             "        <h1 class=\"hero-title\">Title</h1>",
             "      </div>",
-            "      <div data-impeccable-variant=\"2\" style=\"display: none\">",
+            "      <div data-procable-variant=\"2\" style=\"display: none\">",
             "        <h1 class=\"hero-title\">Title</h1>",
             "      </div>",
             "    </div>",
-            "    <!-- impeccable-variants-end ab12cd34 -->",
+            "    <!-- procable-variants-end ab12cd34 -->",
             "  </main>",
             "",
             "<style>",
@@ -1564,7 +1564,7 @@ mod carbonize_tests {
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos())
             .unwrap_or(0);
-        let dir = std::env::temp_dir().join(format!("impeccable-carbonize-{}-{nanos}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-carbonize-{}-{nanos}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let file = dir.join(file_name);
@@ -1596,13 +1596,13 @@ mod carbonize_tests {
     /// the dev server fails the reload of the index that vanished.
     #[test]
     fn an_astro_carbonize_block_keeps_the_style_tag_inline() {
-        let out = carbonize("index.astro", "      <style is:inline data-impeccable-css=\"ab12cd34\">");
+        let out = carbonize("index.astro", "      <style is:inline data-procable-css=\"ab12cd34\">");
         assert_eq!(
             style_tags(&out),
-            vec!["<style is:inline data-impeccable-css=\"ab12cd34\">", "<style>"],
+            vec!["<style is:inline data-procable-css=\"ab12cd34\">", "<style>"],
             "{out}"
         );
-        assert!(out.contains("<!-- impeccable-carbonize-start ab12cd34 -->"), "{out}");
+        assert!(out.contains("<!-- procable-carbonize-start ab12cd34 -->"), "{out}");
     }
 
     /// The tag comes from the file type, not from what the agent wrote: an
@@ -1610,20 +1610,20 @@ mod carbonize_tests {
     /// into the inline form.
     #[test]
     fn an_astro_carbonize_block_is_inline_whatever_the_variants_tag_was() {
-        let out = carbonize("index.astro", "      <style data-impeccable-css=\"ab12cd34\">");
+        let out = carbonize("index.astro", "      <style data-procable-css=\"ab12cd34\">");
         assert_eq!(
             style_tags(&out),
-            vec!["<style is:inline data-impeccable-css=\"ab12cd34\">", "<style>"],
+            vec!["<style is:inline data-procable-css=\"ab12cd34\">", "<style>"],
             "{out}"
         );
     }
 
     #[test]
     fn an_html_carbonize_block_keeps_the_plain_style_tag() {
-        let out = carbonize("index.html", "      <style data-impeccable-css=\"ab12cd34\">");
+        let out = carbonize("index.html", "      <style data-procable-css=\"ab12cd34\">");
         assert_eq!(
             style_tags(&out),
-            vec!["<style data-impeccable-css=\"ab12cd34\">", "<style>"],
+            vec!["<style data-procable-css=\"ab12cd34\">", "<style>"],
             "{out}"
         );
     }
@@ -1642,11 +1642,11 @@ mod bake_tests {
         let variant = |n: &str, hidden: bool| {
             let style = if hidden { " style={{ display: 'none' }}" } else { "" };
             format!(
-                "          <div data-impeccable-variant=\"{n}\"{style}>\n            <div className=\"pricing-grid\">\n              <article className=\"pricing-card\">Starter</article>\n            </div>\n          </div>\n"
+                "          <div data-procable-variant=\"{n}\"{style}>\n            <div className=\"pricing-grid\">\n              <article className=\"pricing-card\">Starter</article>\n            </div>\n          </div>\n"
             )
         };
         format!(
-            "export default function App() {{\n  return (\n    <main>\n      <section className=\"pricing\" id=\"pricing\">\n        <h2 className=\"pricing-title\">Simple pricing</h2>\n        <div data-impeccable-variants=\"{s}\" data-impeccable-variant-count=\"3\" style={{{{ display: \"contents\" }}}}>\n          {{/* impeccable-variants-start {s} */}}\n          {{/* Original */}}\n          <div data-impeccable-variant=\"original\">\n            <div className=\"pricing-grid\">\n              <article className=\"pricing-card\">Starter</article>\n            </div>\n          </div>\n          {{/* Variants: insert below this line */}}\n          <style data-impeccable-css=\"{s}\">{{`\n            @scope ([data-impeccable-variant=\"1\"]) {{ :scope > .pricing-grid {{ gap: 8px; }} }}\n            @scope ([data-impeccable-variant=\"2\"]) {{\n              :scope > .pricing-grid {{ gap: 32px; }}\n              :scope .pricing-card {{ border: 2px solid #111; }}\n            }}\n            @scope ([data-impeccable-variant=\"3\"]) {{ :scope > .pricing-grid {{ gap: 0; }} }}\n          `}}</style>\n{v1}{v2}{v3}          {{/* impeccable-variants-end {s} */}}\n        </div>\n      </section>\n    </main>\n  );\n}}\n",
+            "export default function App() {{\n  return (\n    <main>\n      <section className=\"pricing\" id=\"pricing\">\n        <h2 className=\"pricing-title\">Simple pricing</h2>\n        <div data-procable-variants=\"{s}\" data-procable-variant-count=\"3\" style={{{{ display: \"contents\" }}}}>\n          {{/* procable-variants-start {s} */}}\n          {{/* Original */}}\n          <div data-procable-variant=\"original\">\n            <div className=\"pricing-grid\">\n              <article className=\"pricing-card\">Starter</article>\n            </div>\n          </div>\n          {{/* Variants: insert below this line */}}\n          <style data-procable-css=\"{s}\">{{`\n            @scope ([data-procable-variant=\"1\"]) {{ :scope > .pricing-grid {{ gap: 8px; }} }}\n            @scope ([data-procable-variant=\"2\"]) {{\n              :scope > .pricing-grid {{ gap: 32px; }}\n              :scope .pricing-card {{ border: 2px solid #111; }}\n            }}\n            @scope ([data-procable-variant=\"3\"]) {{ :scope > .pricing-grid {{ gap: 0; }} }}\n          `}}</style>\n{v1}{v2}{v3}          {{/* procable-variants-end {s} */}}\n        </div>\n      </section>\n    </main>\n  );\n}}\n",
             s = SESSION,
             v1 = variant("1", false),
             v2 = variant("2", true),
@@ -1661,10 +1661,10 @@ mod bake_tests {
     }
 
     fn project_with(tag: &str, element: Option<Value>) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("impeccable-accept-bake-{}-{}", tag, std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-accept-bake-{}-{}", tag, std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("src")).unwrap();
-        std::fs::create_dir_all(dir.join(".impeccable/live")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/live")).unwrap();
         std::fs::write(dir.join("src/App.jsx"), app_jsx()).unwrap();
         std::fs::write(dir.join("src/styles.css"), ".pricing-grid { display: grid; gap: 20px; }\n.pricing-card { padding: 20px; }\n").unwrap();
         std::fs::write(dir.join("index.html"), "<html><body><div id=\"root\"></div></body></html>").unwrap();
@@ -1705,19 +1705,19 @@ mod bake_tests {
         assert_eq!(result["css"]["anchor"], json!("div.pricing-grid"));
         assert_eq!(result["verify"]["clean"], json!(true), "{result}");
         let jsx = std::fs::read_to_string(dir.join("src/App.jsx")).unwrap();
-        assert!(!jsx.contains("data-impeccable"), "{jsx}");
-        assert!(!jsx.contains("impeccable-variants"), "{jsx}");
+        assert!(!jsx.contains("data-procable"), "{jsx}");
+        assert!(!jsx.contains("procable-variants"), "{jsx}");
         assert!(!jsx.contains("<style"), "{jsx}");
         assert_eq!(jsx.matches("className=\"pricing-grid\"").count(), 1, "{jsx}");
         // The element sits where the wrapper started, at its indentation.
         assert!(jsx.contains("        <h2 className=\"pricing-title\">Simple pricing</h2>\n        <div className=\"pricing-grid\">\n          <article className=\"pricing-card\">Starter</article>\n        </div>\n      </section>"), "{jsx}");
         let css = std::fs::read_to_string(dir.join("src/styles.css")).unwrap();
         assert!(css.starts_with(".pricing-grid { display: grid; gap: 20px; }\n"), "existing rules untouched: {css}");
-        assert!(css.contains("/* impeccable generate ab12cd34: accepted variant 2 */"), "{css}");
+        assert!(css.contains("/* procable generate ab12cd34: accepted variant 2 */"), "{css}");
         assert!(css.contains("div.pricing-grid { gap: 32px; }"), "{css}");
         assert!(css.contains("div.pricing-grid .pricing-card { border: 2px solid #111; }"), "{css}");
         assert!(!css.contains("8px") && !css.contains("gap: 0"), "other variants dropped: {css}");
-        assert!(!css.contains(":scope") && !css.contains("data-impeccable"), "{css}");
+        assert!(!css.contains(":scope") && !css.contains("data-procable"), "{css}");
         // Idempotent: the receipt answers a rerun.
         let again = accept(&dir, &["--id", SESSION, "--variant", "2", "--bake"]);
         assert_eq!(again["alreadyApplied"], json!(true), "{again}");
@@ -1733,7 +1733,7 @@ mod bake_tests {
         assert_eq!(plain["carbonize"], json!(true), "{plain}");
         assert!(plain.get("baked").is_none(), "{plain}");
         let jsx = std::fs::read_to_string(dir.join("src/App.jsx")).unwrap();
-        assert!(jsx.contains("impeccable-carbonize-start"), "{jsx}");
+        assert!(jsx.contains("procable-carbonize-start"), "{jsx}");
         assert!(!std::fs::read_to_string(dir.join("src/styles.css")).unwrap().contains("32px"));
 
         // The generate verb's session (the journal says origin agent) carbonizes
@@ -1746,7 +1746,7 @@ mod bake_tests {
         let lane = accept(&dir2, &["--id", SESSION, "--variant", "2"]);
         assert_eq!(lane["carbonize"], json!(true), "{lane}");
         assert!(lane.get("baked").is_none(), "{lane}");
-        assert!(std::fs::read_to_string(dir2.join("src/App.jsx")).unwrap().contains("impeccable-carbonize-start"));
+        assert!(std::fs::read_to_string(dir2.join("src/App.jsx")).unwrap().contains("procable-carbonize-start"));
         // --bake is the only way in, and --no-bake still wins over it.
         let dir3 = project("origin3");
         let baked = accept(&dir3, &["--id", SESSION, "--variant", "2", "--bake"]);
@@ -1767,7 +1767,7 @@ mod bake_tests {
         let result = accept(&dir, &["--id", SESSION, "--variant", "2", "--bake"]);
         assert_eq!(result["carbonize"], json!(true), "{result}");
         assert!(result["bakeSkipped"].as_str().unwrap().contains("div.pricing-grid matches 3 elements"), "{result}");
-        assert!(std::fs::read_to_string(dir.join("src/App.jsx")).unwrap().contains("impeccable-carbonize-start"));
+        assert!(std::fs::read_to_string(dir.join("src/App.jsx")).unwrap().contains("procable-carbonize-start"));
         assert!(!std::fs::read_to_string(dir.join("src/styles.css")).unwrap().contains("32px"));
         // Without the overlay's descriptor there is nothing to verify against.
         let dir2 = project_with("nodesc", None);
@@ -1788,7 +1788,7 @@ mod bake_tests {
         assert_eq!(result["carbonize"], json!(true), "{result}");
         assert!(result["bakeSkipped"].as_str().unwrap().contains("knobs"), "{result}");
         let jsx = std::fs::read_to_string(dir.join("src/App.jsx")).unwrap();
-        assert!(jsx.contains("impeccable-carbonize-start"), "{jsx}");
+        assert!(jsx.contains("procable-carbonize-start"), "{jsx}");
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

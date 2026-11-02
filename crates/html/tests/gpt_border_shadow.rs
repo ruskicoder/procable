@@ -1,7 +1,7 @@
 //! `gpt-thin-border-wide-shadow` in the file scan: the hairline-and-halo pair
 //! is reported only where a row of sibling cards repeats it.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::Path;
 
 fn snippets(html: &str) -> Vec<String> {
@@ -28,7 +28,7 @@ fn row(n: usize, shadow: &str) -> String {
 }
 
 fn repo_root() -> std::path::PathBuf {
-    std::env::var("IMPECCABLE_PUBLIC_REPO")
+    std::env::var("PROCABLE_PUBLIC_REPO")
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }

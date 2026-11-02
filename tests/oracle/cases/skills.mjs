@@ -27,7 +27,7 @@ export default [
     id: 'skills-install-replit-project', verb: 'install', workspace: 'skills-replit',
     setup: (ws) => fs.mkdirSync(path.join(ws, '.agents')),
     stdin: '1\n\n',
-    env: { IMPECCABLE_BUNDLE_PATH: '<WS>/no-such-bundle' },
-    files: ['.agents/**', '.codex/**', '.impeccable/**'],
+    env: { PROCABLE_BUNDLE_PATH: '<WS>/no-such-bundle' },
+    files: ['.agents/**', '.codex/**', '.procable/**'],
   },
 ];

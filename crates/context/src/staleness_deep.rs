@@ -11,7 +11,7 @@ use regex::Regex;
 use serde_json::{Map, Value};
 
 const VISUAL_SOURCE_DIRS: [&str; 7] = ["src", "app", "pages", "components", "site", "styles", "public"];
-const LEGACY_LIVE_PATHS: [&str; 2] = [".impeccable-live.json", ".impeccable-live"];
+const LEGACY_LIVE_PATHS: [&str; 2] = [".procable-live.json", ".procable-live"];
 
 fn git(args: &[&str], cwd: &str) -> Option<String> {
     git_run(args, cwd, true, Some(5000))
@@ -83,7 +83,7 @@ fn has_coverage_value(v: Option<&Value>) -> bool {
     }
 }
 
-const SEED_MARKER_TAIL: &str = "impeccable document once there's code to capture the actual tokens and components. -->";
+const SEED_MARKER_TAIL: &str = "procable document once there's code to capture the actual tokens and components. -->";
 
 /// JS: checkDesignCoverage
 pub fn check_design_coverage(design: Option<&str>, design_path: Option<&str>) -> Vec<Finding> {
@@ -134,7 +134,7 @@ pub fn check_detector_ignores(project_root: &str, known_rule_ids: Option<&[Strin
         return out;
     }
     for name in ["config.json", "config.local.json"] {
-        let fp = jsp::join(&[project_root, ".impeccable", name]);
+        let fp = jsp::join(&[project_root, ".procable", name]);
         let Some(raw) = read_json(&fp) else { continue };
         let Some(detector) = raw.get("detector") else { continue };
         if !js_truthy(detector) || !(detector.is_object() || detector.is_array()) {
@@ -293,7 +293,7 @@ pub fn check_hook_installation(
                     "{} still runs the design hook as Cursor's `preToolUse` write gate, which is retired. Cursor now runs it after each edit on `postToolUse` and hands the findings to the agent as context.",
                     ia
                 ),
-                "Move the entry to `postToolUse`: `impeccable doctor --fix`, `impeccable hooks on`, or the next `impeccable update` does it.".to_string(),
+                "Move the entry to `postToolUse`: `procable doctor --fix`, `procable hooks on`, or the next `procable update` does it.".to_string(),
             ));
         }
         if !broken.is_empty() {
@@ -312,11 +312,11 @@ pub fn check_hook_installation(
                 // providers get project hooks, and a launcher entry in their
                 // home file is never repointed.
                 if *is_user && provider_id == "claude-code" {
-                    "Reinstall with `impeccable update --user`, which rewrites this user-level manifest against the skill's current location."
+                    "Reinstall with `procable update --user`, which rewrites this user-level manifest against the skill's current location."
                 } else if *is_user {
-                    "Edit this user-level manifest by hand: point the command at the installed skill's launcher, or remove the Impeccable entry. `impeccable update --user` installs project hooks and does not repoint this file."
+                    "Edit this user-level manifest by hand: point the command at the installed skill's launcher, or remove the Procable entry. `procable update --user` installs project hooks and does not repoint this file."
                 } else {
-                    "Reinstall with `impeccable hooks on`, which rewrites the manifest against the skill's current location."
+                    "Reinstall with `procable hooks on`, which rewrites the manifest against the skill's current location."
                 }
                 .to_string(),
             ));
@@ -325,7 +325,7 @@ pub fn check_hook_installation(
     if let Some(ia) = installed_at {
         for root in &project_roots {
             for name in ["config.json", "config.local.json"] {
-                let cp = jsp::join(&[root, ".impeccable", name]);
+                let cp = jsp::join(&[root, ".procable", name]);
                 let Some(raw) = read_json(&cp) else { continue };
                 let Some(hook) = raw.get("hook") else { continue };
                 if js_truthy(hook) && hook.get("enabled") == Some(&Value::Bool(false)) {
@@ -339,7 +339,7 @@ pub fn check_hook_installation(
                             "{} installs the design hook while this config sets `hook.enabled: false`, so the hook fires and then declines to scan.",
                             ia
                         ),
-                        "Ask which was intended: `impeccable hooks on` to enable, or `impeccable hooks off` to uninstall the manifest entry as well.".to_string(),
+                        "Ask which was intended: `procable hooks on` to enable, or `procable hooks off` to uninstall the manifest entry as well.".to_string(),
                     ));
                     return out;
                 }
@@ -364,7 +364,7 @@ pub fn check_legacy_live_state(project_root: &str) -> Vec<Finding> {
         Some(present.join(", ")),
         "auto",
         format!(
-            "Live-mode state sits in retired location(s): {}. Current live mode writes under `.impeccable/live/`.",
+            "Live-mode state sits in retired location(s): {}. Current live mode writes under `.procable/live/`.",
             present.iter().map(|r| format!("`{}`", r)).collect::<Vec<_>>().join(", ")
         ),
         "These are read only through backward-compatible fallbacks and are safe to delete once no live session is running. No user decision is needed.".to_string(),
@@ -468,7 +468,7 @@ pub fn check_workspaces(repo_root: &str, candidates: &[TargetCandidate]) -> (Vec
 
 /// JS: loadKnownRuleIds -> the bundled registry, lowercased ids.
 pub fn load_known_rule_ids() -> Option<Vec<String>> {
-    Some(impeccable_core::registry::ANTIPATTERNS.iter().map(|r| r.id.to_lowercase()).collect())
+    Some(procable_core::registry::ANTIPATTERNS.iter().map(|r| r.id.to_lowercase()).collect())
 }
 
 #[cfg(test)]
@@ -479,7 +479,7 @@ mod tests {
 
     fn tmp() -> String {
         let base = std::env::temp_dir().join(format!(
-            "impeccable-doctor-hook-{}-{}-{}",
+            "procable-doctor-hook-{}-{}-{}",
             std::process::id(),
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos(),
             // A per-process counter: Windows' clock is coarse enough that two
@@ -505,11 +505,11 @@ mod tests {
     fn hook_script_missing_resolves_launcher_and_legacy_forms() {
         let root = tmp();
         // Launcher form pointing at a launcher that exists: no finding.
-        write(&root, ".claude/skills/impeccable/scripts/impeccable", "#!/bin/sh\n");
+        write(&root, ".claude/skills/procable/scripts/procable", "#!/bin/sh\n");
         write(
             &root,
             ".claude/settings.local.json",
-            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook"}]}]}}"#,
         );
         assert!(check_hook_installation(&root, None, "claude-code", None).is_empty());
 
@@ -517,7 +517,7 @@ mod tests {
         write(
             &root,
             ".claude/settings.local.json",
-            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.other/skills/impeccable/scripts/impeccable\" hook"}]}]}}"#,
+            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"${CLAUDE_PROJECT_DIR}/.other/skills/procable/scripts/procable\" hook"}]}]}}"#,
         );
         let f = check_hook_installation(&root, None, "claude-code", None);
         assert_eq!(f.len(), 1, "{f:?}");
@@ -527,11 +527,11 @@ mod tests {
         write(
             &root,
             ".claude/settings.local.json",
-            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\""}]}]}}"#,
+            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\""}]}]}}"#,
         );
         let f = check_hook_installation(&root, None, "claude-code", None);
         assert_eq!(f.len(), 1, "{f:?}");
-        write(&root, ".claude/skills/impeccable/scripts/hook.mjs", "");
+        write(&root, ".claude/skills/procable/scripts/hook.mjs", "");
         assert!(check_hook_installation(&root, None, "claude-code", None).is_empty());
         let _ = std::fs::remove_dir_all(&root);
     }
@@ -539,13 +539,13 @@ mod tests {
     #[test]
     fn cursor_gate_is_an_auto_finding_and_the_post_edit_hook_is_not() {
         let root = tmp();
-        write(&root, ".cursor/skills/impeccable/scripts/impeccable", "#!/bin/sh\n");
-        write(&root, ".cursor/hooks.json", r#"{"version":1,"hooks":{"preToolUse":[{"command":"\".cursor/skills/impeccable/scripts/impeccable\" hook-before-edit","timeout":5}]}}"#);
+        write(&root, ".cursor/skills/procable/scripts/procable", "#!/bin/sh\n");
+        write(&root, ".cursor/hooks.json", r#"{"version":1,"hooks":{"preToolUse":[{"command":"\".cursor/skills/procable/scripts/procable\" hook-before-edit","timeout":5}]}}"#);
         let f = check_hook_installation(&root, None, "cursor", None);
         assert_eq!(f.len(), 1, "{:?}", f.iter().map(|x| &x.id).collect::<Vec<_>>());
         assert_eq!(f[0].id, "cursor-hook-pre-edit-gate");
         assert_eq!(f[0].severity, "auto");
-        write(&root, ".cursor/hooks.json", r#"{"version":1,"hooks":{"postToolUse":[{"command":"\".cursor/skills/impeccable/scripts/impeccable\" hook","matcher":"^Write$","timeout":5}]}}"#);
+        write(&root, ".cursor/hooks.json", r#"{"version":1,"hooks":{"postToolUse":[{"command":"\".cursor/skills/procable/scripts/procable\" hook","matcher":"^Write$","timeout":5}]}}"#);
         assert!(check_hook_installation(&root, None, "cursor", None).is_empty());
         let _ = std::fs::remove_dir_all(&root);
     }
@@ -560,12 +560,12 @@ mod tests {
             &home,
             ".claude",
             "skills",
-            "impeccable",
+            "procable",
             "scripts",
-            "impeccable",
+            "procable",
         ]);
         let manifest = crate::jsp::join(&[&home, ".claude", "settings.json"]);
-        write(&home, ".claude/skills/impeccable/scripts/impeccable", "#!/bin/sh\n");
+        write(&home, ".claude/skills/procable/scripts/procable", "#!/bin/sh\n");
         write(
             &home,
             ".claude/settings.json",
@@ -584,7 +584,7 @@ mod tests {
         write(
             &home,
             ".claude/settings.local.json",
-            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"/missing/user-local/impeccable\" hook"}]}]}}"#,
+            r#"{"hooks":{"PostToolUse":[{"hooks":[{"type":"command","command":"\"/missing/user-local/procable\" hook"}]}]}}"#,
         );
         assert!(check_hook_installation(&project, None, "claude-code", Some(&manifest)).is_empty());
 
@@ -592,7 +592,7 @@ mod tests {
         let findings = check_hook_installation(&project, None, "claude-code", Some(&manifest));
         assert_eq!(findings.len(), 1, "{findings:?}");
         assert_eq!(findings[0].id, "hook-script-missing");
-        assert!(findings[0].fix.starts_with("Reinstall with `impeccable update --user`"), "{:?}", findings[0].fix);
+        assert!(findings[0].fix.starts_with("Reinstall with `procable update --user`"), "{:?}", findings[0].fix);
         let _ = std::fs::remove_dir_all(&root);
     }
 
@@ -602,9 +602,9 @@ mod tests {
         let project = crate::jsp::join(&[&root, "project"]);
         let home = crate::jsp::join(&[&root, "home"]);
         std::fs::create_dir_all(&project).unwrap();
-        let launcher = crate::jsp::join(&[&home, ".agents", "skills", "impeccable", "scripts", "impeccable"]);
+        let launcher = crate::jsp::join(&[&home, ".agents", "skills", "procable", "scripts", "procable"]);
         let manifest = crate::jsp::join(&[&root, "codex-home", "hooks.json"]);
-        write(&home, ".agents/skills/impeccable/scripts/impeccable", "#!/bin/sh\n");
+        write(&home, ".agents/skills/procable/scripts/procable", "#!/bin/sh\n");
         write(
             &root,
             "codex-home/hooks.json",

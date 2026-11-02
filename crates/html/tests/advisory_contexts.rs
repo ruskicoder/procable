@@ -14,12 +14,12 @@
 //! There is no layout here, so the rows that need rects keep failing: a
 //! label drawn over a plot and labels lined up along an axis.
 
-use impeccable_core::findings::Finding;
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_core::findings::Finding;
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::{Path, PathBuf};
 
 fn repo_root() -> PathBuf {
-    std::env::var("IMPECCABLE_PUBLIC_REPO")
+    std::env::var("PROCABLE_PUBLIC_REPO")
         .map(PathBuf::from)
         .unwrap_or_else(|_| Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }

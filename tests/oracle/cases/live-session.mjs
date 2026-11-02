@@ -1,7 +1,7 @@
 /**
  * `live-status`, `live-resume`, `live-complete`, `live-poll`, `live-server`
  * against staged durable session state (journals under
- * .impeccable/live/sessions). No helper server runs except in the daemon case.
+ * .procable/live/sessions). No helper server runs except in the daemon case.
  */
 import { LIVE_FILES, rm, stageWrappedHtml, write, writeJournal } from '../live-helpers.mjs';
 
@@ -14,11 +14,11 @@ const generating = (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_phase', pha
 const carbonizeRequired = (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'index.html', sourceEventType: 'generate', carbonize: false, arrivedVariants: 3 }, { type: 'accept', variantId: '2', pageUrl: '/', paramValues: { face: 'serif' } }, { type: 'agent_done', file: 'index.html', sourceEventType: 'accept', carbonize: true }]);
 const acceptRequested = (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'index.html', sourceEventType: 'generate', arrivedVariants: 3 }, { type: 'checkpoint', revision: 3, revisionDomain: 'browser', owner: 'deadbeef', phase: 'cycling', reason: 'variants_ready', pageUrl: '/', expectedVariants: 3, arrivedVariants: 3, visibleVariant: 1, paramValues: { lightness: 0.5 } }, { type: 'accept', variantId: '1', pageUrl: '/', paramValues: { lightness: 0.6 } }]);
 const manualApply = (ws) => writeJournal(ws, 'c0ffee01', [{ type: 'manual_edit_apply', pageUrl: '/', chunk: { index: 1, total: 2, opCount: 2, totalOpCount: 3 }, batch: { version: 1, pageUrl: '/', count: 1, entries: [{ id: 'e1', pageUrl: '/', ops: [{ ref: 'h1', tag: 'h1', originalText: 'A', newText: 'B', sourceHint: { file: 'index.html', line: 12 } }, { ref: 'p', tag: 'p', originalText: 'C', newText: 'D' }] }] }, evidencePath: '/tmp/x.json' }]);
-const mountFailed = (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'index.html', arrivedVariants: 3 }, { type: 'variant_mount_failed', variant: 2, url: 'http://localhost:5173/node_modules/.impeccable-live/ab12cd34/r1/v2.svelte', error: 'SyntaxError: unexpected token' }]);
+const mountFailed = (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'index.html', arrivedVariants: 3 }, { type: 'variant_mount_failed', variant: 2, url: 'http://localhost:5173/node_modules/.procable-live/ab12cd34/r1/v2.svelte', error: 'SyntaxError: unexpected token' }]);
 const completed = (ws) => writeJournal(ws, ID, [GEN, { type: 'discard' }, { type: 'discarded' }]);
 const twoSessions = (ws) => { generating(ws); writeJournal(ws, 'bb22cc33', [{ type: 'steer', message: 'make the hero calmer', pageUrl: '/' }]); completed(ws); writeJournal(ws, 'dd44ee55', [GEN, { type: 'complete', file: 'index.html' }]); };
-const staleServerJson = (ws) => write(ws, '.impeccable/live/server.json', '{"pid":2147483646,"port":8497,"token":"stale"}');
-const aliveServerJson = (ws) => write(ws, '.impeccable/live/server.json', JSON.stringify({ pid: process.pid, port: 65531, token: 'oracle-token' }));
+const staleServerJson = (ws) => write(ws, '.procable/live/server.json', '{"pid":2147483646,"port":8497,"token":"stale"}');
+const aliveServerJson = (ws) => write(ws, '.procable/live/server.json', JSON.stringify({ pid: process.pid, port: 65531, token: 'oracle-token' }));
 
 export default [
   // --- live-status ---
@@ -28,7 +28,7 @@ export default [
   S('live-status-manual-apply', 'live-status', [], manualApply),
   S('live-status-mount-failed', 'live-status', [], mountFailed),
   S('live-status-stale-server-json', 'live-status', [], (ws) => { generating(ws); staleServerJson(ws); }),
-  S('live-status-legacy-sessions-dir', 'live-status', [], (ws) => write(ws, '.impeccable-live/sessions/legacy01.jsonl', JSON.stringify({ seq: 1, id: 'legacy01', type: 'generate', ts: '2026-08-01T10:00:00.000Z', event: { id: 'legacy01', ...GEN } }) + '\n')),
+  S('live-status-legacy-sessions-dir', 'live-status', [], (ws) => write(ws, '.procable-live/sessions/legacy01.jsonl', JSON.stringify({ seq: 1, id: 'legacy01', type: 'generate', ts: '2026-08-01T10:00:00.000Z', event: { id: 'legacy01', ...GEN } }) + '\n')),
   S('live-status-target-missing-value', 'live-status', ['--target'], null),
   S('live-status-from-subdir', 'live-status', [], generating, { cwd: 'src' }),
   // --- live-resume ---
@@ -52,7 +52,7 @@ export default [
   S('live-complete-source-dirty-force', 'live-complete', ['--id', ID, '--force'], (ws) => { carbonizeRequired(ws); stageWrappedHtml(ws); }),
   S('live-complete-source-dirty-carbonize-leftovers', 'live-complete', ['--id', ID], (ws) => {
     carbonizeRequired(ws);
-    write(ws, 'index.html', '<html><body>\n<!-- impeccable-carbonize-start ab12cd34 -->\n<style>h1 { color: var(--p-lightness, 0.5); }</style>\n<!-- impeccable-param-values ab12cd34: {"lightness":0.7} -->\n<!-- impeccable-carbonize-end ab12cd34 -->\n<h1 data-p-italic="on" style="--impeccable-variant-ready: 1">Hi</h1>\n</body></html>\n');
+    write(ws, 'index.html', '<html><body>\n<!-- procable-carbonize-start ab12cd34 -->\n<style>h1 { color: var(--p-lightness, 0.5); }</style>\n<!-- procable-param-values ab12cd34: {"lightness":0.7} -->\n<!-- procable-carbonize-end ab12cd34 -->\n<h1 data-p-italic="on" style="--procable-variant-ready: 1">Hi</h1>\n</body></html>\n');
   }),
   S('live-complete-discarded', 'live-complete', ['--id', ID, '--discarded'], generating),
   S('live-complete-discard-alias', 'live-complete', ['--id=' + ID, '--discard'], generating),
@@ -61,7 +61,7 @@ export default [
   S('live-complete-error-no-message', 'live-complete', ['--id', ID, '--error'], generating),
   S('live-complete-unknown-session', 'live-complete', ['--id', 'zz99zz99'], null),
   S('live-complete-twice', 'live-complete', ['--id', ID], carbonizeRequired, { steps: [{}, {}] }),
-  S('live-complete-source-in-node-modules', 'live-complete', ['--id', ID], (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'node_modules/.impeccable-live/ab12cd34/manifest.json', sourceFile: 'src/routes/+page.svelte', previewMode: 'svelte-component' }])),
+  S('live-complete-source-in-node-modules', 'live-complete', ['--id', ID], (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'node_modules/.procable-live/ab12cd34/manifest.json', sourceFile: 'src/routes/+page.svelte', previewMode: 'svelte-component' }])),
   S('live-complete-source-missing-file', 'live-complete', ['--id', ID], (ws) => writeJournal(ws, ID, [GEN, { type: 'agent_done', file: 'src/gone.html' }])),
   // --- live-poll (no server, or a server.json whose pid is the recorder) ---
   S('live-poll-help', 'live-poll', ['--help'], null),
@@ -79,8 +79,8 @@ export default [
   S('live-server-help', 'live-server', ['--help'], null),
   S('live-server-stop-none', 'live-server', ['stop'], null, { files: [...F, 'index.html'] }),
   S('live-server-stop-none-keep-inject', 'live-server', ['stop', '--keep-inject'], null),
-  S('live-server-stop-removes-tag', 'live-server', ['stop'], (ws) => write(ws, 'index.html', '<html><body>\n<!-- impeccable-live-start -->\n<script src="http://localhost:8412/live.js?token=t"></script>\n<!-- impeccable-live-end -->\n</body></html>\n'), { files: [...F, 'index.html'] }),
-  { id: 'live-server-stop-no-config', verb: 'live-server', workspace: 'live-vite', args: ['stop'], setup: (ws) => rm(ws, '.impeccable/live/config.json'), files: F },
+  S('live-server-stop-removes-tag', 'live-server', ['stop'], (ws) => write(ws, 'index.html', '<html><body>\n<!-- procable-live-start -->\n<script src="http://localhost:8412/live.js?token=t"></script>\n<!-- procable-live-end -->\n</body></html>\n'), { files: [...F, 'index.html'] }),
+  { id: 'live-server-stop-no-config', verb: 'live-server', workspace: 'live-vite', args: ['stop'], setup: (ws) => rm(ws, '.procable/live/config.json'), files: F },
   { id: 'live-server-already-running', verb: 'live-server', workspace: 'live-html', args: [], setup: aliveServerJson, files: F },
   { id: 'live-server-target-missing-value', verb: 'live-server', workspace: 'live-html', args: ['--target'] },
 ];

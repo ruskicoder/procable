@@ -1,4 +1,4 @@
-// VENDORED from impeccable-site/site/scripts/instrument-strip.js (the source of truth).
+// VENDORED from procable-site/site/scripts/instrument-strip.js (the source of truth).
 // Do not edit here: change the site, then run node scripts/sync-kinpaku-kit.mjs.
 // Instrument strip: the sliding thumb.
 //

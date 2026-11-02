@@ -11,8 +11,8 @@ mod http;
 use std::collections::{BTreeMap, HashMap};
 use std::time::Duration;
 
-use impeccable_browser::{cdp::Browser, discovery, snapshot_engine};
-use impeccable_core::browser::Dom;
+use procable_browser::{cdp::Browser, discovery, snapshot_engine};
+use procable_core::browser::Dom;
 use serde_json::{json, Value};
 
 /// The in-page probe the live overlay's rule core reads the page through.
@@ -63,7 +63,7 @@ fn the_capture_and_the_page_probe_agree_on_image_load_state() {
     // The live page's probe: `[natural size, complete, currentSrc]` per id,
     // with the sentinels it hands the wasm side spelled as JSON null.
     let script = format!(
-        "(() => {{ {PROBE_JS}\n const out = {{}}; for (const id of {ids}) {{ const h = __intern(document.getElementById(id)); const size = __impeccableDom.image_natural_size(h); const done = __impeccableDom.image_complete(h); const src = __impeccableDom.image_current_src(h); out[id] = [size.length ? size : null, done === -1 ? null : done === 1, src === undefined ? null : src]; }} return out; }})()",
+        "(() => {{ {PROBE_JS}\n const out = {{}}; for (const id of {ids}) {{ const h = __intern(document.getElementById(id)); const size = __procableDom.image_natural_size(h); const done = __procableDom.image_complete(h); const src = __procableDom.image_current_src(h); out[id] = [size.length ? size : null, done === -1 ? null : done === 1, src === undefined ? null : src]; }} return out; }})()",
         ids = json!(IDS)
     );
     let live = page.evaluate_value(&script).unwrap();

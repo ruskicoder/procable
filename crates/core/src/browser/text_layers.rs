@@ -36,8 +36,8 @@ use super::page_checks::{
 };
 use crate::color::{composite_color_over, parse_gradient_colors, split_top_level_commas, Rgba};
 use crate::js;
-use impeccable_foundation::browser::snapshot::NS_SVG;
-use impeccable_foundation::css::measures::{data_svg_intrinsic_size, parse_gradient_layer_stops};
+use procable_foundation::browser::snapshot::NS_SVG;
+use procable_foundation::css::measures::{data_svg_intrinsic_size, parse_gradient_layer_stops};
 
 /// What the stacks at a run of text say about the surface the walk resolved.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

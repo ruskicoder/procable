@@ -1,16 +1,16 @@
-//! JS: skill/scripts/hook-admin.mjs (`impeccable hooks` / `hook-admin`):
+//! JS: skill/scripts/hook-admin.mjs (`procable hooks` / `hook-admin`):
 //! status, on, off, ignore-rule, ignore-file, ignore-value, reset over
-//! `.impeccable/config.json` / `config.local.json`, plus the harness manifest
+//! `.procable/config.json` / `config.local.json`, plus the harness manifest
 //! repair `on` performs. Manifests are written as JSON with 2-space
 //! indentation and a trailing newline, in the JS key order.
 //!
 //! Where the JS wrote `node "<skill>/scripts/hook.mjs"`, the binary writes
-//! `"<skill>/scripts/impeccable" hook`: the launcher shipped next to the
+//! `"<skill>/scripts/procable" hook`: the launcher shipped next to the
 //! skill picks the platform binary, so no Node is needed. Old `.mjs`
-//! manifests are still recognized (`impeccable_context::hook_markers`) so
+//! manifests are still recognized (`procable_context::hook_markers`) so
 //! `on` repairs them to the new form and `off` prunes either.
 
-use impeccable_core::js;
+use procable_core::js;
 use serde_json::{Map, Value};
 
 use crate::hook_lib::*;
@@ -94,10 +94,10 @@ fn stop_manifest_entry_with_windows(command: &str, windows: &str) -> Value {
 /// The launcher paths the manifests invoke, per harness. Project-relative
 /// (or `${CLAUDE_PROJECT_DIR}` / repo-root anchored) so a committed manifest
 /// resolves on every teammate's checkout.
-const CLAUDE_HOOK_COMMAND: &str = "\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook";
-const AGENTS_HOOK_COMMAND: &str = "\".agents/skills/impeccable/scripts/impeccable\" hook";
-const CURSOR_HOOK_COMMAND: &str = "\".cursor/skills/impeccable/scripts/impeccable\" hook";
-const GITHUB_HOOK_COMMAND: &str = "\"$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts/impeccable\" hook";
+const CLAUDE_HOOK_COMMAND: &str = "\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook";
+const AGENTS_HOOK_COMMAND: &str = "\".agents/skills/procable/scripts/procable\" hook";
+const CURSOR_HOOK_COMMAND: &str = "\".cursor/skills/procable/scripts/procable\" hook";
+const GITHUB_HOOK_COMMAND: &str = "\"$(git rev-parse --show-toplevel)/.github/skills/procable/scripts/procable\" hook";
 
 struct ManifestTarget {
     provider: &'static str,
@@ -116,7 +116,7 @@ fn claude_manifest_for_command(cmd: &str) -> Value {
             "description",
             // JS: Claude Code folded multi-edit behavior into Edit; the manifest
             // tracks the current Edit and Write tools (upstream 7d5c60d2).
-            Value::from("Impeccable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop."),
+            Value::from("Procable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop."),
         ),
         (
             "hooks",
@@ -138,7 +138,7 @@ fn claude_manifest_for_command(cmd: &str) -> Value {
 /// `~/.claude/settings.json` (the `update --user` form): POSIX single quotes,
 /// double quotes on Windows.
 fn user_claude_hook_command(skill_root: &str, win32: bool) -> String {
-    let launcher = jsp::join(&[skill_root, "scripts", "impeccable"]);
+    let launcher = jsp::join(&[skill_root, "scripts", "procable"]);
     let q = if win32 {
         serde_json::to_string(&launcher).unwrap_or_default()
     } else {
@@ -153,7 +153,7 @@ fn claude_manifest() -> Value {
 
 fn agents_manifest() -> Value {
     let cmd = AGENTS_HOOK_COMMAND;
-    let win = &impeccable_context::hook_markers::windows_launcher_hook_command(".agents/skills/impeccable/scripts/impeccable", "hook");
+    let win = &procable_context::hook_markers::windows_launcher_hook_command(".agents/skills/procable/scripts/procable", "hook");
     obj(vec![(
         "hooks",
         obj(vec![
@@ -173,11 +173,11 @@ fn agents_manifest() -> Value {
 }
 
 /// Cursor runs the post-edit design hook like the other harnesses (the
-/// before-edit gate is retired). `merge_hook_manifests` strips Impeccable
+/// before-edit gate is retired). `merge_hook_manifests` strips Procable
 /// entries from every event, so `on` also drops a leftover `preToolUse`
 /// gate entry while writing this one.
 fn cursor_manifest() -> Value {
-    impeccable_context::hook_markers::cursor_hook_manifest(CURSOR_HOOK_COMMAND, TIMEOUT_SECONDS)
+    procable_context::hook_markers::cursor_hook_manifest(CURSOR_HOOK_COMMAND, TIMEOUT_SECONDS)
 }
 
 fn github_manifest() -> Value {
@@ -206,8 +206,8 @@ fn github_manifest() -> Value {
 /// token stays bare; PowerShell reads the env var. Timeouts are milliseconds.
 /// No per-edit detector: BeforeTool carries the session id into
 /// `build-phase` shell calls, AfterAgent runs the build-completion check.
-const GEMINI_HOOK_COMMAND: &str = "$GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable hook";
-const GEMINI_HOOK_COMMAND_WINDOWS: &str = "& \"$env:GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable.cmd\" hook";
+const GEMINI_HOOK_COMMAND: &str = "$GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable hook";
+const GEMINI_HOOK_COMMAND_WINDOWS: &str = "& \"$env:GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable.cmd\" hook";
 
 fn gemini_manifest() -> Value {
     let cmd = if cfg!(windows) { GEMINI_HOOK_COMMAND_WINDOWS } else { GEMINI_HOOK_COMMAND };
@@ -222,10 +222,10 @@ fn gemini_manifest() -> Value {
         obj(vec![
             ("BeforeTool", Value::Array(vec![obj(vec![
                 ("matcher", Value::from("^run_shell_command$")),
-                ("hooks", Value::Array(vec![hook("impeccable-session", 5000)])),
+                ("hooks", Value::Array(vec![hook("procable-session", 5000)])),
             ])])),
             ("AfterAgent", Value::Array(vec![obj(vec![
-                ("hooks", Value::Array(vec![hook("impeccable-completion", 30000)])),
+                ("hooks", Value::Array(vec![hook("procable-completion", 30000)])),
             ])])),
         ]),
     )])
@@ -234,7 +234,7 @@ fn gemini_manifest() -> Value {
 const HOOK_MANIFEST_TARGETS: &[ManifestTarget] = &[
     ManifestTarget {
         provider: ".claude",
-        skill_rel: ".claude/skills/impeccable",
+        skill_rel: ".claude/skills/procable",
         dest_rel: ".claude/settings.local.json",
         shared_dest_rel: Some(".claude/settings.json"),
         manifest: claude_manifest,
@@ -242,7 +242,7 @@ const HOOK_MANIFEST_TARGETS: &[ManifestTarget] = &[
     },
     ManifestTarget {
         provider: ".agents",
-        skill_rel: ".agents/skills/impeccable",
+        skill_rel: ".agents/skills/procable",
         dest_rel: ".codex/hooks.json",
         shared_dest_rel: None,
         manifest: agents_manifest,
@@ -250,7 +250,7 @@ const HOOK_MANIFEST_TARGETS: &[ManifestTarget] = &[
     },
     ManifestTarget {
         provider: ".cursor",
-        skill_rel: ".cursor/skills/impeccable",
+        skill_rel: ".cursor/skills/procable",
         dest_rel: ".cursor/hooks.json",
         shared_dest_rel: None,
         manifest: cursor_manifest,
@@ -258,15 +258,15 @@ const HOOK_MANIFEST_TARGETS: &[ManifestTarget] = &[
     },
     ManifestTarget {
         provider: ".github",
-        skill_rel: ".github/skills/impeccable",
-        dest_rel: ".github/hooks/impeccable.json",
+        skill_rel: ".github/skills/procable",
+        dest_rel: ".github/hooks/procable.json",
         shared_dest_rel: None,
         manifest: github_manifest,
         user_settings: false,
     },
     ManifestTarget {
         provider: ".gemini",
-        skill_rel: ".gemini/skills/impeccable",
+        skill_rel: ".gemini/skills/procable",
         dest_rel: ".gemini/settings.json",
         shared_dest_rel: None,
         manifest: gemini_manifest,
@@ -478,7 +478,7 @@ fn unique(values: Vec<String>) -> Vec<String> {
     out
 }
 
-fn ignore_values_json(entries: &[impeccable_detect::config::IgnoreValueEntry]) -> Value {
+fn ignore_values_json(entries: &[procable_detect::config::IgnoreValueEntry]) -> Value {
     Value::Array(entries.iter().map(|e| e.to_json()).collect())
 }
 
@@ -506,7 +506,7 @@ fn merge_detector_config(
         );
         out.insert(
             "ignoreValues".into(),
-            ignore_values_json(&impeccable_detect::config::normalize_ignore_value_entries(
+            ignore_values_json(&procable_detect::config::normalize_ignore_value_entries(
                 &seed_values("ignoreValues"),
             )),
         );
@@ -557,7 +557,7 @@ fn merge_detector_config(
             Some(Value::Array(a)) => a.clone(),
             _ => vec![],
         };
-        let existing_entries = impeccable_detect::config::normalize_ignore_value_entries(&cur);
+        let existing_entries = procable_detect::config::normalize_ignore_value_entries(&cur);
         let merged = merge_ignore_values(&existing_entries, incoming);
         out.insert("ignoreValues".into(), ignore_values_json(&merged));
     }
@@ -587,8 +587,8 @@ fn status_report(rt: &Runtime, cwd: &str) -> String {
     let shared = read_raw_config_file(&get_config_path(cwd));
     let local = read_raw_config_file(&get_local_config_path(cwd));
     let cfg = read_config(cwd);
-    let env_state = match rt.env("IMPECCABLE_HOOK_DISABLED").filter(|v| !v.is_empty()) {
-        Some(v) => format!("IMPECCABLE_HOOK_DISABLED={v}"),
+    let env_state = match rt.env("PROCABLE_HOOK_DISABLED").filter(|v| !v.is_empty()) {
+        Some(v) => format!("PROCABLE_HOOK_DISABLED={v}"),
         None => "unset".to_string(),
     };
     let rel = |p: &str, fallback: &str| -> String {
@@ -599,9 +599,9 @@ fn status_report(rt: &Runtime, cwd: &str) -> String {
             r
         }
     };
-    let cfg_path = rel(&get_config_path(cwd), ".impeccable/config.json");
-    let local_path = rel(&get_local_config_path(cwd), ".impeccable/config.local.json");
-    let cache_path = rel(&get_cache_path(cwd), ".impeccable/hook.cache.json");
+    let cfg_path = rel(&get_config_path(cwd), ".procable/config.json");
+    let local_path = rel(&get_local_config_path(cwd), ".procable/config.local.json");
+    let cache_path = rel(&get_cache_path(cwd), ".procable/hook.cache.json");
     let file_state = |info: &RawFile, rel_path: &str, absent: &str| -> String {
         if info.malformed {
             format!("{rel_path} (malformed; ignored)")
@@ -630,7 +630,7 @@ fn status_report(rt: &Runtime, cwd: &str) -> String {
         }
     };
     [
-        "Impeccable design hook".to_string(),
+        "Procable design hook".to_string(),
         format!(
             "  state:        {}",
             if cfg.enabled { "enabled" } else { "disabled" }
@@ -760,9 +760,9 @@ fn repair_hook_manifests(rt: &Runtime, cwd: &str) -> Result<Repaired, String> {
             // The launcher itself, not just the skill folder: a user hook
             // naming a missing launcher is a no-op, and switching to it would
             // prune a project hook that may still run another installation.
-            && exists(&jsp::join(&[&user_skill, "scripts", "impeccable"]))
-            && (file_has_impeccable_hook_marker(&dest)
-                || shared_dest.as_ref().is_some_and(|path| file_has_impeccable_hook_marker(path)))
+            && exists(&jsp::join(&[&user_skill, "scripts", "procable"]))
+            && (file_has_procable_hook_marker(&dest)
+                || shared_dest.as_ref().is_some_and(|path| file_has_procable_hook_marker(path)))
         {
             (user_skill, true)
         } else {
@@ -775,7 +775,7 @@ fn repair_hook_manifests(rt: &Runtime, cwd: &str) -> Result<Repaired, String> {
             // A user-scope skill gets its hook where a user-scope install
             // writes it: `~/.claude/settings.json`, with the absolute launcher.
             // In the project only the gitignored `settings.local.json` loses
-            // its Impeccable entries, and only after the user hook is written
+            // its Procable entries, and only after the user hook is written
             // or already present: an unreadable user file is skipped, and the
             // project hook is then the only one the machine has. The committed
             // `settings.json` belongs to the team and is never rewritten with
@@ -784,8 +784,8 @@ fn repair_hook_manifests(rt: &Runtime, cwd: &str) -> Result<Repaired, String> {
             dest = jsp::join(&[&rt.homedir(), ".claude", "settings.json"]);
             user_settings = true;
         } else if let Some(sd) = &shared_dest {
-            if file_has_impeccable_hook_marker(sd) {
-                prune_impeccable_hook_from_manifest(&dest)?;
+            if file_has_procable_hook_marker(sd) {
+                prune_procable_hook_from_manifest(&dest)?;
                 result.already.push(target.provider.to_string());
                 continue;
             }
@@ -823,7 +823,7 @@ fn repair_hook_manifests(rt: &Runtime, cwd: &str) -> Result<Repaired, String> {
         };
         if current.as_deref() == Some(serialized.as_str()) {
             if let Some(project_manifest) = &prune_after {
-                prune_impeccable_hook_from_manifest(project_manifest)?;
+                prune_procable_hook_from_manifest(project_manifest)?;
             }
             result.already.push(target.provider.to_string());
             continue;
@@ -831,12 +831,12 @@ fn repair_hook_manifests(rt: &Runtime, cwd: &str) -> Result<Repaired, String> {
         backup_commented(&dest, had_comments)?;
         std::fs::create_dir_all(jsp::dirname(&dest)).map_err(|e| e.to_string())?;
         if user_settings {
-            impeccable_common::fsx::write_atomic(&dest, serialized.as_bytes()).map_err(|e| e.to_string())?;
+            procable_common::fsx::write_atomic(&dest, serialized.as_bytes()).map_err(|e| e.to_string())?;
         } else {
             std::fs::write(&dest, serialized).map_err(|e| e.to_string())?;
         }
         if let Some(project_manifest) = &prune_after {
-            prune_impeccable_hook_from_manifest(project_manifest)?;
+            prune_procable_hook_from_manifest(project_manifest)?;
         }
         result.written.push(target.provider.to_string());
     }
@@ -876,7 +876,7 @@ fn merge_hook_manifests(existing: &Value, fresh: &Value) -> Value {
     }
     let mut hooks = Map::new();
     for event in events {
-        let preserved = strip_impeccable_hook_entries(existing_hooks.get(&event));
+        let preserved = strip_procable_hook_entries(existing_hooks.get(&event));
         let added: Vec<Value> = match fresh_hooks.get(&event) {
             Some(Value::Array(a)) => a.clone(),
             _ => vec![],
@@ -894,7 +894,7 @@ fn merge_hook_manifests(existing: &Value, fresh: &Value) -> Value {
 /// A manifest parsed with comments tolerated (Gemini's `settings.json`
 /// allows them); the flag says a rewrite would drop comments.
 fn read_manifest(path: &str) -> Option<(Value, bool)> {
-    impeccable_context::hook_markers::parse_manifest_jsonc(&safe_read(path)?)
+    procable_context::hook_markers::parse_manifest_jsonc(&safe_read(path)?)
 }
 
 /// Keep the original of a commented manifest before the JSON writer drops
@@ -906,8 +906,8 @@ fn backup_commented(path: &str, had_comments: bool) -> Result<(), String> {
     Ok(())
 }
 
-/// JS: fileHasImpeccableHookMarker(filePath)
-fn file_has_impeccable_hook_marker(path: &str) -> bool {
+/// JS: fileHasProcableHookMarker(filePath)
+fn file_has_procable_hook_marker(path: &str) -> bool {
     if !exists(path) {
         return false;
     }
@@ -918,17 +918,17 @@ fn file_has_impeccable_hook_marker(path: &str) -> bool {
         return false;
     };
     match o.get("hooks") {
-        Some(h @ (Value::Object(_) | Value::Array(_))) => value_has_impeccable_hook_marker(h),
+        Some(h @ (Value::Object(_) | Value::Array(_))) => value_has_procable_hook_marker(h),
         _ => false,
     }
 }
 
-/// JS: valueHasImpeccableHookMarker(value)
-fn value_has_impeccable_hook_marker(value: &Value) -> bool {
+/// JS: valueHasProcableHookMarker(value)
+fn value_has_procable_hook_marker(value: &Value) -> bool {
     match value {
-        Value::String(s) => impeccable_context::hook_markers::is_impeccable_hook_command(s),
-        Value::Array(a) => a.iter().any(value_has_impeccable_hook_marker),
-        Value::Object(o) => o.values().any(value_has_impeccable_hook_marker),
+        Value::String(s) => procable_context::hook_markers::is_procable_hook_command(s),
+        Value::Array(a) => a.iter().any(value_has_procable_hook_marker),
+        Value::Object(o) => o.values().any(value_has_procable_hook_marker),
         _ => false,
     }
 }
@@ -936,12 +936,12 @@ fn value_has_impeccable_hook_marker(value: &Value) -> bool {
 fn marker_in(entry: &Map<String, Value>, key: &str) -> bool {
     entry
         .get(key)
-        .map(value_has_impeccable_hook_marker)
+        .map(value_has_procable_hook_marker)
         .unwrap_or(false)
 }
 
-/// JS: stripImpeccableHookEntry(entry) — `None` drops the entry.
-fn strip_impeccable_hook_entry(entry: &Value) -> Option<Value> {
+/// JS: stripProcableHookEntry(entry) — `None` drops the entry.
+fn strip_procable_hook_entry(entry: &Value) -> Option<Value> {
     let Value::Object(e) = entry else {
         // JS: `!entry || typeof entry !== 'object'` returns the entry as-is
         // (a null/primitive survives until `.filter(Boolean)`; an array is
@@ -961,10 +961,10 @@ fn strip_impeccable_hook_entry(entry: &Value) -> Option<Value> {
     };
     let stripped: Vec<Value> = hooks
         .iter()
-        .filter_map(strip_impeccable_hook_entry)
+        .filter_map(strip_procable_hook_entry)
         .filter(|v| truthy_json(v))
         .collect();
-    if stripped.is_empty() && hooks.iter().any(value_has_impeccable_hook_marker) {
+    if stripped.is_empty() && hooks.iter().any(value_has_procable_hook_marker) {
         return None;
     }
     let mut out = e.clone();
@@ -977,21 +977,21 @@ fn truthy_json(v: &Value) -> bool {
     crate::util::truthy_value(Some(v))
 }
 
-/// JS: stripImpeccableHookEntries(entries)
-fn strip_impeccable_hook_entries(entries: Option<&Value>) -> Vec<Value> {
+/// JS: stripProcableHookEntries(entries)
+fn strip_procable_hook_entries(entries: Option<&Value>) -> Vec<Value> {
     match entries {
         Some(Value::Array(a)) => a
             .iter()
-            .filter_map(strip_impeccable_hook_entry)
+            .filter_map(strip_procable_hook_entry)
             .filter(|v| truthy_json(v))
             .collect(),
         _ => vec![],
     }
 }
 
-/// JS: pruneImpeccableHookFromManifest(manifestPath)
-fn prune_impeccable_hook_from_manifest(path: &str) -> Result<bool, String> {
-    if !file_has_impeccable_hook_marker(path) {
+/// JS: pruneProcableHookFromManifest(manifestPath)
+fn prune_procable_hook_from_manifest(path: &str) -> Result<bool, String> {
+    if !file_has_procable_hook_marker(path) {
         return Ok(false);
     }
     let Some((parsed, had_comments)) = read_manifest(path) else {
@@ -1002,7 +1002,7 @@ fn prune_impeccable_hook_from_manifest(path: &str) -> Result<bool, String> {
     let existing_hooks = obj_field(&parsed, "hooks").cloned().unwrap_or_default();
     let mut cleaned = Map::new();
     for (event, entries) in &existing_hooks {
-        let kept = strip_impeccable_hook_entries(Some(entries));
+        let kept = strip_procable_hook_entries(Some(entries));
         if !kept.is_empty() {
             cleaned.insert(event.clone(), Value::Array(kept));
         }
@@ -1059,7 +1059,7 @@ fn parse_ignore_rule_args(args: &[String]) -> Result<(String, bool), String> {
 /// JS: addIgnoreRule(cwd, args)
 fn add_ignore_rule(rt: &Runtime, cwd: &str, args: &[String]) -> Result<String, String> {
     let (rule, all_values) = parse_ignore_rule_args(args)?;
-    let cmd = &rt.impeccable_command;
+    let cmd = &rt.procable_command;
     if rule.is_empty() {
         return Err(format!(
             "Pass a rule id, e.g. {cmd} hooks ignore-rule side-tab"
@@ -1119,7 +1119,7 @@ fn add_ignore_file(rt: &Runtime, cwd: &str, args: &[String]) -> Result<String, S
         _ => {
             return Err(format!(
                 "Pass a glob, e.g. {} hooks ignore-file \"src/legacy/**\"",
-                rt.impeccable_command
+                rt.procable_command
             ))
         }
     };
@@ -1223,7 +1223,7 @@ fn parse_ignore_value_args(args: &[String]) -> Result<IgnoreValueArgs, String> {
 /// JS: addIgnoreValue(cwd, args)
 fn add_ignore_value(rt: &Runtime, cwd: &str, args: &[String]) -> Result<String, String> {
     let parsed = parse_ignore_value_args(args)?;
-    let cmd = &rt.impeccable_command;
+    let cmd = &rt.procable_command;
     if parsed.rule.is_empty() || parsed.value.is_empty() {
         return Err(format!(
             "Pass a rule id and value, e.g. {cmd} hooks ignore-value overused-font Inter"
@@ -1242,9 +1242,9 @@ fn add_ignore_value(rt: &Runtime, cwd: &str, args: &[String]) -> Result<String, 
     }
     // JS: refuse inert exact entries — a value the extractor can never
     // produce for this rule would silently match nothing (upstream be87f5eb,
-    // issue #662). Shared with `ignores add-value` via impeccable-detect.
+    // issue #662). Shared with `ignores add-value` via procable-detect.
     if parsed.value != "*"
-        && impeccable_detect::config::synthetic_ignore_value(&parsed.rule, &parsed.value).is_empty()
+        && procable_detect::config::synthetic_ignore_value(&parsed.rule, &parsed.value).is_empty()
     {
         return Err(format!(
             "{rule} has no extractable ignore value. Use {cmd} hooks ignore-value {rule} \"*\" --file <glob> to suppress it in matching files.",
@@ -1353,13 +1353,13 @@ fn reset(rt: &Runtime, cwd: &str) -> String {
     // deleted. destRel only (the local manifest `on` writes); never the
     // team-shared sharedDestRel. No skill-folder gate: a reset mid-uninstall is
     // exactly the case that needs the prune. The manifest entries are the
-    // launcher-era shape the engine writes (`impeccable hook ...`), not the old
-    // `node hook.mjs` form; prune_impeccable_hook_from_manifest keys on the
-    // impeccable marker, so it removes whichever form is present.
+    // launcher-era shape the engine writes (`procable hook ...`), not the old
+    // `node hook.mjs` form; prune_procable_hook_from_manifest keys on the
+    // procable marker, so it removes whichever form is present.
     let mut pruned: Vec<String> = Vec::new();
     for target in HOOK_MANIFEST_TARGETS {
         let dest = jsp::join(&[cwd, target.dest_rel]);
-        if let Ok(true) = prune_impeccable_hook_from_manifest(&dest) {
+        if let Ok(true) = prune_procable_hook_from_manifest(&dest) {
             pruned.push(target.provider.to_string());
         }
     }
@@ -1380,8 +1380,8 @@ fn reset(rt: &Runtime, cwd: &str) -> String {
     }
 }
 
-/// `impeccable hooks [action] [args...]` (hook-admin.mjs main). Returns the exit code.
-pub fn run(rt: &Runtime, args: &[String], io: &mut impeccable_common::Io) -> i32 {
+/// `procable hooks [action] [args...]` (hook-admin.mjs main). Returns the exit code.
+pub fn run(rt: &Runtime, args: &[String], io: &mut procable_common::Io) -> i32 {
     let action = js::to_lower_case(
         args.first()
             .map(String::as_str)

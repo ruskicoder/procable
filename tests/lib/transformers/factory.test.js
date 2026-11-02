@@ -158,19 +158,19 @@ describe('createTransformer factory', () => {
     };
     const transform = createTransformer(config);
     const skills = [{
-      name: 'impeccable',
+      name: 'procable',
       description: 'Test',
       body: 'Body',
       scripts: [{
         name: 'example.mjs',
         content: [
-          "export const IMPECCABLE_COMMAND_PREFIX = '/'; // @impeccable-provider-command-prefix",
-          "export const IMPECCABLE_PROVIDER_ID = 'source'; // @impeccable-provider-id",
-          'const command = `${IMPECCABLE_COMMAND_PREFIX}impeccable polish`;',
-          'const hint = "Run /impeccable audit";',
-          'const hook = ".github/hooks/impeccable.json";',
-          'const runtime = "/src/lib/impeccable/__runtime.js";',
-          'const regex = /impeccable\\b/gi;',
+          "export const PROCABLE_COMMAND_PREFIX = '/'; // @procable-provider-command-prefix",
+          "export const PROCABLE_PROVIDER_ID = 'source'; // @procable-provider-id",
+          'const command = `${PROCABLE_COMMAND_PREFIX}procable polish`;',
+          'const hint = "Run /procable audit";',
+          'const hook = ".github/hooks/procable.json";',
+          'const runtime = "/src/lib/procable/__runtime.js";',
+          'const regex = /procable\\b/gi;',
         ].join('\n'),
       }],
     }];
@@ -178,16 +178,16 @@ describe('createTransformer factory', () => {
     transform(skills, TEST_DIR);
 
     const script = fs.readFileSync(
-      path.join(TEST_DIR, 'codex/.test/skills/impeccable/scripts/example.mjs'),
+      path.join(TEST_DIR, 'codex/.test/skills/procable/scripts/example.mjs'),
       'utf-8',
     );
-    expect(script).toContain('IMPECCABLE_COMMAND_PREFIX = "$"');
-    expect(script).toContain('IMPECCABLE_PROVIDER_ID = "codex"');
-    expect(script).toContain('`${IMPECCABLE_COMMAND_PREFIX}impeccable polish`');
-    expect(script).toContain('"Run /impeccable audit"');
-    expect(script).toContain('".github/hooks/impeccable.json"');
-    expect(script).toContain('"/src/lib/impeccable/__runtime.js"');
-    expect(script).toContain('/impeccable\\b/gi');
+    expect(script).toContain('PROCABLE_COMMAND_PREFIX = "$"');
+    expect(script).toContain('PROCABLE_PROVIDER_ID = "codex"');
+    expect(script).toContain('`${PROCABLE_COMMAND_PREFIX}procable polish`');
+    expect(script).toContain('"Run /procable audit"');
+    expect(script).toContain('".github/hooks/procable.json"');
+    expect(script).toContain('"/src/lib/procable/__runtime.js"');
+    expect(script).toContain('/procable\\b/gi');
   });
 
   test('should clean existing directory before writing', () => {

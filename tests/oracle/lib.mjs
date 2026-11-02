@@ -1,11 +1,11 @@
 /**
- * Oracle harness: records the observable behavior of every impeccable verb
+ * Oracle harness: records the observable behavior of every procable verb
  * (stdout, stderr, exit code, files written) against a fixed corpus, and
  * replays the same corpus against an alternate implementation to diff.
  *
  * Two implementations are addressable:
  *   - js  (default): the Node scripts in skill/scripts and cli/bin
- *   - bin: an executable at $IMPECCABLE_BIN invoked as `<bin> <verb> ...args`
+ *   - bin: an executable at $PROCABLE_BIN invoked as `<bin> <verb> ...args`
  *
  * A case is { id, verb, args, cwd?, stdin?, env?, files?, workspace? }:
  *   - workspace: name of a dir under tests/oracle/workspaces to copy into a
@@ -92,7 +92,7 @@ export function stageWorkspace(name) {
   // (/var -> /private/var); without this, goldens recorded there carried
   // symlink artifacts (`../../../../../../..<WS>/...` relative paths, lock
   // files that never matched their own file) that Linux does not reproduce.
-  const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-oracle-')));
+  const tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'procable-oracle-')));
   if (name) {
     const src = path.join(WORKSPACES_DIR, name);
     if (!fs.existsSync(src)) throw new Error(`oracle workspace not found: ${name}`);
@@ -105,8 +105,8 @@ export function stageWorkspace(name) {
 // or followed by anything but a name character (a separator, quote, dot,
 // whitespace, JSON punctuation).
 // A short home directory (`/root` in a container) is otherwise a substring of
-// ordinary words, and `.impeccable/live/roots.json` came out as
-// `.impeccable/live<HOME>s.json`.
+// ordinary words, and `.procable/live/roots.json` came out as
+// `.procable/live<HOME>s.json`.
 function maskPath(text, needle, tag) {
   let out = '';
   let i = 0;
@@ -130,14 +130,14 @@ export function normalize(text, { ws, home = os.homedir() }) {
   // before the generic binary-path mask below.
   out = out.replace(/node '[^']*\/hook-admin\.mjs'/g, '<HOOK_ADMIN_CMD>');
   out = out.replace(/node "[^"]*\/hook-admin\.mjs"/g, '<HOOK_ADMIN_CMD>');
-  out = out.replace(/'[^']*\/impeccable(?:\.exe)?' hooks/g, '<HOOK_ADMIN_CMD>');
-  out = out.replace(/"[^"]*\\impeccable(?:\.exe)?" hooks/g, '<HOOK_ADMIN_CMD>');
+  out = out.replace(/'[^']*\/procable(?:\.exe)?' hooks/g, '<HOOK_ADMIN_CMD>');
+  out = out.replace(/"[^"]*\\procable(?:\.exe)?" hooks/g, '<HOOK_ADMIN_CMD>');
   // Audit entries record the rendered message length, which includes that command's path.
   out = out.replace(/"chars":\s*\d+/g, '"chars": <N>');
   // The binary's own path: it may sit under $HOME or the repo.
-  if (process.env.IMPECCABLE_BIN) {
-    const bin = process.env.IMPECCABLE_BIN;
-    for (const form of [`'${bin}'`, `"${bin}"`, bin]) out = out.split(form).join('<IMPECCABLE>');
+  if (process.env.PROCABLE_BIN) {
+    const bin = process.env.PROCABLE_BIN;
+    for (const form of [`'${bin}'`, `"${bin}"`, bin]) out = out.split(form).join('<PROCABLE>');
   }
   let wsReal = null;
   try { wsReal = ws ? fs.realpathSync(ws) : null; } catch { /* staged dir already gone */ }
@@ -147,8 +147,8 @@ export function normalize(text, { ws, home = os.homedir() }) {
     if (needle) out = maskPath(out, needle, tag);
   }
   // Self-referential command lines: the JS prints "node <scripts>/<verb>.mjs", the
-  // binary prints "<bin> <verb>". Both collapse to "<IMPECCABLE> <verb>".
-  out = out.replace(/node ['"]?<REPO>\/skill\/scripts\/([a-z-]+)\.mjs['"]?/g, (m, v) => `<IMPECCABLE> ${v === 'context-signals' ? 'signals' : v === 'hook-admin' ? 'hooks' : v}`);
+  // binary prints "<bin> <verb>". Both collapse to "<PROCABLE> <verb>".
+  out = out.replace(/node ['"]?<REPO>\/skill\/scripts\/([a-z-]+)\.mjs['"]?/g, (m, v) => `<PROCABLE> ${v === 'context-signals' ? 'signals' : v === 'hook-admin' ? 'hooks' : v}`);
   // context.mjs probes `which cwebp/sips/magick/ffmpeg`; the set found is a
   // property of the recording machine, not of the implementation.
   out = out.replace(/IMAGE_TOOLS: available image converters on this machine: [^.]*\. Use the first suitable one; never probe again this session\./g, 'IMAGE_TOOLS: <IMAGE_TOOLS_PROBE>');
@@ -164,13 +164,13 @@ export function normalize(text, { ws, home = os.homedir() }) {
   // print the surface path relative to the root, which climbs as many levels
   // as the staged tmpdir is deep (7 on macOS, 2 on Linux). The climb is a
   // property of the machine, not of the verb.
-  out = out.replace(/(?:\.\.\/){2,}(?=\.impeccable\/)/g, '<UP_TO_ROOT>/');
+  out = out.replace(/(?:\.\.\/){2,}(?=\.procable\/)/g, '<UP_TO_ROOT>/');
   // Hook audit entries carry wall-clock durations.
   out = out.replace(/"durationMs":\s*\d+(?:\.\d+)?/g, '"durationMs": <MS>');
   // ISO timestamps and epoch millis are run-dependent.
   out = out.replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z/g, '<ISO>');
   out = out.replace(/"(updatedAt|createdAt|checkedAt|lastCheck|lastChecked|timestamp|ts|mtimeMs|mtime|startedAt|endedAt)":\s*\d{10,}/g, '"$1": <EPOCH>');
-  // The staleness notice cache (~/.impeccable/staleness-check.json) keys epoch
+  // The staleness notice cache (~/.procable/staleness-check.json) keys epoch
   // stamps by finding id: { projects: { "<root>": { "<finding-id>": ms } } }.
   out = out.replace(/"([a-z][a-z0-9-]*)":\s*1[6-9]\d{11}(?=[,}\s])/g, '"$1": <EPOCH>');
   // Live mode: server.json, the inject journal, and source locks record the
@@ -224,7 +224,7 @@ export function snapshotFiles(ws, globs) {
         if (ent.name === 'node_modules') {
           // Only the live-mode preview tree is ours; never walk installed or
           // symlinked packages.
-          const preview = path.join(full, '.impeccable-live');
+          const preview = path.join(full, '.procable-live');
           if (fs.existsSync(preview)) walk(preview);
           continue;
         }
@@ -259,7 +259,7 @@ export function caseRunsHere(c, platform = process.platform) {
   return !Array.isArray(c.platforms) || c.platforms.includes(platform);
 }
 
-export function runCase(c, { impl = 'js', bin = process.env.IMPECCABLE_BIN } = {}) {
+export function runCase(c, { impl = 'js', bin = process.env.PROCABLE_BIN } = {}) {
   const ws = stageWorkspace(c.workspace);
   try {
     const isolatedHome = path.join(ws, '.oracle-home');
@@ -313,7 +313,7 @@ function buildInvocation(c, { impl, bin, ws, isolatedHome }) {
     if (!base) throw new Error(`no JS invocation for verb ${c.verb}`);
     argv = [...base];
   } else {
-    if (!bin) throw new Error('IMPECCABLE_BIN not set');
+    if (!bin) throw new Error('PROCABLE_BIN not set');
     argv = binArgv(bin, c.verb);
   }
   const sub = (v) => String(v).replaceAll('<WS>', ws).replaceAll('<REPO>', REPO_ROOT);
@@ -322,18 +322,18 @@ function buildInvocation(c, { impl, bin, ws, isolatedHome }) {
     ...process.env,
     NO_COLOR: '1',
     FORCE_COLOR: '0',
-    IMPECCABLE_NO_UPDATE_CHECK: '1',
-    IMPECCABLE_NO_TELEMETRY: '1',
+    PROCABLE_NO_UPDATE_CHECK: '1',
+    PROCABLE_NO_TELEMETRY: '1',
     DO_NOT_TRACK: '1',
     // Seed references are salted per user; a pinned salt keeps goldens stable.
-    IMPECCABLE_SEED_SALT: 'oracle',
+    PROCABLE_SEED_SALT: 'oracle',
     ...(c.isolateHome === false ? {} : { HOME: isolatedHome, USERPROFILE: isolatedHome }),
-    // What the launcher exports for the binary (see launcher/impeccable in the engine repo).
-    ...(impl === 'bin' ? { IMPECCABLE_SKILL_DIR: path.join(REPO_ROOT, 'skill'), IMPECCABLE_SELF: bin } : {}),
+    // What the launcher exports for the binary (see launcher/procable in the engine repo).
+    ...(impl === 'bin' ? { PROCABLE_SKILL_DIR: path.join(REPO_ROOT, 'skill'), PROCABLE_SELF: bin } : {}),
     ...Object.fromEntries(Object.entries(c.env || {}).map(([k, v]) => [k, v == null ? v : sub(v)])),
   };
   // Tagged as test traffic last, so neither the shell nor a case can untag it.
-  env.IMPECCABLE_TELEMETRY_CHANNEL = 'test';
+  env.PROCABLE_TELEMETRY_CHANNEL = 'test';
   for (const [k, v] of Object.entries(env)) if (v == null) delete env[k];
   const stdin = typeof c.stdin === 'string' ? sub(c.stdin) : c.stdin != null ? sub(JSON.stringify(c.stdin)) : '';
   return { argv, cwd, env, stdin };

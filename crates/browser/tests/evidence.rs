@@ -13,10 +13,10 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use impeccable_browser::{
+use procable_browser::{
     detect_url_evidence, origin, replay_url_scan, BrowserEngine, EvidenceRequest,
 };
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 const CHALLENGE: &str = "<!doctype html><html><head><title>Human Verification</title></head><body><div id=\"captcha-container\">Please verify you are human.</div></body></html>";
 const NOT_FOUND: &str = "<!doctype html><html><head><title>Not found</title></head><body><h1>Nothing here</h1></body></html>";
@@ -113,7 +113,7 @@ fn handle(mut stream: TcpStream) {
 
 fn engine() -> Option<BrowserEngine> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }
@@ -343,12 +343,12 @@ fn evidence_matches_the_cli_path_and_replay_matches_live() {
             detect_url_evidence(&mut browser, &url, &options, "networkidle0", 0, &EvidenceRequest::default())
                 .expect("evidence scan");
 
-        let strip = |f: &impeccable_core::findings::Finding| {
+        let strip = |f: &procable_core::findings::Finding| {
             (f.antipattern.clone(), f.snippet.clone())
         };
         // The visual-contrast pass samples pixels, so compare the passes that
         // do not: everything but visual-contrast must match the CLI path.
-        let non_visual = |fs: &[impeccable_core::findings::Finding], origins: Option<&[&str]>| -> Vec<(String, String)> {
+        let non_visual = |fs: &[procable_core::findings::Finding], origins: Option<&[&str]>| -> Vec<(String, String)> {
             fs.iter()
                 .enumerate()
                 .filter(|(i, f)| match origins {
@@ -385,13 +385,13 @@ fn evidence_matches_the_cli_path_and_replay_matches_live() {
             &options,
         )
         .expect("replay");
-        let replayable: Vec<&impeccable_core::findings::Finding> = live
+        let replayable: Vec<&procable_core::findings::Finding> = live
             .iter()
             .zip(&evidence.origins)
             .filter(|(_, o)| **o == origin::SCAN || **o == origin::CONTENT_HIDDEN)
             .map(|(f, _)| f)
             .collect();
-        let replayed: Vec<&impeccable_core::findings::Finding> = replay.findings.iter().collect();
+        let replayed: Vec<&procable_core::findings::Finding> = replay.findings.iter().collect();
         assert_eq!(replayed, replayable, "{name}: replay differs from the live scan");
         assert_eq!(replay.unanswered_hit_tests, 0, "{name}: unanswered hit tests");
     }

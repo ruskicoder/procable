@@ -27,8 +27,8 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use impeccable_browser::{detect_url_evidence, origin, replay_url_scan, BrowserEngine, EvidenceRequest};
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::{detect_url_evidence, origin, replay_url_scan, BrowserEngine, EvidenceRequest};
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/antipatterns")
@@ -66,7 +66,7 @@ fn handle(mut stream: TcpStream) {
 
 fn engine() -> Option<BrowserEngine> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }
@@ -190,7 +190,7 @@ fn verdicts_the_pixels_replace_stay_out_of_the_replayed_scan() {
     let (live, evidence) =
         detect_url_evidence(&mut browser, &url, &options, "networkidle0", 0, &EvidenceRequest::default())
             .expect("evidence scan");
-    let selector = |f: &impeccable_core::findings::Finding| {
+    let selector = |f: &procable_core::findings::Finding| {
         f.extras.get("selector").and_then(|v| v.as_str()).unwrap_or("").to_string()
     };
     // The pixels read the outlined sticker and pass it, which drops the
@@ -213,13 +213,13 @@ fn verdicts_the_pixels_replace_stay_out_of_the_replayed_scan() {
     )
     .expect("replay");
     assert_eq!(replay.unanswered_hit_tests, 0);
-    let replayable: Vec<&impeccable_core::findings::Finding> = live
+    let replayable: Vec<&procable_core::findings::Finding> = live
         .iter()
         .zip(&evidence.origins)
         .filter(|(_, o)| **o == origin::SCAN || **o == origin::CONTENT_HIDDEN)
         .map(|(f, _)| f)
         .collect();
-    let replayed: Vec<&impeccable_core::findings::Finding> = replay.findings.iter().collect();
+    let replayed: Vec<&procable_core::findings::Finding> = replay.findings.iter().collect();
     assert_eq!(replayed, replayable, "replay differs from the live scan");
     assert!(
         !replayed.iter().any(|f| f.antipattern == "low-contrast" && selector(f) == "#pass-outline-sticker"),

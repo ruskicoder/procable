@@ -1,5 +1,5 @@
 /**
- * Impeccable DevTools Extension - Service Worker
+ * Procable DevTools Extension - Service Worker
  *
  * Routes messages between popup, DevTools panel, and content scripts.
  * Maintains per-tab state and updates the badge. Also owns the offscreen
@@ -62,7 +62,7 @@ async function getSettings() {
     disabledRules: [],
     lineLengthMode: 'strict', // 'strict' = 80, 'lax' = 120
     spotlightBlur: true,      // dim/blur the page on hover-highlight
-    autoScan: 'panel',        // 'panel' = scan when Impeccable UI opens, 'devtools' = scan when DevTools opens
+    autoScan: 'panel',        // 'panel' = scan when Procable UI opens, 'devtools' = scan when DevTools opens
   });
 }
 
@@ -101,9 +101,9 @@ async function ensureOffscreenDocument() {
       // Firefox's getContexts exists, but OFFSCREEN_DOCUMENT is not a valid
       // context type there. Do not call it on this path.
       if (typeof document === 'undefined') throw new Error('No supported rule-core document host');
-      if (!document.getElementById('impeccable-core')) {
+      if (!document.getElementById('procable-core')) {
         const frame = document.createElement('iframe');
-        frame.id = 'impeccable-core';
+        frame.id = 'procable-core';
         frame.hidden = true;
         frame.src = chrome.runtime.getURL(OFFSCREEN_URL);
         document.body.appendChild(frame);
@@ -112,7 +112,7 @@ async function ensureOffscreenDocument() {
     // Wait for the core to be instantiated so the first scan does not race it.
     for (let attempt = 0; attempt < 50; attempt++) {
       try {
-        const r = await chrome.runtime.sendMessage({ target: 'impeccable-offscreen', action: 'ping' });
+        const r = await chrome.runtime.sendMessage({ target: 'procable-offscreen', action: 'ping' });
         if (r && r.ok) return true;
         if (r && r.error) throw new Error(r.error);
       } catch (err) {
@@ -168,7 +168,7 @@ async function sendScanToTab(tabId) {
     let url = '';
     try { url = (await chrome.tabs.get(tabId))?.url || ''; } catch { /* tab gone */ }
     const message = url.startsWith('file:')
-      ? 'Can’t scan local files. Enable “Allow access to file URLs” for Impeccable in chrome://extensions.'
+      ? 'Can’t scan local files. Enable “Allow access to file URLs” for Procable in chrome://extensions.'
       : `Couldn’t scan this page${error ? `: ${error}` : '.'}`;
     reportScanFailure(tabId, message);
     return;
@@ -187,7 +187,7 @@ async function sendScanToTab(tabId) {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Content script <-> offscreen document traffic (snapshots, facts, results)
   // is addressed to the offscreen document; it answers, this worker stays out.
-  if (msg && msg.target === 'impeccable-offscreen') return false;
+  if (msg && msg.target === 'procable-offscreen') return false;
 
   const tabId = msg.tabId || sender.tab?.id;
 
@@ -271,8 +271,8 @@ async function tearDownTab(tabId) {
 // Handle long-lived connections from DevTools pages and panels
 chrome.runtime.onConnect.addListener((port) => {
   // Lifecycle port from devtools.js -- tracks DevTools open/close
-  if (port.name.startsWith('impeccable-devtools-')) {
-    const tabId = parseInt(port.name.replace('impeccable-devtools-', ''), 10);
+  if (port.name.startsWith('procable-devtools-')) {
+    const tabId = parseInt(port.name.replace('procable-devtools-', ''), 10);
     devtoolsTabs.add(tabId);
 
     port.onMessage.addListener((msg) => {
@@ -288,8 +288,8 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 
   // Panel port from panel.js -- for forwarding findings/state
-  if (port.name.startsWith('impeccable-panel-')) {
-    const tabId = parseInt(port.name.replace('impeccable-panel-', ''), 10);
+  if (port.name.startsWith('procable-panel-')) {
+    const tabId = parseInt(port.name.replace('procable-panel-', ''), 10);
     if (!panelPorts.has(tabId)) panelPorts.set(tabId, new Set());
     panelPorts.get(tabId).add(port);
 
@@ -321,10 +321,10 @@ chrome.runtime.onConnect.addListener((port) => {
   }
 
   // Sidebar pane port (Elements panel sidebar) -- receives findings updates.
-  // Connecting the sidebar is a strong signal of "user engaged with Impeccable"
+  // Connecting the sidebar is a strong signal of "user engaged with Procable"
   // so we trigger a scan if no findings exist yet (matches the panel port behavior).
-  if (port.name.startsWith('impeccable-sidebar-')) {
-    const tabId = parseInt(port.name.replace('impeccable-sidebar-', ''), 10);
+  if (port.name.startsWith('procable-sidebar-')) {
+    const tabId = parseInt(port.name.replace('procable-sidebar-', ''), 10);
     if (!panelPorts.has(tabId)) panelPorts.set(tabId, new Set());
     panelPorts.get(tabId).add(port);
 

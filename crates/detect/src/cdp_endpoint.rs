@@ -1,4 +1,4 @@
-//! `impeccable detect --cdp <port|url>`: the DevTools endpoint of a running
+//! `procable detect --cdp <port|url>`: the DevTools endpoint of a running
 //! Chromium-based app (Electron, NW.js, CEF, WebView2) to attach to.
 //!
 //! Parsed here, in the crate that owns the flag, so a bad value is refused

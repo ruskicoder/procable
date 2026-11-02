@@ -1,17 +1,17 @@
 //! fs / os helpers with the Node semantics the JS relied on. Paths are plain
-//! strings joined with `/` (`impeccable_detect::jsp`), like the rest of the
+//! strings joined with `/` (`procable_detect::jsp`), like the rest of the
 //! engine.
 
 use std::collections::HashMap;
 use std::path::Path;
 
-pub use impeccable_detect::jsp;
+pub use procable_detect::jsp;
 
 pub type Env = HashMap<String, String>;
 
 /// `os.homedir()` (posix: `$HOME` first).
 pub fn homedir(env: &Env) -> String {
-    impeccable_context::util::homedir(env)
+    procable_context::util::homedir(env)
 }
 
 /// `os.tmpdir()`: `$TMPDIR || $TMP || $TEMP || '/tmp'`, one trailing slash

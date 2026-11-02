@@ -9,6 +9,11 @@ on:
         description: 'Space-separated case-id prefixes to record (empty records nothing)'
         required: true
         type: string
+      bundle:
+        description: 'Regenerate the in-page detector bundle (cargo xtask bundle) and commit it first'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -31,14 +36,20 @@ jobs:
       - run: bun install
       - run: rustup show
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+      - name: Install wasm-pack
+        if: ${{ inputs.bundle }}
+        run: cargo install wasm-pack --locked
+      - name: Regenerate the in-page detector bundle
+        if: ${{ inputs.bundle }}
+        run: cargo xtask bundle
       - name: Build the engine from source
         run: cargo build --release -p "$(grep -m1 '^name' crates/cli/Cargo.toml | cut -d'"' -f2)"
       - name: Record the requested cases
         env:
           PREFIXES: ${{ inputs.prefixes }}
         run: |
-          bin="$(ls target/release/impeccable target/release/procable 2>/dev/null | head -1)"
-          export IMPECCABLE_BIN="$GITHUB_WORKSPACE/$bin" PROCABLE_BIN="$GITHUB_WORKSPACE/$bin"
+          bin="$(ls target/release/procable target/release/procable 2>/dev/null | head -1)"
+          export PROCABLE_BIN="$GITHUB_WORKSPACE/$bin" PROCABLE_BIN="$GITHUB_WORKSPACE/$bin"
           for p in $PREFIXES; do node tests/oracle/record.mjs --bin "$p"; done
           node tests/oracle/run.mjs
       - name: Commit the recorded goldens
@@ -47,7 +58,7 @@ jobs:
         run: |
           git config user.name "Do Dang Khoa"
           git config user.email "149188141+ruskicoder@users.noreply.github.com"
-          git add tests/oracle
+          git add tests/oracle crates/live/assets
           if git diff --cached --quiet; then echo "no golden changes"; exit 0; fi
           git commit -m "Re-record oracle goldens: $PREFIXES"
           git push

@@ -1,5 +1,5 @@
 /**
- * `impeccable hook`, `hook-before-edit`, `hook-admin` corpus.
+ * `procable hook`, `hook-before-edit`, `hook-admin` corpus.
  * Workspace: hook-project (package.json, PRODUCT.md web, UI files with and
  * without findings); hook-umbrella (a plain folder holding the projects
  * site/ and app/, for Stop from a cwd above them). Multi-step cases share
@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 
 const WS = '<WS>';
-const CACHE_FILES = ['.impeccable/**', '.claude/settings.local.json', '.codex/hooks.json', '.cursor/hooks.json', '.github/hooks/impeccable.json'];
+const CACHE_FILES = ['.procable/**', '.claude/settings.local.json', '.codex/hooks.json', '.cursor/hooks.json', '.github/hooks/procable.json'];
 
 const claudeEdit = (file, extra = {}) => ({
   session_id: 's1', cwd: WS, hook_event_name: 'PostToolUse', tool_name: 'Edit',
@@ -92,9 +92,9 @@ export default [
   { id: 'hook-stdin-empty', verb: 'hook', workspace: 'hook-project', stdin: '', files: CACHE_FILES },
   { id: 'hook-stdin-malformed', verb: 'hook', workspace: 'hook-project', stdin: '{not json', files: CACHE_FILES },
   { id: 'hook-stdin-array', verb: 'hook', workspace: 'hook-project', stdin: '[1,2]', files: CACHE_FILES },
-  { id: 'hook-env-disabled', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.tsx'), env: { IMPECCABLE_HOOK_DISABLED: '1' }, files: CACHE_FILES },
-  { id: 'hook-env-reentrant', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.tsx'), env: { IMPECCABLE_HOOK_DEPTH: '1' }, files: CACHE_FILES },
-  { id: 'hook-env-quiet', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.tsx'), env: { IMPECCABLE_HOOK_QUIET: '1' }, files: CACHE_FILES },
+  { id: 'hook-env-disabled', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.tsx'), env: { PROCABLE_HOOK_DISABLED: '1' }, files: CACHE_FILES },
+  { id: 'hook-env-reentrant', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.tsx'), env: { PROCABLE_HOOK_DEPTH: '1' }, files: CACHE_FILES },
+  { id: 'hook-env-quiet', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.tsx'), env: { PROCABLE_HOOK_QUIET: '1' }, files: CACHE_FILES },
   { id: 'hook-harness-github-edit', verb: 'hook', workspace: 'hook-project', stdin: { sessionId: 'g1', cwd: WS, toolName: 'edit', toolArgs: JSON.stringify({ path: 'src/components/Card.module.css', old_str: 'a', new_str: 'b' }) }, files: CACHE_FILES },
   { id: 'hook-harness-github-apply-patch', verb: 'hook', workspace: 'hook-project', stdin: { sessionId: 'g1', cwd: WS, toolName: 'apply_patch', toolArgs: '*** Begin Patch\n*** Update File: src/components/Card.module.css\n@@\n-x\n+y\n*** End Patch' }, files: CACHE_FILES },
   { id: 'hook-harness-codex-apply-patch', verb: 'hook', workspace: 'hook-project', stdin: { session_id: 'c1', cwd: WS, hook_event_name: 'PostToolUse', tool_name: 'apply_patch', tool_input: { command: '*** Begin Patch\n*** Update File: src/components/Card.module.css\n@@\n-x\n+y\n*** End Patch' } }, files: CACHE_FILES },
@@ -111,20 +111,20 @@ export default [
       tool_output: '{}', duration: 12, tool_use_id: 't1',
     },
   },
-  // Two Impeccable hooks for one edit (a plugin's and the project's): the
+  // Two Procable hooks for one edit (a plugin's and the project's): the
   // second invocation of the same tool call finds the claim and stays silent;
   // the next tool call scans again.
   {
     id: 'hook-duplicate-event-scans-once', workspace: 'hook-project', files: CACHE_FILES,
     steps: [
-      { verb: 'hook', stdin: claudeEdit('src/components/Card.module.css', { tool_use_id: 'toolu_dup' }), env: { IMPECCABLE_HOOK_HARNESS: 'claude' } },
+      { verb: 'hook', stdin: claudeEdit('src/components/Card.module.css', { tool_use_id: 'toolu_dup' }), env: { PROCABLE_HOOK_HARNESS: 'claude' } },
       { verb: 'hook', stdin: claudeEdit('src/components/Card.module.css', { tool_use_id: 'toolu_dup' }) },
       { verb: 'hook', stdin: claudeEdit('src/components/Card.tsx', { tool_use_id: 'toolu_next' }) },
     ],
   },
-  { id: 'hook-harness-vscode-patch-string', verb: 'hook', workspace: 'hook-project', env: { IMPECCABLE_HOOK_HARNESS: 'vscode' }, stdin: { session_id: 'v1', cwd: WS, hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: '*** Begin Patch\n*** Update File: src/components/Card.module.css\n@@\n-a\n+b\n*** End Patch\n' } },
-  { id: 'hook-harness-forced-github', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.module.css'), env: { IMPECCABLE_HOOK_HARNESS: 'github' }, files: CACHE_FILES },
-  { id: 'hook-audit-log', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.module.css'), env: { IMPECCABLE_HOOK_LOG: `${WS}/.impeccable/audit.ndjson` }, files: CACHE_FILES },
+  { id: 'hook-harness-vscode-patch-string', verb: 'hook', workspace: 'hook-project', env: { PROCABLE_HOOK_HARNESS: 'vscode' }, stdin: { session_id: 'v1', cwd: WS, hook_event_name: 'PostToolUse', tool_name: 'Edit', tool_input: '*** Begin Patch\n*** Update File: src/components/Card.module.css\n@@\n-a\n+b\n*** End Patch\n' } },
+  { id: 'hook-harness-forced-github', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.module.css'), env: { PROCABLE_HOOK_HARNESS: 'github' }, files: CACHE_FILES },
+  { id: 'hook-audit-log', verb: 'hook', workspace: 'hook-project', stdin: claudeEdit('src/components/Card.module.css'), env: { PROCABLE_HOOK_LOG: `${WS}/.procable/audit.ndjson` }, files: CACHE_FILES },
   {
     id: 'hook-native-platform-skip', verb: 'hook', workspace: 'hook-project',
     setup: (ws) => fs.writeFileSync(`${ws}/PRODUCT.md`, '# P\n\n## Platform\nios\n'),
@@ -132,17 +132,17 @@ export default [
   },
   {
     id: 'hook-config-disabled', verb: 'hook', workspace: 'hook-project',
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ hook: { enabled: false } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ hook: { enabled: false } }, null, 2) + '\n'); },
     stdin: claudeEdit('src/components/Card.module.css'), files: CACHE_FILES,
   },
   {
     id: 'hook-config-ignore-rule', verb: 'hook', workspace: 'hook-project',
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ detector: { ignoreRules: ['gradient-text'] } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ detector: { ignoreRules: ['gradient-text'] } }, null, 2) + '\n'); },
     stdin: claudeEdit('src/components/Card.module.css'), files: CACHE_FILES,
   },
   {
     id: 'hook-config-ignore-file', verb: 'hook', workspace: 'hook-project',
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ detector: { ignoreFiles: ['src/components/**'] } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ detector: { ignoreFiles: ['src/components/**'] } }, null, 2) + '\n'); },
     stdin: claudeEdit('src/components/Card.module.css'), files: CACHE_FILES,
   },
   // #1087: a linked stylesheet detector.ignoreFiles waives is not reported
@@ -154,20 +154,20 @@ export default [
       fs.writeFileSync(`${ws}/src/vendor/lib.css`, '.unused-text { background-image: linear-gradient(90deg, #f00, #00f); background-clip: text; -webkit-background-clip: text; color: transparent; }\n');
       fs.writeFileSync(`${ws}/src/linked.html`, '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>mock</title>\n<link rel="stylesheet" href="vendor/lib.css"></head><body><main><h1>Mock</h1></main></body></html>\n');
       if (ignoreFiles) {
-        fs.mkdirSync(`${ws}/.impeccable`, { recursive: true });
-        fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ detector: { ignoreFiles } }, null, 2) + '\n');
+        fs.mkdirSync(`${ws}/.procable`, { recursive: true });
+        fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ detector: { ignoreFiles } }, null, 2) + '\n');
       }
     },
     stdin: claudeEdit('src/linked.html'), files: CACHE_FILES,
   })),
   {
     id: 'hook-config-per-edit-all', verb: 'hook', workspace: 'hook-project',
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ hook: { perEditRules: 'all' } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ hook: { perEditRules: 'all' } }, null, 2) + '\n'); },
     stdin: claudeEdit('src/components/Card.tsx'), files: CACHE_FILES,
   },
   {
     id: 'hook-config-max-findings-1', verb: 'hook', workspace: 'hook-project',
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ hook: { perEditRules: 'all', limits: { maxFindings: 1, maxChars: 8000 } } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ hook: { perEditRules: 'all', limits: { maxFindings: 1, maxChars: 8000 } } }, null, 2) + '\n'); },
     stdin: claudeEdit('src/page.html'), files: CACHE_FILES,
   },
   // Session flows
@@ -226,7 +226,7 @@ export default [
   // events; its pre_verify gate reads the same top-level decision/block.
   {
     id: 'hook-session-hermes-stop-decision', verb: 'hook', workspace: 'hook-project', files: CACHE_FILES,
-    env: { IMPECCABLE_HOOK_HARNESS: 'hermes' },
+    env: { PROCABLE_HOOK_HARNESS: 'hermes' },
     steps: [
       { stdin: claudeEdit('src/components/Card.module.css', { session_id: 'hm1' }) },
       { stdin: stop({ session_id: 'hm1' }) },
@@ -240,7 +240,7 @@ export default [
   // umbrella folder. The second Stop is silent.
   {
     id: 'hook-stop-umbrella-cwd', verb: 'hook', workspace: 'hook-umbrella',
-    files: ['.impeccable/**', 'site/.impeccable/**', 'app/.impeccable/**'],
+    files: ['.procable/**', 'site/.procable/**', 'app/.procable/**'],
     steps: [
       { stdin: claudeEdit('site/src/a.css', { session_id: 'u1' }) },
       { stdin: claudeEdit('app/src/b.css', { session_id: 'u1' }) },
@@ -264,7 +264,7 @@ export default [
   { id: 'hbe-no-file', verb: 'hook-before-edit', workspace: 'hook-project', stdin: { hook_event_name: 'preToolUse', conversation_id: 'cv1', workspace_roots: [WS], tool_name: 'Shell', tool_input: { command: 'ls' } }, files: CACHE_FILES },
   { id: 'hbe-stdin-empty', verb: 'hook-before-edit', workspace: 'hook-project', stdin: '', files: CACHE_FILES },
   { id: 'hbe-stdin-malformed', verb: 'hook-before-edit', workspace: 'hook-project', stdin: '{', files: CACHE_FILES },
-  { id: 'hbe-env-disabled', verb: 'hook-before-edit', workspace: 'hook-project', stdin: '{', env: { IMPECCABLE_HOOK_DISABLED: 'true' }, files: CACHE_FILES },
+  { id: 'hbe-env-disabled', verb: 'hook-before-edit', workspace: 'hook-project', stdin: '{', env: { PROCABLE_HOOK_DISABLED: 'true' }, files: CACHE_FILES },
   { id: 'hbe-outside-project', verb: 'hook-before-edit', workspace: 'hook-project', stdin: { hook_event_name: 'preToolUse', conversation_id: 'cv1', workspace_roots: [WS], tool_name: 'Write', tool_input: { path: '<REPO>/tests/x.css', content: '.a{}' } }, files: CACHE_FILES },
   {
     id: 'hbe-denial-downgrade-after-6', verb: 'hook-before-edit', workspace: 'hook-project', files: CACHE_FILES,
@@ -315,24 +315,24 @@ export default [
   { id: 'hadmin-full-cycle', verb: 'hook-admin', workspace: 'hook-project', files: CACHE_FILES, steps: [{ args: ['ignore-rule', 'side-tab'] }, { args: ['ignore-file', 'x/**', '--local'] }, { args: ['ignore-value', 'overused-font', 'Inter'] }, { args: ['status'] }, { args: ['reset'] }, { args: ['status'] }] },
   {
     id: 'hadmin-legacy-migration', verb: 'hook-admin', workspace: 'hook-project', files: CACHE_FILES,
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, JSON.stringify({ hook: { enabled: true, quiet: true, ignoreRules: ['legacy-rule'], advisoryRules: 'include', consent: 'accepted' }, other: { keep: 1 } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, JSON.stringify({ hook: { enabled: true, quiet: true, ignoreRules: ['legacy-rule'], advisoryRules: 'include', consent: 'accepted' }, other: { keep: 1 } }, null, 2) + '\n'); },
     steps: [{ args: ['status'] }, { args: ['ignore-rule', 'side-tab'] }, { args: ['status'] }],
   },
   {
     id: 'hadmin-malformed-config', verb: 'hook-admin', workspace: 'hook-project', files: CACHE_FILES,
-    setup: (ws) => { fs.mkdirSync(`${ws}/.impeccable`, { recursive: true }); fs.writeFileSync(`${ws}/.impeccable/config.json`, '{ nope'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.procable`, { recursive: true }); fs.writeFileSync(`${ws}/.procable/config.json`, '{ nope'); },
     steps: [{ args: ['status'] }, { args: ['off'] }],
   },
   {
     id: 'hadmin-on-repairs-existing-manifest', verb: 'hook-admin', workspace: 'hook-project', files: CACHE_FILES,
-    setup: (ws) => { fs.mkdirSync(`${ws}/.claude`, { recursive: true }); fs.writeFileSync(`${ws}/.claude/settings.local.json`, JSON.stringify({ permissions: { allow: ['Bash(ls)'] }, hooks: { PostToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: 'node old/skills/impeccable/scripts/hook.mjs' }] }, { matcher: 'Write', hooks: [{ type: 'command', command: 'echo other' }] }] } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.claude`, { recursive: true }); fs.writeFileSync(`${ws}/.claude/settings.local.json`, JSON.stringify({ permissions: { allow: ['Bash(ls)'] }, hooks: { PostToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: 'node old/skills/procable/scripts/hook.mjs' }] }, { matcher: 'Write', hooks: [{ type: 'command', command: 'echo other' }] }] } }, null, 2) + '\n'); },
     args: ['on'],
   },
   // The retired Cursor before-edit gate moves to postToolUse; the foreign
   // preToolUse entry and the other event stay.
   {
     id: 'hadmin-on-migrates-cursor-gate', verb: 'hook-admin', workspace: 'hook-project', files: CACHE_FILES,
-    setup: (ws) => { fs.mkdirSync(`${ws}/.cursor`, { recursive: true }); fs.writeFileSync(`${ws}/.cursor/hooks.json`, JSON.stringify({ version: 1, hooks: { preToolUse: [{ command: './audit.sh', matcher: 'Shell' }, { command: '[ ! -f ".cursor/skills/impeccable/scripts/impeccable" ] || ".cursor/skills/impeccable/scripts/impeccable" hook-before-edit', timeout: 5 }], stop: [{ command: './notify.sh' }] } }, null, 2) + '\n'); },
+    setup: (ws) => { fs.mkdirSync(`${ws}/.cursor`, { recursive: true }); fs.writeFileSync(`${ws}/.cursor/hooks.json`, JSON.stringify({ version: 1, hooks: { preToolUse: [{ command: './audit.sh', matcher: 'Shell' }, { command: '[ ! -f ".cursor/skills/procable/scripts/procable" ] || ".cursor/skills/procable/scripts/procable" hook-before-edit', timeout: 5 }], stop: [{ command: './notify.sh' }] } }, null, 2) + '\n'); },
     args: ['on'],
   },
   {

@@ -2,7 +2,7 @@
 //! does not collide. Each module holds the rule half of its concern: the
 //! `check_*` and `scan_*` functions and the heuristics behind them. The
 //! shared half (the plain-data inputs and outputs, the CSS and text
-//! utilities, the selector and tag lists) lives in `impeccable_foundation`
+//! utilities, the selector and tag lists) lives in `procable_foundation`
 //! and is re-exported at the top of each module, so `checks::rules::RuleHit`,
 //! `checks::measures::StyleMap` and friends keep resolving here.
 //!
@@ -10,22 +10,22 @@
 //!   checkHoverContrast, checkIconTile, checkItalicSerif, checkHeroEyebrow,
 //!   checkKickerAboveHeading, checkMotion, checkGlow) and their heuristics
 //!   (isCardLikeFromProps, resolveSerif, isAccentColor,
-//!   resolveHeroHeadingSizePx). Open: `impeccable_foundation::rules::types`.
+//!   resolveHeroHeadingSizePx). Open: `procable_foundation::rules::types`.
 //! - `css_scan`: CSS-text scanners (cssTextHasDarkRootBg,
 //!   scanCssTextForGlow/GridBackground/RadialHalo/PseudoStripe/InsetStripe/
 //!   Marquee/PulsingDot/OrganicClipPath/BuriedRaster, isRoundDotRadius).
-//!   Open: `impeccable_foundation::css::scan`.
+//!   Open: `procable_foundation::css::scan`.
 //! - `row_stripe`: the side stripe on a status row or cell
 //!   (scanCssTextForRowStripe), which the card scans in `css_scan` skip.
 //! - `html_patterns`: scanHtmlForShapeAssembledIllustration,
 //!   buildHtmlPatternCorpora, checkHtmlPatterns. Open (the corpora type):
-//!   `impeccable_foundation::rules::html_patterns`.
+//!   `procable_foundation::rules::html_patterns`.
 //! - `measures`: the Section 4-6 gates that take plain data:
 //!   checkRadialSpotlight, checkOversizedH1, checkGptThinBorderWideShadow,
 //!   checkContentHiddenAtRest, isCreamColor, creamFromClassList,
 //!   positionedStyleImpliesEscape, isOpaqueDecoratedBox. Open (value parsing,
 //!   lengths, alphas, shadows, the style traits and the input structs):
-//!   `impeccable_foundation::css::measures`.
+//!   `procable_foundation::css::measures`.
 //! - `decorative_text`: the shapes of text with no reading job (avatar
 //!   initials, version stamps, signatures, mockup text) that report
 //!   `low-contrast` as advisory. The adapters gather the facts.
@@ -33,7 +33,7 @@
 //!   gates: isKickerCandidate, isNumberedSectionLabelCandidate,
 //!   checkNumberedSectionLabels, checkEmDashOveruse, isRepeatedTextContainer.
 //!   Open (selector and tag lists, thresholds, the two text parsers):
-//!   `impeccable_foundation::rules::text`.
+//!   `procable_foundation::rules::text`.
 //! - `text_context`: the contexts in which a typography finding reports as
 //!   advisory (framed HTML demos, legal fine print, micro-labels), decided
 //!   once over the `ContextNode` both engines implement.
@@ -47,7 +47,7 @@
 //! `vectors_a` (rules, css_scan, html_patterns) and `vectors_b` (measures,
 //! text_rules) hold this crate's vector-replay dispatch arms for
 //! `crate::vectors`; foundation's own arms are dispatched by
-//! `impeccable_foundation::vectors`.
+//! `procable_foundation::vectors`.
 
 pub mod css_scan;
 pub mod decorative_text;

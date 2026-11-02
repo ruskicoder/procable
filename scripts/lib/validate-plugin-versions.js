@@ -13,9 +13,9 @@
  *   - `plugin/.claude-plugin/plugin.json` version — generated, derived from
  *     root at build:release; checked so a bump that forgets to regenerate the
  *     subtree fails loudly instead of merging a drift window onto main.
- *   - `plugin/skills/impeccable/SKILL.md` frontmatter version — generated;
+ *   - `plugin/skills/procable/SKILL.md` frontmatter version — generated;
  *     same rationale.
- *   - `dist/openai/impeccable/.codex-plugin/plugin.json` version — generated
+ *   - `dist/openai/procable/.codex-plugin/plugin.json` version — generated
  *     for public OpenAI submission and checked when that build output exists.
  *
  * The collector is pure (filesystem-in, data-out) so it can be unit-tested
@@ -123,12 +123,12 @@ export function collectPluginVersions(rootDir) {
       // The npm CLI shares the skill's version: one number for users to read
       // off npm, the plugin and the changelog. Only this repo's package.json is
       // the CLI, and it is the one that pins the engine's platform packages:
-      // impeccable-site builds the skill from a tree whose root package.json is
-      // the site's own, also named impeccable, at its own version.
+      // procable-site builds the skill from a tree whose root package.json is
+      // the site's own, also named procable, at its own version.
       relPath: 'package.json',
       read: (raw) => {
         const pkg = JSON.parse(raw);
-        const isCli = Object.keys(pkg.optionalDependencies || {}).some((k) => k.startsWith('@impeccable/cli-'));
+        const isCli = Object.keys(pkg.optionalDependencies || {}).some((k) => k.startsWith('@procable/cli-'));
         return isCli ? pkg.version : SKIP;
       },
     },
@@ -141,15 +141,15 @@ export function collectPluginVersions(rootDir) {
       read: (raw) => JSON.parse(raw).version,
     },
     {
-      relPath: 'dist/openai/impeccable/.codex-plugin/plugin.json',
+      relPath: 'dist/openai/procable/.codex-plugin/plugin.json',
       read: (raw) => JSON.parse(raw).version,
     },
     ...['cursor-plugin', 'dist/cursor-plugin'].flatMap((prefix) => [
       { relPath: `${prefix}/.cursor-plugin/plugin.json`, read: (raw) => JSON.parse(raw).version },
-      { relPath: `${prefix}/skills/impeccable/SKILL.md`, read: readSkillFrontmatterVersion },
+      { relPath: `${prefix}/skills/procable/SKILL.md`, read: readSkillFrontmatterVersion },
     ]),
     {
-      relPath: 'plugin/skills/impeccable/SKILL.md',
+      relPath: 'plugin/skills/procable/SKILL.md',
       read: (raw) => readSkillFrontmatterVersion(raw),
     },
   ];

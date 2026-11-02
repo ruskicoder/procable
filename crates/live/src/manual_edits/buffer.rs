@@ -1,5 +1,5 @@
 //! JS: live/manual-edits-buffer.mjs. The pending-manual-edits buffer on disk
-//! (`.impeccable/live/pending-manual-edits.json`).
+//! (`.procable/live/pending-manual-edits.json`).
 
 use crate::json_error::json_parse_error;
 use crate::paths::live_dir;
@@ -34,7 +34,7 @@ fn read_internal(cwd: &str, env: &Env, strict: bool) -> Result<Buffer, String> {
             if strict && e.kind() != std::io::ErrorKind::NotFound {
                 return Err(format!(
                     "manual_edit_buffer_unreadable: {}",
-                    impeccable_context::util::node_read_error(&file, &e)
+                    procable_context::util::node_read_error(&file, &e)
                 ));
             }
             return Ok(Buffer { entries: vec![] });
@@ -292,7 +292,7 @@ mod tests {
 
     fn scratch(name: &str) -> String {
         let dir = std::env::temp_dir().join(format!(
-            "impeccable-buffer-{}-{}",
+            "procable-buffer-{}-{}",
             name,
             std::process::id()
         ));

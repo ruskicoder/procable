@@ -1,5 +1,5 @@
 //! The static engine's reading of
-//! [`impeccable_core::checks::decorative_text::DecorativeTextFacts`]. There
+//! [`procable_core::checks::decorative_text::DecorativeTextFacts`]. There
 //! is no layout here, so a box's size is its declared `width` and `height`
 //! in px (or an `svg`'s attributes), and "centred" is what the cascade can
 //! say: `text-align: center`, a flex or grid box, a line box as tall as the
@@ -8,12 +8,12 @@
 
 use crate::background::{read_own_background_color, sv};
 use crate::dom::StaticElement;
-use impeccable_core::checks::decorative_text::{
+use procable_core::checks::decorative_text::{
     avatar_sized, classify_decorative_text, is_mockup_marker, is_signature_marker,
     DecorativeTextFacts, MOCKUP_MARKER_SKIP_TAGS,
 };
-use impeccable_core::color::{parse_any_color, parse_rgb};
-use impeccable_core::js;
+use procable_core::color::{parse_any_color, parse_rgb};
+use procable_core::js;
 
 const CONTROL_TAGS: &[&str] = &["a", "button", "label", "summary", "select", "option"];
 const CONTROL_ROLES: &[&str] = &[
@@ -164,7 +164,7 @@ fn marked_mockup(el: &StaticElement<'_>) -> (bool, bool) {
 
 /// Whether a box sits in a drawn product mockup: under an HTML `role="img"`
 /// outside any `svg`, or in or itself a framed demo by its structure. The static twin
-/// of [`impeccable_core::browser::decorative_text::box_in_mockup_dom`], for
+/// of [`procable_core::browser::decorative_text::box_in_mockup_dom`], for
 /// `nested-cards` (decision r6-t3-nested-cards-mockups); a mockup class or id
 /// is not read there either.
 pub fn box_in_mockup(el: &StaticElement<'_>) -> bool {

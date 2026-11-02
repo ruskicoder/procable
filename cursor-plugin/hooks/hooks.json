@@ -3,7 +3,7 @@
   "hooks": {
     "postToolUse": [
       {
-        "command": "[ ! -f \"${CURSOR_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" ] || \"${CURSOR_PLUGIN_ROOT}/skills/impeccable/scripts/impeccable\" hook",
+        "command": "[ ! -f \"${CURSOR_PLUGIN_ROOT}/skills/procable/scripts/procable\" ] || \"${CURSOR_PLUGIN_ROOT}/skills/procable/scripts/procable\" hook",
         "matcher": "^Write$",
         "timeout": 5
       }

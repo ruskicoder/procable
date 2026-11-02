@@ -1,11 +1,11 @@
 //! [`Dom`] implemented over the JS probe object the in-page bundle defines
-//! (`browser-bundle/10-probe.js`, `const __impeccableDom = {...}`). Every
+//! (`browser-bundle/10-probe.js`, `const __procableDom = {...}`). Every
 //! method is one imported function; element handles are indexes into the
 //! probe's registry (0 = null). Selector errors come back as sentinels
 //! (`u32::MAX`, or a first element of `u32::MAX` in arrays) because the probe
 //! catches the DOM's SyntaxError and cannot throw across the boundary.
 
-use impeccable_core::browser::dom::{
+use procable_core::browser::dom::{
     merge_text_rects_into_lines, Dom, DomChild, ElId, KeyframeFrame, Rect, SelectorError,
 };
 use std::cell::RefCell;
@@ -14,7 +14,7 @@ use wasm_bindgen::prelude::*;
 
 const ERR: u32 = u32::MAX;
 
-#[wasm_bindgen(js_namespace = __impeccableDom)]
+#[wasm_bindgen(js_namespace = __procableDom)]
 extern "C" {
     fn document_element() -> u32;
     fn body() -> u32;

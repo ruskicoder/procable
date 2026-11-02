@@ -1,8 +1,8 @@
 /**
- * `impeccable detect` corpus.
+ * `procable detect` corpus.
  *
  * Every antipattern fixture is scanned individually in JSON and text mode with
- * --no-config (the repo's own .impeccable config ignores tests/fixtures), plus
+ * --no-config (the repo's own .procable config ignores tests/fixtures), plus
  * directory scans, project-config / DESIGN.md / inline-ignore behaviour from
  * the detect-config workspace, and the flag surface (help, scope, quiet,
  * no-advisory, errors).
@@ -215,8 +215,8 @@ function Thumb({ url }: { url?: string }) {
     {
       id: 'cli-version', verb: 'cli-version', args: [],
       // A fixture skill dir keeps the golden off every release cadence.
-      setup: (ws) => fs.writeFileSync(path.join(ws, 'SKILL.md'), '---\nname: impeccable\nversion: 9.9.9\n---\n'),
-      env: { IMPECCABLE_SKILL_DIR: '<WS>' },
+      setup: (ws) => fs.writeFileSync(path.join(ws, 'SKILL.md'), '---\nname: procable\nversion: 9.9.9\n---\n'),
+      env: { PROCABLE_SKILL_DIR: '<WS>' },
     },
 
     // Project config, DESIGN.md, inline ignores (detect-config workspace)
@@ -284,9 +284,9 @@ function Thumb({ url }: { url?: string }) {
           '.unused-text { background-image: linear-gradient(90deg, #f00, #00f); background-clip: text; -webkit-background-clip: text; color: transparent; }\n',
         );
         if (ignoreFiles) {
-          fs.mkdirSync(path.join(ws, '.impeccable'));
+          fs.mkdirSync(path.join(ws, '.procable'));
           fs.writeFileSync(
-            path.join(ws, '.impeccable', 'config.json'),
+            path.join(ws, '.procable', 'config.json'),
             JSON.stringify({ detector: { ignoreFiles } }) + '\n',
           );
         }
@@ -300,9 +300,9 @@ function Thumb({ url }: { url?: string }) {
       setup: (ws) => {
         fs.writeFileSync(path.join(ws, 'package.json'), '{"name":"globstar-ignore"}\n');
         fs.mkdirSync(path.join(ws, 'docs'), { recursive: true });
-        fs.mkdirSync(path.join(ws, '.impeccable'));
+        fs.mkdirSync(path.join(ws, '.procable'));
         fs.writeFileSync(
-          path.join(ws, '.impeccable', 'config.json'),
+          path.join(ws, '.procable', 'config.json'),
           JSON.stringify({ detector: { ignoreFiles: ['**/index.html'] } }) + '\n',
         );
         const html = '<style>.card { border-left: 4px solid #ff0000; border-radius: 10px; }</style>\n<div class="card">Card</div>\n';

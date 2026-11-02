@@ -4,9 +4,9 @@
 
 /** @type {import('next').NextConfig} */
 
-// Dev-only allowance so impeccable live mode can load. Empty string in any
+// Dev-only allowance so procable live mode can load. Empty string in any
 // non-development environment.
-const __impeccableLiveDev =
+const __procableLiveDev =
   process.env.NODE_ENV === "development" ? " http://localhost:8400" : "";
 
 module.exports = {
@@ -19,10 +19,10 @@ module.exports = {
             key: "Content-Security-Policy",
             value:
               "default-src 'self'; " +
-              `script-src 'self' 'unsafe-inline' 'unsafe-eval'${__impeccableLiveDev}; ` +
+              `script-src 'self' 'unsafe-inline' 'unsafe-eval'${__procableLiveDev}; ` +
               "style-src 'self' 'unsafe-inline'; " +
               "img-src 'self' data: blob:; " +
-              `connect-src 'self'${__impeccableLiveDev}; ` +
+              `connect-src 'self'${__procableLiveDev}; ` +
               "frame-ancestors 'self';",
           },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },

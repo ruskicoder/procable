@@ -2,7 +2,7 @@
 //! cascade alone.
 //!
 //! The browser engine answers this from layout (`layer_under_text` in
-//! `impeccable_core::browser::visual`). This engine has no layout, no
+//! `procable_core::browser::visual`). This engine has no layout, no
 //! `z-index` and no rects, so it reads the one shape a background photograph
 //! is written in and that the cascade does carry: a media element, or a box
 //! with a raster background, taken out of flow and stretched over its
@@ -15,7 +15,7 @@
 use crate::background::{read_own_background_color, sv};
 use crate::cascade::StyleValues;
 use crate::dom::StaticElement;
-use impeccable_core::js;
+use procable_core::js;
 
 /// Replaced boxes that paint a picture rather than a colour.
 const MEDIA_TAGS: &[&str] = &["img", "picture", "video", "canvas"];

@@ -5,7 +5,7 @@
  * Each fixture under tests/framework-fixtures/ is a small project tree with a
  * fixture.json that declares the inject config + expected CSP and wrap
  * outcomes. The harness copies the fixture into a tmp git repo, applies the
- * fixture's gitignore, and runs `impeccable live-inject`, `live-wrap`, and
+ * fixture's gitignore, and runs `procable live-inject`, `live-wrap`, and
  * `detect-csp` against it. Skips when no engine binary is available (see
  * tests/lib/engine-bin.mjs).
  *
@@ -43,11 +43,11 @@ function stageFixture(name) {
   const fixture = JSON.parse(readFileSync(join(fixtureRoot, 'fixture.json'), 'utf-8'));
   const gitignore = readFileSync(join(fixtureRoot, 'gitignore.txt'), 'utf-8');
 
-  const tmp = mkdtempSync(join(tmpdir(), 'impeccable-fixture-'));
+  const tmp = mkdtempSync(join(tmpdir(), 'procable-fixture-'));
   cpSync(join(fixtureRoot, 'files'), tmp, { recursive: true });
   writeFileSync(join(tmp, '.gitignore'), gitignore);
-  mkdirSync(join(tmp, '.impeccable', 'live'), { recursive: true });
-  writeFileSync(join(tmp, '.impeccable', 'live', 'config.json'), JSON.stringify(fixture.config));
+  mkdirSync(join(tmp, '.procable', 'live'), { recursive: true });
+  writeFileSync(join(tmp, '.procable', 'live', 'config.json'), JSON.stringify(fixture.config));
 
   // The AST scaffolder resolves the app's svelte compiler from the staged
   // root; the runtime suite gets it from a real npm install, the static sweep
@@ -113,34 +113,34 @@ for (const name of listFixtures()) {
         assert.equal(result.gitIgnore?.mode, 'git-info-exclude', 'live runtime ignores are installed locally');
         const ignored = execFileSync('git', [
           'check-ignore',
-          '.impeccable/live/server.json',
-          '.impeccable/live/sessions/example.jsonl',
-          '.impeccable/live/previews/example/v1.html',
-          '.impeccable/live/artifacts/example-r1.jsx',
-          '.impeccable/live/accept-receipts/example.json',
-          '.impeccable/live/locks/example.lock',
-          '.impeccable/live/deferred-svelte-component-accepts.json',
-          'src/lib/impeccable/ImpeccableLiveRoot.svelte',
-          'src/lib/impeccable/__runtime.js',
-          'src/lib/impeccable/a4ac4e74/v3.svelte',
+          '.procable/live/server.json',
+          '.procable/live/sessions/example.jsonl',
+          '.procable/live/previews/example/v1.html',
+          '.procable/live/artifacts/example-r1.jsx',
+          '.procable/live/accept-receipts/example.json',
+          '.procable/live/locks/example.lock',
+          '.procable/live/deferred-svelte-component-accepts.json',
+          'src/lib/procable/ProcableLiveRoot.svelte',
+          'src/lib/procable/__runtime.js',
+          'src/lib/procable/a4ac4e74/v3.svelte',
         ], { cwd: tmp, encoding: 'utf-8' });
-        assert.match(ignored, /\.impeccable\/live\/server\.json/);
-        assert.match(ignored, /\.impeccable\/live\/sessions\/example\.jsonl/);
-        assert.match(ignored, /\.impeccable\/live\/previews\/example\/v1\.html/);
-        assert.match(ignored, /\.impeccable\/live\/artifacts\/example-r1\.jsx/);
-        assert.match(ignored, /\.impeccable\/live\/accept-receipts\/example\.json/);
-        assert.match(ignored, /\.impeccable\/live\/locks\/example\.lock/);
-        assert.match(ignored, /\.impeccable\/live\/deferred-svelte-component-accepts\.json/);
-        assert.match(ignored, /src\/lib\/impeccable\/ImpeccableLiveRoot\.svelte/);
-        assert.match(ignored, /src\/lib\/impeccable\/__runtime\.js/);
-        assert.match(ignored, /src\/lib\/impeccable\/a4ac4e74\/v3\.svelte/);
+        assert.match(ignored, /\.procable\/live\/server\.json/);
+        assert.match(ignored, /\.procable\/live\/sessions\/example\.jsonl/);
+        assert.match(ignored, /\.procable\/live\/previews\/example\/v1\.html/);
+        assert.match(ignored, /\.procable\/live\/artifacts\/example-r1\.jsx/);
+        assert.match(ignored, /\.procable\/live\/accept-receipts\/example\.json/);
+        assert.match(ignored, /\.procable\/live\/locks\/example\.lock/);
+        assert.match(ignored, /\.procable\/live\/deferred-svelte-component-accepts\.json/);
+        assert.match(ignored, /src\/lib\/procable\/ProcableLiveRoot\.svelte/);
+        assert.match(ignored, /src\/lib\/procable\/__runtime\.js/);
+        assert.match(ignored, /src\/lib\/procable\/a4ac4e74\/v3\.svelte/);
         if (result.adapter === 'sveltekit') {
           const layout = readFileSync(join(tmp, 'src/routes/+layout.svelte'), 'utf-8');
           const appHtml = readFileSync(join(tmp, 'src/app.html'), 'utf-8');
-          const root = readFileSync(join(tmp, 'src/lib/impeccable/ImpeccableLiveRoot.svelte'), 'utf-8');
-          assert.match(layout, /impeccable-live-svelte-start/, 'SvelteKit layout got the adapter marker');
-          assert.match(layout, /ImpeccableLiveRoot/, 'SvelteKit layout renders the adapter host');
-          assert.doesNotMatch(appHtml, /impeccable-live-start/, 'SvelteKit app.html must remain untouched');
+          const root = readFileSync(join(tmp, 'src/lib/procable/ProcableLiveRoot.svelte'), 'utf-8');
+          assert.match(layout, /procable-live-svelte-start/, 'SvelteKit layout got the adapter marker');
+          assert.match(layout, /ProcableLiveRoot/, 'SvelteKit layout renders the adapter host');
+          assert.doesNotMatch(appHtml, /procable-live-start/, 'SvelteKit app.html must remain untouched');
           assert.doesNotMatch(appHtml, /localhost:9999\/live\.js/, 'SvelteKit app.html must not own live.js');
           assert.match(root, /localhost:9999\/live\.js/, 'SvelteKit root component loads live.js');
           return;
@@ -149,7 +149,7 @@ for (const name of listFixtures()) {
           const plugin = result.results[0];
           const body = readFileSync(join(tmp, plugin.file), 'utf-8');
           assert.equal(plugin.inserted, true, 'Nuxt client plugin was created');
-          assert.match(body, /impeccable-live-nuxt-plugin/);
+          assert.match(body, /procable-live-nuxt-plugin/);
           assert.match(body, /if \(!import\.meta\.dev/);
           assert.match(body, /localhost:9999\/live\.js/);
           return;
@@ -159,9 +159,9 @@ for (const name of listFixtures()) {
           const rootDoc = readFileSync(join(tmp, adapterResult.file), 'utf-8');
           const component = readFileSync(join(tmp, adapterResult.componentFile), 'utf-8');
           assert.equal(adapterResult.inserted, true, 'TanStack Start root document was patched');
-          assert.match(rootDoc, /impeccable-live-tanstack-start/, 'root document got the adapter marker');
-          assert.match(rootDoc, /<ImpeccableLiveRoot \/>/, 'root document renders the mount component');
-          assert.doesNotMatch(rootDoc, /impeccable-live-start/, 'root document must not get the raw script block');
+          assert.match(rootDoc, /procable-live-tanstack-start/, 'root document got the adapter marker');
+          assert.match(rootDoc, /<ProcableLiveRoot \/>/, 'root document renders the mount component');
+          assert.doesNotMatch(rootDoc, /procable-live-start/, 'root document must not get the raw script block');
           assert.doesNotMatch(rootDoc, /localhost:9999\/live\.js/, 'root document must not own live.js directly');
           assert.match(component, /localhost:9999\/live\.js/, 'mount component loads live.js');
           assert.match(component, /useEffect/, 'mount component appends the script on mount');
@@ -170,7 +170,7 @@ for (const name of listFixtures()) {
         for (const r of result.results) {
           assert.ok(r.inserted, `${r.file} got the tag (result: ${JSON.stringify(r)})`);
           const body = readFileSync(join(tmp, r.file), 'utf-8');
-          assert.match(body, /impeccable-live-start/);
+          assert.match(body, /procable-live-start/);
           assert.match(body, /localhost:9999\/live\.js/);
         }
       } finally {
@@ -188,10 +188,10 @@ for (const name of listFixtures()) {
         if (result.adapter === 'sveltekit') {
           const layout = readFileSync(join(tmp, 'src/routes/+layout.svelte'), 'utf-8');
           const appHtml = readFileSync(join(tmp, 'src/app.html'), 'utf-8');
-          assert.doesNotMatch(layout, /ImpeccableLiveRoot/);
-          assert.doesNotMatch(layout, /impeccable-live-svelte-start/);
-          assert.doesNotMatch(appHtml, /impeccable-live-start/);
-          assert.equal(existsSync(join(tmp, 'src/lib/impeccable/ImpeccableLiveRoot.svelte')), false);
+          assert.doesNotMatch(layout, /ProcableLiveRoot/);
+          assert.doesNotMatch(layout, /procable-live-svelte-start/);
+          assert.doesNotMatch(appHtml, /procable-live-start/);
+          assert.equal(existsSync(join(tmp, 'src/lib/procable/ProcableLiveRoot.svelte')), false);
           return;
         }
         if (result.adapter === 'nuxt') {
@@ -202,14 +202,14 @@ for (const name of listFixtures()) {
         if (result.adapter === 'tanstack-start') {
           const adapterResult = result.results[0];
           const rootDoc = readFileSync(join(tmp, adapterResult.file), 'utf-8');
-          assert.doesNotMatch(rootDoc, /ImpeccableLiveRoot/);
-          assert.doesNotMatch(rootDoc, /impeccable-live-tanstack-start/);
+          assert.doesNotMatch(rootDoc, /ProcableLiveRoot/);
+          assert.doesNotMatch(rootDoc, /procable-live-tanstack-start/);
           assert.equal(existsSync(join(tmp, adapterResult.componentFile)), false, 'TanStack mount component was removed');
           return;
         }
         for (const r of result.results) {
           const body = readFileSync(join(tmp, r.file), 'utf-8');
-          assert.doesNotMatch(body, /impeccable-live-start/);
+          assert.doesNotMatch(body, /procable-live-start/);
           assert.doesNotMatch(body, /live\.js/);
         }
       } finally {
@@ -281,7 +281,7 @@ describe('detect-csp — Next.js proxy placement', { skip: ENGINE_BIN ? false : 
       ['lib/network/proxy.ts', null],
       ['apps/web/lib/proxy.ts', null, ['apps/web/app']],
     ]) {
-      const tmp = mkdtempSync(join(tmpdir(), 'impeccable-proxy-placement-'));
+      const tmp = mkdtempSync(join(tmpdir(), 'procable-proxy-placement-'));
       try {
         mkdirSync(dirname(join(tmp, relPath)), { recursive: true });
         for (const marker of markers) {

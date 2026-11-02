@@ -4,8 +4,8 @@
   "exit": 3,
   "signal": null,
   "files": {
-    ".impeccable/questions/k1.hand.json": "{\"id\":\"h1\",\"digest\":\"0000000000000000\",\"comps\":[\".impeccable/mocks/decision/a.png\"],\"pre\":{}}",
-    ".impeccable/questions/k1.render-check": "h1",
-    ".impeccable/questions/k1.state.json": "{\"pid\":<PID>,\"port\":1,\"url\":\"http://127.0.0.1:1/\",\"comps\":[\".impeccable/mocks/decision/a.png\"]}"
+    ".procable/questions/k1.hand.json": "{\"id\":\"h1\",\"digest\":\"0000000000000000\",\"comps\":[\".procable/mocks/decision/a.png\"],\"pre\":{}}",
+    ".procable/questions/k1.render-check": "h1",
+    ".procable/questions/k1.state.json": "{\"pid\":<PID>,\"port\":1,\"url\":\"http://127.0.0.1:1/\",\"comps\":[\".procable/mocks/decision/a.png\"]}"
   }
 }

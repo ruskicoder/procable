@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // A/B of the two probes inside one bundle: inject dist/detect-antipatterns-
-// browser.js and diff `impeccableDetect()` (rules over the live-DOM probe)
-// against `impeccableDetectFromSnapshot()` (the same rules over a page
+// browser.js and diff `procableDetect()` (rules over the live-DOM probe)
+// against `procableDetectFromSnapshot()` (the same rules over a page
 // snapshot, hit tests answered on demand) on the same page in the same
 // Chrome. Verification tooling only (needs this repo's puppeteer).
 //
@@ -23,7 +23,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const engineRoot = path.resolve(here, '../../..');
 // The fixtures and puppeteer live in this repo; --public points at another
 // checkout (an older one, for A/B against the pre-Rust engine).
-const publicRepo = path.resolve(flag('--public') || process.env.IMPECCABLE_PUBLIC_REPO || engineRoot);
+const publicRepo = path.resolve(flag('--public') || process.env.PROCABLE_PUBLIC_REPO || engineRoot);
 const require = createRequire(path.join(publicRepo, 'package.json'));
 const puppeteer = require('puppeteer');
 
@@ -60,16 +60,16 @@ for (const url of targets) {
   let live, snap;
   try {
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 60000 });
-    await page.evaluate(() => { window.__IMPECCABLE_CONFIG__ = { autoScan: false }; });
+    await page.evaluate(() => { window.__PROCABLE_CONFIG__ = { autoScan: false }; });
     await page.evaluate(BUNDLE);
     live = await page.evaluate(() => {
       const t0 = performance.now();
-      const findings = window.impeccableDetect({ decorate: false, serialize: true });
+      const findings = window.procableDetect({ decorate: false, serialize: true });
       return { findings, ms: performance.now() - t0 };
     });
     snap = await page.evaluate(() => {
       const t0 = performance.now();
-      const r = window.impeccableDetectFromSnapshot();
+      const r = window.procableDetectFromSnapshot();
       return { ...r, ms: performance.now() - t0 };
     });
   } catch (e) {

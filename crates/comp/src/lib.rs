@@ -1,4 +1,4 @@
-//! impeccable-comp: the pure, browser-independent foundation of the
+//! procable-comp: the pure, browser-independent foundation of the
 //! comp-fidelity pipeline, ported from the skill's JS libs.
 //!
 //! Ported modules (all pure, no browser, no CLI):

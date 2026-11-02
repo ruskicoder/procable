@@ -2,7 +2,7 @@
  * Scripted user bot for the new-work interactive smoke suite.
  *
  * Given a workspace directory, it discovers a running serve-question daemon
- * from `.impeccable/questions/<key>.state.json`, opens the served page in a
+ * from `.procable/questions/<key>.state.json`, opens the served page in a
  * real browser, and drives it through a scripted policy: it clicks the real
  * `button.choose`, `#reroll`, and `#canon` controls, types into `#steer`, and
  * closes the tab for the exit-4 path. Because a real page runs the page's own
@@ -28,7 +28,7 @@ import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 
 function questionsDir(workspaceDir) {
-  return path.join(workspaceDir, '.impeccable', 'questions');
+  return path.join(workspaceDir, '.procable', 'questions');
 }
 
 // Resolve the served URL from the daemon state file. When no key is given and

@@ -33,19 +33,19 @@ The concept-seed direction roll (challengers, `ASSIGNED INDEX`, the no
 PRODUCT.md gate) is pinned by the oracle corpus (`tests/oracle`, the `seed-*`
 cases) and is not repeated here.
 
-Both verbs run through the engine binary (`impeccable serve-question`,
-`impeccable generate-image`) resolved by `tests/lib/engine-bin.mjs`:
-`IMPECCABLE_BIN` or `skill/scripts/bin/<os>-<arch>/` (`bun run fetch:engine`).
+Both verbs run through the engine binary (`procable serve-question`,
+`procable generate-image`) resolved by `tests/lib/engine-bin.mjs`:
+`PROCABLE_BIN` or `skill/scripts/bin/<os>-<arch>/` (`bun run fetch:engine`).
 
 ## Pieces
 
 - `user-bot.mjs` is a module plus CLI. Given a workspace dir it resolves the
-  running daemon from `.impeccable/questions/<key>.state.json`, opens the page,
+  running daemon from `.procable/questions/<key>.state.json`, opens the page,
   and runs a JSON policy of real clicks: `{"pick":"assigned"}`,
   `{"reroll":true,"steer":"warmer"}`, `{"pick":"challenger-*"}`,
   `{"canon":true}`, `{"close":true}`. The deterministic tier passes an
   already-launched browser in; the CLI launches its own Chromium.
-- `IMPECCABLE_IMAGE_GEN_FAKE=1` switches `impeccable generate-image` to
+- `PROCABLE_IMAGE_GEN_FAKE=1` switches `procable generate-image` to
   the offline stand-in: no OpenAI call, no key, a `$0.00` cost line, and a
   deterministic image (SVG for `.svg` out with the wrapped prompt text and a
   `SYNTHETIC COMP` label; a valid palette-stripe PNG otherwise, with the prompt
@@ -58,7 +58,7 @@ pattern in `tests/live-e2e`:
 
 - A real model plays the user through the same scripted `user-bot.mjs` policy,
   choosing and steering instead of following canned actions.
-- `IMPECCABLE_IMAGE_GEN_FAKE` still stands in for image spend, so a full
+- `PROCABLE_IMAGE_GEN_FAKE` still stands in for image spend, so a full
   concept-to-card cycle runs without paying per render.
 - Assertions run against the tool-call trace via the skill-behavior harness,
   the same way `tests/skill-behavior` keys on the trace rather than free-form

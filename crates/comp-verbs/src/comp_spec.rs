@@ -5,10 +5,10 @@
 
 use std::path::{Path, PathBuf};
 
-use impeccable_common::Io;
-use impeccable_comp::metrics as m;
-use impeccable_comp::png_io;
-use impeccable_comp::raster::{self as r, Image};
+use procable_common::Io;
+use procable_comp::metrics as m;
+use procable_comp::png_io;
+use procable_comp::raster::{self as r, Image};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Map, Value};
@@ -16,9 +16,9 @@ use sha2::{Digest, Sha256};
 
 use crate::util::{self, arg, arg_or, flag, num, r4, r4f, round};
 
-pub const BUILD_DIR: &str = ".impeccable/build";
-pub const SPEC_PATH: &str = ".impeccable/build/spec.json";
-pub const GRID_PATH: &str = ".impeccable/build/comp-grid.png";
+pub const BUILD_DIR: &str = ".procable/build";
+pub const SPEC_PATH: &str = ".procable/build/spec.json";
+pub const GRID_PATH: &str = ".procable/build/comp-grid.png";
 pub const PLATES_DIR: &str = "assets/plates";
 
 const COLS: &[u8] = b"ABCDEFGHIJ";
@@ -1105,7 +1105,7 @@ fn resolve(io: &Io, p: &str) -> PathBuf {
 
 // ---- CLI -------------------------------------------------------------------
 
-/// `impeccable comp-spec ...`
+/// `procable comp-spec ...`
 /// A failed edit leaves the last valid measurements intact, but they cannot
 /// authorize a build against different source geometry.
 pub fn region_source_issue(io: &Io, spec: &Value) -> Option<String> {
@@ -1137,7 +1137,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
     if flag(argv, "help") || argv.is_empty() {
         io.out("MAP WORKFLOW: open --grid, author regions.json, run --regions regions.json --inspect-map, inspect its crops, then correct the map. Stop here for a mapping-only task.\nSCHEMA: comp-spec --schema lists required fields, coordinates, parentId and reviewGroup. Default inspection output is concise; --json prints the full report.\n");
         io.out("REGION COORDINATES: use one of grid (coarse inclusive cells), box {x,y,w,h} (fractions of the comp, 0..1), or pixelBox {x,y,w,h} (whole pixels in the original comp). Use exact bounds when an element ends inside a grid cell; do not include neighbouring content.\n");
-        io.out("usage: comp-spec.mjs --comp <png> --grid            write .impeccable/build/comp-grid.png (10x10 labeled grid) + palette + bands\n       comp-spec.mjs --comp <png> --regions <json>  measure regions -> .impeccable/build/spec.json\n         regions json: { \"regions\": [ { \"id\": \"art\", \"kind\": \"plate|image|texture|text|control|chrome\", \"grid\": \"E0:J4\", \"note\": \"...\" } ] }\n       comp-spec.mjs --comp <png> --auto [--out f]  write a band draft; refine into elements before --regions\n       comp-spec.mjs --comp <png> --regions <json> --inspect-map [--out-dir dir] [--json]  inspect all crops and masks without writing a spec\n       comp-spec.mjs --print                        the compact spec\n       comp-spec.mjs --crop <id> [--out f] [--scale n]   reference crop of a region (never a shipping asset)\n       comp-spec.mjs --plate-prompt <id> [--background transparent|opaque|auto]  the regeneration prompt for a raster region\n");
+        io.out("usage: comp-spec.mjs --comp <png> --grid            write .procable/build/comp-grid.png (10x10 labeled grid) + palette + bands\n       comp-spec.mjs --comp <png> --regions <json>  measure regions -> .procable/build/spec.json\n         regions json: { \"regions\": [ { \"id\": \"art\", \"kind\": \"plate|image|texture|text|control|chrome\", \"grid\": \"E0:J4\", \"note\": \"...\" } ] }\n       comp-spec.mjs --comp <png> --auto [--out f]  write a band draft; refine into elements before --regions\n       comp-spec.mjs --comp <png> --regions <json> --inspect-map [--out-dir dir] [--json]  inspect all crops and masks without writing a spec\n       comp-spec.mjs --print                        the compact spec\n       comp-spec.mjs --crop <id> [--out f] [--scale n]   reference crop of a region (never a shipping asset)\n       comp-spec.mjs --plate-prompt <id> [--background transparent|opaque|auto]  the regeneration prompt for a raster region\n");
         return 0;
     }
     if flag(argv, "print") {
@@ -1213,9 +1213,9 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         if let Some(parent) = out_path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        let mut text = vec![("impeccable:crop-of".to_string(), format!("{comp_file}#{id}"))];
+        let mut text = vec![("procable:crop-of".to_string(), format!("{comp_file}#{id}"))];
         if let Some(audit) = reference_audit {
-            text.push(("impeccable:reference-audit".into(), audit.to_string()));
+            text.push(("procable:reference-audit".into(), audit.to_string()));
         }
         match png_io::encode_png(&c, &text) {
             Ok(bytes) => {
@@ -1290,7 +1290,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
             io.err("comp-spec: --auto writes a draft, not a measured spec; use --out <draft.json> instead of --spec\n");
             return 1;
         }
-        let draft_path = arg_or(argv,"out",".impeccable/build/regions.draft.json");
+        let draft_path = arg_or(argv,"out",".procable/build/regions.draft.json");
         let dest = resolve(io,draft_path);
         if dest == resolve(io,SPEC_PATH) {
             io.err("comp-spec: an automatic draft cannot replace the measured spec\n");
@@ -1336,7 +1336,7 @@ pub fn run(argv: &[String], io: &mut Io) -> i32 {
         io.err("comp-spec: this is an automatic draft, not a measured element map; refine its bands into the visible elements before removing the draft flag\n");
         return 1;
     }
-    let group_issues = impeccable_comp::review_groups::issues(regions_input["regions"].as_array().unwrap_or(&Vec::new()));
+    let group_issues = procable_comp::review_groups::issues(regions_input["regions"].as_array().unwrap_or(&Vec::new()));
     if !group_issues.is_empty() {
         for (id, message) in group_issues { io.err(&format!("comp-spec: region {id}: {message}\n")); }
         return 1;
@@ -1410,7 +1410,7 @@ mod reference_tests {
 
     #[test]
     fn crop_reads_the_comp_not_a_stale_png_cache() {
-        let dir = std::env::temp_dir().join(format!("impeccable-crop-cache-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-crop-cache-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         // The source the spec measured: solid blue, as a GIF so load_raster

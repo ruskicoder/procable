@@ -5,10 +5,10 @@
 
 use std::path::PathBuf;
 
-use impeccable_comp::png_io;
-use impeccable_comp::raster::Image;
-use impeccable_comp_verbs::comp_diff;
-use impeccable_comp_verbs::comp_spec;
+use procable_comp::png_io;
+use procable_comp::raster::Image;
+use procable_comp_verbs::comp_diff;
+use procable_comp_verbs::comp_spec;
 use serde_json::{json, Value};
 
 fn fixtures() -> PathBuf {
@@ -18,10 +18,10 @@ fn fixtures() -> PathBuf {
 
 #[test]
 fn transparent_plate_prompt_preserves_paint_and_reference_spacing() {
-    let dir = std::env::temp_dir().join(format!("impeccable-alpha-prompt-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-alpha-prompt-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("spec.json"), json!({"regions": [{"id": "boat", "kind": "plate", "note": "White sails and three hull holes"}]}).to_string()).unwrap();
-    let (mut io, output) = impeccable_common::Io::captured("", dir.clone(), Default::default());
+    let (mut io, output) = procable_common::Io::captured("", dir.clone(), Default::default());
     let args = [
         "--spec",
         "spec.json",
@@ -123,7 +123,7 @@ fn measure_regions_refuses_oversized_code_region() {
 
 #[test]
 fn remeasure_keeps_only_unchanged_reference_typography() {
-    let dir = std::env::temp_dir().join(format!("impeccable-remeasure-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-remeasure-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::copy(fixtures().join("comp.png"), dir.join("comp.png")).unwrap();
     let mut input = json!({"allowUncovered":true,"regions":[
@@ -132,7 +132,7 @@ fn remeasure_keeps_only_unchanged_reference_typography() {
     ]});
     let run = |input: &Value| {
         std::fs::write(dir.join("regions.json"), input.to_string()).unwrap();
-        let (mut io, _) = impeccable_common::Io::captured("", dir.clone(), Default::default());
+        let (mut io, _) = procable_common::Io::captured("", dir.clone(), Default::default());
         let args = ["--comp","comp.png","--regions","regions.json","--spec","spec.json"].map(String::from);
         assert_eq!(comp_spec::run(&args, &mut io), 0);
         serde_json::from_slice::<Value>(&std::fs::read(dir.join("spec.json")).unwrap()).unwrap()

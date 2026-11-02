@@ -2,7 +2,7 @@
  * Playwright helpers that drive the live-mode bar UI exactly the way a user
  * would: pick an element, configure, Go, cycle, accept.
  *
- * Selector strategy: live-browser.js uses deterministic ids (`impeccable-live-*`)
+ * Selector strategy: live-browser.js uses deterministic ids (`procable-live-*`)
  * for the global bar, per-element bar, action picker, and params panel. Buttons
  * inside the per-element bar are matched by visible text or unicode glyph
  * (`← / →`, `✓ Accept`, `✕`), or by aria-label for icon-only buttons (the
@@ -14,36 +14,36 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const BAR_ID = '#impeccable-live-bar';
-const GLOBAL_BAR_ID = '#impeccable-live-global-bar';
-const PICKER_ID = '#impeccable-live-picker';
-const EDIT_BADGE_ID = '#impeccable-live-edit-badge';
-const PENDING_DOCK_ID = '#impeccable-live-pending-dock';
+const BAR_ID = '#procable-live-bar';
+const GLOBAL_BAR_ID = '#procable-live-global-bar';
+const PICKER_ID = '#procable-live-picker';
+const EDIT_BADGE_ID = '#procable-live-edit-badge';
+const PENDING_DOCK_ID = '#procable-live-pending-dock';
 // The configure-row submit button is icon-only; its accessible name is the
 // only stable handle (see buildConfigureSubmitButton in live-browser.js).
 const GO_BUTTON_ARIA_LABEL = 'Generate variants';
-const STEER_CHAT_ID = '#impeccable-live-page-chat';
-const STEER_INPUT_ID = '#impeccable-live-page-chat-input';
-const PICK_TOGGLE = '#impeccable-live-pick-toggle';
+const STEER_CHAT_ID = '#procable-live-page-chat';
+const STEER_INPUT_ID = '#procable-live-page-chat-input';
+const PICK_TOGGLE = '#procable-live-pick-toggle';
 // Alias kept so references introduced via origin/main (PICK_TOGGLE_ID)
 // continue to resolve to the same selector as the older PICK_TOGGLE name.
 const PICK_TOGGLE_ID = PICK_TOGGLE;
-const INSERT_TOGGLE = '#impeccable-live-insert-toggle';
-const DETECT_TOGGLE = '#impeccable-live-detect-toggle';
-const DETECT_BADGE = '#impeccable-live-detect-badge';
-const DESIGN_TOGGLE = '#impeccable-live-design-toggle';
-const DESIGN_HOST = '#impeccable-live-design-host';
-const EXIT_BUTTON = '#impeccable-live-exit';
-const CONFIGURE_INPUT_ID = '#impeccable-live-input';
-const INSERT_INPUT_ID = '#impeccable-live-insert-input';
-const INSERT_CREATE_ID = '#impeccable-live-insert-create';
-const ANNOTATION_ID = '#impeccable-live-annot';
-const ANNOTATION_PINS_ID = '#impeccable-live-annot-pins';
-const ANNOTATION_CLEAR_ID = '#impeccable-live-annot-clear';
+const INSERT_TOGGLE = '#procable-live-insert-toggle';
+const DETECT_TOGGLE = '#procable-live-detect-toggle';
+const DETECT_BADGE = '#procable-live-detect-badge';
+const DESIGN_TOGGLE = '#procable-live-design-toggle';
+const DESIGN_HOST = '#procable-live-design-host';
+const EXIT_BUTTON = '#procable-live-exit';
+const CONFIGURE_INPUT_ID = '#procable-live-input';
+const INSERT_INPUT_ID = '#procable-live-insert-input';
+const INSERT_CREATE_ID = '#procable-live-insert-create';
+const ANNOTATION_ID = '#procable-live-annot';
+const ANNOTATION_PINS_ID = '#procable-live-annot-pins';
+const ANNOTATION_CLEAR_ID = '#procable-live-annot-clear';
 
 /**
  * Wait for the live handshake to complete:
- *   - window.__IMPECCABLE_LIVE_INIT__ set
+ *   - window.__PROCABLE_LIVE_INIT__ set
  *   - global bar mounted
  *   - SSE connection established (state transitioned to PICKING)
  *
@@ -51,12 +51,12 @@ const ANNOTATION_CLEAR_ID = '#impeccable-live-annot-clear';
  */
 export async function waitForHandshake(page, { timeout = 20_000 } = {}) {
   await page.waitForFunction(
-    () => window.__IMPECCABLE_LIVE_INIT__ === true,
+    () => window.__PROCABLE_LIVE_INIT__ === true,
     { timeout },
   );
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
-    (sel) => Boolean(window.__impeccableLiveQuery?.(sel)),
+    (sel) => Boolean(window.__procableLiveQuery?.(sel)),
     GLOBAL_BAR_ID,
     { timeout },
   );
@@ -70,7 +70,7 @@ export async function waitForHandshake(page, { timeout = 20_000 } = {}) {
 export async function assertBottomBarIdle(page, { timeout = 5_000 } = {}) {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
-    ({ ids }) => ids.every((sel) => Boolean(window.__impeccableLiveQuery(sel))),
+    ({ ids }) => ids.every((sel) => Boolean(window.__procableLiveQuery(sel))),
     {
       ids: [
         GLOBAL_BAR_ID,
@@ -80,14 +80,14 @@ export async function assertBottomBarIdle(page, { timeout = 5_000 } = {}) {
         DESIGN_TOGGLE,
         STEER_CHAT_ID,
         STEER_INPUT_ID,
-        '#impeccable-live-page-chat-voice',
+        '#procable-live-page-chat-voice',
         EXIT_BUTTON,
       ],
     },
     { timeout },
   );
   const snapshot = await page.evaluate(({ pickSel, insertSel, detectSel, designSel }) => {
-    const q = window.__impeccableLiveQuery;
+    const q = window.__procableLiveQuery;
     return {
       pick: controlSnapshot(q(pickSel)),
       insert: controlSnapshot(q(insertSel)),
@@ -128,15 +128,15 @@ export async function runLiveChromeBottomBarSmoke(page, {
 }
 
 function installLiveQueryHelpersInPage() {
-  window.__impeccableLiveQuery = (selector) => {
-    const root = window.__IMPECCABLE_LIVE_CHROME_CORE__?.root?.()
-      || window.__IMPECCABLE_LIVE_UI_ROOT__
+  window.__procableLiveQuery = (selector) => {
+    const root = window.__PROCABLE_LIVE_CHROME_CORE__?.root?.()
+      || window.__PROCABLE_LIVE_UI_ROOT__
       || null;
     return root?.querySelector?.(selector) || document.querySelector(selector);
   };
-  window.__impeccableLiveQueryAll = (selector) => {
-    const root = window.__IMPECCABLE_LIVE_CHROME_CORE__?.root?.()
-      || window.__IMPECCABLE_LIVE_UI_ROOT__
+  window.__procableLiveQueryAll = (selector) => {
+    const root = window.__PROCABLE_LIVE_CHROME_CORE__?.root?.()
+      || window.__PROCABLE_LIVE_UI_ROOT__
       || null;
     const fromRoot = root?.querySelectorAll ? [...root.querySelectorAll(selector)] : [];
     const fromDoc = [...document.querySelectorAll(selector)];
@@ -164,7 +164,7 @@ function withTimeout(promise, timeout, label) {
 async function clickLiveControl(page, selector) {
   await installLiveQueryHelpers(page);
   const clicked = await page.evaluate((sel) => {
-    const el = window.__impeccableLiveQuery(sel);
+    const el = window.__procableLiveQuery(sel);
     if (!el || el.disabled) return false;
     el.click();
     return true;
@@ -175,14 +175,14 @@ async function clickLiveControl(page, selector) {
 
 async function readControlActive(page, selector) {
   await installLiveQueryHelpers(page);
-  return page.evaluate((sel) => window.__impeccableLiveQuery(sel)?.dataset.active === 'true', selector);
+  return page.evaluate((sel) => window.__procableLiveQuery(sel)?.dataset.active === 'true', selector);
 }
 
 async function ensureLiveControlActive(page, selector, active) {
   if (await readControlActive(page, selector) === active) return;
   await clickLiveControl(page, selector);
   await page.waitForFunction(
-    ({ sel, expected }) => window.__impeccableLiveQuery(sel)?.dataset.active === (expected ? 'true' : 'false'),
+    ({ sel, expected }) => window.__procableLiveQuery(sel)?.dataset.active === (expected ? 'true' : 'false'),
     { sel: selector, expected: active },
     { timeout: 5_000 },
   );
@@ -192,8 +192,8 @@ export async function runPickInsertToggleSmoke(page) {
   await ensureLiveControlActive(page, PICK_TOGGLE, true);
   await page.waitForFunction(
     ({ pickSel, insertSel }) =>
-      window.__impeccableLiveQuery(pickSel)?.dataset.active === 'true'
-      && window.__impeccableLiveQuery(insertSel)?.dataset.active === 'false',
+      window.__procableLiveQuery(pickSel)?.dataset.active === 'true'
+      && window.__procableLiveQuery(insertSel)?.dataset.active === 'false',
     { pickSel: PICK_TOGGLE, insertSel: INSERT_TOGGLE },
     { timeout: 5_000 },
   );
@@ -201,8 +201,8 @@ export async function runPickInsertToggleSmoke(page) {
   await ensureLiveControlActive(page, INSERT_TOGGLE, true);
   await page.waitForFunction(
     ({ pickSel, insertSel }) =>
-      window.__impeccableLiveQuery(pickSel)?.dataset.active === 'false'
-      && window.__impeccableLiveQuery(insertSel)?.dataset.active === 'true',
+      window.__procableLiveQuery(pickSel)?.dataset.active === 'false'
+      && window.__procableLiveQuery(insertSel)?.dataset.active === 'true',
     { pickSel: PICK_TOGGLE, insertSel: INSERT_TOGGLE },
     { timeout: 5_000 },
   );
@@ -215,9 +215,9 @@ export async function runDetectSmoke(page, { expectMinCount = 1 } = {}) {
   await ensureLiveControlActive(page, DETECT_TOGGLE, true);
   await page.waitForFunction(
     ({ badgeSel, expectMin }) => {
-      const badge = window.__impeccableLiveQuery(badgeSel);
+      const badge = window.__procableLiveQuery(badgeSel);
       const count = parseInt(badge?.textContent || '0', 10);
-      const overlays = document.querySelectorAll('.impeccable-overlay').length;
+      const overlays = document.querySelectorAll('.procable-overlay').length;
       return count >= expectMin && overlays >= expectMin && badge?.style.display !== 'none';
     },
     { badgeSel: DETECT_BADGE, expectMin: expectMinCount },
@@ -226,7 +226,7 @@ export async function runDetectSmoke(page, { expectMinCount = 1 } = {}) {
 
   await ensureLiveControlActive(page, PICK_TOGGLE, true);
   await page.waitForFunction(
-    () => [...document.querySelectorAll('.impeccable-overlay')]
+    () => [...document.querySelectorAll('.procable-overlay')]
       .every((overlay) => overlay.style.pointerEvents === 'none'),
     { timeout: 5_000 },
   );
@@ -235,8 +235,8 @@ export async function runDetectSmoke(page, { expectMinCount = 1 } = {}) {
   await ensureLiveControlActive(page, DETECT_TOGGLE, false);
   await page.waitForFunction(
     ({ badgeSel }) => {
-      const badge = window.__impeccableLiveQuery(badgeSel);
-      return document.querySelectorAll('.impeccable-overlay').length === 0
+      const badge = window.__procableLiveQuery(badgeSel);
+      return document.querySelectorAll('.procable-overlay').length === 0
         && (!badge || badge.style.display === 'none' || (badge.textContent || '') === '0');
     },
     { badgeSel: DETECT_BADGE },
@@ -248,7 +248,7 @@ export async function runDesignPanelSmoke(page, { title = '', rawText = '' } = {
   await ensureLiveControlActive(page, DESIGN_TOGGLE, true);
   await page.waitForFunction(
     ({ hostSel, titleText }) => {
-      const host = window.__impeccableLiveQuery(hostSel);
+      const host = window.__procableLiveQuery(hostSel);
       const root = host?.shadowRoot;
       const panel = root?.querySelector('.panel');
       const bodyText = root?.querySelector('#panel-body')?.textContent || '';
@@ -264,13 +264,13 @@ export async function runDesignPanelSmoke(page, { title = '', rawText = '' } = {
   );
 
   await page.evaluate((hostSel) => {
-    const root = window.__impeccableLiveQuery(hostSel)?.shadowRoot;
+    const root = window.__procableLiveQuery(hostSel)?.shadowRoot;
     const raw = [...(root?.querySelectorAll('.tab') || [])].find((btn) => /Raw/i.test(btn.textContent || ''));
     raw?.click();
   }, DESIGN_HOST);
   await page.waitForFunction(
     ({ hostSel, expected }) => {
-      const text = window.__impeccableLiveQuery(hostSel)?.shadowRoot?.textContent || '';
+      const text = window.__procableLiveQuery(hostSel)?.shadowRoot?.textContent || '';
       return !expected || text.includes(expected);
     },
     { hostSel: DESIGN_HOST, expected: rawText },
@@ -278,13 +278,13 @@ export async function runDesignPanelSmoke(page, { title = '', rawText = '' } = {
   );
 
   await page.evaluate((hostSel) => {
-    const root = window.__impeccableLiveQuery(hostSel)?.shadowRoot;
+    const root = window.__procableLiveQuery(hostSel)?.shadowRoot;
     root?.querySelector('.panel-close')?.click();
   }, DESIGN_HOST);
   await page.waitForFunction(
     ({ hostSel, toggleSel }) => {
-      const panel = window.__impeccableLiveQuery(hostSel)?.shadowRoot?.querySelector('.panel');
-      const toggle = window.__impeccableLiveQuery(toggleSel);
+      const panel = window.__procableLiveQuery(hostSel)?.shadowRoot?.querySelector('.panel');
+      const toggle = window.__procableLiveQuery(toggleSel);
       return panel?.getAttribute('data-open') === 'false' && toggle?.dataset.active === 'false';
     },
     { hostSel: DESIGN_HOST, toggleSel: DESIGN_TOGGLE },
@@ -296,8 +296,8 @@ export async function clickExitLiveMode(page) {
   await clickLiveControl(page, EXIT_BUTTON);
   await page.waitForFunction(
     ({ barSel }) => {
-      const bar = window.__impeccableLiveQuery?.(barSel);
-      return window.__IMPECCABLE_LIVE_INIT__ === false && (!bar || !bar.isConnected);
+      const bar = window.__procableLiveQuery?.(barSel);
+      return window.__PROCABLE_LIVE_INIT__ === false && (!bar || !bar.isConnected);
     },
     { barSel: GLOBAL_BAR_ID },
     { timeout: 5_000 },
@@ -315,12 +315,12 @@ export async function drawAnnotationPinAndStroke(page, {
   };
   await page.mouse.click(pinPoint.x, pinPoint.y);
   await page.waitForFunction(
-    (pinsSel) => Boolean(window.__impeccableLiveQuery(pinsSel)?.querySelector('input')),
+    (pinsSel) => Boolean(window.__procableLiveQuery(pinsSel)?.querySelector('input')),
     ANNOTATION_PINS_ID,
     { timeout: 5_000 },
   );
   await page.evaluate(({ pinsSel, value }) => {
-    const input = window.__impeccableLiveQuery(pinsSel)?.querySelector('input');
+    const input = window.__procableLiveQuery(pinsSel)?.querySelector('input');
     if (!input) return false;
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -329,7 +329,7 @@ export async function drawAnnotationPinAndStroke(page, {
   }, { pinsSel: ANNOTATION_PINS_ID, value: comment });
   await page.waitForFunction(
     ({ pinsSel, expected }) => {
-      const pins = window.__impeccableLiveQuery(pinsSel);
+      const pins = window.__procableLiveQuery(pinsSel);
       return pins && pins.textContent.includes(expected);
     },
     { pinsSel: ANNOTATION_PINS_ID, expected: comment },
@@ -346,8 +346,8 @@ export async function drawAnnotationPinAndStroke(page, {
 
   await page.waitForFunction(
     ({ annotSel, clearSel }) => {
-      const annot = window.__impeccableLiveQuery(annotSel);
-      const clear = window.__impeccableLiveQuery(clearSel);
+      const annot = window.__procableLiveQuery(annotSel);
+      const clear = window.__procableLiveQuery(clearSel);
       const stroke = annot?.querySelector('[data-annot-stroke]');
       return Boolean(stroke) && clear?.style.display !== 'none';
     },
@@ -372,7 +372,7 @@ export async function assertAnnotationUploadEvent(event) {
 async function waitForAnnotationRect(page) {
   await page.waitForFunction(
     (sel) => {
-      const el = window.__impeccableLiveQuery(sel);
+      const el = window.__procableLiveQuery(sel);
       if (!el || el.style.display === 'none') return false;
       const rect = el.getBoundingClientRect();
       return rect.width > 20 && rect.height > 20;
@@ -381,7 +381,7 @@ async function waitForAnnotationRect(page) {
     { timeout: 5_000 },
   );
   return page.evaluate((sel) => {
-    const rect = window.__impeccableLiveQuery(sel).getBoundingClientRect();
+    const rect = window.__procableLiveQuery(sel).getBoundingClientRect();
     return {
       left: rect.left,
       top: rect.top,
@@ -429,16 +429,16 @@ export async function pickElement(page, selector, opts = {}) {
         const target = document.querySelector(selector);
         const rect = target?.getBoundingClientRect();
         const hit = rect ? document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2) : null;
-        const query = window.__impeccableLiveQuery || ((sel) => document.querySelector(sel));
+        const query = window.__procableLiveQuery || ((sel) => document.querySelector(sel));
         const bar = query(barSel);
         const pick = query(pickSel);
         return {
-          liveState: window.__IMPECCABLE_LIVE_STATE__ || null,
+          liveState: window.__PROCABLE_LIVE_STATE__ || null,
           target: target ? { tag: target.tagName, classes: target.className, rect: rect?.toJSON?.() || null } : null,
           hit: hit ? { tag: hit.tagName, classes: hit.className, text: (hit.textContent || '').slice(0, 80) } : null,
           pickActive: pick?.dataset.active || null,
           bar: bar ? { display: bar.style.display, text: bar.textContent } : null,
-          debugState: window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
+          debugState: window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
         };
       }, { selector, barSel: BAR_ID, pickSel: PICK_TOGGLE_ID }).catch((error) => ({ error: error.message }));
       throw new Error(`pick did not open configure bar for ${selector}: ${JSON.stringify(snapshot)}`);
@@ -453,7 +453,7 @@ export async function pickElement(page, selector, opts = {}) {
   // icon-only.
   await page.waitForFunction(
     ({ barSel, goLabel }) => {
-      const bar = window.__impeccableLiveQuery(barSel);
+      const bar = window.__procableLiveQuery(barSel);
       if (!bar) return false;
       const btns = [...bar.querySelectorAll('button')];
       return btns.some((b) => (b.getAttribute('aria-label') || '') === goLabel);
@@ -465,7 +465,7 @@ export async function pickElement(page, selector, opts = {}) {
 
 async function hideAnnotationOverlay(page) {
   await page.evaluate(() => {
-    const annot = window.__impeccableLiveQuery('#impeccable-live-annot');
+    const annot = window.__procableLiveQuery('#procable-live-annot');
     if (annot) annot.style.display = 'none';
   }).catch(() => {});
 }
@@ -490,7 +490,7 @@ async function ensurePickerActive(page) {
   if (active) return;
 
   const clicked = await page.evaluate((sel) => {
-    const btn = window.__impeccableLiveQuery(sel);
+    const btn = window.__procableLiveQuery(sel);
     if (!btn) return false;
     btn.click();
     return true;
@@ -499,7 +499,7 @@ async function ensurePickerActive(page) {
     await page.locator(PICK_TOGGLE_ID).click({ timeout: 5_000 });
   }
   await page.waitForFunction(
-    (sel) => window.__impeccableLiveQuery(sel)?.dataset.active === 'true',
+    (sel) => window.__procableLiveQuery(sel)?.dataset.active === 'true',
     PICK_TOGGLE_ID,
     { timeout: 5_000 },
   );
@@ -511,14 +511,14 @@ async function resetPickMode(page) {
   await page.keyboard.press('Escape').catch(() => {});
   await page.waitForTimeout(100);
   await page.evaluate((sel) => {
-    const btn = window.__impeccableLiveQuery(sel);
+    const btn = window.__procableLiveQuery(sel);
     if (!btn) return;
     const active = btn.dataset.active === 'true';
     if (active) btn.click();
     btn.click();
   }, PICK_TOGGLE_ID).catch(() => {});
   await page.waitForFunction(
-    (sel) => window.__impeccableLiveQuery(sel)?.dataset.active === 'true',
+    (sel) => window.__procableLiveQuery(sel)?.dataset.active === 'true',
     PICK_TOGGLE_ID,
     { timeout: 5_000 },
   ).catch(() => {});
@@ -532,15 +532,15 @@ async function resetPickMode(page) {
 export async function typeConfigurePrompt(page, prompt) {
   await page.waitForFunction(
     (sel) => {
-      const input = window.__impeccableLiveQuery(sel);
-      return Boolean(input) && window.__IMPECCABLE_LIVE_CHROME_CORE__?.activeElementDeep?.() === input;
+      const input = window.__procableLiveQuery(sel);
+      return Boolean(input) && window.__PROCABLE_LIVE_CHROME_CORE__?.activeElementDeep?.() === input;
     },
     CONFIGURE_INPUT_ID,
     { timeout: 5_000 },
   );
   await page.keyboard.type(prompt);
   await page.waitForFunction(
-    ({ sel, value }) => window.__impeccableLiveQuery(sel)?.value === value,
+    ({ sel, value }) => window.__procableLiveQuery(sel)?.value === value,
     { sel: CONFIGURE_INPUT_ID, value: prompt },
     { timeout: 5_000 },
   );
@@ -554,7 +554,7 @@ export async function setCount(page, count) {
   if (count < 2 || count > 4) throw new Error('count must be 2..4');
   for (let i = 0; i < 4; i++) {
     const current = await page.evaluate((barSel) => {
-      const bar = window.__impeccableLiveQuery(barSel);
+      const bar = window.__procableLiveQuery(barSel);
       if (!bar) return null;
       const btns = [...bar.querySelectorAll('button')];
       const btn = btns.find((b) => /^×\d+$/.test((b.textContent || '').trim()));
@@ -567,11 +567,11 @@ export async function setCount(page, count) {
   throw new Error(`could not cycle count to ${count}`);
 }
 
-/** Select a named Impeccable sub-command from the configure-row picker. */
+/** Select a named Procable sub-command from the configure-row picker. */
 export async function selectAction(page, action) {
-  const pickerSelector = '#impeccable-live-picker';
+  const pickerSelector = '#procable-live-picker';
   const opened = await page.evaluate(({ barSel, pickerSel }) => {
-    const query = window.__impeccableLiveQuery || ((selector) => document.querySelector(selector));
+    const query = window.__procableLiveQuery || ((selector) => document.querySelector(selector));
     const bar = query(barSel);
     const picker = query(pickerSel);
     const actionControl = [...(bar?.querySelectorAll('button') || [])]
@@ -583,12 +583,12 @@ export async function selectAction(page, action) {
   if (!opened) throw new Error('could not open Live action picker');
 
   await page.waitForFunction((selector) => {
-    const picker = window.__impeccableLiveQuery(selector);
+    const picker = window.__procableLiveQuery(selector);
     return picker && picker.style.display !== 'none';
   }, pickerSelector, { timeout: 5_000 });
 
   const selected = await page.evaluate(({ pickerSel, value }) => {
-    const picker = window.__impeccableLiveQuery(pickerSel);
+    const picker = window.__procableLiveQuery(pickerSel);
     const chip = picker?.querySelector(`button[data-action="${CSS.escape(value)}"]`);
     if (!chip) return false;
     chip.click();
@@ -609,7 +609,7 @@ export async function clickGo(page) {
     await clickBarButton(page, { ariaLabel: GO_BUTTON_ARIA_LABEL });
     const advanced = await page.waitForFunction(
       ({ barSel, goLabel }) => {
-        const bar = window.__impeccableLiveQuery(barSel);
+        const bar = window.__procableLiveQuery(barSel);
         if (!bar) return false;
         const text = bar.textContent || '';
         if (/Generating\b/.test(text)) return true;
@@ -638,7 +638,7 @@ export async function clickGo(page) {
 async function assertGeneratingShaderCleared(page) {
   const stillUp = await page
     .waitForFunction(
-      () => !(window.__impeccableLiveQuery || document.querySelector.bind(document))('#impeccable-live-shader'),
+      () => !(window.__procableLiveQuery || document.querySelector.bind(document))('#procable-live-shader'),
       undefined,
       { timeout: 5_000 },
     )
@@ -646,13 +646,13 @@ async function assertGeneratingShaderCleared(page) {
     .catch(() => true);
   if (stillUp) {
     const err = new Error(
-      'CYCLING reached but the generating shader overlay (#impeccable-live-shader) is still up: '
+      'CYCLING reached but the generating shader overlay (#procable-live-shader) is still up: '
       + 'the loader never handed off to the variant cycler',
     );
     // Cycling was reached, so the recovery paths in waitForCyclingRobust
     // (retrace preActions, reload) have nothing to recover and a reload would
     // hide the defect by taking the shader down with the page.
-    err.impeccableNoRetry = true;
+    err.procableNoRetry = true;
     throw err;
   }
 }
@@ -670,18 +670,18 @@ export async function waitForCycling(page, expectedCount, { timeout = 30_000 } =
   try {
     await page.waitForFunction(
     ({ barSel, expected }) => {
-      const bar = window.__impeccableLiveQuery(barSel);
+      const bar = window.__procableLiveQuery(barSel);
       if (!bar) return false;
       const text = bar.textContent || '';
       // Counter format: "1/3", "2/3" etc. Look for any "i/N" with N matching.
       const m = text.match(/(\d+)\s*\/\s*(\d+)/);
       if (!m) return false;
-      const wrapper = window.__impeccableLiveQuery('[data-impeccable-variants]');
-      const debugState = window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.();
-      const arrived = /^(?:svelte|vue)-component$/.test(wrapper?.dataset.impeccablePreview || '')
+      const wrapper = window.__procableLiveQuery('[data-procable-variants]');
+      const debugState = window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.();
+      const arrived = /^(?:svelte|vue)-component$/.test(wrapper?.dataset.procablePreview || '')
         ? Number(debugState?.arrivedVariants || 0)
         : wrapper
-          ? wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])').length
+          ? wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])').length
           : 0;
       return parseInt(m[2], 10) === expected && arrived >= expected;
     },
@@ -690,23 +690,23 @@ export async function waitForCycling(page, expectedCount, { timeout = 30_000 } =
     );
     await assertGeneratingShaderCleared(page);
   } catch (err) {
-    if (process.env.IMPECCABLE_E2E_DEBUG) {
+    if (process.env.PROCABLE_E2E_DEBUG) {
       const snapshot = await page.evaluate((barSel) => {
-        const query = window.__impeccableLiveQuery || ((sel) => document.querySelector(sel));
-        const root = window.__IMPECCABLE_LIVE_CHROME_CORE__?.root?.() || window.__IMPECCABLE_LIVE_UI_ROOT__ || null;
+        const query = window.__procableLiveQuery || ((sel) => document.querySelector(sel));
+        const root = window.__PROCABLE_LIVE_CHROME_CORE__?.root?.() || window.__PROCABLE_LIVE_UI_ROOT__ || null;
         const bar = query(barSel);
-        const toast = query('#impeccable-live-toast');
-        const wrapper = query('[data-impeccable-variants]');
+        const toast = query('#procable-live-toast');
+        const wrapper = query('[data-procable-variants]');
         return {
-          liveInit: window.__IMPECCABLE_LIVE_INIT__,
-          adapter: window.__IMPECCABLE_LIVE_ADAPTER__,
+          liveInit: window.__PROCABLE_LIVE_INIT__,
+          adapter: window.__PROCABLE_LIVE_ADAPTER__,
           rootText: root?.textContent?.replace(/\s+/g, ' ').trim().slice(0, 600) || null,
           bar: bar ? { display: bar.style.display, text: bar.textContent } : null,
           toast: toast?.textContent || null,
-          wrapper: wrapper ? { preview: wrapper.dataset.impeccablePreview, count: wrapper.dataset.impeccableVariantCount, html: wrapper.outerHTML.slice(0, 600) } : null,
-          debugState: window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
-          storage: localStorage.getItem('impeccable-live-session'),
-          scripts: document.querySelectorAll('script[data-impeccable-live-script]').length,
+          wrapper: wrapper ? { preview: wrapper.dataset.procablePreview, count: wrapper.dataset.procableVariantCount, html: wrapper.outerHTML.slice(0, 600) } : null,
+          debugState: window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
+          storage: localStorage.getItem('procable-live-session'),
+          scripts: document.querySelectorAll('script[data-procable-live-script]').length,
           bodyText: document.body.textContent.replace(/\s+/g, ' ').trim().slice(0, 600),
         };
       }, BAR_ID).catch((snapErr) => ({ error: snapErr.message }));
@@ -741,9 +741,9 @@ export async function waitForVariantSettled(page, expected, count, { timeout = 1
   try {
     await page.waitForFunction(
       ({ expected, count, barSel }) => {
-        const bar = window.__impeccableLiveQuery(barSel);
+        const bar = window.__procableLiveQuery(barSel);
         if (!bar || !(bar.textContent || '').includes(`${expected}/${count}`)) return false;
-        const debugState = window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.();
+        const debugState = window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.();
         if (!debugState) return true;
         if (debugState.visibleVariant !== expected) return false;
         if (debugState.hasSvelteComponentSession && debugState.mountedSvelteVariant !== expected) return false;
@@ -754,7 +754,7 @@ export async function waitForVariantSettled(page, expected, count, { timeout = 1
     );
   } catch (err) {
     const debugState = await page
-      .evaluate(() => window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null)
+      .evaluate(() => window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null)
       .catch(() => null);
     throw new Error(
       `variant ${expected}/${count} never settled; debugState=${JSON.stringify(debugState)} (${err.message})`,
@@ -836,7 +836,7 @@ async function dispatchBarButton(page, label) {
 }
 
 function findAndClickBarButton({ barSel, textMatch }) {
-  const bar = window.__impeccableLiveQuery(barSel);
+  const bar = window.__procableLiveQuery(barSel);
   if (!bar) return false;
   const btn = [...bar.querySelectorAll('button')]
     .find((candidate) => {
@@ -858,14 +858,14 @@ export async function getVisibleVariant(page) {
     await installLiveQueryHelpers(page);
     return await withTimeout(
       page.evaluate((barSel) => {
-        const wrapper = window.__impeccableLiveQuery('[data-impeccable-variants]');
+        const wrapper = window.__procableLiveQuery('[data-procable-variants]');
         if (wrapper) {
-          const variants = [...wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])')];
+          const variants = [...wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])')];
           const visible = variants.find((variant) => getComputedStyle(variant).display !== 'none');
-          const idx = visible ? parseInt(visible.dataset.impeccableVariant || '0', 10) : 0;
+          const idx = visible ? parseInt(visible.dataset.procableVariant || '0', 10) : 0;
           if (idx > 0) return idx;
         }
-        const bar = window.__impeccableLiveQuery(barSel);
+        const bar = window.__procableLiveQuery(barSel);
         if (!bar) return null;
         const m = (bar.textContent || '').match(/(\d+)\s*\/\s*(\d+)/);
         return m ? parseInt(m[1], 10) : null;
@@ -888,14 +888,14 @@ export async function getVisibleVariant(page) {
 // ---------------------------------------------------------------------------
 
 const TUNE_BUTTON = '[data-iceq-tune="1"]';
-const PARAMS_PANEL_ID = '#impeccable-live-params-panel';
+const PARAMS_PANEL_ID = '#procable-live-params-panel';
 
 /** Open the Tune popover and wait for its rows to render. */
 export async function openTunePanel(page, { timeout = 5_000 } = {}) {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
     (sel) => {
-      const tune = window.__impeccableLiveQuery(sel);
+      const tune = window.__procableLiveQuery(sel);
       return Boolean(tune) && tune.disabled === false;
     },
     TUNE_BUTTON,
@@ -903,7 +903,7 @@ export async function openTunePanel(page, { timeout = 5_000 } = {}) {
   );
   await clickLiveControl(page, TUNE_BUTTON);
   await page.waitForFunction(
-    (sel) => (window.__impeccableLiveQuery(sel)?.querySelectorAll(':scope > div > div').length || 0) > 0,
+    (sel) => (window.__procableLiveQuery(sel)?.querySelectorAll(':scope > div > div').length || 0) > 0,
     PARAMS_PANEL_ID,
     { timeout },
   );
@@ -913,13 +913,13 @@ export async function openTunePanel(page, { timeout = 5_000 } = {}) {
 export async function closeTunePanel(page) {
   await installLiveQueryHelpers(page);
   const alreadyClosed = await page.evaluate(
-    (sel) => window.__impeccableLiveQuery(sel)?.style.pointerEvents === 'none',
+    (sel) => window.__procableLiveQuery(sel)?.style.pointerEvents === 'none',
     PARAMS_PANEL_ID,
   );
   if (alreadyClosed) return;
   await clickLiveControl(page, TUNE_BUTTON);
   await page.waitForFunction(
-    (sel) => window.__impeccableLiveQuery(sel)?.style.pointerEvents === 'none',
+    (sel) => window.__procableLiveQuery(sel)?.style.pointerEvents === 'none',
     PARAMS_PANEL_ID,
     { timeout: 5_000 },
   );
@@ -933,7 +933,7 @@ export async function closeTunePanel(page) {
 export async function setTuneRange(page, label, value) {
   await installLiveQueryHelpers(page);
   const applied = await page.evaluate(({ panelSel, label, value }) => {
-    const panel = window.__impeccableLiveQuery(panelSel);
+    const panel = window.__procableLiveQuery(panelSel);
     const row = [...(panel?.querySelectorAll(':scope > div > div') || [])]
       .find((candidate) => candidate.querySelector('span')?.textContent?.trim() === label);
     const input = row?.querySelector('input[type="range"]');
@@ -951,10 +951,10 @@ export async function setTuneRange(page, label, value) {
 /** Panel contents + variant state, for failures that would otherwise be mute. */
 async function describeTunePanel(page) {
   const snapshot = await page.evaluate((panelSel) => {
-    const panel = window.__impeccableLiveQuery(panelSel);
+    const panel = window.__procableLiveQuery(panelSel);
     const rows = [...(panel?.querySelectorAll(':scope > div > div') || [])]
       .map((row) => (row.querySelector('span')?.textContent || '').trim());
-    const debugState = window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null;
+    const debugState = window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null;
     return {
       rows,
       barText: debugState?.barText || null,
@@ -970,7 +970,7 @@ async function describeTunePanel(page) {
 export async function chooseTuneStep(page, label, optionLabel) {
   await installLiveQueryHelpers(page);
   const clicked = await page.evaluate(({ panelSel, label, optionLabel }) => {
-    const panel = window.__impeccableLiveQuery(panelSel);
+    const panel = window.__procableLiveQuery(panelSel);
     const row = [...(panel?.querySelectorAll(':scope > div > div') || [])]
       .find((candidate) => candidate.querySelector('span')?.textContent?.trim() === label);
     if (!row) return 'no-row';
@@ -989,15 +989,15 @@ export async function chooseTuneStep(page, label, optionLabel) {
 // Mount-error card (component previews)
 // ---------------------------------------------------------------------------
 
-const MOUNT_ERROR_ID = '#impeccable-live-mount-error';
-const MOUNT_RETRY = '[data-impeccable-mount-retry="true"]';
+const MOUNT_ERROR_ID = '#procable-live-mount-error';
+const MOUNT_RETRY = '[data-procable-mount-retry="true"]';
 
 /** Wait for the persistent mount-error card and return its text. */
 export async function waitForMountErrorCard(page, { variant, timeout = 20_000 } = {}) {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
     ({ sel, variant }) => {
-      const card = window.__impeccableLiveQuery(sel);
+      const card = window.__procableLiveQuery(sel);
       if (!card) return false;
       if (variant == null) return true;
       return (card.textContent || '').includes(`Variant ${variant} failed to load`);
@@ -1005,19 +1005,19 @@ export async function waitForMountErrorCard(page, { variant, timeout = 20_000 } 
     { sel: MOUNT_ERROR_ID, variant: variant ?? null },
     { timeout },
   );
-  return page.evaluate((sel) => window.__impeccableLiveQuery(sel)?.textContent || '', MOUNT_ERROR_ID);
+  return page.evaluate((sel) => window.__procableLiveQuery(sel)?.textContent || '', MOUNT_ERROR_ID);
 }
 
 export async function isMountErrorCardVisible(page) {
   await installLiveQueryHelpers(page);
-  return page.evaluate((sel) => Boolean(window.__impeccableLiveQuery(sel)), MOUNT_ERROR_ID);
+  return page.evaluate((sel) => Boolean(window.__procableLiveQuery(sel)), MOUNT_ERROR_ID);
 }
 
 /** Click the card's Retry button (re-imports the manifest's current revision). */
 export async function clickMountRetry(page) {
   await installLiveQueryHelpers(page);
   const clicked = await page.evaluate(({ cardSel, retrySel }) => {
-    const button = window.__impeccableLiveQuery(cardSel)?.querySelector(retrySel);
+    const button = window.__procableLiveQuery(cardSel)?.querySelector(retrySel);
     if (!button) return false;
     button.click();
     return true;
@@ -1028,7 +1028,7 @@ export async function clickMountRetry(page) {
 export async function waitForMountErrorCardGone(page, { timeout = 20_000 } = {}) {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
-    (sel) => !window.__impeccableLiveQuery(sel),
+    (sel) => !window.__procableLiveQuery(sel),
     MOUNT_ERROR_ID,
     { timeout },
   );
@@ -1043,7 +1043,7 @@ export async function waitForComputedFontWeight(page, selector, expected, { time
   try {
     await page.waitForFunction(
       ({ sel, expected }) => {
-        const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
+        const query = window.__procableLiveQuery || ((s) => document.querySelector(s));
         const el = query(sel) || document.querySelector(sel);
         return Boolean(el) && getComputedStyle(el).fontWeight === expected;
       },
@@ -1053,8 +1053,8 @@ export async function waitForComputedFontWeight(page, selector, expected, { time
   } catch (err) {
     const snapshot = await page.evaluate((sel) => {
       const el = document.querySelector(sel);
-      const debugState = window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null;
-      const mount = document.querySelector('[data-impeccable-component-mount]');
+      const debugState = window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null;
+      const mount = document.querySelector('[data-procable-component-mount]');
       return {
         found: Boolean(el),
         fontWeight: el ? getComputedStyle(el).fontWeight : null,
@@ -1074,7 +1074,7 @@ export async function waitForComputedFontWeight(page, selector, expected, { time
 
 export async function readComputedFontWeight(page, selector) {
   return page.evaluate((sel) => {
-    const query = window.__impeccableLiveQuery || ((s) => document.querySelector(s));
+    const query = window.__procableLiveQuery || ((s) => document.querySelector(s));
     const el = query(sel) || document.querySelector(sel);
     return el ? getComputedStyle(el).fontWeight : null;
   }, selector);
@@ -1122,7 +1122,7 @@ export async function clickDiscard(page) {
 export async function clickEditCopy(page) {
   await clickEditBadgeButton(page, 'Edit copy');
   await page.waitForFunction(
-    () => window.__impeccableLiveQuery('[data-impeccable-editable="true"]')?.isContentEditable === true,
+    () => window.__procableLiveQuery('[data-procable-editable="true"]')?.isContentEditable === true,
     { timeout: 5_000 },
   );
 }
@@ -1146,14 +1146,14 @@ async function resolveEditableLeaf(page, leafSelector) {
 export async function clickSaveEdit(page) {
   await clickEditBadgeButton(page, 'Save');
   await page.waitForFunction(
-    () => !window.__impeccableLiveQuery('[data-impeccable-editable="true"]'),
+    () => !window.__procableLiveQuery('[data-procable-editable="true"]'),
     { timeout: 5_000 },
   );
 }
 
 async function clickEditBadgeButton(page, label) {
   const proxyRect = await page.evaluate((text) => {
-    const proxies = [...document.querySelectorAll('[data-impeccable-edit-badge-proxy="true"]')];
+    const proxies = [...document.querySelectorAll('[data-procable-edit-badge-proxy="true"]')];
     const proxy = proxies.find((candidate) =>
       (candidate.title || candidate.getAttribute('aria-label') || '').includes(text)
     );
@@ -1172,7 +1172,7 @@ async function clickEditBadgeButton(page, label) {
     return;
   } catch (err) {
     const clicked = await page.evaluate(({ badgeSel, text }) => {
-      const badge = window.__impeccableLiveQuery(badgeSel);
+      const badge = window.__procableLiveQuery(badgeSel);
       const btn = [...(badge?.querySelectorAll('button') || [])].find((candidate) =>
         (candidate.textContent || candidate.getAttribute('aria-label') || candidate.title || '').includes(text)
       );
@@ -1187,7 +1187,7 @@ async function clickEditBadgeButton(page, label) {
 export async function assertApplyDockVisible(page, expectedCount, { timeout = 5_000 } = {}) {
   await page.waitForFunction(
     ({ dockSel, expected }) => {
-      const dock = window.__impeccableLiveQuery(dockSel);
+      const dock = window.__procableLiveQuery(dockSel);
       if (!dock || dock.style.display === 'none') return false;
       const pill = [...dock.querySelectorAll('button')].find((btn) =>
         /Apply copy edit/.test(btn.textContent || '')
@@ -1204,7 +1204,7 @@ export async function assertApplyDockVisible(page, expectedCount, { timeout = 5_
 export async function waitForApplyDockHidden(page, { timeout = 10_000 } = {}) {
   await page.waitForFunction(
     (dockSel) => {
-      const dock = window.__impeccableLiveQuery(dockSel);
+      const dock = window.__procableLiveQuery(dockSel);
       if (!dock || dock.style.display === 'none') return true;
       const pill = [...dock.querySelectorAll('button')].find((btn) =>
         /Apply copy edit/.test(btn.textContent || '')
@@ -1219,7 +1219,7 @@ export async function waitForApplyDockHidden(page, { timeout = 10_000 } = {}) {
 export async function assertApplyDockLoading(page, { timeout = 5_000 } = {}) {
   await page.waitForFunction(
     (dockSel) => {
-      const dock = window.__impeccableLiveQuery(dockSel);
+      const dock = window.__procableLiveQuery(dockSel);
       if (!dock || dock.style.display === 'none') return false;
       const pill = [...dock.querySelectorAll('button')].find((btn) =>
         /Apply copy edit|Applying|Verifying|Fixing apply issue/.test(btn.textContent || '')
@@ -1261,7 +1261,7 @@ export async function waitForBarHidden(page, { timeout = 10_000 } = {}) {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
     (barSel) => {
-      const bar = window.__impeccableLiveQuery(barSel);
+      const bar = window.__procableLiveQuery(barSel);
       return !bar || bar.style.display === 'none';
     },
     BAR_ID,
@@ -1275,7 +1275,7 @@ export async function waitForBarHidden(page, { timeout = 10_000 } = {}) {
  */
 export async function preparePageForBarInteraction(page) {
   await page.evaluate(() => {
-    for (const el of window.__impeccableLiveQueryAll('astro-dev-toolbar')) {
+    for (const el of window.__procableLiveQueryAll('astro-dev-toolbar')) {
       el.style.setProperty('display', 'none', 'important');
       el.style.setProperty('pointer-events', 'none', 'important');
     }
@@ -1285,8 +1285,8 @@ export async function preparePageForBarInteraction(page) {
 export async function waitForSteerInputFocused(page, { timeout = 5_000 } = {}) {
   await page.waitForFunction(
     (inputSel) => {
-      const input = window.__impeccableLiveQuery(inputSel);
-      const active = window.__IMPECCABLE_LIVE_CHROME_CORE__?.activeElementDeep?.()
+      const input = window.__procableLiveQuery(inputSel);
+      const active = window.__PROCABLE_LIVE_CHROME_CORE__?.activeElementDeep?.()
         || input?.getRootNode?.()?.activeElement
         || document.activeElement;
       return Boolean(input && active === input && input.style.pointerEvents !== 'none' && input.style.opacity !== '0');
@@ -1298,7 +1298,7 @@ export async function waitForSteerInputFocused(page, { timeout = 5_000 } = {}) {
 
 export async function waitForSteerInputValue(page, value, { timeout = 5_000 } = {}) {
   await page.waitForFunction(
-    ({ inputSel, value: expected }) => window.__impeccableLiveQuery(inputSel)?.value === expected,
+    ({ inputSel, value: expected }) => window.__procableLiveQuery(inputSel)?.value === expected,
     { inputSel: STEER_INPUT_ID, value },
     { timeout },
   );
@@ -1342,7 +1342,7 @@ export async function waitForSteerDomMarker(page, selector, { timeout = 20_000 }
  */
 export async function waitForSteerLocked(page, { timeout = 5_000 } = {}) {
   await page.waitForFunction(
-    (sel) => window.__impeccableLiveQuery(sel)?.dataset.processing === 'true',
+    (sel) => window.__procableLiveQuery(sel)?.dataset.processing === 'true',
     STEER_CHAT_ID,
     { timeout },
   );
@@ -1354,8 +1354,8 @@ export async function waitForSteerLocked(page, { timeout = 5_000 } = {}) {
 export async function waitForSteerUnlocked(page, { timeout = 15_000 } = {}) {
   await page.waitForFunction(
     (sel) => {
-      const chat = window.__impeccableLiveQuery(sel);
-      const input = window.__impeccableLiveQuery('#impeccable-live-page-chat-input');
+      const chat = window.__procableLiveQuery(sel);
+      const input = window.__procableLiveQuery('#procable-live-page-chat-input');
       return chat?.dataset.processing !== 'true' && input && !input.disabled;
     },
     STEER_CHAT_ID,
@@ -1369,7 +1369,7 @@ async function ensureToggleActive(page, selector, shouldBeActive) {
   if (isActive === shouldBeActive) return;
   await page.locator(selector).click({ timeout: 5_000 });
   await page.waitForFunction(
-    ({ sel, active }) => window.__impeccableLiveQuery(sel)?.dataset.active === (active ? 'true' : 'false'),
+    ({ sel, active }) => window.__procableLiveQuery(sel)?.dataset.active === (active ? 'true' : 'false'),
     { sel: selector, active: shouldBeActive },
     { timeout: 5_000 },
   );
@@ -1403,7 +1403,7 @@ export async function runInsertFlow(page, {
   const y = position === 'before' ? box.y + 4 : box.y + box.height - 4;
   await page.mouse.move(x, y);
   await page.waitForFunction(() => {
-    const line = window.__impeccableLiveQuery('#impeccable-live-insert-line');
+    const line = window.__procableLiveQuery('#procable-live-insert-line');
     return line && line.style.display !== 'none';
   }, { timeout: 5_000 });
   await page.mouse.click(x, y);
@@ -1411,8 +1411,8 @@ export async function runInsertFlow(page, {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
     ({ inputSel, barSel }) => {
-      const input = window.__impeccableLiveQuery(inputSel);
-      const bar = window.__impeccableLiveQuery(barSel);
+      const input = window.__procableLiveQuery(inputSel);
+      const bar = window.__procableLiveQuery(barSel);
       if (!input || !bar) return false;
       const rect = input.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0 && bar.style.display !== 'none';
@@ -1422,7 +1422,7 @@ export async function runInsertFlow(page, {
   );
 
   const focused = await page.evaluate((sel) => {
-    const el = window.__impeccableLiveQuery(sel);
+    const el = window.__procableLiveQuery(sel);
     if (!el) return false;
     try { el.focus({ preventScroll: true }); } catch { el.focus(); }
     let active = document.activeElement;
@@ -1433,21 +1433,21 @@ export async function runInsertFlow(page, {
 
   await page.keyboard.type(prompt);
   await page.waitForFunction(
-    ({ sel, value }) => window.__impeccableLiveQuery(sel)?.value === value,
+    ({ sel, value }) => window.__procableLiveQuery(sel)?.value === value,
     { sel: INSERT_INPUT_ID, value: prompt },
     { timeout: 5_000 },
   );
 
   await page.waitForFunction(
     (sel) => {
-      const btn = window.__impeccableLiveQuery(sel);
+      const btn = window.__procableLiveQuery(sel);
       return btn && !btn.disabled;
     },
     INSERT_CREATE_ID,
     { timeout: 5_000 },
   );
   const clicked = await page.evaluate((sel) => {
-    const btn = window.__impeccableLiveQuery(sel);
+    const btn = window.__procableLiveQuery(sel);
     if (!btn || btn.disabled) return false;
     btn.click();
     return true;

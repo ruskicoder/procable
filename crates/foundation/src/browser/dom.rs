@@ -114,7 +114,7 @@ pub trait Dom {
         None
     }
     /// `document.documentElement.cloneNode(true)` with every
-    /// `[id^="impeccable-live-"]` node removed, serialized as `outerHTML`.
+    /// `[id^="procable-live-"]` node removed, serialized as `outerHTML`.
     fn document_html_for_patterns(&self) -> String;
     /// The CSS of every readable linked stylesheet whose rules resolve to a
     /// live element, flattened out of its grouping rules (#709). Empty when

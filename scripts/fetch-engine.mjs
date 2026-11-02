@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 /**
  * Fetch the pinned engine binary (root ENGINE_VERSION) for one or every
- * platform into skill/scripts/bin/<os>-<arch>/impeccable[.exe], the sibling
- * layout the launcher (skill/scripts/impeccable) looks in first.
+ * platform into skill/scripts/bin/<os>-<arch>/procable[.exe], the sibling
+ * layout the launcher (skill/scripts/procable) looks in first.
  *
  *   node scripts/fetch-engine.mjs                # current platform
  *   node scripts/fetch-engine.mjs --all          # every release target
  *   node scripts/fetch-engine.mjs --target linux-x64 [--target ...]
- *   node scripts/fetch-engine.mjs --dest <dir>   # <dir>/<os>-<arch>/impeccable[.exe]
+ *   node scripts/fetch-engine.mjs --dest <dir>   # <dir>/<os>-<arch>/procable[.exe]
  *   node scripts/fetch-engine.mjs --lenient      # a target that cannot be fetched warns instead of failing
  *
  * Environment (same names the launcher honors):
- *   IMPECCABLE_DOWNLOAD_BASE  release channel root (default: the public repo's GitHub Releases)
- *   IMPECCABLE_BIN            copy this local binary for the current platform instead of downloading
+ *   PROCABLE_DOWNLOAD_BASE  release channel root (default: the public repo's GitHub Releases)
+ *   PROCABLE_BIN            copy this local binary for the current platform instead of downloading
  *
- * The URL scheme is the launcher's: <base>/engine-v<version>/impeccable-<os>-<arch>[.exe].
+ * The URL scheme is the launcher's: <base>/engine-v<version>/procable-<os>-<arch>[.exe].
  * Every download is verified against the line for its version and asset in
  * skill/scripts/engine-checksums.txt; no line means no download.
  */
@@ -25,7 +25,8 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const DEFAULT_DOWNLOAD_BASE = 'https://github.com/pbakaus/impeccable/releases/download';
+// procable: maintainer tooling only (CI, release checks); the installed skill never downloads.
+export const DEFAULT_DOWNLOAD_BASE = 'https://github.com/ruskicoder/procable/releases/download';
 export const ENGINE_TARGETS = ['darwin-arm64', 'darwin-x64', 'linux-x64', 'linux-arm64', 'windows-x64'];
 
 export function readEngineVersion(root = ROOT) {
@@ -39,14 +40,14 @@ export function currentTarget() {
 }
 
 export function binaryName(target) {
-  return target.startsWith('windows-') ? 'impeccable.exe' : 'impeccable';
+  return target.startsWith('windows-') ? 'procable.exe' : 'procable';
 }
 
 export function assetName(target) {
-  return `impeccable-${target}${target.startsWith('windows-') ? '.exe' : ''}`;
+  return `procable-${target}${target.startsWith('windows-') ? '.exe' : ''}`;
 }
 
-export function assetUrl(version, target, base = process.env.IMPECCABLE_DOWNLOAD_BASE || DEFAULT_DOWNLOAD_BASE) {
+export function assetUrl(version, target, base = process.env.PROCABLE_DOWNLOAD_BASE || DEFAULT_DOWNLOAD_BASE) {
   return `${base.replace(/\/$/, '')}/engine-v${version}/${assetName(target)}`;
 }
 
@@ -101,9 +102,9 @@ function install(buffer, target, dest) {
  * unavailable or its checksum does not match.
  */
 export async function fetchEngine(target, { version = readEngineVersion(), dest, base, root } = {}) {
-  const local = process.env.IMPECCABLE_BIN;
+  const local = process.env.PROCABLE_BIN;
   if (local && target === currentTarget()) {
-    if (!fs.existsSync(local)) throw new Error(`IMPECCABLE_BIN points at a missing file: ${local}`);
+    if (!fs.existsSync(local)) throw new Error(`PROCABLE_BIN points at a missing file: ${local}`);
     return install(fs.readFileSync(local), target, dest);
   }
   const checksum = expectedChecksum(version, target, root);

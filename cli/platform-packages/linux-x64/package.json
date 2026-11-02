@@ -1,7 +1,7 @@
 {
-  "name": "@impeccable/cli-linux-x64",
+  "name": "@procable/cli-linux-x64",
   "version": "0.0.0-engine",
-  "description": "impeccable engine binary for linux-x64. Installed as an optional dependency of the impeccable npm package; do not depend on it directly.",
+  "description": "procable engine binary for linux-x64. Installed as an optional dependency of the procable npm package; do not depend on it directly.",
   "license": "SEE LICENSE IN LICENSE",
   "homepage": "https://impeccable.style",
   "repository": {
@@ -12,6 +12,6 @@
   "cpu": ["x64"],
   "files": ["bin/", "LICENSE"],
   "bin": {
-    "impeccable-linux-x64": "bin/impeccable"
+    "procable-linux-x64": "bin/procable"
   }
 }

@@ -22,10 +22,10 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::time::Duration;
 
-use impeccable_browser::{
+use procable_browser::{
     cdp::Browser, detect_url_evidence, discovery, snapshot_engine, BrowserEngine, EvidenceRequest,
 };
-use impeccable_detect::engines::ScanOptions;
+use procable_detect::engines::ScanOptions;
 use serde_json::Value;
 
 /// Exercises every part of the capture: a linked stylesheet (with a media

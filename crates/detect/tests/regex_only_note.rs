@@ -5,16 +5,16 @@
 
 use std::collections::HashMap;
 
-use impeccable_common::Io;
-use impeccable_detect::cli::run_detect;
-use impeccable_core::findings::Finding;
-use impeccable_detect::engines::EngineError;
-use impeccable_detect::{Engines, HtmlEngine, MissingHtmlEngine, ScanOptions};
+use procable_common::Io;
+use procable_detect::cli::run_detect;
+use procable_core::findings::Finding;
+use procable_detect::engines::EngineError;
+use procable_detect::{Engines, HtmlEngine, MissingHtmlEngine, ScanOptions};
 
 const RULES: &str = "Rules that need a parsed page (tiny-text, low-contrast and other element rules) did not run on them; findings are an undercount, not a clean bill of health.\n";
 /// No framework config in the scanned directory, so no port to spell.
-const NO_PORT: &str = "For the full check, scan the running dev server (npx impeccable detect http://localhost:PORT) or a static site's built .html.\n";
-const ASTRO_OPT_IN: &str = ".astro files can take the HTML engine instead: add { \"ext\": \".astro\", \"engine\": \"html\" } under detector.extensions in .impeccable/config.json (trades the regex rules and line numbers for the element rules).\n";
+const NO_PORT: &str = "For the full check, scan the running dev server (npx procable detect http://localhost:PORT) or a static site's built .html.\n";
+const ASTRO_OPT_IN: &str = ".astro files can take the HTML engine instead: add { \"ext\": \".astro\", \"engine\": \"html\" } under detector.extensions in .procable/config.json (trades the regex rules and line numbers for the element rules).\n";
 
 fn run(dir: &std::path::Path, flags: &[&str]) -> (i32, String, String) {
     let mut args: Vec<String> = ["--no-config", "--no-design-system"]
@@ -36,7 +36,7 @@ fn run(dir: &std::path::Path, flags: &[&str]) -> (i32, String, String) {
 
 #[test]
 fn zero_finding_source_scan_says_it_was_regex_only() {
-    let dir = std::env::temp_dir().join(format!("impeccable-regex-note-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-regex-note-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(
         dir.join("a.astro"),
@@ -71,7 +71,7 @@ fn zero_finding_source_scan_says_it_was_regex_only() {
 
 #[test]
 fn framework_directory_spells_the_dev_server_scan() {
-    let dir = std::env::temp_dir().join(format!("impeccable-regex-note-fw-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-regex-note-fw-{}", std::process::id()));
     std::fs::create_dir_all(dir.join("src")).unwrap();
     std::fs::write(dir.join("vite.config.js"), "export default {};\n").unwrap();
     std::fs::write(
@@ -86,7 +86,7 @@ fn framework_directory_spells_the_dev_server_scan() {
     assert_eq!(code, 0);
     assert!(
         err.ends_with(&format!(
-            "\n2 files scanned with regex matching only (.js, .tsx).\n{RULES}For the full check, scan the running app:\n  npx impeccable detect http://localhost:5173\n"
+            "\n2 files scanned with regex matching only (.js, .tsx).\n{RULES}For the full check, scan the running app:\n  npx procable detect http://localhost:5173\n"
         )),
         "stderr was: {err:?}"
     );
@@ -96,7 +96,7 @@ fn framework_directory_spells_the_dev_server_scan() {
 
 #[test]
 fn two_framework_directories_get_one_url_each() {
-    let root = std::env::temp_dir().join(format!("impeccable-regex-note-two-{}", std::process::id()));
+    let root = std::env::temp_dir().join(format!("procable-regex-note-two-{}", std::process::id()));
     let vite = root.join("vite-app");
     let next = root.join("next-app");
     std::fs::create_dir_all(&vite).unwrap();
@@ -121,7 +121,7 @@ fn two_framework_directories_get_one_url_each() {
     // Ports are listed in ascending order, whichever directory came first.
     assert!(
         err.ends_with(&format!(
-            "\n4 files scanned with regex matching only (.js, .tsx).\n{RULES}For the full check, scan each running app:\n  npx impeccable detect http://localhost:3000\n  npx impeccable detect http://localhost:5173\n"
+            "\n4 files scanned with regex matching only (.js, .tsx).\n{RULES}For the full check, scan each running app:\n  npx procable detect http://localhost:3000\n  npx procable detect http://localhost:5173\n"
         )),
         "stderr was: {err:?}"
     );
@@ -146,10 +146,10 @@ impl HtmlEngine for CleanHtmlEngine {
 
 #[test]
 fn configured_html_engine_extension_is_not_counted() {
-    let dir = std::env::temp_dir().join(format!("impeccable-regex-note-ext-{}", std::process::id()));
-    std::fs::create_dir_all(dir.join(".impeccable")).unwrap();
+    let dir = std::env::temp_dir().join(format!("procable-regex-note-ext-{}", std::process::id()));
+    std::fs::create_dir_all(dir.join(".procable")).unwrap();
     std::fs::write(
-        dir.join(".impeccable/config.json"),
+        dir.join(".procable/config.json"),
         r#"{ "detector": { "extensions": [{ "ext": ".html.erb", "engine": "html" }, ".liquid"], "designSystem": { "enabled": false } } }"#,
     )
     .unwrap();

@@ -351,7 +351,7 @@ export function createTransformer(config) {
       // Generate degraded-mode fallback reference files from the shipped
       // subagent definitions. Single-sourced from skill/agents/ so a harness
       // with no subagent capability runs each role inline from the same
-      // specialized text. Role name = agent name minus the `impeccable-`
+      // specialized text. Role name = agent name minus the `procable-`
       // prefix. These pass through the same provider-block compilation and
       // placeholder replacement as ordinary reference files, so <codex> blocks
       // and {{placeholders}} resolve identically.
@@ -359,7 +359,7 @@ export function createTransformer(config) {
         const degradedDir = path.join(skillDir, 'reference', 'degraded');
         ensureDir(degradedDir);
         for (const agent of skill.agents) {
-          const role = agent.name.replace(/^impeccable-/, '');
+          const role = agent.name.replace(/^procable-/, '');
           const body = renderAgentBody(agent, { providerTags, placeholderKey, allSkillNames, scriptsPath, emitDir: degradedDir, skillDir });
           const content = `${DEGRADED_PREAMBLE}\n\n${body.replace(/^\s+/, '')}`;
           writeFile(path.join(degradedDir, `${role}.md`), content);
@@ -376,7 +376,7 @@ export function createTransformer(config) {
           const outPath = path.join(scriptsOutDir, script.name);
           writeFile(outPath, scriptContent);
           // The launcher must stay executable in every provider copy; a
-          // plain write would drop the bit and `impeccable context` would
+          // plain write would drop the bit and `procable context` would
           // fail with EACCES on the first session.
           if (script.mode) fs.chmodSync(outPath, script.mode);
           scriptCount++;
@@ -452,7 +452,7 @@ export function createTransformer(config) {
     }
 
     // Emit a provider plugin verbatim from the skill's payloads (Hermes:
-    // skill/hermes-plugin/ -> .hermes/plugins/impeccable-design-hook/). A
+    // skill/hermes-plugin/ -> .hermes/plugins/procable-design-hook/). A
     // skill without the payload emits none; tests/hook-build.test.mjs pins
     // that the real source carries it.
     let pluginInfo = '';

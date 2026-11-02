@@ -8,8 +8,8 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Value};
 
-pub const NUXT_PLUGIN_MARKER: &str = "impeccable-live-nuxt-plugin";
-pub const NUXT_PLUGIN_NAME: &str = "impeccable-live.client.ts";
+pub const NUXT_PLUGIN_MARKER: &str = "procable-live-nuxt-plugin";
+pub const NUXT_PLUGIN_NAME: &str = "procable-live.client.ts";
 
 static NUXT_CONFIG_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^nuxt\.config\.(?:js|mjs|cjs|ts|mts|cts)$").unwrap());
@@ -68,7 +68,7 @@ pub fn build_nuxt_plugin(port: i64, token: Option<&str>) -> String {
     format!(
         "/* {m} */
 const liveSrc = '{src}';
-const liveSelector = 'script[data-impeccable-live-nuxt]';
+const liveSelector = 'script[data-procable-live-nuxt]';
 
 export default defineNuxtPlugin(() => {{
   if (!import.meta.dev || typeof document === 'undefined') return;
@@ -81,7 +81,7 @@ export default defineNuxtPlugin(() => {{
   script = document.createElement('script');
   script.src = liveSrc;
   script.async = true;
-  script.dataset.impeccableLiveNuxt = '';
+  script.dataset.procableLiveNuxt = '';
   document.head.appendChild(script);
 
   import.meta.hot?.dispose(() => {{
@@ -109,7 +109,7 @@ pub fn apply_nuxt_live_adapter(
             return json!({
                 "file": project.plugin_file,
                 "error": "nuxt_plugin_conflict",
-                "hint": format!("{} already exists and is not managed by Impeccable Live", project.plugin_file),
+                "hint": format!("{} already exists and is not managed by Procable Live", project.plugin_file),
             });
         }
     }
@@ -134,7 +134,7 @@ pub fn remove_nuxt_live_adapter(cwd: &str, project: &NuxtProject) -> Value {
             "file": project.plugin_file,
             "removed": false,
             "error": "nuxt_plugin_conflict",
-            "hint": format!("{} is not managed by Impeccable Live", project.plugin_file),
+            "hint": format!("{} is not managed by Procable Live", project.plugin_file),
         });
     }
     let _ = std::fs::remove_file(&abs);

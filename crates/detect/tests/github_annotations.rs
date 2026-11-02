@@ -1,15 +1,15 @@
-//! `impeccable detect --github` writes Actions workflow commands and skips
+//! `procable detect --github` writes Actions workflow commands and skips
 //! the human-readable findings stream.
 
 use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 
-use impeccable_common::Io;
-use impeccable_core::findings::{finding, Finding};
-use impeccable_detect::cli::run_detect;
-use impeccable_detect::engines::EngineError;
-use impeccable_detect::{Engines, HtmlEngine, MissingHtmlEngine, ScanOptions};
+use procable_common::Io;
+use procable_core::findings::{finding, Finding};
+use procable_detect::cli::run_detect;
+use procable_detect::engines::EngineError;
+use procable_detect::{Engines, HtmlEngine, MissingHtmlEngine, ScanOptions};
 
 struct CannedHtml(Vec<Finding>);
 
@@ -58,7 +58,7 @@ fn stage_card(dir: &Path) {
 
 #[test]
 fn github_writes_annotations_to_stdout() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-ann-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-ann-{}", std::process::id()));
     stage_card(&dir);
     let html = CannedHtml(vec![finding("side-tab", "", "border-left: 4px", 1.0)]);
     let (code, out, err) = run_with(
@@ -77,7 +77,7 @@ fn github_writes_annotations_to_stdout() {
 
 #[test]
 fn github_conflicts_with_json() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-json-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-json-{}", std::process::id()));
     stage_card(&dir);
     let (code, out, err) = run_with(
         &dir,
@@ -101,14 +101,14 @@ fn github_help_wins() {
     );
     assert_eq!(code, 0, "{err}");
     assert!(err.is_empty(), "{err}");
-    assert!(out.starts_with("Usage: impeccable detect"));
+    assert!(out.starts_with("Usage: procable detect"));
     assert!(out.contains("--github"));
     assert!(!out.contains("::warning"));
 }
 
 #[test]
 fn github_quiet_still_annotates() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-quiet-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-quiet-{}", std::process::id()));
     stage_card(&dir);
     let html = CannedHtml(vec![finding("side-tab", "", "snip", 4.0)]);
     let (code, out, err) = run_with(
@@ -125,7 +125,7 @@ fn github_quiet_still_annotates() {
 
 #[test]
 fn github_no_advisory_drops_notices() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-adv-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-adv-{}", std::process::id()));
     stage_card(&dir);
     let html = CannedHtml(vec![
         finding("side-tab", "", "primary", 1.0),
@@ -146,7 +146,7 @@ fn github_no_advisory_drops_notices() {
 
 #[test]
 fn github_advisory_is_notice_and_does_not_fail() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-notice-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-notice-{}", std::process::id()));
     stage_card(&dir);
     let html = CannedHtml(vec![finding("em-dash-overuse", "", "—", 2.0)]);
     let (code, out, err) = run_with(
@@ -162,7 +162,7 @@ fn github_advisory_is_notice_and_does_not_fail() {
 
 #[test]
 fn github_error_severity_is_an_error_annotation() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-err-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-err-{}", std::process::id()));
     stage_card(&dir);
     let html = CannedHtml(vec![finding("script-error", "", "TypeError: x", 9.0)]);
     let (code, out, err) = run_with(
@@ -178,7 +178,7 @@ fn github_error_severity_is_an_error_annotation() {
 
 #[test]
 fn github_clean_scan_is_silent() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-clean-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-clean-{}", std::process::id()));
     stage_card(&dir);
     let (code, out, err) = run_with(
         &dir,
@@ -194,7 +194,7 @@ fn github_clean_scan_is_silent() {
 
 #[test]
 fn github_workspace_relativizes_nested_cwd() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-ws-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-ws-{}", std::process::id()));
     let nested = dir.join("packages").join("web");
     stage_card(&nested);
     let html = CannedHtml(vec![finding("side-tab", "", "snip", 1.0)]);
@@ -219,7 +219,7 @@ fn github_workspace_relativizes_nested_cwd() {
 
 #[test]
 fn github_skips_the_regex_only_note() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-regex-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-regex-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(dir.join("probe.astro"), "<p>ok</p>\n").unwrap();
     let (code, out, err) = run_with(
@@ -238,7 +238,7 @@ fn github_skips_the_regex_only_note() {
 }
 
 fn stage_framework_dir(tag: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-fw-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-fw-{tag}-{}", std::process::id()));
     stage_card(&dir);
     // An unlikely port keeps the probe from finding a real dev server.
     std::fs::write(dir.join("next.config.js"), "module.exports = { port: 59871 };\n").unwrap();
@@ -270,7 +270,7 @@ fn text_mode_prints_the_framework_note() {
 
 #[test]
 fn github_conflicts_with_list_rules() {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-list-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-list-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     for args in [&["--list-rules", "--github"][..], &["--list-rules", "--github", "--json"][..]] {
         let (code, out, err) = run_with(&dir, args, &MissingHtmlEngine, HashMap::new());
@@ -300,7 +300,7 @@ fn run_tty(dir: &Path, args: &[&str]) -> (i32, String, String) {
 }
 
 fn stage_many(tag: &str) -> std::path::PathBuf {
-    let dir = std::env::temp_dir().join(format!("impeccable-gh-many-{tag}-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-gh-many-{tag}-{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     for i in 0..51 {
         std::fs::write(dir.join(format!("f{i}.css")), "body { margin: 0; }\n").unwrap();

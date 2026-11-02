@@ -1,0 +1,106 @@
+name: release-procable
+# One release for prompt-orchestrator installs: the engine binary for every
+# target, the launcher-only skill bundle (universal.zip) whose
+# engine-checksums.txt records those binaries, and SHA256SUMS for all of it.
+# The prompt-orchestrator installer downloads these once at install time;
+# procable itself never downloads anything.
+#
+# Trigger: push a tag `procable-v<X.Y.Z>`. ENGINE_VERSION must already name the
+# engine version this release builds.
+on:
+  push:
+    tags: ['procable-v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-procable-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  engine:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14,       target: aarch64-apple-darwin,       short: darwin-arm64 }
+          - { os: macos-14,       target: x86_64-apple-darwin,        short: darwin-x64 }
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-musl,  short: linux-x64 }
+          - { os: ubuntu-latest,  target: aarch64-unknown-linux-musl, short: linux-arm64, cross: true }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,     short: windows-x64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install the pinned toolchain
+        shell: bash
+        run: rustup show && rustup target add ${{ matrix.target }}
+      - if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      - if: matrix.cross
+        run: cargo install cross --locked
+      - name: Build
+        shell: bash
+        run: |
+          pkg="$(grep -m1 '^name' crates/cli/Cargo.toml | cut -d'"' -f2)"
+          ${{ matrix.cross && 'cross' || 'cargo' }} build --release -p "$pkg" --target ${{ matrix.target }}
+      - name: Stage the binary
+        shell: bash
+        run: |
+          pkg="$(grep -m1 '^name' crates/cli/Cargo.toml | cut -d'"' -f2)"
+          ext=""; [ "${{ runner.os }}" = Windows ] && ext=".exe"
+          mkdir -p out
+          cp "target/${{ matrix.target }}/release/$pkg$ext" "out/$pkg-${{ matrix.short }}$ext"
+      - name: Smoke the binary
+        if: ${{ !matrix.cross }}
+        shell: bash
+        run: for f in out/*; do "$f" engine-probe; done
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: engine-${{ matrix.short }}
+          path: out/*
+          if-no-files-found: error
+
+  bundle:
+    needs: engine
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: .bun-version
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: engine-*
+          path: engines
+          merge-multiple: true
+      - name: Record the engine checksums in the skill
+        run: |
+          set -e
+          version="$(tr -d '[:space:]' < ENGINE_VERSION)"
+          manifest=skill/scripts/engine-checksums.txt
+          grep '^#' "$manifest" > manifest.tmp || true
+          (cd engines && for f in *; do printf '%s %s %s\n' "$version" "$f" "$(sha256sum "$f" | cut -d' ' -f1)"; done) >> manifest.tmp
+          mv manifest.tmp "$manifest"
+          cat "$manifest"
+      - run: bun install --frozen-lockfile
+      - name: Build the skill bundle
+        run: bun run build:release
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -e
+          mkdir -p release
+          cp engines/* release/
+          cp dist/universal.zip release/
+          (cd release && sha256sum * > SHA256SUMS)
+          cat release/SHA256SUMS
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --title "$TAG" \
+            --notes "procable $TAG: the skill bundle (universal.zip) and the engine for every platform, with SHA256SUMS. Installed by the prompt-orchestrator installer; procable runs fully offline once installed. The Windows engine is unsigned." release/*

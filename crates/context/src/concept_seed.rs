@@ -1,4 +1,4 @@
-//! JS: concept-seed.mjs -> `impeccable concept-seed`
+//! JS: concept-seed.mjs -> `procable concept-seed`
 
 use crate::catalog::*;
 use crate::context::load_context;
@@ -8,7 +8,7 @@ use crate::seed_text as t;
 use crate::target_args::TargetOptions;
 use crate::telemetry;
 use crate::util::Env;
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::time::{Duration, Instant};
@@ -121,7 +121,7 @@ impl ApiBudget {
 }
 
 pub(crate) fn card_base(env: &Env) -> String {
-    env.get("IMPECCABLE_CARD_BASE").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| "https://impeccable.style/worlds/cards".to_string())
+    env.get("PROCABLE_CARD_BASE").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| "https://impeccable.style/worlds/cards".to_string())
 }
 
 /// URLSearchParams serialization (application/x-www-form-urlencoded).
@@ -285,7 +285,7 @@ pub struct SeedArgs {
     /// The recorded build-path default and its file (`recorded_build_path`).
     pub build_path: Option<(String, String)>,
     /// The engine generated `key` itself this run (no `--from`, no
-    /// `IMPECCABLE_CONCEPT_SEED`), so it has no ledger to look for.
+    /// `PROCABLE_CONCEPT_SEED`), so it has no ledger to look for.
     pub fresh_key: bool,
 }
 
@@ -387,7 +387,7 @@ fn render_roll(env: &Env, cwd: &str, budget: &mut ApiBudget, a: &SeedArgs) -> Re
     let dealt_str = dealt.iter().map(|d| d.to_string()).collect::<Vec<_>>().join(", ");
 
     // data resolution
-    let catalog_dir = env.get("IMPECCABLE_CATALOG_DIR").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| {
+    let catalog_dir = env.get("PROCABLE_CATALOG_DIR").filter(|v| !v.is_empty()).cloned().unwrap_or_else(|| {
         crate::provider::detect(env, cwd).skill_dir.map(|d| jsp::join(&[&d, "scripts"])).unwrap_or_else(|| ".".to_string())
     });
     let data: Option<RollData> = if let Some(local) = load_local(&catalog_dir) {
@@ -477,7 +477,7 @@ fn render_roll(env: &Env, cwd: &str, budget: &mut ApiBudget, a: &SeedArgs) -> Re
         return Ok((scope, reroll, fill(t::DEGRADED_BODY, &pairs), true, RollMeta { worlds: vec![], api: false, pool_revision: None, hand_id: None }));
     };
 
-    let compositions_enabled = env.get("IMPECCABLE_COMPOSITIONS").map(|v| v == "1").unwrap_or(false);
+    let compositions_enabled = env.get("PROCABLE_COMPOSITIONS").map(|v| v == "1").unwrap_or(false);
     let compositions: Vec<Value> = if compositions_enabled { data.compositions.clone() } else { vec![] };
     let grain_note = match &data.composition_match {
         Some(m) if m.grain.is_some() => {
@@ -585,7 +585,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
             io.out(if available { "SEED NONE: this machine can make seed references, so a brief written here records one; `none` means the roll was skipped.\n" } else { "SEED NONE ACCEPTED: this machine has no seed salt, so no reference can exist and the brief rightly records none.\n" });
             return if available { 1 } else { 0 };
         }
-        if impeccable_common::seed::parse_reference(&v).is_none() {
+        if procable_common::seed::parse_reference(&v).is_none() {
             io.out("SEED UNKNOWN: not a seed reference (`seed:` and 16 hex). A raw key never belongs in a brief.\n");
             return 1;
         }
@@ -636,17 +636,17 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
     let supplied = match val("--from") {
         Some(Some(k)) => Some(k),
         Some(None) => Some("undefined".to_string()),
-        None => env.get("IMPECCABLE_CONCEPT_SEED").filter(|v| !v.is_empty()).cloned(),
+        None => env.get("PROCABLE_CONCEPT_SEED").filter(|v| !v.is_empty()).cloned(),
     };
     let fresh_key = supplied.is_none();
-    let given = supplied.unwrap_or_else(impeccable_common::seed::new_key);
+    let given = supplied.unwrap_or_else(procable_common::seed::new_key);
     // A seed reference (what the surface brief records) stands for the key
     // this machine rolled it from; the deal depends on the key itself.
     let ledger = telemetry::Ledger::new(&env, &cwd).for_fresh_key(&given, fresh_key);
     let key = match ledger.resolve(&given) {
         Ok(k) => k,
         Err(r) => {
-            io.err(&format!("concept-seed: {} is a seed reference this machine has no record of. A reference resolves only where its roll was made (in .impeccable/questions/seeds/, which is never committed). To reproduce that deal here, pass the original key with --from; otherwise roll anew without --from.\n", r));
+            io.err(&format!("concept-seed: {} is a seed reference this machine has no record of. A reference resolves only where its roll was made (in .procable/questions/seeds/, which is never committed). To reproduce that deal here, pass the original key with --from; otherwise roll anew without --from.\n", r));
             return 1;
         }
     };
@@ -708,11 +708,11 @@ mod tests {
 
     /// The ledger the test runs see: the same pinned salt.
     fn tl(p: &std::path::Path) -> telemetry::Ledger {
-        telemetry::Ledger::new(&Env::from([("IMPECCABLE_SEED_SALT".into(), "test-salt".into())]), &p.to_string_lossy())
+        telemetry::Ledger::new(&Env::from([("PROCABLE_SEED_SALT".into(), "test-salt".into())]), &p.to_string_lossy())
     }
 
     fn temp_dir(name: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("impeccable-seed-{}-{}", name, std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-seed-{}-{}", name, std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         dir
@@ -739,14 +739,14 @@ mod tests {
             proj.join("no-such-catalog")
         };
         let env = Env::from([
-            ("IMPECCABLE_SKILL_DIR".into(), skill.to_string_lossy().into_owned()),
-            ("IMPECCABLE_CATALOG_DIR".into(), catalog_dir.to_string_lossy().into_owned()),
-            ("IMPECCABLE_API_URL".into(), "http://127.0.0.1:9/api".into()),
-            ("IMPECCABLE_API_TIMEOUT".into(), "300".into()),
-            ("IMPECCABLE_NO_TELEMETRY".into(), "1".into()),
-            ("IMPECCABLE_SEED_SALT".into(), "test-salt".into()),
-            ("IMPECCABLE_NO_STALENESS_CHECK".into(), "1".into()),
-            ("IMPECCABLE_SELF".into(), "impeccable".into()),
+            ("PROCABLE_SKILL_DIR".into(), skill.to_string_lossy().into_owned()),
+            ("PROCABLE_CATALOG_DIR".into(), catalog_dir.to_string_lossy().into_owned()),
+            ("PROCABLE_API_URL".into(), "http://127.0.0.1:9/api".into()),
+            ("PROCABLE_API_TIMEOUT".into(), "300".into()),
+            ("PROCABLE_NO_TELEMETRY".into(), "1".into()),
+            ("PROCABLE_SEED_SALT".into(), "test-salt".into()),
+            ("PROCABLE_NO_STALENESS_CHECK".into(), "1".into()),
+            ("PROCABLE_SELF".into(), "procable".into()),
         ]);
         let (mut io, cap) = Io::captured("", proj.to_path_buf(), env);
         let argv: Vec<String> = args.iter().map(|s| s.to_string()).collect();
@@ -849,7 +849,7 @@ mod tests {
         &out[at..]
     }
 
-    const PRESENT_FIRST_LINE: &str = "- Present this hand on the decision page: write the options payload (`impeccable serve-question --schema` prints its shape), run `impeccable serve-question --start --payload <file>`, and open the URL it prints for the user.";
+    const PRESENT_FIRST_LINE: &str = "- Present this hand on the decision page: write the options payload (`procable serve-question --schema` prints its shape), run `procable serve-question --start --payload <file>`, and open the URL it prints for the user.";
 
     #[test]
     fn direction_roll_ends_with_the_presentation_block() {
@@ -862,10 +862,10 @@ mod tests {
         let lines: Vec<&str> = block.trim_end().split('\n').collect();
         assert_eq!(lines.len(), 6, "{block}");
         assert_eq!(lines[1], PRESENT_FIRST_LINE);
-        assert!(lines[2].starts_with("- With image generation, every card declares a comp under .impeccable/mocks/decision/, canon included, declined challengers excepted. Serve first"), "{block}");
+        assert!(lines[2].starts_with("- With image generation, every card declares a comp under .procable/mocks/decision/, canon included, declined challengers excepted. Serve first"), "{block}");
         assert!(lines[2].contains("(a.png gets a.png.json)"), "{block}");
         // The wait follows comp generation, never precedes it.
-        assert!(lines[3].starts_with("- After the last comp or sketch lands (at once when this round makes none), hold `impeccable serve-question --wait --key <key>`. If your shell hands back a session before --wait exits, keep polling that session until it exits; rerun --wait only after it exits 3"), "{block}");
+        assert!(lines[3].starts_with("- After the last comp or sketch lands (at once when this round makes none), hold `procable serve-question --wait --key <key>`. If your shell hands back a session before --wait exits, keep polling that session until it exits; rerun --wait only after it exits 3"), "{block}");
         assert!(lines[4].starts_with("- Build path: none recorded"), "{block}");
         assert!(lines[4].contains("\"buildPath\": {\"value\": \"comp\", \"toggle\": true}"), "{block}");
         assert!(lines[5].starts_with("- The structured question tool is the fallback, never the first channel: take it when --start exits 2, when --wait exits 4"), "{block}");
@@ -884,7 +884,7 @@ mod tests {
         assert_eq!(code, 0, "{out}");
         let block = presentation(&out);
         assert!(block.contains(PRESENT_FIRST_LINE), "{block}");
-        assert!(block.contains("- With image generation, each dealt card declares a comp under .impeccable/mocks/decision/; serve first"), "{block}");
+        assert!(block.contains("- With image generation, each dealt card declares a comp under .procable/mocks/decision/; serve first"), "{block}");
         assert!(block.contains("Without image generation, each card carries an HTML sketch: one self-contained file of the first viewport only"), "{block}");
         assert!(!block.contains("canon included"), "{block}");
     }
@@ -901,7 +901,7 @@ mod tests {
             let (code, out) = seed(&proj, &skill, true, args);
             assert_eq!(code, 0, "{out}");
             let block = presentation(&out);
-            assert!(block.contains("- Re-roll round: while the page is open on a key, deliver this hand to it with `impeccable serve-question --update --key <same key> --payload <file>` and never --start a second server. A re-roll made before any page opened starts one with `impeccable serve-question --start --payload <file>`;"), "{args:?}: {block}");
+            assert!(block.contains("- Re-roll round: while the page is open on a key, deliver this hand to it with `procable serve-question --update --key <same key> --payload <file>` and never --start a second server. A re-roll made before any page opened starts one with `procable serve-question --start --payload <file>`;"), "{args:?}: {block}");
             assert!(!block.contains("- Present this hand"), "{args:?}: {block}");
         }
     }
@@ -914,7 +914,7 @@ mod tests {
         let block = presentation(&out);
         assert!(block.contains(PRESENT_FIRST_LINE), "{block}");
         assert!(block.contains("- This degraded hand goes on the page as a single text-only card with re-roll; it declares no comp."), "{block}");
-        assert!(block.contains("- Right after serving, with no comp to generate first, hold `impeccable serve-question --wait --key <key>`."), "{block}");
+        assert!(block.contains("- Right after serving, with no comp to generate first, hold `procable serve-question --wait --key <key>`."), "{block}");
         // Degraded safer keeps its lineup: the full-hand comp line, not one card.
         let (_, out) = seed(&proj, &skill, false, &["--scope", "direction", "--from", "k1", "--reroll", "1", "--register", "safer"]);
         let block = presentation(&out);
@@ -930,7 +930,7 @@ mod tests {
     #[test]
     fn operate_and_read_surfaces_are_code_led_whatever_is_recorded() {
         let (proj, skill) = fixture("present-mode-code-led", &[("mode-operate", MODE_FILE), ("mode-read", MODE_FILE), ("mode-persuade", MODE_FILE)]);
-        let dir = proj.join(".impeccable");
+        let dir = proj.join(".procable");
         std::fs::create_dir_all(&dir).unwrap();
         let roll = |scope: &str, mode: &str| seed(&proj, &skill, true, &["--scope", scope, "--mode", mode, "--from", "k1"]).1;
 
@@ -941,7 +941,7 @@ mod tests {
             assert!(block.contains(&format!("- Build path: code-led. A surface in {mode} mode builds in code whatever the project records. With image generation, put \"buildPath\": {{\"value\": \"code\", \"toggle\": true}} in the payload")), "{block}");
             assert!(block.contains("never offer to record a flip made on this surface"), "{block}");
             assert!(block.contains("- Code-led round: every card but the declined challengers carries an HTML sketch"), "{block}");
-            assert!(block.contains("- After the last sketch lands, hold `impeccable serve-question --wait --key <key>`."), "{block}");
+            assert!(block.contains("- After the last sketch lands, hold `procable serve-question --wait --key <key>`."), "{block}");
             assert!(presentation(&roll("surface", mode)).contains("- Code-led round: each dealt card carries an HTML sketch"), "{mode}");
         }
         for mode in ["persuade", "experience"] {
@@ -952,10 +952,10 @@ mod tests {
         std::fs::write(dir.join("config.json"), r#"{"buildPath": "comp"}"#).unwrap();
         let out = roll("direction", "operate");
         let block = presentation(&out);
-        assert!(block.contains("- Build path: code-led. A surface in operate mode builds in code whatever the project records (the recorded default comp from .impeccable/config.json governs Persuade and Experience surfaces)."), "{block}");
+        assert!(block.contains("- Build path: code-led. A surface in operate mode builds in code whatever the project records (the recorded default comp from .procable/config.json governs Persuade and Experience surfaces)."), "{block}");
         assert!(block.contains("\"buildPath\": {\"value\": \"code\", \"toggle\": true}"), "{block}");
         assert!(!block.contains("Serve first, then generate each comp in reading order"), "{block}");
-        assert!(presentation(&roll("direction", "persuade")).contains("- Build path: recorded default comp (from .impeccable/config.json)."));
+        assert!(presentation(&roll("direction", "persuade")).contains("- Build path: recorded default comp (from .procable/config.json)."));
 
         // A recorded code default reads the same on Operate, with nothing extra to name.
         std::fs::write(dir.join("config.json"), r#"{"buildPath": "code"}"#).unwrap();
@@ -965,17 +965,17 @@ mod tests {
     #[test]
     fn build_path_line_names_the_recorded_default() {
         let (proj, skill) = fixture("present-build-path", &[("mode-persuade", MODE_FILE)]);
-        let dir = proj.join(".impeccable");
+        let dir = proj.join(".procable");
         std::fs::create_dir_all(&dir).unwrap();
         let roll = |scope: &str| seed(&proj, &skill, true, &["--scope", scope, "--mode", "persuade", "--from", "k1"]).1;
 
         std::fs::write(dir.join("config.json"), r#"{"buildPath": "code"}"#).unwrap();
         let out = roll("direction");
         let block = presentation(&out);
-        assert!(block.contains("- Build path: recorded default code (from .impeccable/config.json). With image generation, put \"buildPath\": {\"value\": \"code\", \"toggle\": true} in the payload; without it there is no toggle and the build is code-led. Never ask the user about the build path."), "{block}");
+        assert!(block.contains("- Build path: recorded default code (from .procable/config.json). With image generation, put \"buildPath\": {\"value\": \"code\", \"toggle\": true} in the payload; without it there is no toggle and the build is code-led. Never ask the user about the build path."), "{block}");
         assert!(block.contains("- Code-led round: every card but the declined challengers carries an HTML sketch"), "{block}");
         assert!(block.contains("only when --wait prints BUILD PATH FLIPPED"), "{block}");
-        assert!(block.contains("- After the last sketch lands, hold `impeccable serve-question --wait --key <key>`."), "{block}");
+        assert!(block.contains("- After the last sketch lands, hold `procable serve-question --wait --key <key>`."), "{block}");
         let out = roll("surface");
         assert!(presentation(&out).contains("- Code-led round: each dealt card carries an HTML sketch"), "{out}");
 
@@ -983,7 +983,7 @@ mod tests {
         std::fs::write(dir.join("config.local.json"), r#"{"buildPath": "comp"}"#).unwrap();
         let out = roll("direction");
         let block = presentation(&out);
-        assert!(block.contains("- Build path: recorded default comp (from .impeccable/config.local.json)."), "{block}");
+        assert!(block.contains("- Build path: recorded default comp (from .procable/config.local.json)."), "{block}");
         assert!(block.contains("\"buildPath\": {\"value\": \"comp\", \"toggle\": true}"), "{block}");
         assert!(block.contains("Serve first, then generate each comp in reading order"), "{block}");
 
@@ -1004,7 +1004,7 @@ mod tests {
     #[test]
     fn every_roll_records_its_scope_for_serve_question() {
         let (proj, skill) = fixture("roll-record", &[]);
-        let record = proj.join(".impeccable/questions/roll.json");
+        let record = proj.join(".procable/questions/roll.json");
         let read = || serde_json::from_str::<Value>(&std::fs::read_to_string(&record).unwrap()).unwrap();
         // Invalid arguments and telemetry pings are not rolls.
         let (code, _) = seed(&proj, &skill, true, &["--scope", "world", "--from", "k1"]);
@@ -1044,7 +1044,7 @@ mod tests {
 
     /// A stand-in roll API on loopback: answers `GET /api/roll` with two
     /// dealt worlds and `POST /api/chosen` with 200, and records every
-    /// request as (method, url, X-Impeccable-Client, body).
+    /// request as (method, url, X-Procable-Client, body).
     type Seen = std::sync::Arc<std::sync::Mutex<Vec<(String, String, String, String, String)>>>;
     /// The bodies posted to /api/chosen, each round's random pingId masked.
     fn chosen_bodies(seen: &Seen) -> Vec<String> {
@@ -1056,14 +1056,14 @@ mod tests {
     fn without_a_salt_the_roll_offers_no_reference_and_records_no_seed() {
         let (proj, skill) = fixture("no-salt", &[("mode-persuade", MODE_FILE)]);
         let home = proj.join("home");
-        std::fs::create_dir_all(home.join(".impeccable")).unwrap();
-        std::fs::write(home.join(".impeccable/seed-salt"), "corrupt\n").unwrap();
+        std::fs::create_dir_all(home.join(".procable")).unwrap();
+        std::fs::write(home.join(".procable/seed-salt"), "corrupt\n").unwrap();
         let env = Env::from([
-            ("IMPECCABLE_SKILL_DIR".into(), skill.to_string_lossy().into_owned()),
-            ("IMPECCABLE_CATALOG_DIR".into(), std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/concept-catalog").to_string_lossy().into_owned()),
-            ("IMPECCABLE_API_URL".into(), "http://127.0.0.1:9/api".into()),
-            ("IMPECCABLE_NO_TELEMETRY".into(), "1".into()),
-            ("IMPECCABLE_NO_STALENESS_CHECK".into(), "1".into()),
+            ("PROCABLE_SKILL_DIR".into(), skill.to_string_lossy().into_owned()),
+            ("PROCABLE_CATALOG_DIR".into(), std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/concept-catalog").to_string_lossy().into_owned()),
+            ("PROCABLE_API_URL".into(), "http://127.0.0.1:9/api".into()),
+            ("PROCABLE_NO_TELEMETRY".into(), "1".into()),
+            ("PROCABLE_NO_STALENESS_CHECK".into(), "1".into()),
             ("HOME".into(), home.to_string_lossy().into_owned()),
             ("USERPROFILE".into(), home.to_string_lossy().into_owned()),
         ]);
@@ -1072,7 +1072,7 @@ mod tests {
         assert_eq!(run(&argv, &mut io), 0);
         let out = String::from_utf8(cap.stdout.borrow().clone()).unwrap();
         assert!(out.contains("SEED REFERENCE: unavailable on this machine") && out.contains("`seed: none (unavailable)`") && !out.contains("SEED REFERENCE: seed:"), "{out}");
-        let record: Value = serde_json::from_str(&std::fs::read_to_string(proj.join(".impeccable/questions/roll.json")).unwrap()).unwrap();
+        let record: Value = serde_json::from_str(&std::fs::read_to_string(proj.join(".procable/questions/roll.json")).unwrap()).unwrap();
         assert!(record.get("seed").is_none() && record.get("key").is_none(), "{record}");
     }
 
@@ -1080,7 +1080,7 @@ mod tests {
     fn check_seed_corroborates_a_reference_against_this_machine() {
         let (proj, skill) = fixture("check-seed", &[("mode-persuade", MODE_FILE)]);
         let check = |v: &str| {
-            let env = Env::from([("IMPECCABLE_SEED_SALT".into(), "test-salt".into()), ("HOME".into(), proj.join("home").to_string_lossy().into_owned())]);
+            let env = Env::from([("PROCABLE_SEED_SALT".into(), "test-salt".into()), ("HOME".into(), proj.join("home").to_string_lossy().into_owned())]);
             let (mut io, cap) = Io::captured("", proj.clone(), env);
             let code = run(&["--check-seed".to_string(), v.to_string()], &mut io);
             let out = String::from_utf8(cap.stdout.borrow().clone()).unwrap();
@@ -1101,7 +1101,7 @@ mod tests {
         let (code, out) = seed(&proj, &skill, true, &["--scope", "direction"]);
         assert_eq!(code, 0, "{out}");
         let reference = out.lines().find_map(|l| l.strip_prefix("SEED REFERENCE: ")).unwrap().split('.').next().unwrap().to_string();
-        let ledgers: Vec<String> = std::fs::read_dir(proj.join(".impeccable/questions/seeds")).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.ends_with(".json")).collect();
+        let ledgers: Vec<String> = std::fs::read_dir(proj.join(".procable/questions/seeds")).unwrap().flatten().map(|e| e.file_name().to_string_lossy().into_owned()).filter(|n| n.ends_with(".json")).collect();
         assert_eq!(ledgers, vec![format!("{}.json", reference.trim_start_matches("seed:"))]);
         let key = tl(&proj).resolve(&reference).unwrap();
         assert!(key.len() == 32 && key.bytes().all(|b| b.is_ascii_hexdigit()), "{key}");

@@ -74,7 +74,7 @@ export function mountPlanReview(host: HTMLElement, packet: PlanPacket, options: 
   let toast: { label: string; before: PlanDraft; view: View; current?: string; timer: number } | null = null;
   /** The last decision and its undo, shown in the caption slot above the decision bar (or the send row on the summary), never floating over the controls. */
   const undoLine = () => toast ? `<p class="hint undo-line" role="status">${esc(toast.label)} <button type="button" class="text-action" id="undo">Undo${kbd('⌘Z')}</button></p>` : '';
-  let hintSeen = storage.get('impeccable.review.flipHint') === '1';
+  let hintSeen = storage.get('procable.review.flipHint') === '1';
   let resize: ResizeObserver | null = null;
   let strips: (() => void) | null = null;
   const transparency = new Map<string, boolean>();
@@ -581,7 +581,7 @@ export function mountPlanReview(host: HTMLElement, packet: PlanPacket, options: 
     root.querySelectorAll<HTMLElement>('[data-role="generated"] .frame').forEach(f => f.classList.toggle('flipped', on));
     const cap = root.querySelector<HTMLElement>('[data-role="generated"] figcaption .eyebrow');
     if (cap) cap.textContent = on ? 'In the comp' : priorRound(current ?? '', history)?.beforeUrl ? 'After' : 'Generated';
-    if (on && !hintSeen) { hintSeen = true; storage.set('impeccable.review.flipHint', '1'); root.querySelector('.hint')?.classList.add('gone'); }
+    if (on && !hintSeen) { hintSeen = true; storage.set('procable.review.flipHint', '1'); root.querySelector('.hint')?.classList.add('gone'); }
   }
 
   const onKey = (event: Event) => {

@@ -1,17 +1,17 @@
 # Windows engine signing
 
-Engine releases sign `impeccable.exe` with Azure Artifact Signing before
+Engine releases sign `procable.exe` with Azure Artifact Signing before
 computing release checksums. The publisher is **Renaissance Geek, Inc.**
 Existing release assets are immutable; never replace a shipped unsigned binary
 with signed bytes under the same version.
 
 ## Access boundary
 
-- Azure account: `impeccable-signing`, East US (`https://eus.codesigning.azure.net/`).
-- Public Trust certificate profile: `impeccable-windows`.
-- User-assigned managed identity: `impeccable-release-signing`, in the same resource group.
+- Azure account: `procable-signing`, East US (`https://eus.codesigning.azure.net/`).
+- Public Trust certificate profile: `procable-windows`.
+- User-assigned managed identity: `procable-release-signing`, in the same resource group.
 - Its only Azure role is **Artifact Signing Certificate Profile Signer**, scoped
-  to `impeccable-signing/certificateProfiles/impeccable-windows`, not the account
+  to `procable-signing/certificateProfiles/procable-windows`, not the account
   or subscription.
 - Federated credential: `github-windows-signing`, issuer
   `https://token.actions.githubusercontent.com`, audience `api://AzureADTokenExchange`,
@@ -32,11 +32,11 @@ the ability to sign as the company.
 
 The build job uploads Windows output as `unsigned-windows-x64`. A separate
 Windows runner downloads that artifact from the same run, signs exactly
-`impeccable.exe`, and requires a valid Authenticode signature, the expected
-publisher, and a timestamp before uploading `impeccable-windows-x64`. That
+`procable.exe`, and requires a valid Authenticode signature, the expected
+publisher, and a timestamp before uploading `procable-windows-x64`. That
 runner does not check out repository code or execute the downloaded engine.
 Only its job receives an OIDC token; only the publish job can write releases.
-Publication waits for successful signing and downloads only `impeccable-*`
+Publication waits for successful signing and downloads only `procable-*`
 artifacts, so it cannot package the unsigned intermediate.
 
 RFC 3161 timestamping is required because Azure issues short-lived signing

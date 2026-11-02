@@ -37,7 +37,7 @@ test('signs the exact bundle with version, size, digest, artifact and domain bou
   assert.equal(envelope.size, bundle.length);
   assert.equal(envelope.artifact, 'universal.zip');
   assert.equal(envelope.schema, 1);
-  assert.match(signaturePayload(envelope).toString(), /^impeccable-skill-bundle-v1\n/);
+  assert.match(signaturePayload(envelope).toString(), /^procable-skill-bundle-v1\n/);
   assert.ok(verify(null, signaturePayload(envelope), publicKey, Buffer.from(envelope.signature, 'hex')));
   for (const changed of [
     { version: '4.2.1' }, { size: 1 }, { sha256: '0'.repeat(64) },
@@ -58,7 +58,7 @@ test('rejects unknown or non-Ed25519 keys and invalid versions', () => {
 });
 
 test('1Password read uses a pipe, checks the pinned key, writes only a public signature', () => {
-  const root = mkdtempSync(path.join(tmpdir(), 'impeccable-sign-test-'));
+  const root = mkdtempSync(path.join(tmpdir(), 'procable-sign-test-'));
   try {
     const zipPath = path.join(root, 'universal.zip');
     writeFileSync(zipPath, 'test bundle');

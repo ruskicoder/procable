@@ -150,7 +150,7 @@ fn reserve_profile(parent: &std::path::Path, stamp: u128) -> CdpResult<PathBuf> 
     for _ in 0..128 {
         let serial = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let path = parent.join(format!(
-            "impeccable_dev_chrome_profile-{}-{stamp}-{serial}",
+            "procable_dev_chrome_profile-{}-{stamp}-{serial}",
             std::process::id()
         ));
         match std::fs::create_dir(&path) {
@@ -1451,7 +1451,7 @@ impl<'a> Page<'a> {
         if frame_id.is_empty() || loader_id.is_empty() {
             return Err(CdpError::new("no current document for isolated capture"));
         }
-        let created=self.send("Page.createIsolatedWorld",json!({"frameId":frame_id,"worldName":"impeccable-diagnostic-capture","grantUniveralAccess":false}))?;
+        let created=self.send("Page.createIsolatedWorld",json!({"frameId":frame_id,"worldName":"procable-diagnostic-capture","grantUniveralAccess":false}))?;
         let id = created["executionContextId"]
             .as_i64()
             .ok_or_else(|| CdpError::new("isolated world returned no context id"))?;
@@ -1732,7 +1732,7 @@ impl<'a> Page<'a> {
         } else {
             (y, height)
         };
-        let round = |v: f64| impeccable_core::js::math_round(v);
+        let round = |v: f64| procable_core::js::math_round(v);
         let timeout = if self.attached { ATTACHED_SCREENSHOT_TIMEOUT } else { PROTOCOL_TIMEOUT };
         let res = self.send_with_timeout(
             "Page.captureScreenshot",
@@ -2054,7 +2054,7 @@ pub fn page_error_key(message: &str) -> std::borrow::Cow<'_, str> {
 /// The first line, trimmed. [`cap_message`] makes the cut.
 fn first_line(s: &str) -> String {
     let first = s.split('\n').next().unwrap_or("");
-    impeccable_core::js::trim(first).chars().collect()
+    procable_core::js::trim(first).chars().collect()
 }
 
 /// The thrown value, typed: `TypeError: ...`, `Object {...}`, `boom`.
@@ -2203,7 +2203,7 @@ pub fn client_error_message(details: &Value) -> String {
             Some(Value::String(s)) => s.clone(),
             Some(Value::Bool(b)) => b.to_string(),
             Some(Value::Number(n)) => {
-                impeccable_core::js::number_to_string(n.as_f64().unwrap_or(f64::NAN))
+                procable_core::js::number_to_string(n.as_f64().unwrap_or(f64::NAN))
             }
             Some(other) => other.to_string(),
         };
@@ -2575,18 +2575,18 @@ mod tests {
 
 /// `browser-bundle/05-natives.js`: binds the built-ins the page JS uses
 /// (`Map`, `Set`, `Array.from`, `JSON.stringify`, ...) from
-/// `window.__impeccableNatives` when that stash exists, else from the
+/// `window.__procableNatives` when that stash exists, else from the
 /// current globals.
 pub const NATIVES_JS: &str = include_str!("../../../browser-bundle/05-natives.js");
 
 /// The new-document script [`Page`] registers for every document, which runs
 /// before the page's own scripts: it builds the natives from the untouched
-/// globals and stashes them on `window.__impeccableNatives`, non-enumerable
+/// globals and stashes them on `window.__procableNatives`, non-enumerable
 /// and read-only, so a page that declares its own global `Map` (work24.go.kr)
 /// or reassigns `Array.from` cannot reach the capture.
 pub fn natives_prelude_script() -> String {
     format!(
-        "(function(){{\n{NATIVES_JS}\ntry {{ Reflect.defineProperty(window, '__impeccableNatives', {{ value: __impeccableNatives, enumerable: false, writable: false, configurable: false }}); }} catch (e) {{}}\n}})()"
+        "(function(){{\n{NATIVES_JS}\ntry {{ Reflect.defineProperty(window, '__procableNatives', {{ value: __procableNatives, enumerable: false, writable: false, configurable: false }}); }} catch (e) {{}}\n}})()"
     )
 }
 
@@ -2615,7 +2615,7 @@ pub fn in_natives_scope(expression: &str) -> String {
     let mut out = String::with_capacity(expression.len() + 320);
     out.push_str("{ const { ");
     out.push_str(&NATIVE_NAMES.join(", "));
-    out.push_str(" } = (window.__impeccableNatives || window); ");
+    out.push_str(" } = (window.__procableNatives || window); ");
     out.push_str(expression);
     out.push_str("\n}");
     out

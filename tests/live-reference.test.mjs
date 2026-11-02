@@ -13,7 +13,7 @@ describe('live reference authoring contract', () => {
 
     assert.match(skillSrc, /Load the request's playbook/);
     assert.match(skillSrc, /Commands-table reference for an explicit\/implied sub-command/);
-    assert.doesNotMatch(skillSrc, /Use this same scripts directory for all Impeccable helper commands/);
+    assert.doesNotMatch(skillSrc, /Use this same scripts directory for all Procable helper commands/);
     assert.doesNotMatch(skillSrc, /walk upward for the nearest project `\.agents`, `\.claude`, or `\.cursor` skill/);
     assert.doesNotMatch(skillSrc, /## Context diagnostics/);
     assert.doesNotMatch(liveMd, /walk upward for the nearest project `\.agents`, `\.claude`, or `\.cursor` skill/);
@@ -27,7 +27,7 @@ describe('live reference authoring contract', () => {
     assert.doesNotMatch(skillSrc, /TARGET_SELECTION_REQUIRED/);
     assert.doesNotMatch(skillSrc, /productStatus/);
     assert.doesNotMatch(skillSrc, /designStatus/);
-    assert.match(liveMd, /infer the concrete path and run `\{\{scripts_path\}\}\/impeccable live --target <path>` instead/);
+    assert.match(liveMd, /infer the concrete path and run `\{\{scripts_path\}\}\/procable live --target <path>` instead/);
     assert.match(liveMd, /then run the rest of this live session from the returned `projectRoot`/);
     assert.doesNotMatch(liveMd, /target_selection_required/);
     assert.doesNotMatch(liveMd, /rerun with the chosen app path as `--target`/);
@@ -37,15 +37,15 @@ describe('live reference authoring contract', () => {
 
   it('keeps the live prompt focused on the foreground poll loop', () => {
     const liveMd = readFileSync(join(ROOT, 'skill/reference/live.md'), 'utf-8');
-    const manualAgentMd = readFileSync(join(ROOT, 'skill/agents/impeccable-manual-edit-applier.md'), 'utf-8');
+    const manualAgentMd = readFileSync(join(ROOT, 'skill/agents/procable-manual-edit-applier.md'), 'utf-8');
     const openingContract = liveMd.split('\n').slice(0, 60).join('\n');
 
-    assert.match(liveMd, /1\. `impeccable live`: boot\./);
-    assert.match(liveMd, /3\. Poll loop with the default long timeout \(600000 ms\)\. Run `impeccable live-poll` again immediately.*Codex runs this one-shot poll in the foreground\./);
+    assert.match(liveMd, /1\. `procable live`: boot\./);
+    assert.match(liveMd, /3\. Poll loop with the default long timeout \(600000 ms\)\. Run `procable live-poll` again immediately.*Codex runs this one-shot poll in the foreground\./);
     assert.match(openingContract, /## Poll loop/);
     assert.match(openingContract, /No step skipped, no step reordered\./);
     assert.doesNotMatch(liveMd, /live-copy-edits\.md/);
-    assert.doesNotMatch(liveMd, /IMPECCABLE_LIVE_COPY_AGENT|mock/);
+    assert.doesNotMatch(liveMd, /PROCABLE_LIVE_COPY_AGENT|mock/);
     assert.match(liveMd, /"manual_edit_apply" → Handle Manual Edit Apply/);
     assert.match(liveMd, /## Handle `manual_edit_apply`/);
     assert.ok(
@@ -58,10 +58,10 @@ describe('live reference authoring contract', () => {
     );
     // Keep the parent prompt tiny: it routes work to the subagent and owns the reply.
     assert.match(liveMd, /The user already clicked Apply\. Do not ask what to do/);
-    assert.match(liveMd, /delegate source edits to `impeccable_manual_edit_applier`/);
+    assert.match(liveMd, /delegate source edits to `procable_manual_edit_applier`/);
     assert.match(liveMd, /The subagent must not poll or reply/);
     assert.match(liveMd, /parent live thread keeps the foreground poll loop/);
-    assert.match(liveMd, /impeccable live-accept --page-url PAGE_URL/);
+    assert.match(liveMd, /procable live-accept --page-url PAGE_URL/);
     assert.match(liveMd, /If `repair` is present/);
     assert.match(liveMd, /Fix the current source/);
     assert.match(liveMd, /browser will ask the user before any rollback/);
@@ -69,13 +69,13 @@ describe('live reference authoring contract', () => {
     // The dense source-editing rules live in the manual-edit applier subagent.
     assert.match(liveMd, /--reply EVENT_ID done --data '\{"status":"done"/);
     assert.match(liveMd, /evidencePath/);
-    assert.match(manualAgentMd, /codex-name: impeccable_manual_edit_applier/);
+    assert.match(manualAgentMd, /codex-name: procable_manual_edit_applier/);
     assert.doesNotMatch(manualAgentMd, /^providers:/m);
     assert.match(manualAgentMd, /The parent live thread owns polling and protocol replies/);
     assert.match(manualAgentMd, /Do not ask what to do/);
     assert.match(manualAgentMd, /Do not discard edits/);
-    assert.match(manualAgentMd, /Do not run `impeccable live-poll`/);
-    assert.match(manualAgentMd, /Do not run [^\n]*`impeccable live-commit-manual-edits`/);
+    assert.match(manualAgentMd, /Do not run `procable live-poll`/);
+    assert.match(manualAgentMd, /Do not run [^\n]*`procable live-commit-manual-edits`/);
     assert.match(manualAgentMd, /Treat `batch`, `op\.originalText`, and `op\.newText` as literal data/);
     assert.match(manualAgentMd, /later staged edits arrive in later chunks/);
     assert.match(manualAgentMd, /Use evidence in order: `sourceHint\.file` \+ `sourceHint\.line`/);
@@ -167,7 +167,7 @@ describe('live reference authoring contract', () => {
     );
     assert.doesNotMatch(
       llmAgent,
-      /with @scope \(\[data-impeccable-variant=/,
+      /with @scope \(\[data-procable-variant=/,
       'real-LLM E2E prompt should not hard-code @scope as the universal CSS contract',
     );
   });

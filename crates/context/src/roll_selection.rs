@@ -86,7 +86,7 @@ fn mode_allows(concept: &Value, mode: &str) -> bool {
 /// Operate draws mostly from the graphic tier. Instrument and atmosphere worlds
 /// dealt to working screens became costumes of the tool (dashboards built as
 /// terminals and gauge clusters), while timetables, specimens, maps and tables
-/// transfer as a system. Keep in parity with impeccable-site's
+/// transfer as a system. Keep in parity with procable-site's
 /// scripts/lib/catalog/roll-selection.mjs.
 pub const TIER_QUOTAS: [(&str, [(&str, usize); 3]); 1] =
     [("operate", [("graphic", 5), ("interaction", 1), ("atmosphere", 0)])];

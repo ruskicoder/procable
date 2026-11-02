@@ -1,9 +1,9 @@
-//! wasm exports over `impeccable_core::browser::driver` (see
+//! wasm exports over `procable_core::browser::driver` (see
 //! docs/WASM-BUNDLE.md for the contract).
 
 use crate::dom_source::with_dom;
-use impeccable_core::browser::driver;
-use impeccable_core::browser::{BrowserFinding, FindingGroup};
+use procable_core::browser::driver;
+use procable_core::browser::{BrowserFinding, FindingGroup};
 use wasm_bindgen::prelude::*;
 
 /// `serializeFindings(allFindings)`: `groups_json` is `[{ el, findings }]`.
@@ -36,6 +36,6 @@ pub fn visual_contrast_result_finding(el: u32, existing_json: &str, result_json:
 /// `measureHiddenTextDOM()`.
 #[wasm_bindgen]
 pub fn measure_hidden_text() -> String {
-    let m = with_dom(|dom| impeccable_core::browser::page_checks::measure_hidden_text_dom(dom));
+    let m = with_dom(|dom| procable_core::browser::page_checks::measure_hidden_text_dom(dom));
     serde_json::to_string(&m).unwrap_or_else(|_| "{\"totalChars\":0,\"hiddenChars\":0,\"hiddenSamples\":[]}".into())
 }

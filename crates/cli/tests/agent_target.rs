@@ -132,25 +132,25 @@ static START_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 impl Server {
     fn start(tag: &str) -> Server {
         let _serialized = START_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-        let dir = std::env::temp_dir().join(format!("impeccable-agent-target-{}-{}", tag, std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-agent-target-{}-{}", tag, std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(dir.join(".impeccable/live")).unwrap();
+        std::fs::create_dir_all(dir.join(".procable/live")).unwrap();
         std::fs::write(dir.join("index.html"), "<html><body><h1>t</h1></body></html>").unwrap();
         let port = free_port();
-        let child = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+        let child = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
             .args(["live-server", &format!("--port={}", port)])
             .current_dir(&dir)
-            .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
+            .env("PROCABLE_LIVE_COPY_AGENT", "off")
             // A short timeout keeps the browser_timeout case fast; the env
             // override exists exactly for this. The lease shrinks with it.
-            .env("IMPECCABLE_AGENT_TARGET_TIMEOUT_MS", "400")
-            .env("IMPECCABLE_AGENT_TARGET_CLAIM_LEASE_MS", "250")
-            .env("IMPECCABLE_AGENT_TARGET_RESOLVE_GRACE_MS", "150")
+            .env("PROCABLE_AGENT_TARGET_TIMEOUT_MS", "400")
+            .env("PROCABLE_AGENT_TARGET_CLAIM_LEASE_MS", "250")
+            .env("PROCABLE_AGENT_TARGET_RESOLVE_GRACE_MS", "150")
             .stdout(std::process::Stdio::null())
             .stderr(std::process::Stdio::null())
             .spawn()
             .expect("spawn live-server");
-        let pid_file = dir.join(".impeccable/live/server.json");
+        let pid_file = dir.join(".procable/live/server.json");
         // Sixteen servers spawn at once under the default test parallelism; a
         // loaded machine has taken more than ten seconds to write the first
         // pid file.
@@ -540,7 +540,7 @@ fn agent_target_resolves_from_the_generate_event_when_the_result_never_lands() {
     assert_eq!(late["granted"], serde_json::json!(false), "{late}");
     assert_eq!(late["pending"], serde_json::json!(false), "{late}");
     // The journal carries the event without the envelope.
-    let journal = std::fs::read_to_string(s.dir.join(".impeccable/live/sessions/aabbccdd.jsonl")).unwrap();
+    let journal = std::fs::read_to_string(s.dir.join(".procable/live/sessions/aabbccdd.jsonl")).unwrap();
     assert!(journal.contains("generate"), "{journal}");
     assert!(!journal.contains("agentTarget"), "{journal}");
     let _ = &mut b;
@@ -572,7 +572,7 @@ fn agent_target_refuses_a_generate_event_from_a_superseded_claimant() {
     assert_eq!(status, 409, "{body}");
     assert_eq!(body["error"], serde_json::json!("agent_target_already_served"));
     assert!(body.get("sessionId").is_none(), "{body}");
-    assert!(!s.dir.join(".impeccable/live/sessions/aaaaaaaa.jsonl").exists());
+    assert!(!s.dir.join(".procable/live/sessions/aaaaaaaa.jsonl").exists());
     // B's Go serves the request.
     let (status, _) = post_json(s.port, "/events", generate_event_for(&s, &target_id, "bbbbbbbb", "tab-b"));
     assert_eq!(status, 200);
@@ -583,7 +583,7 @@ fn agent_target_refuses_a_generate_event_from_a_superseded_claimant() {
     let (status, body) = post_json(s.port, "/events", generate_event_for(&s, &target_id, "aaaaaaa2", "tab-a"));
     assert_eq!(status, 409, "{body}");
     assert_eq!(body["sessionId"], serde_json::json!("bbbbbbbb"));
-    assert!(!s.dir.join(".impeccable/live/sessions/aaaaaaa2.jsonl").exists());
+    assert!(!s.dir.join(".procable/live/sessions/aaaaaaa2.jsonl").exists());
     let _ = &mut b;
 }
 
@@ -599,7 +599,7 @@ fn agent_target_refuses_a_generate_event_from_a_page_that_never_held_the_lease()
     // Before any claim, no page may open the session from an event.
     let (status, body) = post_json(s.port, "/events", generate_event_for(&s, &target_id, "cccccc01", "tab-b"));
     assert_eq!(status, 409, "{body}");
-    assert!(!s.dir.join(".impeccable/live/sessions/cccccc01.jsonl").exists());
+    assert!(!s.dir.join(".procable/live/sessions/cccccc01.jsonl").exists());
     // A holds the lease; it lapses (250ms) with no rescuer. A stranger's
     // event is still refused: a lapsed lease belongs to A until a rescuer
     // claims.
@@ -607,7 +607,7 @@ fn agent_target_refuses_a_generate_event_from_a_page_that_never_held_the_lease()
     std::thread::sleep(Duration::from_millis(300));
     let (status, body) = post_json(s.port, "/events", generate_event_for(&s, &target_id, "cccccc02", "tab-b"));
     assert_eq!(status, 409, "{body}");
-    assert!(!s.dir.join(".impeccable/live/sessions/cccccc02.jsonl").exists());
+    assert!(!s.dir.join(".procable/live/sessions/cccccc02.jsonl").exists());
     // A's own late Go is welcome and answers the request.
     let (status, body) = post_json(s.port, "/events", generate_event_for(&s, &target_id, "cccccc03", "tab-a"));
     assert_eq!(status, 200, "{body}");
@@ -630,7 +630,7 @@ fn agent_target_welcomes_the_generate_event_of_the_session_that_answered() {
     assert_eq!(verdict["sessionId"], serde_json::json!("cccccccc"), "{verdict}");
     let (status, body) = post_json(s.port, "/events", generate_event_for(&s, &target_id, "cccccccc", "tab-a"));
     assert_eq!(status, 200, "{body}");
-    assert!(s.dir.join(".impeccable/live/sessions/cccccccc.jsonl").exists());
+    assert!(s.dir.join(".procable/live/sessions/cccccccc.jsonl").exists());
 }
 
 #[test]
@@ -650,7 +650,7 @@ fn agent_target_fences_a_generate_event_that_lands_after_the_timeout() {
     assert_eq!(status, 409, "{body}");
     assert_eq!(body["error"], serde_json::json!("agent_target_already_served"));
     assert!(body.get("sessionId").is_none(), "{body}");
-    assert!(!s.dir.join(".impeccable/live/sessions/eeeeeeee.jsonl").exists());
+    assert!(!s.dir.join(".procable/live/sessions/eeeeeeee.jsonl").exists());
 }
 
 #[test]
@@ -662,7 +662,7 @@ fn agent_target_refuses_a_generate_event_for_a_target_it_never_held() {
     assert_eq!(status, 409, "{body}");
     assert_eq!(body["error"], serde_json::json!("agent_target_already_served"));
     assert!(body.get("sessionId").is_none(), "{body}");
-    assert!(!s.dir.join(".impeccable/live/sessions/ffffffff.jsonl").exists());
+    assert!(!s.dir.join(".procable/live/sessions/ffffffff.jsonl").exists());
     // Without an envelope the same event is an ordinary Go.
     let mut plain = generate_event_for(&s, "0badf00d", "ffffffff", "tab-a");
     plain.as_object_mut().unwrap().remove("agentTarget");
@@ -754,10 +754,10 @@ fn agent_target_result_is_honored_only_from_the_lease_holder() {
 
 /// The generate verb as the agent runs it, against this helper's dir.
 fn spawn_cli(s: &Server, args: &[&str]) -> std::process::Child {
-    std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args(args)
         .current_dir(&s.dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
@@ -825,11 +825,11 @@ fn live_generate_boot_and_open_run_the_lane_from_a_cold_project() {
     // No helper running: --boot starts one (the lane's flags), --open hands the
     // dev URL to the configured browser, and the overlay that page brings up
     // serves the target.
-    let dir = std::env::temp_dir().join(format!("impeccable-agent-target-cold-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-agent-target-cold-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(dir.join(".impeccable/live")).unwrap();
+    std::fs::create_dir_all(dir.join(".procable/live")).unwrap();
     std::fs::write(dir.join("index.html"), "<html><body><h1>t</h1></body></html>").unwrap();
-    std::fs::write(dir.join(".impeccable/live/config.json"), "{\"files\":[\"index.html\"],\"insertBefore\":\"</body>\",\"commentSyntax\":\"html\"}").unwrap();
+    std::fs::write(dir.join(".procable/live/config.json"), "{\"files\":[\"index.html\"],\"insertBefore\":\"</body>\",\"commentSyntax\":\"html\"}").unwrap();
     // The "browser": a script that records the URL it was asked to open.
     let opener = dir.join("opener.sh");
     std::fs::write(&opener, format!("#!/bin/sh\necho \"$1\" > {}\n", dir.join("opened.txt").display())).unwrap();
@@ -838,7 +838,7 @@ fn live_generate_boot_and_open_run_the_lane_from_a_cold_project() {
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&opener, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
-    std::fs::write(dir.join(".impeccable/config.local.json"), format!("{{\"browser\":\"{}\"}}", opener.display())).unwrap();
+    std::fs::write(dir.join(".procable/config.local.json"), format!("{{\"browser\":\"{}\"}}", opener.display())).unwrap();
     // A stand-in dev server serving the injected page, so --dev-url finds it.
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
     let dev_port = listener.local_addr().unwrap().port();
@@ -853,12 +853,12 @@ fn live_generate_boot_and_open_run_the_lane_from_a_cold_project() {
             let _ = std::io::Write::write_all(&mut stream, res.as_bytes());
         }
     });
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args(["live-generate", "--selector", "h1", "--action", "bolder", "--boot", "--open", "--wait-for-browser", "1500"])
         .current_dir(&dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
-        .env("IMPECCABLE_DEV_URL_CANDIDATES", format!("http://127.0.0.1:{}/", dev_port))
-        .env("IMPECCABLE_AGENT_TARGET_TIMEOUT_MS", "400")
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_DEV_URL_CANDIDATES", format!("http://127.0.0.1:{}/", dev_port))
+        .env("PROCABLE_AGENT_TARGET_TIMEOUT_MS", "400")
         .output()
         .expect("cli");
     let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
@@ -876,7 +876,7 @@ fn live_generate_boot_and_open_run_the_lane_from_a_cold_project() {
     assert_eq!(v["opened"]["url"], serde_json::json!(format!("http://127.0.0.1:{}/", dev_port)));
     assert!(v["_instructions"].as_str().unwrap().contains("opened in the browser"), "{v}");
     // Cleanup: stop the helper the boot started.
-    let info: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join(".impeccable/live/server.json")).unwrap()).unwrap();
+    let info: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join(".procable/live/server.json")).unwrap()).unwrap();
     let _ = http(info["port"].as_u64().unwrap() as u16, "GET", &format!("/stop?token={}", info["token"].as_str().unwrap()), None);
     std::thread::sleep(Duration::from_millis(500));
     let _ = std::fs::remove_dir_all(&dir);
@@ -888,11 +888,11 @@ fn live_generate_boot_and_open_run_the_lane_from_a_cold_project() {
 #[cfg(unix)]
 #[test]
 fn live_generate_stops_waiting_when_the_dev_server_dies() {
-    let dir = std::env::temp_dir().join(format!("impeccable-agent-target-devgone-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-agent-target-devgone-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(dir.join(".impeccable/live")).unwrap();
+    std::fs::create_dir_all(dir.join(".procable/live")).unwrap();
     std::fs::write(dir.join("index.html"), "<html><body><h1>t</h1></body></html>").unwrap();
-    std::fs::write(dir.join(".impeccable/live/config.json"), "{\"files\":[\"index.html\"],\"insertBefore\":\"</body>\",\"commentSyntax\":\"html\"}").unwrap();
+    std::fs::write(dir.join(".procable/live/config.json"), "{\"files\":[\"index.html\"],\"insertBefore\":\"</body>\",\"commentSyntax\":\"html\"}").unwrap();
     // A stand-in dev server that serves the injected page until told to stop,
     // then closes its port: the server a harness reaps mid-session.
     let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
@@ -919,12 +919,12 @@ fn live_generate_stops_waiting_when_the_dev_server_dies() {
         }
     });
     let started = std::time::Instant::now();
-    let child = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let child = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args(["live-generate", "--selector", "h1", "--action", "bolder", "--boot", "--dev-url", &dev_url, "--wait-for-browser", "30000"])
         .current_dir(&dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
-        .env("IMPECCABLE_DEV_URL_CANDIDATES", &dev_url)
-        .env("IMPECCABLE_AGENT_TARGET_TIMEOUT_MS", "400")
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_DEV_URL_CANDIDATES", &dev_url)
+        .env("PROCABLE_AGENT_TARGET_TIMEOUT_MS", "400")
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::null())
         .spawn()
@@ -942,7 +942,7 @@ fn live_generate_stops_waiting_when_the_dev_server_dies() {
     assert!(v["_instructions"].as_str().unwrap().contains("stopped answering"), "{v}");
     assert!(elapsed < Duration::from_secs(20), "the wait ran out its budget instead of noticing: {:?}", elapsed);
     // Cleanup: stop the helper the boot started.
-    let info: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join(".impeccable/live/server.json")).unwrap()).unwrap();
+    let info: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join(".procable/live/server.json")).unwrap()).unwrap();
     let _ = http(info["port"].as_u64().unwrap() as u16, "GET", &format!("/stop?token={}", info["token"].as_str().unwrap()), None);
     std::thread::sleep(Duration::from_millis(500));
     let _ = std::fs::remove_dir_all(&dir);
@@ -971,12 +971,12 @@ fn live_generate_asks_the_harness_to_open_the_page_instead_of_a_second_browser()
     let run = |provider: &str, extra: &[&str]| -> serde_json::Value {
         let mut args = vec!["live-generate", "--selector", "h1", "--action", "bolder"];
         args.extend_from_slice(extra);
-        let out = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+        let out = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
             .args(&args)
             .current_dir(&s.dir)
-            .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
-            .env("IMPECCABLE_PROVIDER_ID", provider)
-            .env("IMPECCABLE_DEV_URL_CANDIDATES", "http://127.0.0.1:1/")
+            .env("PROCABLE_LIVE_COPY_AGENT", "off")
+            .env("PROCABLE_PROVIDER_ID", provider)
+            .env("PROCABLE_DEV_URL_CANDIDATES", "http://127.0.0.1:1/")
             .output()
             .expect("cli");
         let stdout = String::from_utf8_lossy(&out.stdout).into_owned();
@@ -1010,12 +1010,12 @@ fn live_generate_asks_the_harness_to_open_the_page_instead_of_a_second_browser()
         use std::os::unix::fs::PermissionsExt;
         std::fs::set_permissions(&opener, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args(["live-generate", "--selector", "h1", "--action", "bolder", "--dev-url", &hint, "--open"])
         .current_dir(&s.dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
-        .env("IMPECCABLE_PROVIDER_ID", "cursor")
-        .env("IMPECCABLE_DEV_URL_CANDIDATES", "http://127.0.0.1:1/")
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_PROVIDER_ID", "cursor")
+        .env("PROCABLE_DEV_URL_CANDIDATES", "http://127.0.0.1:1/")
         .env("BROWSER", opener.to_string_lossy().to_string())
         .output()
         .expect("cli");
@@ -1026,13 +1026,13 @@ fn live_generate_asks_the_harness_to_open_the_page_instead_of_a_second_browser()
     std::thread::sleep(Duration::from_millis(300));
     assert!(!s.dir.join("guard-opened.txt").exists(), "the harness browser guard must not launch the opener");
     // The user's explicit choice still wins on that harness.
-    let out = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let out = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args(["live-generate", "--selector", "h1", "--action", "bolder", "--dev-url", &hint, "--open", "--wait-for-browser", "500"])
         .current_dir(&s.dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
-        .env("IMPECCABLE_PROVIDER_ID", "cursor")
-        .env("IMPECCABLE_DEV_URL_CANDIDATES", "http://127.0.0.1:1/")
-        .env("IMPECCABLE_BROWSER", opener.to_string_lossy().to_string())
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_PROVIDER_ID", "cursor")
+        .env("PROCABLE_DEV_URL_CANDIDATES", "http://127.0.0.1:1/")
+        .env("PROCABLE_BROWSER", opener.to_string_lossy().to_string())
         .output()
         .expect("cli");
     let explicit: serde_json::Value = serde_json::from_str(String::from_utf8_lossy(&out.stdout).trim()).unwrap();

@@ -46,7 +46,7 @@ fn js_str(v: Option<&Value>) -> String {
         Some(Value::Bool(b)) => b.to_string(),
         Some(Value::Number(n)) => n
             .as_f64()
-            .map(impeccable_context::util::js_number_to_string)
+            .map(procable_context::util::js_number_to_string)
             .unwrap_or_default(),
         Some(Value::Array(a)) => a
             .iter()
@@ -127,7 +127,7 @@ pub fn instructions_for_event(event: &Map<String, Value>, self_cmd: &str) -> Opt
                     )
                 } else {
                     format!(
-                        "Discard did NOT restore the source: {}. If the impeccable-variants wrapper for {} is still in source, replace it with the original element by hand (the VCS diff shows what it replaced). Once no impeccable-variants marker for {} remains in source, run {} and poll again.",
+                        "Discard did NOT restore the source: {}. If the procable-variants wrapper for {} is still in source, replace it with the original element by hand (the VCS diff shows what it replaced). Once no procable-variants marker for {} remains in source, run {} and poll again.",
                         err, id, id, complete
                     )
                 }
@@ -148,14 +148,14 @@ pub fn instructions_for_event(event: &Map<String, Value>, self_cmd: &str) -> Opt
                 ""
             };
             Some(format!(
-                "The user already clicked Apply; never ask, discard, or redirect. Delegate the source edits to the impeccable_manual_edit_applier subagent when available (pass cwd, scripts path, event id, page URL, chunk/deadline, batch, evidencePath); it must not poll or reply. {}Reply exactly once: {} (status \"partial\"/\"error\" with failed[] when not every entry applied). Then poll again.",
+                "The user already clicked Apply; never ask, discard, or redirect. Delegate the source edits to the procable_manual_edit_applier subagent when available (pass cwd, scripts path, event id, page URL, chunk/deadline, batch, evidencePath); it must not poll or reply. {}Reply exactly once: {} (status \"partial\"/\"error\" with failed[] when not every entry applied). Then poll again.",
                 repair,
                 reply_cmd(self_cmd, &id, "done --data '{\"status\":\"done\",\"appliedEntryIds\":[...],\"failed\":[],\"files\":[...],\"notes\":[]}'")
             ))
         }
         "timeout" => Some("No event arrived; poll again immediately.".to_string()),
         "exit" => Some(format!(
-            "Session over: kill any background poll, then {} stop (removes the injected script tag). Sweep leftover impeccable-variants-start / impeccable-carbonize-start markers from source.",
+            "Session over: kill any background poll, then {} stop (removes the injected script tag). Sweep leftover procable-variants-start / procable-carbonize-start markers from source.",
             script_cmd(self_cmd, "live-server")
         )),
         _ => None,
@@ -232,7 +232,7 @@ fn generate_instructions(event: &Map<String, Value>, self_cmd: &str) -> String {
     // knob budget. The lane is a different way in, not a different design.
     let action = event.get("action").filter(|a| truthy(Some(a)));
     match action {
-        Some(a) if a.as_str() != Some("impeccable") => steps.push(format!(
+        Some(a) if a.as_str() != Some("procable") => steps.push(format!(
             "Action is \"{}\": read reference/{}.md before planning; its MUST params are non-negotiable. {}",
             js_str(Some(a)),
             js_str(Some(a)),
@@ -261,7 +261,7 @@ fn svelte_component_instructions(event: &Map<String, Value>, scaffold: &Value) -
     let dir = js_str(scaffold.get("componentDir"));
     let count = js_str(event.get("count"));
     format!(
-        "Svelte component preview. EDIT the existing stubs {dir}/v1.svelte ... v{count}.svelte in place; never delete or recreate them; do not read them back (the prop-substituted markup is in scaffold.componentStubMarkup). Keep the stub's control flow ({{#each}}, {{#if}}) and propContract prop names exactly; never flatten a loop into literal items. The stub <style> is seeded with the source rules that style the selection; restyle or delete freely, and know that any seeded rule you do not re-declare is REMOVED from source on accept (the preview never applied it). ALL your CSS goes inside that ONE existing <style> block: Svelte forbids a second top-level style element, and a publish with a non-compiling variant is bounced back to you with file and line. Semantic class selectors only: no @scope, no data-impeccable-* attributes. Params go in {dir}/params.json keyed by variant number (never an attribute); author knob CSS against var(--p-<id>, default) and :global([data-p-<id>=\"...\"]). Reply with --file {file}. Accept later merges everything into {source} mechanically; you have no post-accept cleanup.",
+        "Svelte component preview. EDIT the existing stubs {dir}/v1.svelte ... v{count}.svelte in place; never delete or recreate them; do not read them back (the prop-substituted markup is in scaffold.componentStubMarkup). Keep the stub's control flow ({{#each}}, {{#if}}) and propContract prop names exactly; never flatten a loop into literal items. The stub <style> is seeded with the source rules that style the selection; restyle or delete freely, and know that any seeded rule you do not re-declare is REMOVED from source on accept (the preview never applied it). ALL your CSS goes inside that ONE existing <style> block: Svelte forbids a second top-level style element, and a publish with a non-compiling variant is bounced back to you with file and line. Semantic class selectors only: no @scope, no data-procable-* attributes. Params go in {dir}/params.json keyed by variant number (never an attribute); author knob CSS against var(--p-<id>, default) and :global([data-p-<id>=\"...\"]). Reply with --file {file}. Accept later merges everything into {source} mechanically; you have no post-accept cleanup.",
         dir = dir,
         count = count,
         file = js_str(scaffold.get("file")),
@@ -310,7 +310,7 @@ fn insert_scaffold_instructions(event: &Map<String, Value>, self_cmd: &str) -> S
     {
         let s = scaffold.unwrap();
         return format!(
-            "{} Write each inserted variant as a single-root Svelte component under {} (no data-impeccable-* attributes, CSS in each component's <style>). Never edit the route during generation; reply with --file {}.",
+            "{} Write each inserted variant as a single-root Svelte component under {} (no data-procable-* attributes, CSS in each component's <style>). Never edit the route during generation; reply with --file {}.",
             base,
             js_str(s.get("componentDir")),
             js_str(s.get("file"))
@@ -361,7 +361,7 @@ fn accept_instructions(event: &Map<String, Value>, self_cmd: &str) -> String {
     let handled = result.get("handled") == Some(&Value::Bool(true));
     if handled && result.get("carbonize") == Some(&Value::Bool(true)) {
         return format!(
-            "{}Carbonize cleanup is REQUIRED now, before the next poll, in {}: (1) locate the impeccable-carbonize-start/end block and read the impeccable-param-values comment; (2) move the CSS rules into the stylesheet that owns this area; (3) bake params while rewriting selectors (@scope wrappers to semantic classes, keep only the chosen data-p branch, substitute range literals); (4) unwrap the accepted content and drop every data-impeccable-* / data-p-* attribute; (5) delete the inline <style>, the param-values comment, and both markers plus dead @scope rules. Then run {} --id {} and verify phase \"completed\"; it refuses with source_dirty while leftovers remain. Poll again only after that.",
+            "{}Carbonize cleanup is REQUIRED now, before the next poll, in {}: (1) locate the procable-carbonize-start/end block and read the procable-param-values comment; (2) move the CSS rules into the stylesheet that owns this area; (3) bake params while rewriting selectors (@scope wrappers to semantic classes, keep only the chosen data-p branch, substitute range literals); (4) unwrap the accepted content and drop every data-procable-* / data-p-* attribute; (5) delete the inline <style>, the param-values comment, and both markers plus dead @scope rules. Then run {} --id {} and verify phase \"completed\"; it refuses with source_dirty while leftovers remain. Poll again only after that.",
             prefix,
             js_str(result.get("file")),
             script_cmd(self_cmd, "live-complete"),
@@ -425,7 +425,7 @@ fn accept_instructions(event: &Map<String, Value>, self_cmd: &str) -> String {
         _ => "the session source file".to_string(),
     };
     format!(
-        "{}No mechanical accept result; read {}, find the impeccable markers, and finish the merge by hand. Poll again after.",
+        "{}No mechanical accept result; read {}, find the procable markers, and finish the merge by hand. Poll again after.",
         prefix, file
     )
 }
@@ -450,8 +450,8 @@ mod tests {
 
     #[test]
     fn an_agent_initiated_generate_plans_exactly_like_a_users() {
-        let lane = generate_instructions(&generate_event(Some("agent")), "impeccable");
-        let user = generate_instructions(&generate_event(None), "impeccable");
+        let lane = generate_instructions(&generate_event(Some("agent")), "procable");
+        let user = generate_instructions(&generate_event(None), "procable");
         assert_eq!(lane, user, "the lane is a different way in, not a different design");
         assert!(lane.contains("read reference/bolder.md before planning"), "{lane}");
         assert!(lane.contains("live.md section 4"), "{lane}");
@@ -470,21 +470,21 @@ mod tests {
         };
         let refused = instructions_for_event(
             &event(json!({ "handled": false, "file": "src/App.tsx", "error": "Original not found" })),
-            "impeccable",
+            "procable",
         )
         .unwrap();
         assert!(refused.starts_with("Discard did NOT restore the source: Original not found."), "{refused}");
         assert!(!refused.contains("Original restored"), "{refused}");
-        assert!(refused.contains("impeccable live-complete --id ab12cd34 --discarded"), "{refused}");
+        assert!(refused.contains("procable live-complete --id ab12cd34 --discarded"), "{refused}");
         let locked = instructions_for_event(
             &event(json!({ "handled": false, "mode": "error", "file": "src/App.tsx", "error": "source_locked" })),
-            "impeccable",
+            "procable",
         )
         .unwrap();
-        assert!(locked.contains("Re-run impeccable live-accept --id ab12cd34 --discard"), "{locked}");
+        assert!(locked.contains("Re-run procable live-accept --id ab12cd34 --discard"), "{locked}");
         assert!(locked.contains("do NOT hand-edit"), "{locked}");
-        assert!(locked.contains("impeccable live-complete --id ab12cd34 --discarded"), "{locked}");
-        let restored = instructions_for_event(&event(json!({ "handled": true, "file": "src/App.tsx" })), "impeccable").unwrap();
+        assert!(locked.contains("procable live-complete --id ab12cd34 --discarded"), "{locked}");
+        let restored = instructions_for_event(&event(json!({ "handled": true, "file": "src/App.tsx" })), "procable").unwrap();
         assert!(restored.starts_with("Original restored"), "{restored}");
     }
 }

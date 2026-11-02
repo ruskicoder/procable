@@ -5,9 +5,9 @@
         "matcher": "^run_shell_command$",
         "hooks": [
           {
-            "name": "impeccable-session",
+            "name": "procable-session",
             "type": "command",
-            "command": "[ ! -f $GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable ] || $GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable hook",
+            "command": "[ ! -f $GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable ] || $GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable hook",
             "timeout": 5000
           }
         ]
@@ -17,9 +17,9 @@
       {
         "hooks": [
           {
-            "name": "impeccable-completion",
+            "name": "procable-completion",
             "type": "command",
-            "command": "[ ! -f $GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable ] || $GEMINI_PROJECT_DIR/.gemini/skills/impeccable/scripts/impeccable hook",
+            "command": "[ ! -f $GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable ] || $GEMINI_PROJECT_DIR/.gemini/skills/procable/scripts/procable hook",
             "timeout": 30000
           }
         ]

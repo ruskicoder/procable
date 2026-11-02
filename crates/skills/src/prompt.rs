@@ -5,7 +5,7 @@
 
 use std::io::Write;
 
-use impeccable_common::Io;
+use procable_common::Io;
 
 use crate::util::utf16_len;
 use crate::{Flow, R};

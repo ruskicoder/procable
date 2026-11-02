@@ -7,9 +7,9 @@ use markup5ever::data::NAMED_ENTITIES;
 use once_cell::sync::Lazy;
 use regex::{Regex, RegexBuilder};
 
-pub const MARKER_OPEN_TEXT: &str = "impeccable-live-start";
-pub const MARKER_CLOSE_TEXT: &str = "impeccable-live-end";
-pub const CSP_MARKER_ATTR: &str = "data-impeccable-csp-original";
+pub const MARKER_OPEN_TEXT: &str = "procable-live-start";
+pub const MARKER_CLOSE_TEXT: &str = "procable-live-end";
+pub const CSP_MARKER_ATTR: &str = "data-procable-csp-original";
 /// JS: TAG_PATCH_MARKERS
 pub const TAG_PATCH_MARKERS: [&str; 2] = [MARKER_OPEN_TEXT, CSP_MARKER_ATTR];
 
@@ -122,10 +122,10 @@ pub fn insert_tag(
 }
 
 static REMOVE_HTML_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"([ \t]*)<!--\s*impeccable-live-start\s*-->[\s\S]*?<!--\s*impeccable-live-end\s*-->([ \t]*(?:\r\n|\n|\r|$)?)").unwrap()
+    Regex::new(r"([ \t]*)<!--\s*procable-live-start\s*-->[\s\S]*?<!--\s*procable-live-end\s*-->([ \t]*(?:\r\n|\n|\r|$)?)").unwrap()
 });
 static REMOVE_JSX_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"([ \t]*)\{/\*\s*impeccable-live-start\s*\*/\}[\s\S]*?\{/\*\s*impeccable-live-end\s*\*/\}([ \t]*(?:\r\n|\n|\r|$)?)").unwrap()
+    Regex::new(r"([ \t]*)\{/\*\s*procable-live-start\s*\*/\}[\s\S]*?\{/\*\s*procable-live-end\s*\*/\}([ \t]*(?:\r\n|\n|\r|$)?)").unwrap()
 });
 
 /// JS: removeTag(content). Matches either comment style; indent-preserving.

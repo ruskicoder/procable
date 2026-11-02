@@ -20,7 +20,7 @@ after(async () => { await browser?.close(); });
 function run(cwd, ...args) {
   return new Promise((resolve, reject) => {
     const child = spawn(engine, args, {
-      cwd, env: engineEnv(engine, { IMPECCABLE_QUESTION_FORCE: '1' }), stdio: ['ignore', 'pipe', 'pipe'],
+      cwd, env: engineEnv(engine, { PROCABLE_QUESTION_FORCE: '1' }), stdio: ['ignore', 'pipe', 'pipe'],
     });
     let out = '', err = '';
     child.stdout.on('data', chunk => { out += chunk; });
@@ -31,7 +31,7 @@ function run(cwd, ...args) {
 }
 
 async function screenshot(page, name) {
-  const dir = process.env.IMPECCABLE_REVIEW_SCREENSHOTS;
+  const dir = process.env.PROCABLE_REVIEW_SCREENSHOTS;
   if (!dir) return;
   mkdirSync(dir, { recursive: true });
   await page.screenshot({ path: path.join(dir, `${name}.png`), fullPage: true, animations: 'disabled' });
@@ -162,7 +162,7 @@ test('picker follows live OS changes while comp pixels and their background stay
     const started = await run(cwd, 'serve-question', '--start', '--payload', 'question.json', '--no-open', '--key', key);
     const url = started.match(/QUESTION URL: (\S+)/)?.[1];
     assert.ok(url, started);
-    serverPid = JSON.parse(readFileSync(path.join(cwd, '.impeccable', 'questions', `${key}.state.json`))).pid;
+    serverPid = JSON.parse(readFileSync(path.join(cwd, '.procable', 'questions', `${key}.state.json`))).pid;
     // Keep the sketch static: its own media queries also react to emulation on the original light-only picker.
     writeFileSync(path.join(cwd, 'sketch.html'), '<!doctype html><style>:root{color-scheme:light}body{margin:0}div{margin:120px;width:340px;height:220px;background:#2c8176}</style><div></div>');
     await page.goto(url);
@@ -236,14 +236,14 @@ async function componentServer(cwd, manifest) {
   mkdirSync(project);
   await image(project);
   const spec = JSON.stringify({ comp: 'sample.png', compSize: { width: 640, height: 400 }, regions: manifest.components.map(c => ({ id: c.id, kind: c.kind, box: c.box, plate: 'sample.png', note: c.note })) });
-  mkdirSync(path.join(project, '.impeccable', 'build'), { recursive: true });
-  writeFileSync(path.join(project, '.impeccable', 'build', 'spec.json'), spec);
+  mkdirSync(path.join(project, '.procable', 'build'), { recursive: true });
+  writeFileSync(path.join(project, '.procable', 'build', 'spec.json'), spec);
   if (manifest.schemaVersion === 3) manifest.specSha256 = createHash('sha256').update(spec).digest('hex');
   writeFileSync(path.join(project, 'preview.html'), '<!doctype html><style>:root{color-scheme:light}body{margin:0;background:#eee;color:#222}</style><p>Preview</p>');
   writeFileSync(path.join(project, 'review.json'), JSON.stringify(manifest));
   const prepared = JSON.parse(await run(project, 'component-review', 'prepare', '--manifest', 'review.json', '--store', store));
   const child = spawn(engine, ['component-review', 'serve', '--session', prepared.session, '--store', store, '--port', '0', '--idle-timeout', '60'], {
-    cwd: project, env: engineEnv(engine, { IMPECCABLE_QUESTION_FORCE: '1' }), stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: project, env: engineEnv(engine, { PROCABLE_QUESTION_FORCE: '1' }), stdio: ['ignore', 'pipe', 'pipe'],
   });
   const url = await new Promise((resolve, reject) => {
     let output = '';

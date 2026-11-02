@@ -8,29 +8,29 @@
 use crate::background::{sv, sv_opt};
 use crate::cascade::StyleValues;
 use crate::dom::{ChildNode, StaticElement};
-use impeccable_core::checks::measures::{
+use procable_core::checks::measures::{
     chars_per_line, colors_nearly_match, css_color_is_transparent, is_capitalized_run,
     resolve_length_px, TRACKED_LABEL_MAX_CHARS,
 };
-use impeccable_core::checks::rules::RuleHit;
-use impeccable_core::checks::text_context::FinePrint;
-use impeccable_core::checks::text_rules::{
+use procable_core::checks::rules::RuleHit;
+use procable_core::checks::text_context::FinePrint;
+use procable_core::checks::text_rules::{
     font_weight_number, is_bold_title_leading, is_cjk_text, is_line_clamp,
     is_under_ui_text_floor, justifies_without_word_spaces_text, tracking_is_crushed,
     ALL_CAPS_LONG_RUN, JUSTIFY_NARROW_CHARS_PER_LINE, LEADING_CAPS_LABEL_MIN_RATIO, LEADING_DISPLAY_TYPE_PX,
     LEADING_HEADING_CONTEXT, NON_RENDERED_TAGS, QUALITY_TEXT_TAGS, SMALLPRINT_TEXT_FLOOR_PX,
     SR_ONLY_SELECTOR, UI_TEXT_FLOOR_PX,
 };
-use impeccable_core::js::{self, number_to_string, parse_float, to_fixed};
-use impeccable_core::js_ext_a::num_truthy;
-use impeccable_core::js_ext_b::{slice_utf16_prefix, utf16_len};
+use procable_core::js::{self, number_to_string, parse_float, to_fixed};
+use procable_core::js_ext_a::num_truthy;
+use procable_core::js_ext_b::{slice_utf16_prefix, utf16_len};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
 static WS_RE: Lazy<Regex> = Lazy::new(|| Regex::new(&format!("{}+", js::WS)).expect("WS_RE"));
 // JS `/url\(/i` in checkQuality's buried-raster branch.
 static RASTER_URL_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!(r"{}\(", impeccable_core::js::ci("url"))).expect("RASTER_URL_RE"));
+    Lazy::new(|| Regex::new(&format!(r"{}\(", procable_core::js::ci("url"))).expect("RASTER_URL_RE"));
 static CLIP_RECT_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(&format!(r"rect\({}*0", js::WS)).expect("CLIP_RECT_RE"));
 static CLIP_INSET_RE: Lazy<Regex> = Lazy::new(|| {
@@ -109,12 +109,12 @@ pub fn has_visible_background_boundary(style: &StyleValues, el: &StaticElement<'
     // Nothing in the chain paints, so the ground is the canvas: a white box
     // on an unpainted light page draws no edge. A page that asks for a dark
     // scheme gets a dark canvas, and there a white box is an edge.
-    if !impeccable_core::browser::quality::canvas_is_light(sv(style, "colorScheme")) {
+    if !procable_core::browser::quality::canvas_is_light(sv(style, "colorScheme")) {
         return true;
     }
     !colors_nearly_match(
         Some(bg),
-        Some(impeccable_core::browser::quality::CANVAS_BACKGROUND),
+        Some(procable_core::browser::quality::CANVAS_BACKGROUND),
     )
 }
 
@@ -395,7 +395,7 @@ const SMALLPRINT: &str = "small, footer, [class*=\"legal\" i], [class*=\"copyrig
 
 /// Whether `el` or a box around it carries a class that names page
 /// furniture, read by part as the browser engine does
-/// (`impeccable_core::checks::decorative_text::class_names_furniture`). The
+/// (`procable_core::checks::decorative_text::class_names_furniture`). The
 /// markers are not read off `html`, which holds a page's script state flags
 /// (`html.js-nav-ready` is not navigation).
 fn has_furniture_class(el: StaticElement<'_>) -> bool {
@@ -405,7 +405,7 @@ fn has_furniture_class(el: StaticElement<'_>) -> bool {
             return false;
         }
         if c.get_attribute("class").is_some_and(|cls| {
-            impeccable_core::checks::decorative_text::class_names_furniture(cls)
+            procable_core::checks::decorative_text::class_names_furniture(cls)
         }) {
             return true;
         }
@@ -686,7 +686,7 @@ fn insulates_side(
 /// The hit, at advisory severity when `advisory` holds.
 fn advisory_if(mut hit: RuleHit, advisory: bool) -> RuleHit {
     if advisory {
-        hit.severity = Some(impeccable_core::checks::rules::ADVISORY_SEVERITY.to_string());
+        hit.severity = Some(procable_core::checks::rules::ADVISORY_SEVERITY.to_string());
     }
     hit
 }
@@ -714,7 +714,7 @@ pub fn check_quality(q: &QualityInput<'_, '_>) -> Vec<RuleHit> {
         if op.is_finite() && op < 0.15 && op >= 0.0 {
             let bg = sv(style, "backgroundImage");
             if (tag == "img" || RASTER_URL_RE.is_match(bg))
-                && !impeccable_core::checks::measures::raster_source_is_svg(
+                && !procable_core::checks::measures::raster_source_is_svg(
                     tag == "img",
                     el.get_attribute("src"),
                     bg,
@@ -924,7 +924,7 @@ pub fn check_quality(q: &QualityInput<'_, '_>) -> Vec<RuleHit> {
                 // monospace by the browser's default unless a face is set.
                 let family = sv(style, "fontFamily");
                 let is_code_run = el.closest("pre").is_some()
-                    && (family.is_empty() || impeccable_core::checks::text_rules::is_monospace_family(family));
+                    && (family.is_empty() || procable_core::checks::text_rules::is_monospace_family(family));
                 // Capitals have no descenders to crowd the line below
                 // (r13-t3), as the browser engine reads them. With no layout
                 // the lead-text exemption, which counts lines, is browser-only.
@@ -1133,7 +1133,7 @@ pub fn check_quality(q: &QualityInput<'_, '_>) -> Vec<RuleHit> {
                     let cjk = {
                         let direct = collapse_ws(js::trim(&el.direct_text()));
                         let sample = if direct.chars().any(char::is_alphabetic) { &direct } else { &own };
-                        impeccable_core::checks::text_rules::is_cjk_text(sample)
+                        procable_core::checks::text_rules::is_cjk_text(sample)
                     };
                     if !caps_label && !cjk {
                         findings.push(RuleHit::new(
@@ -1203,7 +1203,7 @@ pub fn check_element_quality(
 /// JS: checks.mjs#checkPageQualityFromDoc(doc)
 ///
 /// A skip into the footer is not reported; see the browser twin
-/// (`impeccable_core::browser::quality::check_page_quality_from_doc`) for
+/// (`procable_core::browser::quality::check_page_quality_from_doc`) for
 /// the rule (corpus decision r5-p29-skipped-heading-footer-titles).
 pub fn check_page_quality_from_doc(doc: &crate::dom::StaticDocument) -> Vec<RuleHit> {
     let mut findings = Vec::new();
@@ -1216,7 +1216,7 @@ pub fn check_page_quality_from_doc(doc: &crate::dom::StaticDocument) -> Vec<Rule
         let level = tag[1..2].parse::<i64>().unwrap_or(0);
         let text = slice_utf16_prefix(&collapse_ws(js::trim(&h.text_content())), 60);
         let footer = h
-            .closest(impeccable_core::browser::quality::FOOTER_SELECTOR)
+            .closest(procable_core::browser::quality::FOOTER_SELECTOR)
             .map(|f| f.id());
         let opens_footer = footer.is_some() && footer != prev_footer;
         let into_footer = footer.is_some() && (opens_footer || prev_opens_footer);

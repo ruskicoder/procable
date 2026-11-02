@@ -28,7 +28,7 @@ export function publicKeyHex(key) {
 // Shared wire format with crates/skills/src/bundle_signature.rs. UTF-8, LF,
 // trailing LF. Sign fields explicitly so JSON whitespace/order is irrelevant.
 export function signaturePayload({ keyId, version, artifact, size, sha256 }) {
-  return Buffer.from(`impeccable-skill-bundle-v1\n${keyId}\nskill-v${version}\n${artifact}\n${size}\n${sha256}\n`);
+  return Buffer.from(`procable-skill-bundle-v1\n${keyId}\nskill-v${version}\n${artifact}\n${size}\n${sha256}\n`);
 }
 
 export function readTrustedKeys() {
@@ -61,10 +61,10 @@ function readFrom1Password(reference, account) {
 }
 
 export function signReleaseBundle({ zipPath, version, trustedKeys = readTrustedKeys(),
-  secretReference = process.env.IMPECCABLE_SIGNING_KEY_REF ?? localSetting('impeccable.signingKeyRef'),
-  account = process.env.OP_ACCOUNT ?? localSetting('impeccable.signingAccount'), readSecret = readFrom1Password }) {
+  secretReference = process.env.PROCABLE_SIGNING_KEY_REF ?? localSetting('procable.signingKeyRef'),
+  account = process.env.OP_ACCOUNT ?? localSetting('procable.signingAccount'), readSecret = readFrom1Password }) {
   if (!secretReference?.startsWith('op://')) {
-    throw new Error('Set IMPECCABLE_SIGNING_KEY_REF to the 1Password private-key reference (op://vault/item/field).');
+    throw new Error('Set PROCABLE_SIGNING_KEY_REF to the 1Password private-key reference (op://vault/item/field).');
   }
   if (typeof version !== 'string' || version.length > 128 || !VERSION_PATTERN.test(version)) throw new Error('Invalid skill version for signing.');
   if (statSync(zipPath).size > MAX_BUNDLE_BYTES) throw new Error('Invalid bundle size for signing.');

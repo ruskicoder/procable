@@ -1,7 +1,7 @@
 //! Mechanical bake of an accepted generate-lane variant. The lane's variants
 //! carry no knobs, so what accept leaves behind (the chosen variant inside
-//! its `data-impeccable-variant` div, and every variant's CSS in one
-//! `<style data-impeccable-css>` block) can be made permanent without an
+//! its `data-procable-variant` div, and every variant's CSS in one
+//! `<style data-procable-css>` block) can be made permanent without an
 //! agent: the chosen variant's rules are rewritten from `:scope` to the
 //! element's own selector and appended to the stylesheet that already styles
 //! it, and the wrapper is unwrapped in source. Anything the rewrite cannot
@@ -13,7 +13,7 @@ use crate::accept_css::{parse_stylesheet, serialize_nodes, split_selector_list, 
 use crate::accept_verify::verify_accepted_source;
 use crate::source_search::{is_generated_file, read_dir_sorted, NEVER_SOURCE_DIRS};
 use crate::util::jsp;
-use impeccable_core::js::trim;
+use procable_core::js::trim;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Map, Value};
@@ -45,9 +45,9 @@ pub struct BakePlan {
 static ROOT_TAG_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"(?s)<([A-Za-z][A-Za-z0-9.-]*)((?:\s+[^<>]*?)?)>").unwrap());
 static ATTR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"(?:^|\s)(id|class|className)\s*=\s*(?:"([^"]*)"|'([^']*)')"#).unwrap());
 static SCOPE_PRELUDE_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"data-impeccable-variant\s*=\s*["']?(\d+)["']?"#).unwrap());
+    Lazy::new(|| Regex::new(r#"data-procable-variant\s*=\s*["']?(\d+)["']?"#).unwrap());
 static VARIANT_PREFIX_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"^\[data-impeccable-variant\s*=\s*["']?\d+["']?\]"#).unwrap());
+    Lazy::new(|| Regex::new(r#"^\[data-procable-variant\s*=\s*["']?\d+["']?\]"#).unwrap());
 
 /// The variant's root tag as written in source: `div`, `my-card`,
 /// `PricingGrid`, `Card.Root`.
@@ -262,7 +262,7 @@ fn anchor_with_child(anchor: &str, child: &str) -> Result<String, String> {
     Ok(out)
 }
 
-/// One selector out of a `:scope` (or `[data-impeccable-variant="N"]`)
+/// One selector out of a `:scope` (or `[data-procable-variant="N"]`)
 /// prefixed rule, anchored on the element. A state on the wrapper
 /// (`:scope:hover`, `:scope[open]`) lands on the element, which is the
 /// wrapper's only child and takes its place after the unwrap; a `:scope >`
@@ -296,7 +296,7 @@ pub fn rewrite_selector(selector: &str, anchor: &str) -> Result<String, String> 
     } else {
         s
     };
-    if out.contains(":scope") || out.contains("data-impeccable") {
+    if out.contains(":scope") || out.contains("data-procable") {
         return Err(format!("selector still names the preview wrapper: {}", selector));
     }
     if trim(&out).is_empty() {
@@ -342,7 +342,7 @@ fn rewrite_nodes(nodes: &[CssNode], anchor: &str, out: &mut Vec<CssNode>, rules:
 }
 
 /// A rule outside any `@scope`: Astro's global-prefixed mode writes
-/// `[data-impeccable-variant="N"] > .x`. Ours are rewritten, other
+/// `[data-procable-variant="N"] > .x`. Ours are rewritten, other
 /// variants' are dropped (None), plain rules are kept as they are.
 fn global_rule(prelude: &str, body: &str, variant_num: &str, anchor: &str) -> Result<Option<CssNode>, String> {
     let selectors = split_selector_list(prelude);
@@ -352,7 +352,7 @@ fn global_rule(prelude: &str, body: &str, variant_num: &str, anchor: &str) -> Re
         .cloned()
         .collect();
     if mine.is_empty() {
-        if prelude.contains("data-impeccable-variant") {
+        if prelude.contains("data-procable-variant") {
             return Ok(None);
         }
         return Ok(Some(CssNode::Rule { prelude: prelude.to_string(), body: body.to_string() }));
@@ -405,7 +405,7 @@ fn global_nodes(nodes: &[CssNode], variant_num: &str, anchor: &str, out: &mut Ve
 }
 
 /// The accepted variant's rules out of the whole preview stylesheet: its
-/// `@scope ([data-impeccable-variant="N"])` block rewritten and flattened,
+/// `@scope ([data-procable-variant="N"])` block rewritten and flattened,
 /// its prefixed rules rewritten wherever they sit, global at-rules
 /// (`@keyframes`, `@font-face`) kept, the other variants' rules dropped.
 pub fn extract_variant_css(css: &str, variant_num: &str, anchor: &str) -> Result<(String, usize), String> {
@@ -417,7 +417,7 @@ pub fn extract_variant_css(css: &str, variant_num: &str, anchor: &str) -> Result
         return Err("the accepted variant declares no rules".to_string());
     }
     let text = serialize_nodes(&kept, "");
-    if text.contains("data-impeccable") || text.contains(":scope") {
+    if text.contains("data-procable") || text.contains(":scope") {
         return Err("rewritten CSS still names the preview wrapper".to_string());
     }
     Ok((text, rules))
@@ -505,14 +505,14 @@ pub fn plan(
         return Err("the session has knobs (paramValues); knob baking needs the agent".into());
     }
     let variant_text = restored.join("\n");
-    if variant_text.contains("data-impeccable-") || variant_text.contains("data-p-") {
+    if variant_text.contains("data-procable-") || variant_text.contains("data-p-") {
         return Err("the accepted variant carries preview plumbing inside it".into());
     }
     let Some(css_lines) = css_lines else {
         return Err("no preview stylesheet to bake".into());
     };
     let css = css_lines.join("\n");
-    if css.contains("var(--p-") || css.contains("data-p-") || css.contains("data-impeccable-params") {
+    if css.contains("var(--p-") || css.contains("data-p-") || css.contains("data-procable-params") {
         return Err("the preview CSS is authored against knobs".into());
     }
     let anchor = element_anchor(restored).ok_or_else(|| match root_tag(restored) {
@@ -526,7 +526,7 @@ pub fn plan(
     let (rules_css, rules) = extract_variant_css(&css, variant_num, &anchor)?;
     let css_file = if is_jsx {
         Some(find_owning_stylesheet(cwd, &anchor).ok_or_else(|| "no stylesheet under the app root names the element".to_string())?)
-    } else if HTML_STYLE_BLOCK_RE.captures_iter(source_after_unwrap).any(|c| !c[1].contains("data-impeccable")) {
+    } else if HTML_STYLE_BLOCK_RE.captures_iter(source_after_unwrap).any(|c| !c[1].contains("data-procable")) {
         None
     } else {
         Some(find_owning_stylesheet(cwd, &anchor).ok_or_else(|| "no stylesheet names the element and the page has no <style> block".to_string())?)
@@ -539,7 +539,7 @@ pub fn plan(
 /// the rewritten rules.
 pub fn appended_block(plan: &BakePlan, session_id: &str, variant_num: &str) -> String {
     format!(
-        "\n/* impeccable generate {}: accepted variant {} */\n{}\n",
+        "\n/* procable generate {}: accepted variant {} */\n{}\n",
         session_id, variant_num, plan.css
     )
 }
@@ -561,7 +561,7 @@ pub fn apply(
             // Into the last <style> block that is the page's own.
             let mut last: Option<(usize, usize)> = None;
             for c in HTML_STYLE_BLOCK_RE.captures_iter(source_after_unwrap) {
-                if !c[1].contains("data-impeccable") {
+                if !c[1].contains("data-procable") {
                     let inner = c.get(2).unwrap();
                     last = Some((inner.start(), inner.end()));
                 }
@@ -607,7 +607,7 @@ mod tests {
         assert_eq!(rewrite_selector(":scope:hover .card", a).unwrap(), "div.pricing-grid:hover .card");
         assert_eq!(rewrite_selector(":scope:not([hidden])", a).unwrap(), "div.pricing-grid:not([hidden])");
         assert!(rewrite_selector(":scope:hover >", a).is_err());
-        assert_eq!(rewrite_selector("[data-impeccable-variant=\"2\"] > .x", a).unwrap(), "div.pricing-grid.x");
+        assert_eq!(rewrite_selector("[data-procable-variant=\"2\"] > .x", a).unwrap(), "div.pricing-grid.x");
         // The child compound is the element: a class it adds rides on the
         // anchor, a type must be the anchor's own, an id anchor takes any.
         assert_eq!(rewrite_selector(":scope > div.pricing-grid.wide[open]", a).unwrap(), "div.pricing-grid.wide[open]");
@@ -642,14 +642,14 @@ mod tests {
     #[test]
     fn only_the_accepted_variants_block_survives_rewritten() {
         let css = r#"
-@scope ([data-impeccable-variant="1"]) { :scope > .pricing-grid { gap: 8px; } }
-@scope ([data-impeccable-variant="2"]) {
+@scope ([data-procable-variant="1"]) { :scope > .pricing-grid { gap: 8px; } }
+@scope ([data-procable-variant="2"]) {
   :scope > .pricing-grid { gap: 32px; }
   :scope .pricing-card { border: 2px solid #111; }
   @media (max-width: 600px) { :scope > .pricing-grid { gap: 12px; } }
 }
 @keyframes rise { from { opacity: 0 } to { opacity: 1 } }
-@scope ([data-impeccable-variant="3"]) { :scope > .pricing-grid { gap: 0; } }
+@scope ([data-procable-variant="3"]) { :scope > .pricing-grid { gap: 0; } }
 "#;
         let (out, rules) = extract_variant_css(css, "2", "div.pricing-grid").unwrap();
         assert_eq!(rules, 3, "{out}");
@@ -658,19 +658,19 @@ mod tests {
         assert!(out.contains("@media (max-width: 600px)"), "{out}");
         assert!(out.contains("@keyframes rise"), "{out}");
         assert!(!out.contains("8px") && !out.contains("gap: 0"), "{out}");
-        assert!(!out.contains("data-impeccable") && !out.contains(":scope"), "{out}");
+        assert!(!out.contains("data-procable") && !out.contains(":scope"), "{out}");
     }
 
     #[test]
     fn prefixed_rules_under_a_top_level_media_block_are_rewritten_not_dropped() {
         // Astro's global-prefixed mode, with a breakpoint.
         let css = r#"
-[data-impeccable-variant="1"] > .pricing-grid { gap: 8px; }
-[data-impeccable-variant="2"] > .pricing-grid { gap: 32px; }
+[data-procable-variant="1"] > .pricing-grid { gap: 8px; }
+[data-procable-variant="2"] > .pricing-grid { gap: 32px; }
 @media (max-width: 600px) {
-  [data-impeccable-variant="1"] > .pricing-grid { gap: 4px; }
-  [data-impeccable-variant="2"] > .pricing-grid { gap: 12px; }
-  [data-impeccable-variant="2"]:hover > .pricing-grid .card { border-color: #111; }
+  [data-procable-variant="1"] > .pricing-grid { gap: 4px; }
+  [data-procable-variant="2"] > .pricing-grid { gap: 12px; }
+  [data-procable-variant="2"]:hover > .pricing-grid .card { border-color: #111; }
   .site-wide { color: red; }
 }
 "#;
@@ -681,24 +681,24 @@ mod tests {
         assert!(out.contains("div.pricing-grid:hover .card { border-color: #111; }"), "{out}");
         assert!(out.contains(".site-wide { color: red; }"), "{out}");
         assert!(!out.contains("8px") && !out.contains("4px"), "the other variant's rules are gone: {out}");
-        assert!(!out.contains("data-impeccable"), "{out}");
+        assert!(!out.contains("data-procable"), "{out}");
     }
 
     #[test]
     fn knobs_and_plumbing_refuse_the_bake() {
         let restored = vec!["<div className=\"pricing-grid\">".to_string(), "</div>".to_string()];
-        let css = vec!["@scope ([data-impeccable-variant=\"1\"]) { :scope > .pricing-grid { gap: var(--p-gap, 8px); } }".to_string()];
+        let css = vec!["@scope ([data-procable-variant=\"1\"]) { :scope > .pricing-grid { gap: var(--p-gap, 8px); } }".to_string()];
         let err = plan("/nonexistent", "src/App.jsx", true, "1", Some(&css), &restored, None, None, "").unwrap_err();
         assert!(err.contains("knobs"), "{err}");
         let mut pv = Map::new();
         pv.insert("gap".into(), json!(1));
         let err = plan("/nonexistent", "src/App.jsx", true, "1", Some(&css), &restored, Some(&pv), None, "").unwrap_err();
         assert!(err.contains("paramValues"), "{err}");
-        let plumbing = vec!["<div className=\"pricing-grid\" data-impeccable-x=\"1\">".to_string()];
+        let plumbing = vec!["<div className=\"pricing-grid\" data-procable-x=\"1\">".to_string()];
         let err = plan("/nonexistent", "src/App.jsx", true, "1", Some(&css), &plumbing, None, None, "").unwrap_err();
         assert!(err.contains("plumbing"), "{err}");
         // A component root: its className prop may never reach the rendered element.
-        let plain = vec!["@scope ([data-impeccable-variant=\"1\"]) { :scope { gap: 8px; } }".to_string()];
+        let plain = vec!["@scope ([data-procable-variant=\"1\"]) { :scope { gap: 8px; } }".to_string()];
         let component = vec!["<PricingGrid className=\"pricing-grid\">".to_string(), "</PricingGrid>".to_string()];
         let err = plan("/nonexistent", "src/App.jsx", true, "1", Some(&plain), &component, None, None, "").unwrap_err();
         assert!(err.contains("component <PricingGrid>"), "{err}");
@@ -707,7 +707,7 @@ mod tests {
     #[test]
     fn a_class_anchor_bakes_only_when_the_page_showed_one_match() {
         let restored = vec!["<div className=\"pricing-grid featured\">".to_string(), "</div>".to_string()];
-        let css = vec!["@scope ([data-impeccable-variant=\"1\"]) { :scope { gap: 8px; } }".to_string()];
+        let css = vec!["@scope ([data-procable-variant=\"1\"]) { :scope { gap: 8px; } }".to_string()];
         let attempt = |element: Option<Map<String, Value>>| {
             plan("/nonexistent", "src/App.jsx", true, "1", Some(&css), &restored, None, element.as_ref(), "").unwrap_err()
         };
@@ -739,7 +739,7 @@ mod tests {
 
     #[test]
     fn the_owning_stylesheet_is_the_one_naming_the_element() {
-        let dir = std::env::temp_dir().join(format!("impeccable-bake-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-bake-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(dir.join("src")).unwrap();
         std::fs::create_dir_all(dir.join("node_modules/x")).unwrap();

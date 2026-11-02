@@ -7,7 +7,7 @@ use crate::inject::resolve_source_traits;
 use crate::source_search::{
     find_source_file, is_generated_file, resolve_live_template_extensions, NEVER_SOURCE_DIRS,
 };
-use impeccable_core::js::{is_js_whitespace, trim, WS};
+use procable_core::js::{is_js_whitespace, trim, WS};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{json, Value};
@@ -161,7 +161,7 @@ pub fn find_element(lines: &[String], query: &str, tag: Option<&str>) -> Option<
         if skip_line(line) {
             continue;
         }
-        if line.contains("data-impeccable-variant") {
+        if line.contains("data-procable-variant") {
             continue;
         }
         let Some(opener) = find_opener_line(lines, i, tag) else {
@@ -186,7 +186,7 @@ pub fn find_all_elements(lines: &[String], query: &str, tag: Option<&str>) -> Ve
         if skip_line(line) {
             continue;
         }
-        if line.contains("data-impeccable-variant") {
+        if line.contains("data-procable-variant") {
             continue;
         }
         let Some(opener) = find_opener_line(lines, i, tag) else {
@@ -385,7 +385,7 @@ pub fn build_css_selector_prefix_examples(style_mode: &str, count: i64) -> Vec<S
         return Vec::new();
     }
     (1..=count.max(0))
-        .map(|i| format!("[data-impeccable-variant=\"{}\"]", i))
+        .map(|i| format!("[data-procable-variant=\"{}\"]", i))
         .collect()
 }
 
@@ -398,12 +398,12 @@ pub fn build_css_authoring(style_mode: (&str, &str), count: i64) -> Value {
             "mode": mode,
             "styleTag": style_tag,
             "strategy": "global-prefixed",
-            "rulePattern": "[data-impeccable-variant=\"N\"] > .variant-class { ... }",
-            "selectorExamples": numbers.iter().map(|n| format!("[data-impeccable-variant=\"{}\"] > .variant-class", n)).collect::<Vec<_>>(),
+            "rulePattern": "[data-procable-variant=\"N\"] > .variant-class { ... }",
+            "selectorExamples": numbers.iter().map(|n| format!("[data-procable-variant=\"{}\"] > .variant-class", n)).collect::<Vec<_>>(),
             "requirements": [
                 "Use the styleTag exactly; the is:inline attribute is required for this file.",
                 "Put raw CSS directly between the styleTag opening and a plain </style> close.",
-                "Prefix every preview selector with the matching [data-impeccable-variant=\"N\"] selector.",
+                "Prefix every preview selector with the matching [data-procable-variant=\"N\"] selector.",
                 "Keep selectors anchored to the generated variant wrapper; do not rely on component CSS scoping for preview rules.",
             ],
             "forbidden": [
@@ -417,15 +417,15 @@ pub fn build_css_authoring(style_mode: (&str, &str), count: i64) -> Value {
         "mode": mode,
         "styleTag": style_tag,
         "strategy": "scope-rule",
-        "rulePattern": "@scope ([data-impeccable-variant=\"N\"]) { :scope > .variant-class { ... } }",
-        "selectorExamples": numbers.iter().map(|n| format!("@scope ([data-impeccable-variant=\"{}\"]) {{ :scope > .variant-class {{ ... }} }}", n)).collect::<Vec<_>>(),
+        "rulePattern": "@scope ([data-procable-variant=\"N\"]) { :scope > .variant-class { ... } }",
+        "selectorExamples": numbers.iter().map(|n| format!("@scope ([data-procable-variant=\"{}\"]) {{ :scope > .variant-class {{ ... }} }}", n)).collect::<Vec<_>>(),
         "requirements": [
-            "Use @scope blocks keyed to each [data-impeccable-variant=\"N\"] wrapper.",
+            "Use @scope blocks keyed to each [data-procable-variant=\"N\"] wrapper.",
             "Inside each @scope block, make :scope rules step into the replacement element with a descendant combinator.",
             "Use the styleTag exactly; do not add framework-specific style attributes unless this object says to.",
         ],
         "forbidden": [
-            "Do not use global [data-impeccable-variant=\"N\"] selector prefixes for this styleMode.",
+            "Do not use global [data-procable-variant=\"N\"] selector prefixes for this styleMode.",
             "Do not add is:inline to the style tag for this styleMode.",
         ],
     })
@@ -444,7 +444,7 @@ pub fn parse_count(v: Option<&str>) -> i64 {
         Some(s) if !s.is_empty() => s,
         _ => "3",
     };
-    let n = impeccable_core::js::parse_int(raw, 10);
+    let n = procable_core::js::parse_int(raw, 10);
     if n.is_nan() {
         // JS: NaN interpolates as "NaN" and Array.from({length: NaN}) is [].
         i64::MIN

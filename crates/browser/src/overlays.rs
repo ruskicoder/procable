@@ -122,14 +122,14 @@ pub struct BuilderBadge {
 pub const BUILDER_BADGES: &[BuilderBadge] = &[BuilderBadge { name: "Lovable", roots: &["#lovable-badge"] }];
 
 /// The id of the style element the tour and badge hide step injects.
-pub const HIDE_STYLE_ID: &str = "impeccable-overlay-hide";
+pub const HIDE_STYLE_ID: &str = "procable-overlay-hide";
 
 /// The attribute the preloader hide step puts on a layer it hid, naming it,
 /// so a later pass reports it again without hiding twice.
-pub const PRELOADER_MARK: &str = "data-impeccable-hidden";
+pub const PRELOADER_MARK: &str = "data-procable-hidden";
 /// Beside [`PRELOADER_MARK`], the kind of a layer that is not a preloader
 /// (`intro`, `splash`).
-pub const KIND_MARK: &str = "data-impeccable-hidden-kind";
+pub const KIND_MARK: &str = "data-procable-hidden-kind";
 
 /// How long the engine waits for a preloader to go on its own before hiding
 /// it, and how often it looks.
@@ -266,7 +266,7 @@ pub fn preloader_js() -> String {
   // end, so the page's own script removing it a beat later is still waited
   // for and a layer that never leaves can still be hidden.
   // Each seen layer maps to the last time it was seen animating.
-  const introsSeen = window.__impeccableIntrosSeen || (window.__impeccableIntrosSeen = new WeakMap());
+  const introsSeen = window.__procableIntrosSeen || (window.__procableIntrosSeen = new WeakMap());
   const playsFinite = el => {{
     try {{
       return el.getAnimations({{ subtree: true }}).some(a => {{

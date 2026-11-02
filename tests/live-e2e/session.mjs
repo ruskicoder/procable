@@ -4,9 +4,9 @@
  * Composes:
  *   - tmp staging (clones the fixture, git init, writes the inject config)
  *   - npm install (the fixture's runtime.install command)
- *   - `impeccable live-server --background` (returns {pid, port, token})
- *   - `impeccable live-inject --port` (patches the framework HTML entry)
- *     ...or, for a fixture declaring runtime.appDir, one `impeccable live`
+ *   - `procable live-server --background` (returns {pid, port, token})
+ *   - `procable live-inject --port` (patches the framework HTML entry)
+ *     ...or, for a fixture declaring runtime.appDir, one `procable live`
  *     boot from the repo root that resolves the app, starts the server, and
  *     injects
  *   - the fixture's framework dev server (vite, vite dev, npx vite, ...)
@@ -14,7 +14,7 @@
  *   - the fake-agent poll loop (in this same node process)
  *
  * Every verb runs through the engine binary resolved by tests/lib/engine-bin.mjs
- * (IMPECCABLE_BIN or skill/scripts/bin/<os>-<arch>/); the suite skips when
+ * (PROCABLE_BIN or skill/scripts/bin/<os>-<arch>/); the suite skips when
  * none is present.
  *
  * Returns handles + a single `teardown()` that cleans them all up in order.
@@ -36,7 +36,7 @@ const SCRIPTS_DIR = join(REPO_ROOT, 'skill', 'scripts');
 const FIXTURES_DIR = join(REPO_ROOT, 'tests', 'framework-fixtures');
 const ENGINE_BIN = findEngineBinary();
 
-// Live servers here are detached daemons (`impeccable live-server --background`,
+// Live servers here are detached daemons (`procable live-server --background`,
 // or a full `live` boot), orphaned to pid 1 by design; teardown() is the only
 // thing that stops them. The reaper covers the runs where teardown never
 // happens, and it stamps this process's environment before any verb runs, so
@@ -53,7 +53,7 @@ export function requireEngineBin() {
 
 /**
  * Run one engine verb synchronously from `cwd` and return its stdout, the
- * way an agent shell would (`impeccable <verb> ...`).
+ * way an agent shell would (`procable <verb> ...`).
  */
 export function runEngineSync(verb, args, { cwd, stdio, env } = {}) {
   return execFileSync(requireEngineBin(), [verb, ...args], {
@@ -92,12 +92,12 @@ export function appRootFor(tmp, fixture) {
 export function stageFixture(name, fixture, { fixtureRoot = join(FIXTURES_DIR, name) } = {}) {
   const gitignore = readFileSync(join(fixtureRoot, 'gitignore.txt'), 'utf-8');
 
-  const tmp = mkdtempSync(join(tmpdir(), 'impeccable-e2e-'));
+  const tmp = mkdtempSync(join(tmpdir(), 'procable-e2e-'));
   cpSync(join(fixtureRoot, 'files'), tmp, { recursive: true });
   writeFileSync(join(tmp, '.gitignore'), gitignore);
   const appRoot = appRootFor(tmp, fixture);
-  mkdirSync(join(appRoot, '.impeccable', 'live'), { recursive: true });
-  writeFileSync(join(appRoot, '.impeccable', 'live', 'config.json'), JSON.stringify(fixture.config));
+  mkdirSync(join(appRoot, '.procable', 'live'), { recursive: true });
+  writeFileSync(join(appRoot, '.procable', 'live', 'config.json'), JSON.stringify(fixture.config));
 
   execFileSync('git', ['init', '-q'], { cwd: tmp });
   execFileSync('git', ['config', 'user.email', 'test@example.com'], { cwd: tmp });
@@ -108,7 +108,7 @@ export function stageFixture(name, fixture, { fixtureRoot = join(FIXTURES_DIR, n
   return tmp;
 }
 
-export function runInstall(tmp, command, { timeoutMs = readTimeoutEnv('IMPECCABLE_E2E_INSTALL_TIMEOUT_MS', 180_000) } = {}) {
+export function runInstall(tmp, command, { timeoutMs = readTimeoutEnv('PROCABLE_E2E_INSTALL_TIMEOUT_MS', 180_000) } = {}) {
   const [cmd, ...args] = command;
   const installArgs = addNpmInstallDefaults(cmd, args);
   try {
@@ -162,7 +162,7 @@ export function startLiveServer(tmp) {
 }
 
 /**
- * Full live boot through `impeccable live`, the entry point a real agent runs.
+ * Full live boot through `procable live`, the entry point a real agent runs.
  *
  * Used by fixtures whose app is not at the repo root: `cwd` is the repo root,
  * and the boot verb is the step that resolves the roots, persists the manifest
@@ -176,16 +176,16 @@ export function runLiveBoot(cwd, appRoot) {
   try {
     boot = JSON.parse(out.trim());
   } catch {
-    throw new Error('impeccable live returned unparseable output:\n' + out);
+    throw new Error('procable live returned unparseable output:\n' + out);
   }
-  if (!boot.ok) throw new Error('impeccable live boot failed: ' + JSON.stringify(boot));
+  if (!boot.ok) throw new Error('procable live boot failed: ' + JSON.stringify(boot));
 
   let pid = null;
   try {
-    pid = JSON.parse(readFileSync(join(appRoot, '.impeccable', 'live', 'server.json'), 'utf-8')).pid;
+    pid = JSON.parse(readFileSync(join(appRoot, '.procable', 'live', 'server.json'), 'utf-8')).pid;
   } catch { /* reported below */ }
   if (!pid || !boot.serverPort) {
-    throw new Error('impeccable live boot produced no reachable server: ' + JSON.stringify(boot));
+    throw new Error('procable live boot produced no reachable server: ' + JSON.stringify(boot));
   }
   return { boot, live: { pid, port: boot.serverPort, token: boot.serverToken } };
 }
@@ -233,7 +233,7 @@ export function startDevServer(tmp, runtime) {
 
   const ready = new Promise((resolve, reject) => {
     const readyTimeoutMs = readTimeoutEnv(
-      'IMPECCABLE_E2E_DEV_READY_TIMEOUT_MS',
+      'PROCABLE_E2E_DEV_READY_TIMEOUT_MS',
       runtime.readyTimeoutMs ?? 120_000,
     );
     const timeout = setTimeout(() => {
@@ -370,15 +370,15 @@ export async function bootFixtureSession({
     trace('setup.live_server.start', { fixture: name });
     if (appDir) {
       // The whole point of an appDir fixture: boot from the repo root and let
-      // `impeccable live` find the app, so the run proves root resolution
+      // `procable live` find the app, so the run proves root resolution
       // rather than assuming it. The boot verb starts the server and injects
       // in one step.
-      log(`booting impeccable live from the repo root (app is ${appDir}/)`);
+      log(`booting procable live from the repo root (app is ${appDir}/)`);
       const booted = runLiveBoot(tmp, appRoot);
       liveBoot = booted.boot;
       live = booted.live;
       trace('setup.live_server.end', { fixture: name, port: live.port, appRoot: liveBoot.roots?.appRoot });
-      log(`impeccable live booted on ${live.port} (appRoot=${liveBoot.roots?.appRoot}) in ${formatDuration(Date.now() - liveStartedAt)}`);
+      log(`procable live booted on ${live.port} (appRoot=${liveBoot.roots?.appRoot}) in ${formatDuration(Date.now() - liveStartedAt)}`);
     } else {
       log(`starting live-server`);
       live = startLiveServer(tmp);
@@ -402,7 +402,7 @@ export async function bootFixtureSession({
       log(`live-inject complete in ${formatDuration(Date.now() - injectStartedAt)}`);
     } else {
       trace('setup.inject.end', { fixture: name, files: liveBoot.pageFiles || [] });
-      log(`impeccable live injected into ${(liveBoot.pageFiles || []).join(', ') || '(nothing)'}`);
+      log(`procable live injected into ${(liveBoot.pageFiles || []).join(', ') || '(nothing)'}`);
     }
 
     const devStartedAt = Date.now();
@@ -456,7 +456,7 @@ export async function bootFixtureSession({
         let url = '';
         try { url = msg.location()?.url || ''; } catch { /* older playwright */ }
         consoleErrors.push(`console.error: ${msg.text()}${url ? ` [${url}]` : ''}`);
-      } else if (process.env.IMPECCABLE_E2E_CONSOLE && /\[impeccable\]|\[vite\]/.test(msg.text())) {
+      } else if (process.env.PROCABLE_E2E_CONSOLE && /\[procable\]|\[vite\]/.test(msg.text())) {
         log(`[console.${msg.type()}] ${msg.text()}`);
       }
     });
@@ -469,7 +469,7 @@ export async function bootFixtureSession({
       const status = res.status();
       if (status >= 400) failedRequests.push({ url: res.url(), status, reason: `HTTP ${status}` });
     });
-    if (process.env.IMPECCABLE_E2E_CONSOLE) {
+    if (process.env.PROCABLE_E2E_CONSOLE) {
       page.on('framenavigated', (frame) => {
         if (frame === page.mainFrame()) log(`[nav] main frame → ${frame.url()}`);
       });

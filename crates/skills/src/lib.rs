@@ -1,23 +1,23 @@
-//! impeccable-skills: `impeccable help|install|link|update|check` and the
-//! legacy `impeccable skills <verb>` namespace, ported from
-//! `cli/bin/commands/skills.mjs` (plus the slice of `cli/lib/impeccable-config.mjs`
+//! procable-skills: `procable help|install|link|update|check` and the
+//! legacy `procable skills <verb>` namespace, ported from
+//! `cli/bin/commands/skills.mjs` (plus the slice of `cli/lib/procable-config.mjs`
 //! it imports).
 //!
 //! Deliberate departures from the original JS behavior:
 //!
 //! 1. After a skill directory is written (fresh install, refresh, update), if
-//!    its `scripts/VERSION` exists and `scripts/bin/<os>-<arch>/impeccable`
+//!    its `scripts/VERSION` exists and `scripts/bin/<os>-<arch>/procable`
 //!    does not, the matching engine binary is downloaded from this repo's
-//!    `engine-v<version>` GitHub Release (`IMPECCABLE_DOWNLOAD_BASE` overrides
+//!    `engine-v<version>` GitHub Release (`PROCABLE_DOWNLOAD_BASE` overrides
 //!    the base URL), verified against the skill dir's own
 //!    `scripts/engine-checksums.txt`, so the installed skill is
 //!    self-contained. See `engine_binary`.
 //! 2. Hook manifests are rewritten to invoke the launcher
-//!    (`"<skill>/scripts/impeccable" hook`, `impeccable.cmd` in the Codex
+//!    (`"<skill>/scripts/procable" hook`, `procable.cmd` in the Codex
 //!    `commandWindows` sibling) instead of `node "<skill>/scripts/hook.mjs"`.
-//!    The command forms match what `impeccable hooks on`
-//!    (`impeccable_hook::admin`) writes, and both paths recognize a manifest
-//!    entry as ours through `impeccable_context::hook_markers`, so the two
+//!    The command forms match what `procable hooks on`
+//!    (`procable_hook::admin`) writes, and both paths recognize a manifest
+//!    entry as ours through `procable_context::hook_markers`, so the two
 //!    never drift on detection. See `hook_manifest`.
 //! 3. Remote skill ZIPs require an Ed25519 signature from a compiled-in key
 //!    before extraction. Failure is fatal even when an existing install is
@@ -36,7 +36,7 @@ pub mod prompt;
 pub mod providers;
 pub mod util;
 
-use impeccable_common::Io;
+use procable_common::Io;
 
 /// How a JS code path leaves the verb: `process.exit(code)`, a thrown
 /// `PromptAbortError` (cli.js prints `\nAborted.` and exits 130), or any

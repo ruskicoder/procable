@@ -1,14 +1,14 @@
-//! How an Impeccable-owned hook command is recognized inside a harness
+//! How an Procable-owned hook command is recognized inside a harness
 //! manifest. Two generations coexist in the wild:
 //!
-//! * the JS era, `node "<...>/skills/impeccable/scripts/hook.mjs"` (and the
+//! * the JS era, `node "<...>/skills/procable/scripts/hook.mjs"` (and the
 //!   `hook-before-edit` / `hook-probe` / `hook-after-edit` / `hook-stop`
 //!   siblings), and
-//! * the binary era, `"<...>/skills/impeccable/scripts/impeccable" hook`
-//!   (`impeccable.cmd` on Windows; Cursor manifests written before the
+//! * the binary era, `"<...>/skills/procable/scripts/procable" hook`
+//!   (`procable.cmd` on Windows; Cursor manifests written before the
 //!   post-edit hook ran `hook-before-edit` on `preToolUse`).
 //!
-//! `impeccable hooks on` repairs the old form to the new one, so pruning and
+//! `procable hooks on` repairs the old form to the new one, so pruning and
 //! merging must recognize both; `doctor` and `context`'s automatic-hook scan
 //! must accept either as "installed".
 
@@ -18,22 +18,22 @@ use regex::Regex;
 /// The JS-era script markers, still recognized so old installs are pruned
 /// and repaired rather than duplicated.
 pub const LEGACY_HOOK_SCRIPT_MARKERS: &[&str] = &[
-    "skills/impeccable/scripts/hook-probe.mjs",
-    "skills/impeccable/scripts/hook.mjs",
-    "skills/impeccable/scripts/hook-before-edit.mjs",
-    "skills/impeccable/scripts/hook-after-edit.mjs",
-    "skills/impeccable/scripts/hook-stop.mjs",
+    "skills/procable/scripts/hook-probe.mjs",
+    "skills/procable/scripts/hook.mjs",
+    "skills/procable/scripts/hook-before-edit.mjs",
+    "skills/procable/scripts/hook-after-edit.mjs",
+    "skills/procable/scripts/hook-stop.mjs",
 ];
 
-/// Matches the launcher path (`.../skills/impeccable/scripts/impeccable` or
-/// `impeccable.cmd`), the closing quote if any, then the hook verb.
+/// Matches the launcher path (`.../skills/procable/scripts/procable` or
+/// `procable.cmd`), the closing quote if any, then the hook verb.
 static LAUNCHER_HOOK_MARKER: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"skills/impeccable/scripts/impeccable(?:\.cmd|\.exe)?["']?\s+hook(?:-before-edit|-probe|-after-edit|-stop)?(?:\s|$|["'&|;)])"#).unwrap()
+    Regex::new(r#"skills/procable/scripts/procable(?:\.cmd|\.exe)?["']?\s+hook(?:-before-edit|-probe|-after-edit|-stop)?(?:\s|$|["'&|;)])"#).unwrap()
 });
 
 /// User-scope Windows commands embed a JSON-quoted path whose backslashes are
 /// doubled in the command string (#784). #604's single `\`→`/` replace is not
-/// enough: `\\` becomes `//`, which breaks `skills/impeccable` matching.
+/// enough: `\\` becomes `//`, which breaks `skills/procable` matching.
 /// A leading `//` after a quote (or at the start of the string) is a UNC
 /// prefix and stays two slashes, so doctor still probes `//server/share/...`.
 fn normalize_hook_separators(command: &str) -> String {
@@ -60,13 +60,13 @@ fn normalize_hook_separators(command: &str) -> String {
     out
 }
 
-/// True when `command` invokes an Impeccable hook in either generation's spelling.
-pub fn is_impeccable_hook_command(command: &str) -> bool {
+/// True when `command` invokes an Procable hook in either generation's spelling.
+pub fn is_procable_hook_command(command: &str) -> bool {
     let command = normalize_hook_separators(command);
     LEGACY_HOOK_SCRIPT_MARKERS.iter().any(|m| command.contains(m)) || LAUNCHER_HOOK_MARKER.is_match(&command)
 }
 
-/// True when `command` invokes an Impeccable hook in the launcher generation
+/// True when `command` invokes an Procable hook in the launcher generation
 /// only (any hook verb). Tells a repaired manifest from a stale `.mjs`-only
 /// one: install/update use this to decide which manifests still need
 /// migrating to the launcher form.
@@ -97,7 +97,7 @@ pub fn windows_launcher_hook_command(launcher: &str, verb: &str) -> String {
 /// proper (the per-edit hook and Cursor's before-edit gate). Legacy siblings
 /// like `hook-probe` are admin-only and do not count as an installed hook.
 static LAUNCHER_DESIGN_HOOK: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r#"skills/impeccable/scripts/impeccable(?:\.cmd|\.exe)?["']?\s+hook(?:-before-edit)?(?:\s|$|["'&|;)])"#).unwrap()
+    Regex::new(r#"skills/procable/scripts/procable(?:\.cmd|\.exe)?["']?\s+hook(?:-before-edit)?(?:\s|$|["'&|;)])"#).unwrap()
 });
 
 /// True when `command` runs the design hook itself (`hook` or
@@ -105,8 +105,8 @@ static LAUNCHER_DESIGN_HOOK: Lazy<Regex> = Lazy::new(|| {
 /// `staleness-deep` HOOK_SCRIPT_MARKERS both meant exactly these two.
 pub fn is_design_hook_command(command: &str) -> bool {
     let command = normalize_hook_separators(command);
-    command.contains("skills/impeccable/scripts/hook.mjs")
-        || command.contains("skills/impeccable/scripts/hook-before-edit.mjs")
+    command.contains("skills/procable/scripts/hook.mjs")
+        || command.contains("skills/procable/scripts/hook-before-edit.mjs")
         || LAUNCHER_DESIGN_HOOK.is_match(&command)
 }
 
@@ -133,13 +133,13 @@ pub fn hook_program_token(command: &str) -> Option<String> {
         return None;
     }
     static QUOTED: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r#""([^"]*skills/impeccable/scripts/(?:hook(?:-before-edit)?\.mjs|impeccable(?:\.cmd|\.exe)?))""#).unwrap()
+        Regex::new(r#""([^"]*skills/procable/scripts/(?:hook(?:-before-edit)?\.mjs|procable(?:\.cmd|\.exe)?))""#).unwrap()
     });
     static SINGLE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r"'([^']*skills/impeccable/scripts/(?:hook(?:-before-edit)?\.mjs|impeccable(?:\.cmd|\.exe)?))'").unwrap()
+        Regex::new(r"'([^']*skills/procable/scripts/(?:hook(?:-before-edit)?\.mjs|procable(?:\.cmd|\.exe)?))'").unwrap()
     });
     static BARE: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r#"([^\s"'|&;()]*skills/impeccable/scripts/(?:hook(?:-before-edit)?\.mjs|impeccable(?:\.cmd|\.exe)?))"#).unwrap()
+        Regex::new(r#"([^\s"'|&;()]*skills/procable/scripts/(?:hook(?:-before-edit)?\.mjs|procable(?:\.cmd|\.exe)?))"#).unwrap()
     });
     if let Some(m) = QUOTED.captures(&command) {
         return Some(m[1].to_string());
@@ -162,7 +162,7 @@ pub const CURSOR_HOOK_MATCHER: &str = "^Write$";
 /// The event the retired before-edit gate (`hook-before-edit`) ran on.
 pub const CURSOR_RETIRED_HOOK_EVENT: &str = "preToolUse";
 
-/// The Impeccable part of a Cursor `.cursor/hooks.json`, for a given hook
+/// The Procable part of a Cursor `.cursor/hooks.json`, for a given hook
 /// command. `hooks on` and install/update both build the manifest here so
 /// the two writers cannot drift (`transformers/hooks.js`
 /// `buildCursorHooksManifest` is the build's twin).
@@ -179,14 +179,14 @@ pub fn cursor_hook_manifest(command: &str, timeout_seconds: i64) -> serde_json::
     serde_json::json!({ "version": 1, "hooks": hooks })
 }
 
-/// True when a Cursor manifest still runs an Impeccable hook on
+/// True when a Cursor manifest still runs an Procable hook on
 /// `preToolUse`: the before-edit write gate, retired in favor of the
 /// post-edit hook. The gate verb keeps working, so this is a migration, not
 /// a broken hook.
 pub fn cursor_manifest_has_retired_gate(manifest: &serde_json::Value) -> bool {
     fn any_marker(v: &serde_json::Value) -> bool {
         match v {
-            serde_json::Value::String(s) => is_impeccable_hook_command(s),
+            serde_json::Value::String(s) => is_procable_hook_command(s),
             serde_json::Value::Array(a) => a.iter().any(any_marker),
             serde_json::Value::Object(o) => o.values().any(any_marker),
             _ => false,
@@ -202,14 +202,14 @@ pub fn cursor_manifest_has_retired_gate(manifest: &serde_json::Value) -> bool {
 /// post-edit hook in place: the same launcher command with `hook-before-edit`
 /// swapped for `hook`, under `postToolUse` with the `^Write$` matcher. Other
 /// tools' entries are kept, an emptied `preToolUse` is dropped, and an
-/// existing Impeccable `postToolUse` entry is not duplicated. `None` when
+/// existing Procable `postToolUse` entry is not duplicated. `None` when
 /// there is no gate, or when a gate entry is in the JS-era `.mjs` spelling
-/// (its script is gone; `impeccable hooks on` rewrites those). `doctor --fix`
+/// (its script is gone; `procable hooks on` rewrites those). `doctor --fix`
 /// uses this; install/update and `hooks on` rebuild the manifest instead.
 pub fn migrate_cursor_gate_in_place(manifest: &serde_json::Value) -> Option<serde_json::Value> {
     use serde_json::Value;
     static GATE_VERB: Lazy<Regex> = Lazy::new(|| {
-        Regex::new(r#"(skills[/\\]+impeccable[/\\]+scripts[/\\]+impeccable(?:\.cmd|\.exe)?["']?\s+)hook-before-edit"#).unwrap()
+        Regex::new(r#"(skills[/\\]+procable[/\\]+scripts[/\\]+procable(?:\.cmd|\.exe)?["']?\s+)hook-before-edit"#).unwrap()
     });
     if !cursor_manifest_has_retired_gate(manifest) {
         return None;
@@ -222,7 +222,7 @@ pub fn migrate_cursor_gate_in_place(manifest: &serde_json::Value) -> Option<serd
     for entry in pre {
         let command = entry.get("command").and_then(Value::as_str);
         match command {
-            Some(c) if is_impeccable_hook_command(c) => {
+            Some(c) if is_procable_hook_command(c) => {
                 if !is_launcher_hook_command(c) {
                     return None;
                 }
@@ -235,7 +235,7 @@ pub fn migrate_cursor_gate_in_place(manifest: &serde_json::Value) -> Option<serd
         }
     }
     // A gate nested somewhere other than a top-level `command` is not a
-    // shape any Impeccable writer produced; leave it to `hooks on`.
+    // shape any Procable writer produced; leave it to `hooks on`.
     let (command, timeout) = moved?;
     if kept.is_empty() {
         hooks.remove(CURSOR_RETIRED_HOOK_EVENT);
@@ -247,7 +247,7 @@ pub fn migrate_cursor_gate_in_place(manifest: &serde_json::Value) -> Option<serd
         _ => Vec::new(),
     };
     let has_post = post.iter().any(|e| {
-        e.get("command").and_then(Value::as_str).is_some_and(is_impeccable_hook_command)
+        e.get("command").and_then(Value::as_str).is_some_and(is_procable_hook_command)
     });
     if !has_post {
         post.push(serde_json::json!({
@@ -267,26 +267,26 @@ mod tests {
 
     #[test]
     fn recognizes_legacy_script_forms() {
-        assert!(is_impeccable_hook_command("node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\""));
-        assert!(is_impeccable_hook_command("[ ! -f '/x/.cursor/skills/impeccable/scripts/hook-before-edit.mjs' ] || node '/x/.cursor/skills/impeccable/scripts/hook-before-edit.mjs'"));
-        assert!(is_impeccable_hook_command("node .agents/skills/impeccable/scripts/hook-probe.mjs"));
-        assert!(is_design_hook_command("node \".agents/skills/impeccable/scripts/hook.mjs\""));
-        assert!(!is_design_hook_command("node .agents/skills/impeccable/scripts/hook-probe.mjs"));
+        assert!(is_procable_hook_command("node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\""));
+        assert!(is_procable_hook_command("[ ! -f '/x/.cursor/skills/procable/scripts/hook-before-edit.mjs' ] || node '/x/.cursor/skills/procable/scripts/hook-before-edit.mjs'"));
+        assert!(is_procable_hook_command("node .agents/skills/procable/scripts/hook-probe.mjs"));
+        assert!(is_design_hook_command("node \".agents/skills/procable/scripts/hook.mjs\""));
+        assert!(!is_design_hook_command("node .agents/skills/procable/scripts/hook-probe.mjs"));
     }
 
     #[test]
     fn recognizes_launcher_forms() {
         for cmd in [
-            "\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook",
-            "\".agents/skills/impeccable/scripts/impeccable\" hook",
-            "\".agents/skills/impeccable/scripts/impeccable.cmd\" hook",
-            "\".cursor/skills/impeccable/scripts/impeccable\" hook-before-edit",
-            "\"$(git rev-parse --show-toplevel)/.github/skills/impeccable/scripts/impeccable\" hook",
-            "[ ! -f '/x/.claude/skills/impeccable/scripts/impeccable' ] || '/x/.claude/skills/impeccable/scripts/impeccable' hook",
-            "if exist \".agents/skills/impeccable/scripts/impeccable.cmd\" (\".agents/skills/impeccable/scripts/impeccable.cmd\" hook & exit /b)",
-            r#"cmd /c if exist ".grok\skills\impeccable\scripts\impeccable.cmd" ".grok\skills\impeccable\scripts\impeccable.cmd" hook"#,
+            "\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook",
+            "\".agents/skills/procable/scripts/procable\" hook",
+            "\".agents/skills/procable/scripts/procable.cmd\" hook",
+            "\".cursor/skills/procable/scripts/procable\" hook-before-edit",
+            "\"$(git rev-parse --show-toplevel)/.github/skills/procable/scripts/procable\" hook",
+            "[ ! -f '/x/.claude/skills/procable/scripts/procable' ] || '/x/.claude/skills/procable/scripts/procable' hook",
+            "if exist \".agents/skills/procable/scripts/procable.cmd\" (\".agents/skills/procable/scripts/procable.cmd\" hook & exit /b)",
+            r#"cmd /c if exist ".grok\skills\procable\scripts\procable.cmd" ".grok\skills\procable\scripts\procable.cmd" hook"#,
         ] {
-            assert!(is_impeccable_hook_command(cmd), "{cmd}");
+            assert!(is_procable_hook_command(cmd), "{cmd}");
             assert!(is_design_hook_command(cmd), "{cmd}");
         }
     }
@@ -296,18 +296,18 @@ mod tests {
         // A stale `.mjs`-only manifest is still "ours" (so it is pruned and
         // repaired) but no longer counts as an active launcher hook.
         for cmd in [
-            "node \".claude/skills/impeccable/scripts/hook.mjs\"",
-            "[ ! -f '/x/.cursor/skills/impeccable/scripts/hook-before-edit.mjs' ] || node '/x/.cursor/skills/impeccable/scripts/hook-before-edit.mjs'",
+            "node \".claude/skills/procable/scripts/hook.mjs\"",
+            "[ ! -f '/x/.cursor/skills/procable/scripts/hook-before-edit.mjs' ] || node '/x/.cursor/skills/procable/scripts/hook-before-edit.mjs'",
         ] {
-            assert!(is_impeccable_hook_command(cmd), "{cmd}");
+            assert!(is_procable_hook_command(cmd), "{cmd}");
             assert!(is_design_hook_command(cmd), "{cmd}");
             assert!(!is_launcher_hook_command(cmd), "{cmd}");
             assert!(!is_launcher_design_hook_command(cmd), "{cmd}");
         }
         // The launcher form counts as active exactly as before.
         for cmd in [
-            "\".claude/skills/impeccable/scripts/impeccable\" hook",
-            "'/x/.cursor/skills/impeccable/scripts/impeccable' hook-before-edit",
+            "\".claude/skills/procable/scripts/procable\" hook",
+            "'/x/.cursor/skills/procable/scripts/procable' hook-before-edit",
         ] {
             assert!(is_launcher_hook_command(cmd), "{cmd}");
             assert!(is_launcher_design_hook_command(cmd), "{cmd}");
@@ -318,37 +318,37 @@ mod tests {
     fn rejects_unrelated_commands() {
         for cmd in [
             "node \"${CLAUDE_PROJECT_DIR}/.claude/skills/other/scripts/hook.mjs\"",
-            "\".claude/skills/impeccable/scripts/impeccable\" context",
-            "impeccable hook",
-            "echo skills/impeccable/scripts/impeccable-hook",
+            "\".claude/skills/procable/scripts/procable\" context",
+            "procable hook",
+            "echo skills/procable/scripts/procable-hook",
         ] {
-            assert!(!is_impeccable_hook_command(cmd), "{cmd}");
+            assert!(!is_procable_hook_command(cmd), "{cmd}");
         }
     }
 
     #[test]
     fn extracts_program_token() {
         assert_eq!(
-            hook_program_token("node \"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs\"").as_deref(),
-            Some("${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/hook.mjs")
+            hook_program_token("node \"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs\"").as_deref(),
+            Some("${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/hook.mjs")
         );
         assert_eq!(
-            hook_program_token("\"${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable\" hook").as_deref(),
-            Some("${CLAUDE_PROJECT_DIR}/.claude/skills/impeccable/scripts/impeccable")
+            hook_program_token("\"${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable\" hook").as_deref(),
+            Some("${CLAUDE_PROJECT_DIR}/.claude/skills/procable/scripts/procable")
         );
         assert_eq!(
-            hook_program_token("'/x/.cursor/skills/impeccable/scripts/impeccable' hook-before-edit").as_deref(),
-            Some("/x/.cursor/skills/impeccable/scripts/impeccable")
+            hook_program_token("'/x/.cursor/skills/procable/scripts/procable' hook-before-edit").as_deref(),
+            Some("/x/.cursor/skills/procable/scripts/procable")
         );
         assert_eq!(
-            hook_program_token(".agents/skills/impeccable/scripts/impeccable hook").as_deref(),
-            Some(".agents/skills/impeccable/scripts/impeccable")
+            hook_program_token(".agents/skills/procable/scripts/procable hook").as_deref(),
+            Some(".agents/skills/procable/scripts/procable")
         );
         assert_eq!(
-            hook_program_token(&windows_launcher_hook_command(r"C:\Users\a b\.agents\skills\impeccable\scripts\impeccable", "hook")).as_deref(),
-            Some("C:/Users/a b/.agents/skills/impeccable/scripts/impeccable.cmd")
+            hook_program_token(&windows_launcher_hook_command(r"C:\Users\a b\.agents\skills\procable\scripts\procable", "hook")).as_deref(),
+            Some("C:/Users/a b/.agents/skills/procable/scripts/procable.cmd")
         );
-        assert_eq!(hook_program_token("'/x/it'\\''s/.claude/skills/impeccable/scripts/impeccable' hook"), None);
+        assert_eq!(hook_program_token("'/x/it'\\''s/.claude/skills/procable/scripts/procable' hook"), None);
         assert_eq!(hook_program_token("echo hi"), None);
     }
 
@@ -357,7 +357,7 @@ mod tests {
         let gate = serde_json::json!({"version": 1, "hooks": {
             "preToolUse": [
                 {"command": "./audit.sh", "matcher": "Shell"},
-                {"command": "[ ! -f '/x/.cursor/skills/impeccable/scripts/impeccable' ] || '/x/.cursor/skills/impeccable/scripts/impeccable' hook-before-edit", "timeout": 7},
+                {"command": "[ ! -f '/x/.cursor/skills/procable/scripts/procable' ] || '/x/.cursor/skills/procable/scripts/procable' hook-before-edit", "timeout": 7},
             ],
         }});
         assert!(cursor_manifest_has_retired_gate(&gate));
@@ -365,7 +365,7 @@ mod tests {
         assert_eq!(next, serde_json::json!({"version": 1, "hooks": {
             "preToolUse": [{"command": "./audit.sh", "matcher": "Shell"}],
             "postToolUse": [{
-                "command": "[ ! -f '/x/.cursor/skills/impeccable/scripts/impeccable' ] || '/x/.cursor/skills/impeccable/scripts/impeccable' hook",
+                "command": "[ ! -f '/x/.cursor/skills/procable/scripts/procable' ] || '/x/.cursor/skills/procable/scripts/procable' hook",
                 "matcher": "^Write$",
                 "timeout": 7,
             }],
@@ -373,13 +373,13 @@ mod tests {
         assert!(!cursor_manifest_has_retired_gate(&next));
         assert_eq!(migrate_cursor_gate_in_place(&next), None);
         // The JS-era spelling has no launcher to keep; `hooks on` rewrites it.
-        let mjs = serde_json::json!({"hooks": {"preToolUse": [{"command": "node \".cursor/skills/impeccable/scripts/hook-before-edit.mjs\""}]}});
+        let mjs = serde_json::json!({"hooks": {"preToolUse": [{"command": "node \".cursor/skills/procable/scripts/hook-before-edit.mjs\""}]}});
         assert!(cursor_manifest_has_retired_gate(&mjs));
         assert_eq!(migrate_cursor_gate_in_place(&mjs), None);
         // An existing post-edit entry is not duplicated.
         let both = serde_json::json!({"hooks": {
-            "preToolUse": [{"command": "\".cursor/skills/impeccable/scripts/impeccable\" hook-before-edit"}],
-            "postToolUse": [{"command": "\".cursor/skills/impeccable/scripts/impeccable\" hook", "matcher": "^Write$"}],
+            "preToolUse": [{"command": "\".cursor/skills/procable/scripts/procable\" hook-before-edit"}],
+            "postToolUse": [{"command": "\".cursor/skills/procable/scripts/procable\" hook", "matcher": "^Write$"}],
         }});
         let next = migrate_cursor_gate_in_place(&both).unwrap();
         assert_eq!(next["hooks"].as_object().unwrap().len(), 1);
@@ -388,42 +388,42 @@ mod tests {
 
     #[test]
     fn recognizes_json_escaped_windows_launcher_path() {
-        let launcher = r"C:\Users\alice\.claude\skills\impeccable\scripts\impeccable";
+        let launcher = r"C:\Users\alice\.claude\skills\procable\scripts\procable";
         let quoted = serde_json::to_string(launcher).unwrap();
         let cmd = format!("[ ! -f {quoted} ] || {quoted} hook");
-        assert!(is_impeccable_hook_command(&cmd), "{cmd}");
+        assert!(is_procable_hook_command(&cmd), "{cmd}");
         assert!(is_launcher_hook_command(&cmd), "{cmd}");
         assert!(is_design_hook_command(&cmd), "{cmd}");
         assert_eq!(
             hook_program_token(&cmd).as_deref(),
-            Some("C:/Users/alice/.claude/skills/impeccable/scripts/impeccable")
+            Some("C:/Users/alice/.claude/skills/procable/scripts/procable")
         );
     }
 
     #[test]
     fn recognizes_single_backslash_windows_path() {
-        let cmd = r#"[ ! -f "C:\Users\alice\.claude\skills\impeccable\scripts\impeccable" ] || "C:\Users\alice\.claude\skills\impeccable\scripts\impeccable" hook"#;
-        assert!(is_impeccable_hook_command(cmd), "{cmd}");
+        let cmd = r#"[ ! -f "C:\Users\alice\.claude\skills\procable\scripts\procable" ] || "C:\Users\alice\.claude\skills\procable\scripts\procable" hook"#;
+        assert!(is_procable_hook_command(cmd), "{cmd}");
         assert!(is_launcher_hook_command(cmd), "{cmd}");
         assert!(is_design_hook_command(cmd), "{cmd}");
     }
 
     #[test]
     fn preserves_unc_prefix_in_program_token() {
-        let launcher = r"\\server\share\.claude\skills\impeccable\scripts\impeccable";
+        let launcher = r"\\server\share\.claude\skills\procable\scripts\procable";
         let quoted = serde_json::to_string(launcher).unwrap();
         let json_escaped = format!("[ ! -f {quoted} ] || {quoted} hook");
-        assert!(is_impeccable_hook_command(&json_escaped), "{json_escaped}");
+        assert!(is_procable_hook_command(&json_escaped), "{json_escaped}");
         assert_eq!(
             hook_program_token(&json_escaped).as_deref(),
-            Some("//server/share/.claude/skills/impeccable/scripts/impeccable")
+            Some("//server/share/.claude/skills/procable/scripts/procable")
         );
 
-        let single = r#"[ ! -f "\\server\share\.claude\skills\impeccable\scripts\impeccable" ] || "\\server\share\.claude\skills\impeccable\scripts\impeccable" hook"#;
-        assert!(is_impeccable_hook_command(single), "{single}");
+        let single = r#"[ ! -f "\\server\share\.claude\skills\procable\scripts\procable" ] || "\\server\share\.claude\skills\procable\scripts\procable" hook"#;
+        assert!(is_procable_hook_command(single), "{single}");
         assert_eq!(
             hook_program_token(single).as_deref(),
-            Some("//server/share/.claude/skills/impeccable/scripts/impeccable")
+            Some("//server/share/.claude/skills/procable/scripts/procable")
         );
     }
 }

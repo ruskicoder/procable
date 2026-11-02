@@ -16,11 +16,11 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
 use base64::Engine as _;
-use impeccable_browser::{
+use procable_browser::{
     detect_url_evidence, origin, BrowserEngine, Evidence, EvidenceRequest,
 };
-use impeccable_core::findings::Finding;
-use impeccable_detect::engines::ScanOptions;
+use procable_core::findings::Finding;
+use procable_detect::engines::ScanOptions;
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/antipatterns")
@@ -69,7 +69,7 @@ fn handle(mut stream: TcpStream) {
 
 fn engine() -> Option<BrowserEngine> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }
@@ -299,7 +299,7 @@ fn a_fixed_scroll_frame_page_is_captured_by_scrolling_the_frame() {
     assert!(!all.iter().any(|(_, s, _)| *s == "#pass-frame-foot-copy"), "{all:?}");
 
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::STITCHED);
+    assert_eq!(shot.method, procable_browser::fullpage::method::STITCHED);
     assert!(shot.height > 3400.0, "{}", shot.height);
     let img = decode(&shot.jpeg_base64);
     let rect = rect_of(&evidence, "#flag-frame-foot-copy");
@@ -462,7 +462,7 @@ fn a_scroller_measured_mid_scroll_keeps_the_band_above_it() {
         .expect("evidence scan");
     browser.close();
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::STITCHED);
+    assert_eq!(shot.method, procable_browser::fullpage::method::STITCHED);
     let img = decode(&shot.jpeg_base64);
     // The band is the image's first hundred rows, as the rects measured it.
     let p = img.get_pixel(40, 50).0;
@@ -498,7 +498,7 @@ fn a_shell_inside_a_body_margin_is_captured_by_scrolling_the_shell() {
         .expect("evidence scan");
     browser.close();
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::STITCHED);
+    assert_eq!(shot.method, procable_browser::fullpage::method::STITCHED);
     assert!(shot.height > 3000.0, "{}", shot.height);
     let img = decode(&shot.jpeg_base64);
     // The marker under the shell's 3000px of content, 8px down for the margin.
@@ -537,7 +537,7 @@ fn a_footer_under_a_scrolled_shell_reaches_the_screenshot() {
         .expect("evidence scan");
     browser.close();
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::STITCHED);
+    assert_eq!(shot.method, procable_browser::fullpage::method::STITCHED);
     assert!(shot.height >= 3140.0, "{}", shot.height);
     let img = decode(&shot.jpeg_base64);
     // The shell's content is white to its foot; the footer follows it.
@@ -640,7 +640,7 @@ const FIXED_BACKDROP_PAGE: &str = r#"<!DOCTYPE html>
 <div class="spacer" style="height: 1200px"></div>
 </body></html>"#;
 
-fn element_shot<'a>(evidence: &'a Evidence, selector: &str) -> &'a impeccable_browser::fullpage::ElementShot {
+fn element_shot<'a>(evidence: &'a Evidence, selector: &str) -> &'a procable_browser::fullpage::ElementShot {
     evidence
         .element_shots
         .iter()
@@ -757,7 +757,7 @@ fn a_page_that_relays_itself_for_the_capture_is_stitched() {
     let Some(engine) = engine() else { return };
     let (_, evidence) = scan_page(&engine, RELAYOUT_PAGE, (1280, 800), &EvidenceRequest::default());
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::STITCHED);
+    assert_eq!(shot.method, procable_browser::fullpage::method::STITCHED);
     assert_eq!(shot.height, shot.document_height);
     let img = decode(&shot.jpeg_base64);
     let green = |p: [u8; 3]| p[1] > 100 && p[0] < 40 && p[2] < 90;
@@ -801,7 +801,7 @@ fn a_page_that_never_stops_moving_keeps_its_beyond_viewport_capture() {
     let Some(engine) = engine() else { return };
     let (_, evidence) = scan_page(&engine, TICKER_PAGE, (1280, 800), &EvidenceRequest::default());
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::BEYOND_VIEWPORT);
+    assert_eq!(shot.method, procable_browser::fullpage::method::BEYOND_VIEWPORT);
 }
 
 #[test]
@@ -809,10 +809,10 @@ fn a_page_that_only_slides_keeps_its_beyond_viewport_capture() {
     let Some(engine) = engine() else { return };
     let (_, evidence) = scan_page(&engine, SLIDING_PAGE, (1280, 800), &EvidenceRequest::default());
     let shot = evidence.screenshot.as_ref().expect("screenshot");
-    assert_eq!(shot.method, impeccable_browser::fullpage::method::BEYOND_VIEWPORT);
+    assert_eq!(shot.method, procable_browser::fullpage::method::BEYOND_VIEWPORT);
 }
 
-fn shot_of(engine: &BrowserEngine, page: &'static str, selector: &str) -> (image::RgbImage, impeccable_browser::fullpage::ElementShot) {
+fn shot_of(engine: &BrowserEngine, page: &'static str, selector: &str) -> (image::RgbImage, procable_browser::fullpage::ElementShot) {
     let request = EvidenceRequest {
         max_screenshot_height: 1500.0,
         ..EvidenceRequest::default()

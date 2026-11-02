@@ -17,8 +17,8 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use impeccable_browser::BrowserEngine;
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::BrowserEngine;
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 const FIXTURE: &str = "visual-contrast-gates.html";
 
@@ -64,7 +64,7 @@ fn handle(mut stream: TcpStream) {
 #[test]
 fn the_visual_passes_measure_only_text_a_reader_sees_on_its_own_surface() {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return;
     }

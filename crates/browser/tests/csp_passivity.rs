@@ -21,7 +21,7 @@ const PAGE: &str = r#"<!doctype html>
 <div id="marker">clean</div>
 <script>
   // Blocked by `script-src 'self'` (no nonce/hash). Ran only under setBypassCSP.
-  window.__impeccableSideEffect = true;
+  window.__procableSideEffect = true;
   document.getElementById('marker').textContent = 'SIDE-EFFECT-FIRED';
 </script>
 </body></html>
@@ -54,11 +54,11 @@ fn handle(mut stream: TcpStream) {
 #[test]
 fn strict_csp_inline_script_does_not_run_during_scan() {
     let env: HashMap<String, String> = std::env::vars().collect();
-    let Ok(exe) = impeccable_browser::discovery::find_browser(&env) else {
+    let Ok(exe) = procable_browser::discovery::find_browser(&env) else {
         eprintln!("skip: no installed browser found");
         return;
     };
-    let mut browser = match impeccable_browser::cdp::Browser::launch(&exe, &[], false) {
+    let mut browser = match procable_browser::cdp::Browser::launch(&exe, &[], false) {
         Ok(b) => b,
         Err(e) => {
             eprintln!("skip: could not launch browser: {}", e.message);
@@ -72,7 +72,7 @@ fn strict_csp_inline_script_does_not_run_during_scan() {
         .expect("goto");
 
     let fired = page
-        .evaluate_value("window.__impeccableSideEffect === true")
+        .evaluate_value("window.__procableSideEffect === true")
         .expect("eval side-effect flag");
     let marker = page
         .evaluate_value("document.getElementById('marker').textContent")

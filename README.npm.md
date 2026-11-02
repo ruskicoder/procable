@@ -1,49 +1,49 @@
-# Impeccable CLI
+# Procable CLI
 
-Detect UI anti-patterns and design quality issues from the command line, and install the Impeccable design skill into your AI coding harness. The detector scans HTML, CSS, JSX, TSX, Vue, and Svelte files for 62 deterministic rules, including AI-generated UI tells, accessibility violations, and general design quality problems.
+Detect UI anti-patterns and design quality issues from the command line, and install the Procable design skill into your AI coding harness. The detector scans HTML, CSS, JSX, TSX, Vue, and Svelte files for 62 deterministic rules, including AI-generated UI tells, accessibility violations, and general design quality problems.
 
-The npm package is a small launcher. It runs the `impeccable` engine binary for your platform, installed alongside it as an optional dependency (`@impeccable/cli-<os>-<arch>`), and falls back to a per-user cache or a one-time download when that package is missing.
+The npm package is a small launcher. It runs the `procable` engine binary for your platform, installed alongside it as an optional dependency (`@procable/cli-<os>-<arch>`), and falls back to a per-user cache or a one-time download when that package is missing.
 
 ## Quick Start
 
 ```bash
 # Install skills into your AI harness (Claude, Cursor, Gemini, etc.)
-npx impeccable install
+npx procable install
 
 # Non-interactive install for a specific scope
-npx impeccable install -y --providers=claude,codex --scope=project
+npx procable install -y --providers=claude,codex --scope=project
 
 # First command to run inside your AI harness
-/impeccable init
+/procable init
 
 # Update skills to the latest version
-npx impeccable update
+npx procable update
 
 # Install or update skills without hook manifests
-npx impeccable install --no-hooks
+npx procable install --no-hooks
 
 # Link skills from a Git submodule checkout
-npx impeccable link --source=.impeccable --providers=claude,cursor
+npx procable link --source=.procable --providers=claude,cursor
 
 # List all available commands
-npx impeccable help
+npx procable help
 
 # Scan files or directories for anti-patterns
-npx impeccable detect src/
+npx procable detect src/
 
 # Scan a live URL (uses an installed Chrome, Chromium, or Edge)
-npx impeccable detect https://example.com
+npx procable detect https://example.com
 
 # JSON output for CI/tooling
-npx impeccable detect --json src/
+npx procable detect --json src/
 
 # GitHub Actions annotations
-npx impeccable detect --github src/
+npx procable detect --github src/
 # Catalog of detector rules (no scan)
-npx impeccable detect --list-rules
+npx procable detect --list-rules
 ```
 
-`npx impeccable skills <command>` is the legacy namespace and still works.
+`npx procable skills <command>` is the legacy namespace and still works.
 
 ## What It Detects
 
@@ -75,7 +75,7 @@ Operational failure takes precedence when a multi-target scan is partial. In JSO
 ## Options
 
 ```
-impeccable detect [options] [file-or-dir-or-url...]
+procable detect [options] [file-or-dir-or-url...]
 
   --json        Output findings as JSON
   --github      Write GitHub Actions annotations for each finding
@@ -86,15 +86,15 @@ impeccable detect [options] [file-or-dir-or-url...]
 
 ## Requirements
 
-- Node.js 18.19+ to run `npx impeccable`. The engine itself is a self-contained binary and needs no runtime; the skill installed into your harness calls it directly.
-- For URL scans, an installed Chrome, Chromium, or Edge (set `IMPECCABLE_BROWSER` to point at one).
+- Node.js 18.19+ to run `npx procable`. The engine itself is a self-contained binary and needs no runtime; the skill installed into your harness calls it directly.
+- For URL scans, an installed Chrome, Chromium, or Edge (set `PROCABLE_BROWSER` to point at one).
 - Behind a TLS-inspecting proxy, downloads trust your OS certificate store as well as the bundled Mozilla roots. Set `SSL_CERT_FILE` or `SSL_CERT_DIR` to use a specific CA bundle instead.
 
-Binary lookup order: `IMPECCABLE_BIN`, the platform package, `~/.impeccable/bin/<version>/`, then a download of the pinned version into that cache. Set `IMPECCABLE_BIN` to a local build to skip all of that.
+Binary lookup order: `PROCABLE_BIN`, the platform package, `~/.procable/bin/<version>/`, then a download of the pinned version into that cache. Set `PROCABLE_BIN` to a local build to skip all of that.
 
-## Part of Impeccable
+## Part of Procable
 
-This CLI is part of [Impeccable](https://impeccable.style), a cross-provider design skill pack for AI-powered development tools. The full suite includes 24 commands for Claude, Cursor, GitHub Copilot, Gemini, Codex, Hermes Agent, Veto, and more.
+This CLI is part of [Procable](https://impeccable.style), a cross-provider design skill pack for AI-powered development tools. The full suite includes 25 commands for Claude, Cursor, GitHub Copilot, Gemini, Codex, Hermes Agent, Veto, and more.
 
 ## License
 

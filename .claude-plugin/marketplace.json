@@ -1,25 +1,25 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "impeccable",
+  "name": "procable",
   "metadata": {
-    "description": "Design fluency for AI harnesses. 1 skill, 24 commands, and curated anti-patterns for impeccable frontend design."
+    "description": "Design fluency for AI harnesses. 1 skill, 25 commands, and curated anti-patterns for procable frontend design."
   },
   "owner": {
-    "name": "Paul Bakaus",
-    "email": "paul@paulbakaus.com"
+    "name": "Do Dang Khoa",
+    "url": "https://github.com/ruskicoder"
   },
   "plugins": [
     {
-      "name": "impeccable",
-      "description": "Design fluency for frontend development. 1 skill with 24 commands (/impeccable polish, /impeccable audit, /impeccable critique, etc.) and curated anti-pattern detection.",
-      "version": "4.8.0",
+      "name": "procable",
+      "description": "Design fluency for frontend development. 1 skill with 25 commands (/procable polish, /procable audit, /procable critique, etc.) and curated anti-pattern detection.",
+      "version": "1.0.0",
       "author": {
-        "name": "Paul Bakaus",
-        "email": "paul@paulbakaus.com"
+        "name": "Do Dang Khoa",
+        "url": "https://github.com/ruskicoder"
       },
       "source": "./plugin",
       "category": "design",
-      "homepage": "https://impeccable.style",
+      "homepage": "https://github.com/ruskicoder/procable",
       "tags": [
         "design",
         "frontend",

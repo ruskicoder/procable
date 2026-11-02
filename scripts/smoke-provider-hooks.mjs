@@ -40,38 +40,38 @@ const selectedProviders = (legacySmokeArg(args.providers) || defaultProviders.jo
   .split(',')
   .map((provider) => provider.trim().toLowerCase())
   .filter(Boolean);
-const smokeDir = join(targetRepo, '.impeccable', 'provider-smoke');
+const smokeDir = join(targetRepo, '.procable', 'provider-smoke');
 const summaryPath = join(smokeDir, 'summary.json');
-const directSmokeFile = 'src/__impeccable_provider_smoke_direct.html';
+const directSmokeFile = 'src/__procable_provider_smoke_direct.html';
 const providerSmoke = {
   claude: {
-    fixture: 'src/__impeccable_provider_smoke_claude.html',
-    confirmedFixture: 'src/__impeccable_provider_smoke_confirmed_claude.html',
-    agentChoiceFixture: 'src/__impeccable_provider_smoke_font_choice_claude.html',
-    launcher: '.claude/skills/impeccable/scripts/impeccable',
+    fixture: 'src/__procable_provider_smoke_claude.html',
+    confirmedFixture: 'src/__procable_provider_smoke_confirmed_claude.html',
+    agentChoiceFixture: 'src/__procable_provider_smoke_font_choice_claude.html',
+    launcher: '.claude/skills/procable/scripts/procable',
     hookVerb: 'hook',
     event: (file) => postToolUseEvent('confirmed-claude', file, 'Edit'),
   },
   codex: {
-    fixture: 'src/__impeccable_provider_smoke_codex.html',
-    confirmedFixture: 'src/__impeccable_provider_smoke_confirmed_codex.html',
-    agentChoiceFixture: 'src/__impeccable_provider_smoke_font_choice_codex.html',
-    launcher: '.agents/skills/impeccable/scripts/impeccable',
+    fixture: 'src/__procable_provider_smoke_codex.html',
+    confirmedFixture: 'src/__procable_provider_smoke_confirmed_codex.html',
+    agentChoiceFixture: 'src/__procable_provider_smoke_font_choice_codex.html',
+    launcher: '.agents/skills/procable/scripts/procable',
     hookVerb: 'hook',
     event: (file) => postToolUseEvent('confirmed-codex', file, 'apply_patch'),
   },
   cursor: {
-    fixture: 'src/__impeccable_provider_smoke_cursor.html',
-    confirmedFixture: 'src/__impeccable_provider_smoke_confirmed_cursor.html',
-    agentChoiceFixture: 'src/__impeccable_provider_smoke_font_choice_cursor.html',
-    launcher: '.cursor/skills/impeccable/scripts/impeccable',
+    fixture: 'src/__procable_provider_smoke_cursor.html',
+    confirmedFixture: 'src/__procable_provider_smoke_confirmed_cursor.html',
+    agentChoiceFixture: 'src/__procable_provider_smoke_font_choice_cursor.html',
+    launcher: '.cursor/skills/procable/scripts/procable',
     hookVerb: 'hook',
     event: (file) => cursorPostToolUseEvent('confirmed-cursor', file),
   },
 };
 
 const results = [];
-const hookConfigFiles = ['.impeccable/config.json', '.impeccable/config.local.json'];
+const hookConfigFiles = ['.procable/config.json', '.procable/config.local.json'];
 const originalHookConfigFiles = new Map();
 
 function legacySmokeArg(value) {
@@ -200,8 +200,8 @@ function shellQuote(value) {
 }
 
 async function reinstallFresh() {
-  cleanInstalledImpeccable();
-  const packDir = makeTempDir('impeccable-provider-smoke-pack-');
+  cleanInstalledProcable();
+  const packDir = makeTempDir('procable-provider-smoke-pack-');
   const pack = run('npm', ['pack', '--pack-destination', packDir], {
     cwd: prRoot,
     logName: 'npm-pack.log',
@@ -211,20 +211,20 @@ async function reinstallFresh() {
   const tarball = join(packDir, packName);
   assertPath(tarball, 'local npm tarball');
 
-  const env = { IMPECCABLE_BUNDLE_PATH: bundlePath };
-  run('npx', ['--yes', '--package', tarball, 'impeccable', 'skills', 'install', '-y', '--force', '--providers=claude,cursor,codex'], {
+  const env = { PROCABLE_BUNDLE_PATH: bundlePath };
+  run('npx', ['--yes', '--package', tarball, 'procable', 'skills', 'install', '-y', '--force', '--providers=claude,cursor,codex'], {
     cwd: targetRepo,
     env,
     logName: 'skills-install.log',
     timeoutMs: 5 * 60 * 1000,
   });
-  run('npx', ['--yes', '--package', tarball, 'impeccable', 'skills', 'update', '-y'], {
+  run('npx', ['--yes', '--package', tarball, 'procable', 'skills', 'update', '-y'], {
     cwd: targetRepo,
     env,
     logName: 'skills-update.log',
     timeoutMs: 5 * 60 * 1000,
   });
-  record('fresh install/update', true, 'installed through local npx + IMPECCABLE_BUNDLE_PATH');
+  record('fresh install/update', true, 'installed through local npx + PROCABLE_BUNDLE_PATH');
 }
 
 function makeTempDir(prefix) {
@@ -233,19 +233,19 @@ function makeTempDir(prefix) {
   return dir;
 }
 
-function cleanInstalledImpeccable() {
+function cleanInstalledProcable() {
   clearRuntimeState();
   cleanSmokeFiles();
 
   for (const rel of [
-    '.claude/skills/impeccable',
-    '.cursor/skills/impeccable',
-    '.agents/skills/impeccable',
+    '.claude/skills/procable',
+    '.cursor/skills/procable',
+    '.agents/skills/procable',
     '.claude/hooks/hooks.json',
     '.agents/hooks',
     '.agents/plugins/marketplace.json',
     '.cursor/pre-log.mjs',
-    '.cursor/rules/impeccable-design-hook.mdc',
+    '.cursor/rules/procable-design-hook.mdc',
     'plugin-codex',
   ]) {
     rmSync(join(targetRepo, rel), { recursive: true, force: true });
@@ -255,25 +255,25 @@ function cleanInstalledImpeccable() {
     stripManifest(rel);
   }
 
-  run('claude', ['plugin', 'uninstall', 'impeccable@impeccable', '--scope', 'user'], {
+  run('claude', ['plugin', 'uninstall', 'procable@procable', '--scope', 'user'], {
     cwd: targetRepo,
     logName: 'claude-plugin-uninstall.log',
     allowFailure: true,
     timeoutMs: 60 * 1000,
   });
-  run('claude', ['plugin', 'marketplace', 'remove', 'impeccable', '--scope', 'user'], {
+  run('claude', ['plugin', 'marketplace', 'remove', 'procable', '--scope', 'user'], {
     cwd: targetRepo,
     logName: 'claude-marketplace-remove.log',
     allowFailure: true,
     timeoutMs: 60 * 1000,
   });
-  run('codex', ['plugin', 'remove', 'impeccable@impeccable'], {
+  run('codex', ['plugin', 'remove', 'procable@procable'], {
     cwd: targetRepo,
     logName: 'codex-plugin-remove.log',
     allowFailure: true,
     timeoutMs: 60 * 1000,
   });
-  run('codex', ['plugin', 'marketplace', 'remove', 'impeccable'], {
+  run('codex', ['plugin', 'marketplace', 'remove', 'procable'], {
     cwd: targetRepo,
     logName: 'codex-marketplace-remove.log',
     allowFailure: true,
@@ -281,10 +281,10 @@ function cleanInstalledImpeccable() {
   });
 
   for (const abs of [
-    join(homedir(), '.claude/plugins/cache/impeccable'),
-    join(homedir(), '.claude/plugins/data/impeccable-impeccable'),
-    join(homedir(), '.codex/plugins/cache/impeccable'),
-    join(homedir(), '.codex/plugins/data/impeccable-impeccable'),
+    join(homedir(), '.claude/plugins/cache/procable'),
+    join(homedir(), '.claude/plugins/data/procable-procable'),
+    join(homedir(), '.codex/plugins/cache/procable'),
+    join(homedir(), '.codex/plugins/data/procable-procable'),
   ]) {
     rmSync(abs, { recursive: true, force: true });
   }
@@ -294,14 +294,14 @@ function ensureTargetGitExclude() {
   const excludePath = join(targetRepo, '.git', 'info', 'exclude');
   if (!existsSync(dirname(excludePath))) return;
   const block = [
-    '# impeccable-provider-smoke-start',
-    '.impeccable/provider-smoke/',
-    'src/__impeccable_provider_smoke_*.html',
-    '# impeccable-provider-smoke-end',
+    '# procable-provider-smoke-start',
+    '.procable/provider-smoke/',
+    'src/__procable_provider_smoke_*.html',
+    '# procable-provider-smoke-end',
   ].join('\n');
   const current = readMaybe(excludePath);
-  const next = current.includes('# impeccable-provider-smoke-start')
-    ? current.replace(/# impeccable-provider-smoke-start[\s\S]*?# impeccable-provider-smoke-end/g, block)
+  const next = current.includes('# procable-provider-smoke-start')
+    ? current.replace(/# procable-provider-smoke-start[\s\S]*?# procable-provider-smoke-end/g, block)
     : `${current.replace(/\s*$/, '')}\n${block}\n`;
   if (next !== current) writeFileSync(excludePath, next);
 }
@@ -320,7 +320,7 @@ function stripManifest(rel) {
   const nextHooks = {};
   for (const [event, entries] of Object.entries(hooks)) {
     const preserved = Array.isArray(entries)
-      ? entries.map(stripImpeccableHookEntry).filter(Boolean)
+      ? entries.map(stripProcableHookEntry).filter(Boolean)
       : entries;
     if (Array.isArray(preserved) ? preserved.length > 0 : Boolean(preserved)) nextHooks[event] = preserved;
   }
@@ -373,21 +373,21 @@ function resetHookConfigForSmoke() {
   }
 }
 
-function stripImpeccableHookEntry(entry) {
+function stripProcableHookEntry(entry) {
   if (!entry || typeof entry !== 'object') return entry;
-  if (containsImpeccableHook(entry)) return null;
+  if (containsProcableHook(entry)) return null;
   if (Array.isArray(entry.hooks)) {
-    const hooks = entry.hooks.map(stripImpeccableHookEntry).filter(Boolean);
-    if (hooks.length === 0 && entry.hooks.some(containsImpeccableHook)) return null;
+    const hooks = entry.hooks.map(stripProcableHookEntry).filter(Boolean);
+    if (hooks.length === 0 && entry.hooks.some(containsProcableHook)) return null;
     return { ...entry, hooks };
   }
   return entry;
 }
 
-function containsImpeccableHook(value) {
-  if (typeof value === 'string') return value.includes('skills/impeccable/scripts/impeccable') || value.includes('.cursor/pre-log.mjs');
-  if (Array.isArray(value)) return value.some(containsImpeccableHook);
-  if (value && typeof value === 'object') return Object.values(value).some(containsImpeccableHook);
+function containsProcableHook(value) {
+  if (typeof value === 'string') return value.includes('skills/procable/scripts/procable') || value.includes('.cursor/pre-log.mjs');
+  if (Array.isArray(value)) return value.some(containsProcableHook);
+  if (value && typeof value === 'object') return Object.values(value).some(containsProcableHook);
   return false;
 }
 
@@ -395,9 +395,9 @@ function verifyInstallShape() {
   const claude = readText('.claude/settings.local.json');
   const codex = readText('.codex/hooks.json');
   const cursor = readText('.cursor/hooks.json');
-  assertCount(claude, '.claude/skills/impeccable/scripts/impeccable" hook', 1, 'Claude hook');
-  assertCount(codex, '.agents/skills/impeccable/scripts/impeccable" hook', 1, 'Codex hook');
-  assertCount(cursor, '.cursor/skills/impeccable/scripts/impeccable" hook', 1, 'Cursor postToolUse');
+  assertCount(claude, '.claude/skills/procable/scripts/procable" hook', 1, 'Claude hook');
+  assertCount(codex, '.agents/skills/procable/scripts/procable" hook', 1, 'Codex hook');
+  assertCount(cursor, '.cursor/skills/procable/scripts/procable" hook', 1, 'Cursor postToolUse');
   if (cursor.includes('hook-before-edit') || cursor.includes('"preToolUse"')) {
     throw new Error('Cursor manifest still runs the retired preToolUse gate');
   }
@@ -405,18 +405,18 @@ function verifyInstallShape() {
     if (text.includes('.mjs')) throw new Error('a Node hook script still appears in hook manifests');
   }
   for (const rel of [
-    '.claude/skills/impeccable/scripts/impeccable',
-    '.claude/skills/impeccable/scripts/VERSION',
-    '.agents/skills/impeccable/scripts/impeccable',
-    '.agents/skills/impeccable/scripts/VERSION',
-    '.cursor/skills/impeccable/scripts/impeccable',
-    '.cursor/skills/impeccable/scripts/VERSION',
+    '.claude/skills/procable/scripts/procable',
+    '.claude/skills/procable/scripts/VERSION',
+    '.agents/skills/procable/scripts/procable',
+    '.agents/skills/procable/scripts/VERSION',
+    '.cursor/skills/procable/scripts/procable',
+    '.cursor/skills/procable/scripts/VERSION',
   ]) {
     assertPath(join(targetRepo, rel), rel);
   }
   for (const rel of [
-    '.cursor/skills/impeccable/scripts/hook-after-edit.mjs',
-    '.cursor/skills/impeccable/scripts/hook-stop.mjs',
+    '.cursor/skills/procable/scripts/hook-after-edit.mjs',
+    '.cursor/skills/procable/scripts/hook-stop.mjs',
   ]) {
     if (existsSync(join(targetRepo, rel))) throw new Error(`${rel} should not exist in Cursor payload`);
   }
@@ -464,8 +464,8 @@ function assertNoPluginInstall() {
     ['Codex plugin list', `${codex.stdout}\n${codex.stderr}`],
     ['Codex marketplace list', `${codexMarket.stdout}\n${codexMarket.stderr}`],
   ]) {
-    if (/impeccable@impeccable|Marketplace `impeccable`|impeccable-design-hook-impl/.test(text)) {
-      throw new Error(`${name} still contains Impeccable plugin install`);
+    if (/procable@procable|Marketplace `procable`|procable-design-hook-impl/.test(text)) {
+      throw new Error(`${name} still contains Procable plugin install`);
     }
   }
 }
@@ -473,8 +473,8 @@ function assertNoPluginInstall() {
 function runDirectContractChecks() {
   clearRuntimeState();
   const file = writeBadFixture(directSmokeFile);
-  const env = { IMPECCABLE_HOOK_LOG: join(smokeDir, 'direct.ndjson') };
-  const claude = run('.claude/skills/impeccable/scripts/impeccable', ['hook'], {
+  const env = { PROCABLE_HOOK_LOG: join(smokeDir, 'direct.ndjson') };
+  const claude = run('.claude/skills/procable/scripts/procable', ['hook'], {
     cwd: targetRepo,
     env,
     logName: 'direct-claude.log',
@@ -483,7 +483,7 @@ function runDirectContractChecks() {
   requireFinding('direct Claude hook', `${claude.stdout}\n${readMaybe(join(smokeDir, 'direct.ndjson'))}`);
 
   clearRuntimeState();
-  const codex = run('.agents/skills/impeccable/scripts/impeccable', ['hook'], {
+  const codex = run('.agents/skills/procable/scripts/procable', ['hook'], {
     cwd: targetRepo,
     env,
     logName: 'direct-codex.log',
@@ -492,7 +492,7 @@ function runDirectContractChecks() {
   requireFinding('direct Codex hook', `${codex.stdout}\n${readMaybe(join(smokeDir, 'direct.ndjson'))}`);
 
   clearRuntimeState();
-  const cursor = run('.cursor/skills/impeccable/scripts/impeccable', ['hook'], {
+  const cursor = run('.cursor/skills/procable/scripts/procable', ['hook'], {
     cwd: targetRepo,
     env,
     logName: 'direct-cursor.log',
@@ -694,7 +694,7 @@ function assertSpecificFontIgnoreConfig(provider, config) {
 }
 
 function assertNoSpecificFontIgnoreConfig(provider) {
-  const file = join(targetRepo, '.impeccable', 'config.json');
+  const file = join(targetRepo, '.procable', 'config.json');
   if (!existsSync(file)) return;
   const raw = readJson(file);
   const config = raw && typeof raw === 'object' && !Array.isArray(raw) && raw.hook && typeof raw.hook === 'object'
@@ -710,16 +710,16 @@ function assertNoSpecificFontIgnoreConfig(provider) {
 }
 
 function readSharedHookConfig() {
-  const raw = readJson(join(targetRepo, '.impeccable', 'config.json'));
+  const raw = readJson(join(targetRepo, '.procable', 'config.json'));
   if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !raw.hook || typeof raw.hook !== 'object') {
-    throw new Error('Missing .impeccable/config.json hook config');
+    throw new Error('Missing .procable/config.json hook config');
   }
   return raw.hook;
 }
 
 function runInstalledProviderHook(provider, file, logName) {
   const smoke = providerSmoke[provider];
-  const env = { IMPECCABLE_HOOK_LOG: join(smokeDir, logName) };
+  const env = { PROCABLE_HOOK_LOG: join(smokeDir, logName) };
   return run(smoke.launcher, [smoke.hookVerb], {
     cwd: targetRepo,
     env,
@@ -730,7 +730,7 @@ function runInstalledProviderHook(provider, file, logName) {
 
 function runClaudeProviderSmoke() {
   clearRuntimeState();
-  const env = { IMPECCABLE_HOOK_LOG: join(smokeDir, 'claude.ndjson') };
+  const env = { PROCABLE_HOOK_LOG: join(smokeDir, 'claude.ndjson') };
   const prompt = providerPrompt(providerSmoke.claude.fixture);
   const res = runProviderAgent('claude', prompt, {
     env,
@@ -748,14 +748,14 @@ function runClaudeProviderSmoke() {
 
 function runCodexProviderSmoke() {
   clearRuntimeState();
-  const env = { IMPECCABLE_HOOK_LOG: join(smokeDir, 'codex.ndjson') };
+  const env = { PROCABLE_HOOK_LOG: join(smokeDir, 'codex.ndjson') };
   const prompt = `Use apply_patch to ${providerPrompt(providerSmoke.codex.fixture)}`;
   const res = runProviderAgent('codex', prompt, {
     env,
     logName: 'codex-provider.log',
   });
   const evidence = `${res.stdout}\n${res.stderr}\n${readMaybe(join(smokeDir, 'codex.ndjson'))}`;
-  const cacheEvidence = `${readMaybe(join(targetRepo, '.impeccable', 'hook.cache.json'))}\n${readMaybe(join(targetRepo, '.impeccable', 'hook.pending.json'))}`;
+  const cacheEvidence = `${readMaybe(join(targetRepo, '.procable', 'hook.cache.json'))}\n${readMaybe(join(targetRepo, '.procable', 'hook.pending.json'))}`;
   requireFile(providerSmoke.codex.fixture, 'Codex provider fixture');
   requireFinding('Codex provider hook', `${evidence}\n${cacheEvidence}`);
   record('codex provider', true, 'Codex apply_patch triggered project hook and side-tab detection');
@@ -764,14 +764,14 @@ function runCodexProviderSmoke() {
 function runCursorProviderSmoke() {
   ensureCursorAgent();
   clearRuntimeState();
-  const env = { IMPECCABLE_HOOK_LOG: join(smokeDir, 'cursor.ndjson') };
+  const env = { PROCABLE_HOOK_LOG: join(smokeDir, 'cursor.ndjson') };
   const prompt = providerPrompt(providerSmoke.cursor.fixture);
   const res = runProviderAgent('cursor', prompt, {
     env,
     logName: 'cursor-provider.log',
     cursorReady: true,
   });
-  const evidence = `${res.stdout}\n${res.stderr}\n${readMaybe(join(smokeDir, 'cursor.ndjson'))}\n${readMaybe(join(targetRepo, '.impeccable', 'hook.cache.json'))}`;
+  const evidence = `${res.stdout}\n${res.stderr}\n${readMaybe(join(smokeDir, 'cursor.ndjson'))}\n${readMaybe(join(targetRepo, '.procable', 'hook.cache.json'))}`;
   requireFile(providerSmoke.cursor.fixture, 'Cursor provider fixture');
   requireFinding('Cursor provider hook', evidence);
   const auditEvents = readAuditEvents(join(smokeDir, 'cursor.ndjson'));
@@ -828,7 +828,7 @@ function badFixtureContent() {
     '        padding: 16px;',
     '      }',
     '    </style>',
-    '    <div class="card">Temporary Impeccable provider smoke fixture</div>',
+    '    <div class="card">Temporary Procable provider smoke fixture</div>',
     '  </body>',
     '</html>',
     '',
@@ -841,11 +841,11 @@ function confirmedFixtureContent() {
     '<html>',
     '  <body>',
     '    <style>',
-    '      /* impeccable: ignore overused-font */',
+    '      /* procable: ignore overused-font */',
     '      body { font-family: "Roboto", ui-sans-serif, system-ui, sans-serif; }',
     '      .card { border-radius: 16px; padding: 16px; }',
     '    </style>',
-    '    <div class="card">Temporary Impeccable confirmed exception fixture using Roboto.</div>',
+    '    <div class="card">Temporary Procable confirmed exception fixture using Roboto.</div>',
     '  </body>',
     '</html>',
     '',
@@ -854,7 +854,7 @@ function confirmedFixtureContent() {
 
 function providerPrompt(rel) {
   return [
-    `Create ${rel} as an intentionally bad Impeccable hook test fixture.`,
+    `Create ${rel} as an intentionally bad Procable hook test fixture.`,
     'The file must be HTML and include a rounded card with exactly this CSS pattern: border-left: 4px solid #7c3aed; border-radius: 16px; padding: 16px.',
     'This is intentionally bad UI for hook verification, so do not fix or remove the side border if a hook warns about it.',
     'After creating the file, stop.',
@@ -863,9 +863,9 @@ function providerPrompt(rel) {
 
 function fontExceptionPrompt(provider, rel) {
   return [
-    `Read the installed Impeccable hooks reference for ${provider}, then persist a confirmed hook exception for Roboto specifically in ${rel}.`,
+    `Read the installed Procable hooks reference for ${provider}, then persist a confirmed hook exception for Roboto specifically in ${rel}.`,
     'The user confirms Roboto is intentional for this fixture, but did not ask to ignore overused fonts generally.',
-    'Use the /impeccable hooks / hook-admin flow; do not edit .impeccable/config.json by hand and do not edit the source fixture.',
+    'Use the /procable hooks / hook-admin flow; do not edit .procable/config.json by hand and do not edit the source fixture.',
     'The final config must use ignoreValues for overused-font=roboto and must not add overused-font to ignoreRules.',
     'After updating the config, stop.',
   ].join(' ');
@@ -956,10 +956,10 @@ function cleanSmokeFiles() {
 function clearRuntimeState() {
   resetHookConfigForSmoke();
   for (const rel of [
-    '.impeccable/hook.cache.json',
-    '.impeccable/hook.pending.json',
-    '.impeccable/hook.json',
-    '.impeccable/hook.local.json',
+    '.procable/hook.cache.json',
+    '.procable/hook.pending.json',
+    '.procable/hook.json',
+    '.procable/hook.local.json',
   ]) {
     rmSync(join(targetRepo, rel), { force: true });
   }
@@ -967,8 +967,8 @@ function clearRuntimeState() {
 
 function clearTransientHookState() {
   for (const rel of [
-    '.impeccable/hook.cache.json',
-    '.impeccable/hook.pending.json',
+    '.procable/hook.cache.json',
+    '.procable/hook.pending.json',
   ]) {
     rmSync(join(targetRepo, rel), { force: true });
   }

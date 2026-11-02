@@ -17,7 +17,7 @@ pub fn deferred_accepts_path(cwd: &str, env: &Env) -> String {
     let key: String = hex.chars().take(16).collect();
     jsp::join(&[
         &tmpdir(env),
-        "impeccable-live",
+        "procable-live",
         &key,
         "deferred-svelte-component-accepts.json",
     ])
@@ -68,7 +68,7 @@ fn js_str(v: &Value) -> String {
         Value::Bool(b) => b.to_string(),
         Value::Number(n) => n
             .as_f64()
-            .map(impeccable_context::util::js_number_to_string)
+            .map(procable_context::util::js_number_to_string)
             .unwrap_or_default(),
         other => other.to_string(),
     }

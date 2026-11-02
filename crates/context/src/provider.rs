@@ -5,17 +5,17 @@
 //! to their own file. One binary serves every harness, so both are resolved
 //! at run time:
 //!
-//! - **Skill dir**: `IMPECCABLE_SKILL_DIR` when set; otherwise walk up from the
+//! - **Skill dir**: `PROCABLE_SKILL_DIR` when set; otherwise walk up from the
 //!   executable's path (the binary ships at `<skill>/scripts/bin/<target>/` or
-//!   is launched via `<skill>/scripts/impeccable`) until a directory holding
+//!   is launched via `<skill>/scripts/procable`) until a directory holding
 //!   `reference/ios.md` is found. `None` when neither works (source checkouts
-//!   running `target/debug/impeccable` need the env var).
-//! - **Provider id**: `IMPECCABLE_PROVIDER_ID` when set; otherwise derived from
-//!   the skill dir's harness folder (`<root>/.codex/skills/impeccable` ->
+//!   running `target/debug/procable` need the env var).
+//! - **Provider id**: `PROCABLE_PROVIDER_ID` when set; otherwise derived from
+//!   the skill dir's harness folder (`<root>/.codex/skills/procable` ->
 //!   `codex`); otherwise `source`, exactly what the JS reads in a source
 //!   checkout. The command prefix is `$` for `codex`, `/` for everything else.
 //! - **Self command**: the text a directive prints where the JS printed
-//!   `node <scripts>/<script>.mjs`. `IMPECCABLE_SELF` when set (the launcher
+//!   `node <scripts>/<script>.mjs`. `PROCABLE_SELF` when set (the launcher
 //!   exports it), else the executable path. Printed as `<self> <verb>`.
 
 use crate::jsp;
@@ -26,11 +26,11 @@ pub const SOURCE_PROVIDER: &str = "source";
 pub struct Provider {
     pub id: String,
     pub command_prefix: String,
-    /// `<prefix>impeccable`
+    /// `<prefix>procable`
     pub command: String,
     pub skill_dir: Option<String>,
     /// How to spell this binary in printed commands
-    /// (`impeccable_common::launcher::spell_self` of `self_raw`).
+    /// (`procable_common::launcher::spell_self` of `self_raw`).
     pub self_cmd: String,
     /// The unquoted self path, for callers that quote it themselves.
     pub self_raw: String,
@@ -56,7 +56,7 @@ fn find_skill_dir_from(start: &str) -> Option<String> {
 }
 
 fn provider_from_skill_dir(skill_dir: &str) -> Option<&'static str> {
-    // <root>/<harness>/skills/impeccable
+    // <root>/<harness>/skills/procable
     let skills = jsp::dirname(skill_dir);
     if jsp::basename(&skills) != "skills" {
         return None;
@@ -88,11 +88,11 @@ fn provider_from_skill_dir(skill_dir: &str) -> Option<&'static str> {
 }
 
 pub fn detect(env: &Env, cwd: &str) -> Provider {
-    let skill_dir = match env.get("IMPECCABLE_SKILL_DIR").filter(|v| !v.trim().is_empty()) {
+    let skill_dir = match env.get("PROCABLE_SKILL_DIR").filter(|v| !v.trim().is_empty()) {
         Some(v) => Some(jsp::resolve(cwd, &[v.trim()])),
         None => exe_path().and_then(|p| find_skill_dir_from(&jsp::dirname(&p))),
     };
-    let id = match env.get("IMPECCABLE_PROVIDER_ID").filter(|v| !v.trim().is_empty()) {
+    let id = match env.get("PROCABLE_PROVIDER_ID").filter(|v| !v.trim().is_empty()) {
         Some(v) => v.trim().to_string(),
         None => skill_dir
             .as_deref()
@@ -101,12 +101,12 @@ pub fn detect(env: &Env, cwd: &str) -> Provider {
             .to_string(),
     };
     let command_prefix = if id == "codex" { "$" } else { "/" }.to_string();
-    let command = format!("{}impeccable", command_prefix);
-    let self_raw = match env.get("IMPECCABLE_SELF").filter(|v| !v.trim().is_empty()) {
+    let command = format!("{}procable", command_prefix);
+    let self_raw = match env.get("PROCABLE_SELF").filter(|v| !v.trim().is_empty()) {
         Some(v) => v.trim().to_string(),
-        None => exe_path().unwrap_or_else(|| "impeccable".to_string()),
+        None => exe_path().unwrap_or_else(|| "procable".to_string()),
     };
-    let self_cmd = impeccable_common::launcher::spell_self(&self_raw);
+    let self_cmd = procable_common::launcher::spell_self(&self_raw);
     Provider { id, command_prefix, command, skill_dir, self_cmd, self_raw }
 }
 
@@ -131,7 +131,7 @@ mod tests {
     use super::*;
 
     fn with_self(value: &str) -> Provider {
-        let env: Env = [("IMPECCABLE_SELF".to_string(), value.to_string())].into_iter().collect();
+        let env: Env = [("PROCABLE_SELF".to_string(), value.to_string())].into_iter().collect();
         detect(&env, "/project")
     }
 
@@ -140,14 +140,14 @@ mod tests {
         // PowerShell rejects `"<path>" <verb>` and splits an unquoted spaced
         // path; `& "<path>" <verb>` runs (#744). The raw path stays available
         // for callers that quote it themselves.
-        let p = with_self(r"C:\Users\A B\skill\scripts\impeccable.cmd");
-        assert_eq!(p.verb_cmd("context"), r"& 'C:\Users\A B\skill\scripts\impeccable.cmd' context");
-        assert_eq!(p.self_raw, r"C:\Users\A B\skill\scripts\impeccable.cmd");
+        let p = with_self(r"C:\Users\A B\skill\scripts\procable.cmd");
+        assert_eq!(p.verb_cmd("context"), r"& 'C:\Users\A B\skill\scripts\procable.cmd' context");
+        assert_eq!(p.self_raw, r"C:\Users\A B\skill\scripts\procable.cmd");
     }
 
     #[test]
     fn other_spellings_are_unchanged() {
-        for value in [r"C:\skill\scripts\impeccable.cmd", "/Users/a b/skill/scripts/impeccable", "npx impeccable"] {
+        for value in [r"C:\skill\scripts\procable.cmd", "/Users/a b/skill/scripts/procable", "npx procable"] {
             let p = with_self(value);
             assert_eq!(p.self_cmd, value);
             assert_eq!(p.self_raw, value);

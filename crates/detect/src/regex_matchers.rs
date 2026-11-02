@@ -1,21 +1,21 @@
 //! Port of the `REGEX_MATCHERS` line matchers and `REGEX_ANALYZERS` page
 //! analyzers from `cli/engine/engines/regex/detect-text.mjs`.
 
-use impeccable_core::checks::css_scan::{
+use procable_core::checks::css_scan::{
     has_interpolation, is_unseen_declaration_source, names_same_element, scan_css_text_for_glow,
     scan_css_text_for_marquee, scan_css_text_for_radial_halo,
     CssHostIndex,
 };
-use impeccable_core::checks::rules::{
+use procable_core::checks::rules::{
     find_gray_on_color_bg, find_solid_chromatic_bg, is_near_black_neutral_class, is_radius_property,
     DeclaredCorners, NOMINAL_CARD_WIDTH_PX,
 };
-use impeccable_core::color::is_neutral_color;
-use impeccable_core::constants::{EM_DASH_CHARS_PER_DASH, EM_DASH_FLOOR, OVERUSED_FONTS};
-use impeccable_core::findings::{finding, Finding};
-use impeccable_core::fonts::extract_google_font_families;
-use impeccable_core::js::{self, ci, math_round, number_to_string, parse_float, string_to_number};
-use impeccable_core::js_ext_a::{advance_utf16, slice_utf16_start, utf16_index, utf16_length};
+use procable_core::color::is_neutral_color;
+use procable_core::constants::{EM_DASH_CHARS_PER_DASH, EM_DASH_FLOOR, OVERUSED_FONTS};
+use procable_core::findings::{finding, Finding};
+use procable_core::fonts::extract_google_font_families;
+use procable_core::js::{self, ci, math_round, number_to_string, parse_float, string_to_number};
+use procable_core::js_ext_a::{advance_utf16, slice_utf16_start, utf16_index, utf16_length};
 use once_cell::sync::Lazy;
 use regex::Regex;
 
@@ -315,7 +315,7 @@ fn gray_on_color_pairs(line: &str, gray_class: &str, index: usize) -> Vec<String
 re!(TW_SIDE_TAB_WHOLE_RE, format!("^border-([lrse])-{D}+$"));
 /// The utility-class corner reader lives in core, where the static engine
 /// reads a runtime-compiled `rounded-*` class with it too.
-pub use impeccable_core::checks::rules::tailwind_declared_corners;
+pub use procable_core::checks::rules::tailwind_declared_corners;
 
 re!(
     STYLE_ATTR_VALUE_RE,
@@ -2865,10 +2865,10 @@ re!(
     format!("&{mdash};|&#0*8212;|&#[xX]0*2014;", mdash = ci("mdash"))
 );
 
-/// The page engines' count ([`impeccable_core::checks::text_rules::count_em_dashes`]):
+/// The page engines' count ([`procable_core::checks::text_rules::count_em_dashes`]):
 /// a run of more than two hyphens is a rule, not a dash.
 fn count_em_dashes(text: &str) -> usize {
-    impeccable_core::checks::text_rules::count_em_dashes(text)
+    procable_core::checks::text_rules::count_em_dashes(text)
 }
 
 fn analyze_em_dash_overuse(content: &str, file_path: &str) -> Vec<Finding> {
@@ -3080,7 +3080,7 @@ mod tests {
     }
 
     /// Cases recorded from origin/main's JS after #707; every expectation
-    /// here was produced by running `impeccable detect` on both engines.
+    /// here was produced by running `procable detect` on both engines.
     #[test]
     fn gray_on_color_scoping() {
         let g = |line: &str| run("gray-on-color", line);

@@ -27,17 +27,17 @@ License: Apache-2.0, unchanged. Upstream copyright and notices are kept; see `NO
 
 Each stage lands green in CI before the next one starts.
 
-1. Fork set-up: rename, this file, notices, contributor rules. *(this commit)*
-2. Offline: egress guard, removal of telemetry, update check, roll API, card images, image generation and install downloads.
+1. Fork set-up: rename of the repository, this file, notices, contributor rules.
+2. Offline: egress guard, removal of telemetry, update check, roll API, card images, image generation and install downloads; offline launcher and shim tests.
 3. Behaviour: skill text aligned with `communication-tone` (directives D1 to D8 in the vetting notes).
-4. Rename transform to procable.
-5. Release workflow: own engine binaries for every platform, checksums pinned in the skill.
-6. WCAG 2.2 AA reference and command.
-7. prompt-orchestrator integration: user-wide install for every supported tool, Claude Code and Codex first.
+4. Release: engine 0.2.0 built in CI for every target (Windows unsigned), no npm packages, `release-procable` publishes engines plus the skill bundle.
+5. WCAG 2.2 AA: the `a11y` command and `reference/a11y.md`.
+6. Rename to procable with `scripts/fork/rename-procable.mjs`; product version 1.0.0.
+7. prompt-orchestrator integration: `install/install_procable.py` in system-prompts installs procable user-wide for every supported tool.
 
 ## Syncing upstream
 
 1. `git fetch upstream` and merge the wanted upstream commit into a branch.
-2. Re-run the rename transform on the merge result.
+2. Re-run `node scripts/fork/rename-procable.mjs --apply` on the merge result, then dispatch `record-oracle` (with `bundle: true` when the detector changed).
 3. Re-vet every changed directive and every new network call before merging to `main`.
 4. Record the new upstream base commit in this file.

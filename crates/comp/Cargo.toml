@@ -1,5 +1,5 @@
 [package]
-name = "impeccable-comp"
+name = "procable-comp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

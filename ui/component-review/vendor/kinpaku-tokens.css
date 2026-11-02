@@ -1,4 +1,4 @@
-/* VENDORED from impeccable-site/site/styles/kinpaku-tokens.css (the source of truth).
+/* VENDORED from procable-site/site/styles/kinpaku-tokens.css (the source of truth).
    Do not edit here: change the site, then run node scripts/sync-kinpaku-kit.mjs. */
 /*
  * impeccable.style tokens (page-global, single source of truth)
@@ -189,7 +189,7 @@
 	--ks-type-eyebrow-size:  0.6875rem;
 	--ks-type-eyebrow-track: 0.14em;
 
-	/* Wordmark: IMPECCABLE in the header. */
+	/* Wordmark: PROCABLE in the header. */
 	--ks-type-wordmark-size:  1.25rem;
 	--ks-type-wordmark-track: 0.18em;
 

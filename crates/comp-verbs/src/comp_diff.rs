@@ -6,15 +6,15 @@
 
 use std::path::{Path, PathBuf};
 
-use impeccable_comp::hero::{ink_box, InkBox};
-use impeccable_comp::metrics as m;
-use impeccable_comp::png_io;
-use impeccable_comp::raster::{self as r, Image};
+use procable_comp::hero::{ink_box, InkBox};
+use procable_comp::metrics as m;
+use procable_comp::png_io;
+use procable_comp::raster::{self as r, Image};
 use serde_json::{json, Value};
 
 use crate::util::{self, arg, arg_or, flag, num, pad_end, pad_start, r4f, round, to_fixed};
 
-use impeccable_common::Io;
+use procable_common::Io;
 
 // ---- scoring ---------------------------------------------------------------
 
@@ -690,7 +690,7 @@ fn resolve(io: &Io, p: &str) -> PathBuf {
 
 // ---- CLI -------------------------------------------------------------------
 
-/// `impeccable comp-diff --comp <png> --build <png> ...`
+/// `procable comp-diff --comp <png> --build <png> ...`
 pub fn run(argv: &[String], io: &mut Io) -> i32 {
     let comp_path = arg(argv, "comp");
     let build_path = arg(argv, "build");

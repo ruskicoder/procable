@@ -1,6 +1,6 @@
 //! Completion feedback for a build explicitly owned by this native session.
 use crate::hook_lib::{Cache, Runtime, ENVELOPE_PREFIX, ensure_session, persist_cache};
-use impeccable_comp_verbs::completion;
+use procable_comp_verbs::completion;
 use serde_json::{json, Value};
 use std::path::Path;
 
@@ -12,7 +12,7 @@ fn literal_session_id(session: &str) -> bool {
 /// Gemini supplies identity to hooks, but not ordinary shell tool processes.
 /// Its native BeforeTool argument transform carries that metadata into the
 /// POSIX shell without adding model instructions or changing the command body.
-/// Only `build-phase` reads IMPECCABLE_SESSION_ID (start records the owner,
+/// Only `build-phase` reads PROCABLE_SESSION_ID (start records the owner,
 /// completion scopes the report), so every other command passes through
 /// untouched: a prefix would change its first word for Gemini's allowlist and
 /// coreTools policy. This runs before every shell call, so it is string checks
@@ -23,7 +23,7 @@ pub fn gemini_shell_identity(rt: &Runtime, event: &serde_json::Map<String, Value
     if !command.contains("build-phase") || command.contains("--session-id") { return None; }
     let session = event.get("session_id")?.as_str()?;
     if !literal_session_id(session) { return None; }
-    let prefix = format!("export IMPECCABLE_SESSION_ID='{session}'\n");
+    let prefix = format!("export PROCABLE_SESSION_ID='{session}'\n");
     if command.starts_with(&prefix) { return None; }
     Some(json!({"hookSpecificOutput":{"tool_input":{"command":format!("{prefix}{command}")}}}).to_string())
 }
@@ -40,7 +40,7 @@ pub fn reminder(rt: &Runtime, cwd: &str, session: &str, active: bool, cache: &mu
         taken.and_then(|v| v.as_str().map(String::from))
     } else { None };
     let root = Path::new(cwd);
-    let state: Value = serde_json::from_str(&std::fs::read_to_string(root.join(".impeccable/build/state.json")).ok()?).ok()?;
+    let state: Value = serde_json::from_str(&std::fs::read_to_string(root.join(".procable/build/state.json")).ok()?).ok()?;
     let report = completion::report(root, Some(&state), Some(session));
     if report["canContinue"] != true { return None; }
     let build = state.get("startedAt")?.as_str()?;
@@ -79,7 +79,7 @@ const FINDINGS_AFTER_FINISH: &str = "findingsAfterFinish";
 pub fn finished_build_note(rt: &Runtime, cwd: &str, session: &str, cache: &mut Cache) -> Option<String> {
     if session == "unknown" || session.is_empty() { return None; }
     let root = Path::new(cwd);
-    let state: Value = serde_json::from_str(&std::fs::read_to_string(root.join(".impeccable/build/state.json")).ok()?).ok()?;
+    let state: Value = serde_json::from_str(&std::fs::read_to_string(root.join(".procable/build/state.json")).ok()?).ok()?;
     let report = completion::report(root, Some(&state), Some(session));
     if report["status"] != "complete" || report["sessionScope"] != "current-session" { return None; }
     let build = state.get("startedAt")?.as_str()?;
@@ -97,8 +97,8 @@ pub fn persist_session_identity(rt: &Runtime, session: &str) {
     // SessionStart fires on every resume; skip the append when this identity is
     // already the last (effective) export, so the env file (which Claude Code
     // inlines into each Bash command) does not grow.
-    let line = format!("export IMPECCABLE_SESSION_ID='{session}'");
-    let effective = |s: String| s.lines().rev().find(|l| l.starts_with("export IMPECCABLE_SESSION_ID=")).is_some_and(|l| l == line);
+    let line = format!("export PROCABLE_SESSION_ID='{session}'");
+    let effective = |s: String| s.lines().rev().find(|l| l.starts_with("export PROCABLE_SESSION_ID=")).is_some_and(|l| l == line);
     if std::fs::read_to_string(&path).is_ok_and(effective) { return; }
     if let Ok(mut file) = std::fs::OpenOptions::new().append(true).create(true).open(path) {
         let _ = writeln!(file, "{line}");

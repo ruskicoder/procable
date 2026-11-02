@@ -8,10 +8,10 @@ use crate::util::{
     exists, inside_or_equal, is_dir, jsp, kill0, read_dir_names_raw, read_dir_raw, read_json,
     rel_fwd, Env,
 };
-use impeccable_common::Io;
-use impeccable_context::context::resolve_project_root;
-use impeccable_context::target_args::TargetOptions;
-use impeccable_context::util::homedir;
+use procable_common::Io;
+use procable_context::context::resolve_project_root;
+use procable_context::target_args::TargetOptions;
+use procable_context::util::homedir;
 
 pub const PRODUCT_NAMES: [&str; 3] = ["PRODUCT.md", "Product.md", "product.md"];
 pub const DESIGN_NAMES: [&str; 3] = ["DESIGN.md", "Design.md", "design.md"];
@@ -84,7 +84,7 @@ pub fn has_dev_config(dir: &str) -> bool {
 
 /// JS: isAppRoot(dir)
 pub fn is_app_root(dir: &str) -> bool {
-    has_dev_config(dir) || exists(&jsp::join(&[dir, ".impeccable", "live", "config.json"]))
+    has_dev_config(dir) || exists(&jsp::join(&[dir, ".procable", "live", "config.json"]))
 }
 
 /// JS: findContextFile(dir, names)
@@ -304,7 +304,7 @@ pub fn resolve_roots(cwd: &str, target_path: Option<&str>, env: &Env) -> RootsRe
 
     RootsResult::Manifest(RootsManifest {
         version: crate::manifests::ROOTS_MANIFEST_VERSION,
-        session_root: jsp::join(&[&app_root, ".impeccable", "live"]),
+        session_root: jsp::join(&[&app_root, ".procable", "live"]),
         app_root,
         repo_root: effective_repo_root,
         context_root,
@@ -319,7 +319,7 @@ pub fn resolve_roots(cwd: &str, target_path: Option<&str>, env: &Env) -> RootsRe
 fn has_live_server(app_root: &str) -> bool {
     let Some(info) = read_json(&jsp::join(&[
         app_root,
-        ".impeccable",
+        ".procable",
         "live",
         "server.json",
     ])) else {
@@ -350,7 +350,7 @@ const TERMINAL_SESSION_PHASES: [&str; 2] = ["completed", "discarded"];
 
 /// JS: hasActiveDurableSession(appRoot)
 fn has_active_durable_session(app_root: &str) -> bool {
-    let dir = jsp::join(&[app_root, ".impeccable", "live", "sessions"]);
+    let dir = jsp::join(&[app_root, ".procable", "live", "sessions"]);
     let Some(entries) = read_dir_names_raw(&dir) else {
         return false;
     };
@@ -422,7 +422,7 @@ pub fn resolve_live_roots(
                     let chosen = &tier[0].app_root;
                     let others: Vec<&str> = tier[1..].iter().map(|m| m.app_root.as_str()).collect();
                     io.err(&format!(
-                        "[impeccable live] Multiple apps in this repo have live state; using {}. Other candidate(s): {}. Run from the app directory (or pass --target) to address a specific app.\n",
+                        "[procable live] Multiple apps in this repo have live state; using {}. Other candidate(s): {}. Run from the app directory (or pass --target) to address a specific app.\n",
                         chosen,
                         others.join(", ")
                     ));
@@ -488,7 +488,7 @@ pub fn enter_live_root(args: &mut Vec<String>, io: &mut Io) -> Result<Option<Roo
     let target = match consume_target_arg(args) {
         Ok(t) => t,
         Err(msg) => {
-            io.err(&format!("[impeccable live] {}\n", msg));
+            io.err(&format!("[procable live] {}\n", msg));
             return Err(1);
         }
     };
@@ -501,7 +501,7 @@ pub fn enter_live_root(args: &mut Vec<String>, io: &mut Io) -> Result<Option<Roo
     if jsp::resolve(&cwd, &[]) != jsp::resolve(&app_root, &[]) {
         if !is_dir(&app_root) {
             io.err(&format!(
-                "[impeccable live] resolved app root does not exist: {} (stale roots manifest? re-run the live boot, or pass --target <path>)\n",
+                "[procable live] resolved app root does not exist: {} (stale roots manifest? re-run the live boot, or pass --target <path>)\n",
                 app_root
             ));
             return Err(1);

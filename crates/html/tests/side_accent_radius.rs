@@ -3,7 +3,7 @@
 //! emits, or not at all, and an unreadable radius is unknown rather than
 //! square.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::Path;
 
 fn side_tab_snippets(card_css: &str) -> Vec<String> {

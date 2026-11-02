@@ -5,7 +5,7 @@
 //! closes its connection. Stands in for `node:http`; nothing here is
 //! contract-visible except the routes the servers build on it.
 //!
-//! The live helper (`impeccable live-server`) drives connections itself. The
+//! The live helper (`procable live-server`) drives connections itself. The
 //! decision page (`serve-question`) and component review handle one request
 //! at a time on their own thread, which [`SerialServer`] provides.
 
@@ -1064,7 +1064,7 @@ mod tests {
         use std::sync::mpsc;
         use std::sync::Mutex;
 
-        let iters: usize = std::env::var("IMPECCABLE_RACE_ITERS")
+        let iters: usize = std::env::var("PROCABLE_RACE_ITERS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(10);

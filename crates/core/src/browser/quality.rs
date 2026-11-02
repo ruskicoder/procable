@@ -6305,7 +6305,7 @@ mod tests {
     /// one-shot slide in from the right, 79px past a 390px viewport.
     #[test]
     fn text_in_a_box_mid_slide_is_not_measured_against_the_viewport() {
-        use impeccable_foundation::browser::dom::KeyframeFrame;
+        use procable_foundation::browser::dom::KeyframeFrame;
         let copy = "Our care teams meet people where they are, and that changes what health looks like.";
         let frame = |decls: &[(&str, &str)]| KeyframeFrame {
             decls: decls.iter().map(|(p, v)| (p.to_string(), v.to_string())).collect(),
@@ -6530,9 +6530,9 @@ mod tests {
         d.set_style(body, "overflowX", "visible");
 
         // An inline ignore on a paragraph leaves it out of the count.
-        d.set_attr(paras[1], "data-impeccable-ignore", "body-text-viewport-edge");
+        d.set_attr(paras[1], "data-procable-ignore", "body-text-viewport-edge");
         assert!(past(&d)[0].ends_with("text in 1 block runs past it"), "{:?}", past(&d));
-        d.set_attr(paras[0], "data-impeccable-ignore", "body-text-viewport-edge");
+        d.set_attr(paras[0], "data-procable-ignore", "body-text-viewport-edge");
         assert!(past(&d).is_empty(), "every paragraph waived");
     }
 

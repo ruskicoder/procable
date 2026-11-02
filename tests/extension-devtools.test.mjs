@@ -55,13 +55,13 @@ test('copy-all treats hard shadows as advisories without prescribing a fix', asy
   const report = await panel().formatFindingsForCopy([item([shadow])]);
   assert.match(report, /## Advisories \(1\)/);
   assert.match(report, /Hard offset shadow.*#card.*8px 8px/);
-  assert.doesNotMatch(report, /AI tells|Suggested Impeccable skills to fix|\/polish/);
+  assert.doesNotMatch(report, /AI tells|Suggested Procable skills to fix|\/polish/);
 });
 
 test('single-finding copy retains design guidance without prescribing a fix', async () => {
   const report = await panel().formatSingleFindingForCopy(item([shadow]), shadow);
   assert.match(report, /Check whether this fits the intended design direction/);
-  assert.doesNotMatch(report, /Suggested Impeccable skill|\/polish/);
+  assert.doesNotMatch(report, /Suggested Procable skill|\/polish/);
 });
 
 test('mixed reports preserve existing categories and suggestions for other rules', async () => {
@@ -73,12 +73,12 @@ test('mixed reports preserve existing categories and suggestions for other rules
   assert.match(report, /## AI tells \(1\)/);
   assert.match(report, /## Quality issues \(1\)/);
   assert.match(report, /## Advisories \(1\)/);
-  assert.match(report, /Suggested Impeccable skills to fix: \/distill, \/polish, \/colorize, \/audit/);
+  assert.match(report, /Suggested Procable skills to fix: \/distill, \/polish, \/colorize, \/audit/);
 });
 
 test('empty reports and the existing unknown-rule fallback still work', async () => {
   const context = panel();
-  assert.equal(await context.formatFindingsForCopy([]), 'Impeccable found no anti-patterns on this page.');
+  assert.equal(await context.formatFindingsForCopy([]), 'Procable found no anti-patterns on this page.');
   assert.equal(context.fixSkillFor({ type: 'unknown-rule' }), '/polish');
 });
 
@@ -94,9 +94,9 @@ test('advisory presentation follows metadata for any rule and registry row', asy
     const finding = { ...advisory, name: 'Review this choice', detail: 'example' };
     const report = await context.formatFindingsForCopy([item([finding])]);
     assert.match(report, /## Advisories \(1\)/);
-    assert.doesNotMatch(report, /Suggested Impeccable skills to fix/);
+    assert.doesNotMatch(report, /Suggested Procable skills to fix/);
     const single = await context.formatSingleFindingForCopy(item([finding]), finding);
-    assert.doesNotMatch(single, /Suggested Impeccable skill/);
+    assert.doesNotMatch(single, /Suggested Procable skill/);
   }
   assert.equal(context.presentationCategory({ type: 'hard-offset-shadow', category: 'quality' }), 'quality');
   assert.equal(context.fixSkillFor({ type: 'side-tab', advisory: false }), '/distill, /polish');
@@ -111,7 +111,7 @@ test('advisories keep a mapped fix command and drop only the generic fallback', 
   const finding = { type: 'bounce-easing', category: 'slop', advisory: true, name: 'Bounce easing', detail: 'cubic-bezier' };
   const report = await context.formatFindingsForCopy([item([finding])]);
   assert.match(report, /## Advisories \(1\)/);
-  assert.match(report, /Suggested Impeccable skills to fix: \/animate/);
+  assert.match(report, /Suggested Procable skills to fix: \/animate/);
 });
 
 // Exercise the rendered button, not just the formatter with a complete finding.
@@ -132,7 +132,7 @@ for (const [label, finding, expected] of [
     assert.equal(context.writes.length, 1);
     assert.match(context.writes[0], /Element: `#card`/);
     assert.match(context.writes[0], /Check whether this fits the intended design direction/);
-    if (expected) assert.ok(context.writes[0].includes(`Suggested Impeccable skill(s) to fix: ${expected}`));
-    else assert.doesNotMatch(context.writes[0], /Suggested Impeccable skill|\/polish/);
+    if (expected) assert.ok(context.writes[0].includes(`Suggested Procable skill(s) to fix: ${expected}`));
+    else assert.doesNotMatch(context.writes[0], /Suggested Procable skill|\/polish/);
   });
 }

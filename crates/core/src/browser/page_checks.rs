@@ -37,7 +37,7 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 /// The hidden-text measurement result type is shared.
-pub use impeccable_foundation::browser::HiddenTextMeasure;
+pub use procable_foundation::browser::HiddenTextMeasure;
 
 macro_rules! re {
     ($name:ident, $pat:expr) => {
@@ -231,8 +231,8 @@ fn face_never_loaded(dom: &dyn Dom, font: &str) -> bool {
     !faces.iter().any(|(family, status)| names_font(family) && status != "error")
 }
 
-const IMPECCABLE_OWN: &str =
-    ".impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip";
+const PROCABLE_OWN: &str =
+    ".procable-overlay, .procable-label, .procable-banner, .procable-tooltip";
 
 /// JS: checks.mjs#checkTypography()
 pub fn check_typography(dom: &dyn Dom) -> Vec<BrowserFinding> {
@@ -250,7 +250,7 @@ pub fn check_typography(dom: &dyn Dom) -> Vec<BrowserFinding> {
         )
         .unwrap_or_default()
     {
-        if closest_or_none(dom, el, IMPECCABLE_OWN).is_some() {
+        if closest_or_none(dom, el, PROCABLE_OWN).is_some() {
             continue;
         }
         if !has_visible_direct_text(dom, el) {
@@ -352,7 +352,7 @@ pub fn check_typography(dom: &dyn Dom) -> Vec<BrowserFinding> {
 /// The overlay chrome `checkTypography` hands `checkFlatTypeHierarchyFromDoc`
 /// as its `skipElement` selector.
 pub const TYPE_HIERARCHY_SKIP_SELECTOR: &str =
-    ".impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip, [id^=\"impeccable-live-\"]";
+    ".procable-overlay, .procable-label, .procable-banner, .procable-tooltip, [id^=\"procable-live-\"]";
 
 /// JS: checks.mjs#isRenderedTypeElement over a live DOM, plus the
 /// screen-reader-only utility: a heading in a 1px box its `clip` or

@@ -37,9 +37,9 @@ use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
-use impeccable_browser::BrowserEngine;
-use impeccable_core::findings::Finding;
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::BrowserEngine;
+use procable_core::findings::Finding;
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/antipatterns")
@@ -82,7 +82,7 @@ fn handle(mut stream: TcpStream) {
 
 fn engine() -> Option<BrowserEngine> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }
@@ -284,7 +284,7 @@ fn a_design_md_purple_switches_the_purple_forms_off() {
             "colors": { "primary": primary }
         }))
         .unwrap();
-        let ds = impeccable_detect::design_system::normalize_design_system(Some(&fm), None, Some("DESIGN.md"), None, false);
+        let ds = procable_detect::design_system::normalize_design_system(Some(&fm), None, Some("DESIGN.md"), None, false);
         let options = ScanOptions {
             design_system: Some(Rc::new(ds)),
             ..ScanOptions::default()

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Publish the five @impeccable/cli-<os>-<arch> npm platform packages for the
+ * Publish the five @procable/cli-<os>-<arch> npm platform packages for the
  * pinned ENGINE_VERSION from the engine-v<ENGINE_VERSION> GitHub release.
  *
  * Step 3 of the engine cutover, as one command:
@@ -12,7 +12,7 @@
  * For each target it downloads the release binary and its .sha256 sidecar
  * (the sidecar is required here: nothing unverified is ever published),
  * stages a package from cli/platform-packages/<target>/package.json with the
- * version stamped, the binary at bin/impeccable[.exe] (executable) and the
+ * version stamped, the binary at bin/procable[.exe] (executable) and the
  * repo LICENSE, then runs `npm publish --access public` from the staging dir.
  * Targets already published at this version are skipped, so a re-run after a
  * partial failure picks up where it stopped.
@@ -21,7 +21,7 @@
  * same version as ENGINE_VERSION, and `npm whoami` succeeds (log in first).
  *
  * Environment:
- *   IMPECCABLE_DOWNLOAD_BASE  release channel root (default: this repo's GitHub Releases)
+ *   PROCABLE_DOWNLOAD_BASE  release channel root (default: this repo's GitHub Releases)
  *   NPM_REGISTRY              registry used for the published-already probe (default: npmjs)
  */
 
@@ -42,7 +42,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NPM_REGISTRY = (process.env.NPM_REGISTRY || 'https://registry.npmjs.org').replace(/\/$/, '');
 
 export function packageName(target) {
-  return `@impeccable/cli-${target}`;
+  return `@procable/cli-${target}`;
 }
 
 /**
@@ -175,9 +175,9 @@ export async function main(argv = process.argv.slice(2)) {
   if (!fs.existsSync(licensePath)) throw new Error(`LICENSE is missing at ${licensePath}; the platform packages ship it`);
   const license = fs.readFileSync(licensePath);
   const user = opts.dryRun ? '(dry run)' : npmWhoami();
-  console.log(`→ Publishing @impeccable/cli-* platform packages for engine ${version} as ${user}`);
+  console.log(`→ Publishing @procable/cli-* platform packages for engine ${version} as ${user}`);
 
-  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-platform-packages-'));
+  const outDir = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-platform-packages-'));
   const results = [];
   try {
     for (const target of targets) {
@@ -188,7 +188,7 @@ export async function main(argv = process.argv.slice(2)) {
         continue;
       }
       console.log(`  ${name}: downloading ${assetUrl(version, target)}`);
-      const binary = await fetchVerifiedBinary(target, version, process.env.IMPECCABLE_DOWNLOAD_BASE);
+      const binary = await fetchVerifiedBinary(target, version, process.env.PROCABLE_DOWNLOAD_BASE);
       const template = JSON.parse(fs.readFileSync(path.join(ROOT, 'cli', 'platform-packages', target, 'package.json'), 'utf-8'));
       const dir = stagePackage({ target, version, binary, template, license, outDir });
       console.log(`  ${name}: staged ${dir} (${binary.length} bytes, checksum verified)`);

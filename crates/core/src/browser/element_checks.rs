@@ -1391,7 +1391,7 @@ fn text_clipped_by_an_ancestor(dom: &dyn Dom, el: ElId) -> bool {
 /// actually failed, and before the colour pair is registered as this page's
 /// one report of itself.
 ///
-/// The first is an author's inline `data-impeccable-ignore`.
+/// The first is an author's inline `data-procable-ignore`.
 ///
 /// The second is the wrong-layer problem. A link or a span reading over a
 /// hero photo, a video, a raster section background or a dark section laid
@@ -8049,7 +8049,7 @@ mod tests {
         // The waived link must not spend the page's one report of the pair:
         // an author silencing one link silences one link.
         let (mut d, _nav, links) = nav_of_links(3);
-        d.set_attr(links[0], "data-impeccable-ignore", "low-contrast");
+        d.set_attr(links[0], "data-procable-ignore", "low-contrast");
         let mut seen = SafeTagTextSeen::default();
         assert!(
             check_element_colors_dom(&d, links[0], &mut seen).is_empty(),

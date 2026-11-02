@@ -5,7 +5,7 @@
 // names and categories come from the registry it is handed. Ported from
 // cli/engine/browser/injected/index.mjs Section 7.
 //
-// createImpeccableOverlay({ extensionMode, antipatterns }) ->
+// createProcableOverlay({ extensionMode, antipatterns }) ->
 //   { highlight(el, findings), showPageBanner(findings), clearOverlays(),
 //     remove(), toggleOverlays() -> visible, spotlight(target),
 //     unspotlight(), highlightSelector(selector), setFirstScanDone(),
@@ -13,7 +13,7 @@
 // Used by the in-page bundle (50-scan.js) and, as `overlay.js`, by the
 // extension's content script.
 
-function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = {}) {
+function createProcableOverlay({ extensionMode = false, antipatterns = [] } = {}) {
   // Kinpaku gold — pinned to the site's brand token (see
   // site/styles/kinpaku-tokens.css --ks-kinpaku). Keep this in sync with
   // the picker's C.brand in skill/scripts/live-browser.js, the extension's
@@ -55,40 +55,40 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   // Inject hover styles via CSS (more reliable than JS event listeners)
   const styleEl = document.createElement('style');
   styleEl.textContent = `
-    @keyframes impeccable-reveal {
+    @keyframes procable-reveal {
       from { opacity: 0; }
       to { opacity: 1; }
     }
-    .impeccable-overlay:not(.impeccable-banner) {
+    .procable-overlay:not(.procable-banner) {
       pointer-events: none;
       outline: 1px solid ${OUTLINE_COLOR};
       box-shadow: ${GLOW};
       border-radius: 4px;
       transition: outline-color 0.15s ease, box-shadow 0.15s ease;
-      animation: impeccable-reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+      animation: procable-reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
       animation-play-state: paused;
       border-top-left-radius: 0;
     }
-    .impeccable-overlay.impeccable-visible {
+    .procable-overlay.procable-visible {
       animation-play-state: running;
     }
-    .impeccable-overlay.impeccable-hover {
+    .procable-overlay.procable-hover {
       outline-color: ${BRAND_COLOR_HOVER};
       box-shadow: ${GLOW_HOVER};
       z-index: 100001 !important;
     }
-    .impeccable-overlay.impeccable-hover .impeccable-label {
+    .procable-overlay.procable-hover .procable-label {
       background: ${BRAND_COLOR_HOVER};
     }
-    .impeccable-overlay.impeccable-spotlight {
+    .procable-overlay.procable-spotlight {
       z-index: 100002 !important;
     }
-    .impeccable-overlay.impeccable-spotlight-dimmed {
+    .procable-overlay.procable-spotlight-dimmed {
       opacity: 0.15 !important;
       animation: none !important;
       filter: blur(3px);
     }
-    .impeccable-spotlight-backdrop {
+    .procable-spotlight-backdrop {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       backdrop-filter: blur(3px) brightness(0.6);
@@ -99,10 +99,10 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
       outline: none !important;
       animation: none !important;
     }
-    .impeccable-spotlight-backdrop.impeccable-visible {
+    .procable-spotlight-backdrop.procable-visible {
       opacity: 1;
     }
-    .impeccable-hidden .impeccable-overlay${extensionMode ? '' : ':not(.impeccable-banner)'} {
+    .procable-hidden .procable-overlay${extensionMode ? '' : ':not(.procable-banner)'} {
       display: none !important;
     }
   `;
@@ -117,7 +117,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   function getSpotlightBackdrop() {
     if (!spotlightBackdrop) {
       spotlightBackdrop = document.createElement('div');
-      spotlightBackdrop.className = 'impeccable-spotlight-backdrop';
+      spotlightBackdrop.className = 'procable-spotlight-backdrop';
       document.body.appendChild(spotlightBackdrop);
     }
     return spotlightBackdrop;
@@ -143,19 +143,19 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   function showSpotlight(target) {
     if (!target || !target.getBoundingClientRect) return;
     // Respect the spotlightBlur setting: if disabled, don't show the backdrop
-    if (window.__IMPECCABLE_CONFIG__?.spotlightBlur === false) {
+    if (window.__PROCABLE_CONFIG__?.spotlightBlur === false) {
       spotlightTarget = target;
       return;
     }
     spotlightTarget = target;
     const bd = getSpotlightBackdrop();
     updateSpotlightClipPath();
-    bd.classList.add('impeccable-visible');
+    bd.classList.add('procable-visible');
   }
 
   function hideSpotlight() {
     spotlightTarget = null;
-    if (spotlightBackdrop) spotlightBackdrop.classList.remove('impeccable-visible');
+    if (spotlightBackdrop) spotlightBackdrop.classList.remove('procable-visible');
   }
 
   function isInViewport(el) {
@@ -208,20 +208,20 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
 
   // Where an outline lives and which coordinates it takes. A modal <dialog>
   // paints over everything outside its subtree, so live mode parks a popover
-  // (#impeccable-live-top-layer) inside the topmost open one; an outline
+  // (#procable-live-top-layer) inside the topmost open one; an outline
   // whose target is in that dialog mounts there, in viewport coordinates
   // because the host is a fixed box. Live fires an event of the same name on
   // every move of the host, and every outline is placed again. Without live
   // mode the lookup misses.
   function placeOverlay(overlay) {
-    const host = document.getElementById('impeccable-live-top-layer');
+    const host = document.getElementById('procable-live-top-layer');
     const mount = host && host.parentNode.contains(overlay._targetEl) ? host : document.body;
     if (overlay.parentNode !== mount) mount.appendChild(overlay);
     overlay._isFixed = mount === host || isInFixedContext(overlay._targetEl);
     overlay.style.position = overlay._isFixed ? 'fixed' : 'absolute';
   }
 
-  document.addEventListener('impeccable-live-top-layer', () => {
+  document.addEventListener('procable-live-top-layer', () => {
     for (const o of overlays) {
       if (!o._targetEl) continue;
       placeOverlay(o);
@@ -231,7 +231,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
 
   function repositionOverlays() {
     for (const o of overlays) {
-      if (!o._targetEl || o.classList.contains('impeccable-banner')) continue;
+      if (!o._targetEl || o.classList.contains('procable-banner')) continue;
       // Skip overlays whose target is currently hidden (display: none on the overlay)
       if (o.style.display === 'none') continue;
       positionOverlay(o);
@@ -259,7 +259,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   let overlayIndex = 0;
   const visibilityObserver = new IntersectionObserver((entries) => {
     for (const entry of entries) {
-      const overlay = entry.target._impeccableOverlay;
+      const overlay = entry.target._procableOverlay;
       if (!overlay) continue;
       if (entry.isIntersecting) {
         overlay.style.display = '';
@@ -275,7 +275,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
             overlay.style.animationDelay = `${Math.min((overlay._staggerIndex || 0) * 60, 600)}ms`;
           }
           requestAnimationFrame(() => {
-            overlay.classList.add('impeccable-visible');
+            overlay.classList.add('procable-visible');
             if (overlay._checkLabel) overlay._checkLabel();
           });
         }
@@ -290,9 +290,9 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
     if (typeof overlay._cleanup === 'function') {
       try { overlay._cleanup(); } catch { /* best effort overlay teardown */ }
     }
-    if (overlay._targetEl && overlay._targetEl._impeccableOverlay === overlay) {
+    if (overlay._targetEl && overlay._targetEl._procableOverlay === overlay) {
       visibilityObserver.unobserve(overlay._targetEl);
-      delete overlay._targetEl._impeccableOverlay;
+      delete overlay._targetEl._procableOverlay;
     }
     const idx = overlays.indexOf(overlay);
     if (idx >= 0) overlays.splice(idx, 1);
@@ -305,7 +305,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   document.addEventListener('transitionend', (e) => {
     if (e.propertyName !== 'transform') return;
     for (const o of overlays) {
-      if (!o._targetEl || o.classList.contains('impeccable-banner') || o.style.display === 'none') continue;
+      if (!o._targetEl || o.classList.contains('procable-banner') || o.style.display === 'none') continue;
       if (e.target === o._targetEl || e.target.contains(o._targetEl)) {
         positionOverlay(o);
       }
@@ -313,11 +313,11 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   });
 
   const highlight = function(el, findings) {
-    if (el._impeccableOverlay) detachOverlay(el._impeccableOverlay);
+    if (el._procableOverlay) detachOverlay(el._procableOverlay);
     const hasSlop = findings.some(f => RULE_CATEGORY[f.type || f.id] === 'slop');
 
     const outline = document.createElement('div');
-    outline.className = 'impeccable-overlay';
+    outline.className = 'procable-overlay';
     outline._targetEl = el;
     Object.assign(outline.style, { zIndex: '99999', boxSizing: 'border-box' });
 
@@ -330,7 +330,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
     const allText = entries.map(e => e.name).join(', ');
 
     const label = document.createElement('div');
-    label.className = 'impeccable-label';
+    label.className = 'procable-label';
     Object.assign(label.style, {
       position: 'absolute', bottom: '100%', left: '-2px',
       display: 'flex', alignItems: 'center',
@@ -407,7 +407,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
     // Start hidden; the IntersectionObserver will show it once the target is rendered
     outline.style.display = 'none';
     outline._staggerIndex = overlayIndex++;
-    el._impeccableOverlay = outline;
+    el._procableOverlay = outline;
     visibilityObserver.observe(el);
 
     // After first paint, check label width vs outline
@@ -420,7 +420,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
     // Hover: show detail text, darken
     const onMouseEnter = () => {
       isHovered = true;
-      outline.classList.add('impeccable-hover');
+      outline.classList.add('procable-hover');
       outline.style.outlineColor = BRAND_COLOR_HOVER;
       label.style.background = BRAND_COLOR_HOVER;
       if (cycleMode) {
@@ -431,7 +431,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
     };
     const onMouseLeave = () => {
       isHovered = false;
-      outline.classList.remove('impeccable-hover');
+      outline.classList.remove('procable-hover');
       outline.style.outlineColor = '';
       label.style.background = LABEL_BG;
       if (cycleMode) {
@@ -455,7 +455,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   const showPageBanner = function(findings) {
     if (!findings.length) return;
     const banner = document.createElement('div');
-    banner.className = 'impeccable-overlay impeccable-banner';
+    banner.className = 'procable-overlay procable-banner';
     Object.assign(banner.style, {
       position: 'fixed', top: '0', left: '0', right: '0', zIndex: '100000',
       background: PAPER, color: PAPER_INK,
@@ -540,7 +540,7 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
       let overlaysVisible = true;
       toggle.addEventListener('click', () => {
         overlaysVisible = !overlaysVisible;
-        document.body.classList.toggle('impeccable-hidden', !overlaysVisible);
+        document.body.classList.toggle('procable-hidden', !overlaysVisible);
         toggle.textContent = overlaysVisible ? '\u25C9' : '\u25CB'; // filled vs empty circle
         toggle.style.opacity = overlaysVisible ? '0.85' : '0.5';
       });
@@ -575,13 +575,13 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
     clearOverlays();
     styleEl.remove();
     if (spotlightBackdrop) { spotlightBackdrop.remove(); spotlightBackdrop = null; }
-    document.body.classList.remove('impeccable-hidden');
+    document.body.classList.remove('procable-hidden');
   }
 
   // Toggle every overlay; returns the new visibility.
   function toggleOverlays() {
-    const visible = !document.body.classList.contains('impeccable-hidden');
-    document.body.classList.toggle('impeccable-hidden', visible);
+    const visible = !document.body.classList.contains('procable-hidden');
+    document.body.classList.toggle('procable-hidden', visible);
     return !visible;
   }
 
@@ -595,15 +595,15 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
         target.scrollIntoView({ behavior: 'instant', block: 'center' });
       }
       for (const o of overlays) {
-        if (o.classList.contains('impeccable-banner')) continue;
+        if (o.classList.contains('procable-banner')) continue;
         const isMatch = o._targetEl === target;
-        o.classList.toggle('impeccable-spotlight', isMatch);
-        o.classList.toggle('impeccable-spotlight-dimmed', !isMatch);
+        o.classList.toggle('procable-spotlight', isMatch);
+        o.classList.toggle('procable-spotlight-dimmed', !isMatch);
         if (isMatch) {
           // Force the matching overlay visible immediately, don't wait for IntersectionObserver
           o.style.display = '';
           o.style.animation = 'none';
-          o.classList.add('impeccable-visible');
+          o.classList.add('procable-visible');
           o._revealed = true;
           positionOverlay(o);
         }
@@ -615,8 +615,8 @@ function createImpeccableOverlay({ extensionMode = false, antipatterns = [] } = 
   function unspotlight() {
     hideSpotlight();
     for (const o of overlays) {
-      o.classList.remove('impeccable-spotlight');
-      o.classList.remove('impeccable-spotlight-dimmed');
+      o.classList.remove('procable-spotlight');
+      o.classList.remove('procable-spotlight-dimmed');
     }
   }
 

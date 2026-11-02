@@ -1,9 +1,9 @@
 /**
- * Browser-side durable session helpers for Impeccable live mode.
+ * Browser-side durable session helpers for Procable live mode.
  *
  * Kept separate from live-browser.js so recovery state can be tested without
  * booting the full overlay UI. Served before live-browser.js and attached to
- * window.__IMPECCABLE_LIVE_SESSION__.
+ * window.__PROCABLE_LIVE_SESSION__.
  */
 (function (root) {
   'use strict';
@@ -179,5 +179,5 @@
     };
   }
 
-  root.__IMPECCABLE_LIVE_SESSION__ = { createLiveBrowserSessionState, randomUUID, randomId8 };
+  root.__PROCABLE_LIVE_SESSION__ = { createLiveBrowserSessionState, randomUUID, randomId8 };
 })(typeof window !== 'undefined' ? window : globalThis);

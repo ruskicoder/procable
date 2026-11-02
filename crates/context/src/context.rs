@@ -361,7 +361,7 @@ fn resolve_local_context_dir(root: &str) -> Option<String> {
 }
 
 fn resolve_env_context_dir(cwd: &str, env: &Env) -> Option<String> {
-    let v = env.get("IMPECCABLE_CONTEXT_DIR")?;
+    let v = env.get("PROCABLE_CONTEXT_DIR")?;
     let t = js_trim(v);
     if t.is_empty() {
         return None;
@@ -513,7 +513,7 @@ pub fn discover_ui_target_candidates(repo_root: &str, env: &Env) -> (Vec<TargetC
 struct CandidateRoot {
     rel: String,
     root: String,
-    /// Named by an `.impeccable/config.json` `projectRoots` pattern, so never
+    /// Named by an `.procable/config.json` `projectRoots` pattern, so never
     /// filtered: the user picked it.
     explicit: bool,
 }
@@ -845,12 +845,12 @@ fn resolve_workspace_project_root(repo_root: &str, target_dir: &str) -> Option<S
 
 fn is_selectable_candidate(repo_root: &str, rel: &str, groups: &[Vec<String>]) -> bool {
     let rel_segments: Vec<&str> = rel.split('/').filter(|s| !s.is_empty()).collect();
-    let impeccable = &groups[0];
+    let procable = &groups[0];
     let package = &groups[1];
-    if is_excluded_by_workspace_pattern(&rel_segments, impeccable) {
+    if is_excluded_by_workspace_pattern(&rel_segments, procable) {
         return false;
     }
-    for pattern in impeccable {
+    for pattern in procable {
         if let Some(boundary) = project_root_from_workspace_pattern(repo_root, &rel_segments, pattern) {
             let mut parts = vec![repo_root];
             parts.extend(rel_segments.iter());
@@ -955,25 +955,25 @@ fn workspace_pattern_matches_rel(pattern: &str, rel_segments: &[&str]) -> bool {
     true
 }
 
-/// JS: readProjectPatternGroups -> [impeccablePatterns, packagePatterns]
+/// JS: readProjectPatternGroups -> [procablePatterns, packagePatterns]
 pub fn read_project_pattern_groups(repo_root: &str) -> Vec<Vec<String>> {
     let mut package: Vec<String> = Vec::new();
     package.extend(read_package_workspaces(repo_root));
     package.extend(read_pnpm_workspaces(repo_root));
     package.extend(read_lerna_workspaces(repo_root));
     let package: Vec<String> = package.into_iter().filter(|p| !p.is_empty()).collect();
-    vec![read_impeccable_project_roots(repo_root), package]
+    vec![read_procable_project_roots(repo_root), package]
 }
 
 fn read_project_patterns(repo_root: &str) -> Vec<String> {
     read_project_pattern_groups(repo_root).into_iter().flatten().collect()
 }
 
-/// JS: readImpeccableProjectRoots
-pub fn read_impeccable_project_roots(repo_root: &str) -> Vec<String> {
+/// JS: readProcableProjectRoots
+pub fn read_procable_project_roots(repo_root: &str) -> Vec<String> {
     let mut patterns = Vec::new();
     for name in ["config.json", "config.local.json"] {
-        let Some(cfg) = read_json(&jsp::join(&[repo_root, ".impeccable", name])) else { continue };
+        let Some(cfg) = read_json(&jsp::join(&[repo_root, ".procable", name])) else { continue };
         let Some(arr) = cfg.get("projectRoots").and_then(|v| v.as_array()) else { continue };
         for entry in arr {
             if let Some(s) = entry.as_str() {
@@ -1408,7 +1408,7 @@ mod ui_target_tests {
     impl Tmp {
         fn new(tag: &str) -> Self {
             let p = std::env::temp_dir().join(format!(
-                "impeccable-ui-targets-{}-{}-{}",
+                "procable-ui-targets-{}-{}-{}",
                 tag,
                 std::process::id(),
                 std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
@@ -1433,8 +1433,8 @@ mod ui_target_tests {
 
     fn env() -> Env {
         Env::from([
-            ("HOME".to_string(), "/nonexistent-impeccable-home".to_string()),
-            ("USERPROFILE".to_string(), "/nonexistent-impeccable-home".to_string()),
+            ("HOME".to_string(), "/nonexistent-procable-home".to_string()),
+            ("USERPROFILE".to_string(), "/nonexistent-procable-home".to_string()),
         ])
     }
 
@@ -1537,7 +1537,7 @@ mod ui_target_tests {
     fn explicit_project_roots_are_never_filtered() {
         let t = Tmp::new("explicit");
         monorepo(&t);
-        t.put(".impeccable/config.json", r#"{"projectRoots":["tooling/*"]}"#);
+        t.put(".procable/config.json", r#"{"projectRoots":["tooling/*"]}"#);
         let (cands, skipped) = discover_ui_target_candidates(&t.root(), &env());
         let p = paths(&cands);
         assert!(p.contains(&"tooling/scripts"));
@@ -1550,7 +1550,7 @@ mod ui_target_tests {
     fn negated_project_roots_still_hide_a_workspace() {
         let t = Tmp::new("negated");
         monorepo(&t);
-        t.put(".impeccable/config.json", r#"{"projectRoots":["!packages/stories","!apps/static"]}"#);
+        t.put(".procable/config.json", r#"{"projectRoots":["!packages/stories","!apps/static"]}"#);
         let (cands, skipped) = discover_ui_target_candidates(&t.root(), &env());
         assert_eq!(paths(&cands), ["apps/web", "packages/ui"]);
         assert_eq!(skipped, 4);

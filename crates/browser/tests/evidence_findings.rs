@@ -25,8 +25,8 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 
-use impeccable_browser::BrowserEngine;
-use impeccable_detect::engines::{ScanOptions, UrlEngine};
+use procable_browser::BrowserEngine;
+use procable_detect::engines::{ScanOptions, UrlEngine};
 
 fn fixtures_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures/antipatterns")
@@ -78,7 +78,7 @@ fn handle(mut stream: TcpStream) {
 /// `None` when no browser is installed.
 fn scan(fixture: &str) -> Option<Vec<(String, String, String)>> {
     let env: HashMap<String, String> = std::env::vars().collect();
-    if impeccable_browser::discovery::find_browser(&env).is_err() {
+    if procable_browser::discovery::find_browser(&env).is_err() {
         eprintln!("skip: no installed browser found");
         return None;
     }

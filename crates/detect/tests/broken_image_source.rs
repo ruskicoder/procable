@@ -1,7 +1,7 @@
 //! The source scan's `broken-image` rule: an `<img>` with no source is
 //! markup, not Svelte/Astro/Vue attribute shorthand or a binding, and `<img`
 //! inside a JS/TS string, template or regex literal is not markup at all.
-use impeccable_detect::detect_text::{detect_text, TextOptions};
+use procable_detect::detect_text::{detect_text, TextOptions};
 
 #[test]
 fn source_images_distinguish_markup_from_bindings_and_code_literals() {

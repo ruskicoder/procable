@@ -1,7 +1,7 @@
 # The engine: the Rust runtime behind every skill verb
 
-Every command the skill text runs is `{{scripts_path}}/impeccable <verb>`. The
-launcher next to the skill (`skill/scripts/impeccable`, `impeccable.cmd`)
+Every command the skill text runs is `{{scripts_path}}/procable <verb>`. The
+launcher next to the skill (`skill/scripts/procable`, `procable.cmd`)
 finds or downloads one static binary per platform and execs it. That binary
 is built from this repo's Cargo workspace. There is no Node at runtime.
 
@@ -21,7 +21,7 @@ ENGINE_VERSION          which engine release the launcher / npm shim download
 .cargo/config.toml      the `cargo xtask` alias
 browser-bundle/         the page JS the in-page bundle is built from
 crates/
-  cli          the `impeccable` binary: verb router, exit codes
+  cli          the `procable` binary: verb router, exit codes
   common       Io handle (stdout/stderr/stdin/env/cwd), path + process helpers,
                the HTTP/1.1 server core (`http`) behind every local server
   context      context, doctor, staleness, signals, concept-seed, pin, ...
@@ -30,7 +30,7 @@ crates/
   skills       install / update / check / link (the old npm CLI verbs)
   comp         comp-fidelity pure libs (raster, png, metrics, fonts)
   comp-verbs   build-phase, comp-diff, comp-spec, font-match
-  detect       `impeccable detect`: file walk, config, ignores, output, regex engine
+  detect       `procable detect`: file walk, config, ignores, output, regex engine
   html         the static HTML engine: parser, cascade, static DOM, rule adapters
   browser      the URL engine: Chrome discovery, CDP, snapshot, visual pass
   foundation   JS-semantics helpers, color, findings, the rule registry, inline
@@ -46,28 +46,28 @@ crates/
 ```
 
 `crates/core` re-exports the foundation modules under its own paths, so every
-consumer names one crate: `impeccable_core::js`, `impeccable_core::color`,
-`impeccable_core::checks::rules::check_colors`,
-`impeccable_core::browser::driver::collect_browser_findings`. The split
+consumer names one crate: `procable_core::js`, `procable_core::color`,
+`procable_core::checks::rules::check_colors`,
+`procable_core::browser::driver::collect_browser_findings`. The split
 between the two crates is about what a check is written against, not about
 who may see it.
 
 Build and test:
 
 ```bash
-cargo build --release -p impeccable      # target/release/impeccable
+cargo build --release -p procable      # target/release/procable
 cargo test --workspace
-IMPECCABLE_BIN=target/release/impeccable node tests/oracle/run.mjs   # the behavior gate
+PROCABLE_BIN=target/release/procable node tests/oracle/run.mjs   # the behavior gate
 ```
 
-`bun run test` and the oracle find the binary through `IMPECCABLE_BIN`, then
+`bun run test` and the oracle find the binary through `PROCABLE_BIN`, then
 `skill/scripts/bin/<os>-<arch>/` (`bun run fetch:engine` downloads the pinned
-release there; `IMPECCABLE_BIN=target/release/impeccable bun run fetch:engine`
-copies a local build), then `target/release/impeccable`, so a plain
-`cargo build --release -p impeccable` is enough.
+release there; `PROCABLE_BIN=target/release/procable bun run fetch:engine`
+copies a local build), then `target/release/procable`, so a plain
+`cargo build --release -p procable` is enough.
 
 Every local server the engine runs (`live-server`, the `serve-question`
-decision page, `component-review serve`) is built on `impeccable_common::http`:
+decision page, `component-review serve`) is built on `procable_common::http`:
 a `TcpListener`, one thread per connection, request parsing with a body cap,
 and responses that close their connection. The live server drives connections
 itself (turnstile ordering, SSE, parked polls); the other two take requests one
@@ -77,7 +77,7 @@ pool could leave part of a browser's connection burst unanswered (#1071). Add
 new servers on the same core rather than another HTTP crate.
 
 The frozen function-level vectors in `tests/oracle/vectors/calls/` replay
-through `impeccable_core::vectors::call` (`cargo test -p impeccable-core`),
+through `procable_core::vectors::call` (`cargo test -p procable-core`),
 which is the union of foundation's dispatch arms and the core's.
 
 ## The browser bundle
@@ -112,9 +112,9 @@ sources, same bytes.
 
 `wasm-pack` is the one extra tool this needs (`cargo install wasm-pack
 --locked`) plus the `wasm32-unknown-unknown` target, which
-`rust-toolchain.toml` requests. `IMPECCABLE_BUNDLE_SKIP_WASM_PACK=1` reuses
+`rust-toolchain.toml` requests. `PROCABLE_BUNDLE_SKIP_WASM_PACK=1` reuses
 whatever is already in `target/wasm-bundle/`, for iterating on the page JS
-alone. `IMPECCABLE_EXTENSION_SKIP_BUNDLE=1` lets `bun run build:extension`
+alone. `PROCABLE_EXTENSION_SKIP_BUNDLE=1` lets `bun run build:extension`
 skip the bundle step when `extension/detector/` is already complete, for CI
 matrices that pre-built it.
 
@@ -123,29 +123,29 @@ Run `cargo xtask bundle` after touching `crates/core`, `crates/foundation`,
 
 ### Reusing the bundler downstream
 
-None of that lives in the task. `impeccable-bundle` (`crates/bundle`) embeds
+None of that lives in the task. `procable-bundle` (`crates/bundle`) embeds
 `browser-bundle/*.js` with `include_str!` and owns the assembly, so a crate
-that links `impeccable-core` + `impeccable-wasm` plus its own rule pack into
+that links `procable-core` + `procable-wasm` plus its own rule pack into
 one wasm module builds the same artifacts for that module without copying a
 file out of this repo:
 
 ```rust
-let (glue, wasm) = impeccable_bundle::wasm_pack_build(
+let (glue, wasm) = procable_bundle::wasm_pack_build(
     Path::new("crates/my-wasm"),      // engine + pack, not crates/wasm
     Path::new("target/wasm-bundle"),
     &[],                              // extra cargo args, after `--`
 )?;
-let js = impeccable_bundle::in_page_bundle(&glue, &wasm);   // /detect.js
-let registry = impeccable_bundle::registry_json();          // built-ins + pack rows
-let ext = impeccable_bundle::extension_pieces(&glue, &wasm, &registry);
-impeccable_bundle::check_capture_contract()?;               // snapshot/core drift
+let js = procable_bundle::in_page_bundle(&glue, &wasm);   // /detect.js
+let registry = procable_bundle::registry_json();          // built-ins + pack rows
+let ext = procable_bundle::extension_pieces(&glue, &wasm, &registry);
+procable_bundle::check_capture_contract()?;               // snapshot/core drift
 ```
 
 Nothing there writes files or exits: the caller places the bytes and reports
 its own failures. The pack's registry rows appear in `registry_json` once the
 pack is installed, since the registry reads built-ins plus every registered
-slice. `IMPECCABLE_BUNDLE_SKIP_WASM_PACK=1` is the library's name for the
-skip switch (the old `IMPECCABLE_XTASK_SKIP_WASM_PACK=1` still works).
+slice. `PROCABLE_BUNDLE_SKIP_WASM_PACK=1` is the library's name for the
+skip switch (the old `PROCABLE_XTASK_SKIP_WASM_PACK=1` still works).
 
 ## Rule packs
 
@@ -157,18 +157,18 @@ enforces byte-for-byte.
 
 The traits:
 
-- `impeccable_core::rule_pack::RulePack` (object-safe, `Send + Sync + Debug`)
+- `procable_core::rule_pack::RulePack` (object-safe, `Send + Sync + Debug`)
   with three hooks, each defaulting to empty: `check_text(content, file_path,
   ext)` for the text engine, `check_element_dom(dom, el)` and
   `check_page_dom(dom)` for the browser engines.
-- `impeccable_html::StaticRulePack` with `check_document(doc, file_path)`.
+- `procable_html::StaticRulePack` with `check_document(doc, file_path)`.
   The `StaticDocument` model belongs to `crates/html`, and `detect` cannot
   name a type from a crate that depends on it, so the static engine's hook is
   a separate trait. A pack that covers HTML implements both.
 
 Three steps for the downstream crate: declare `static ROWS: &[Antipattern]`
 with namespaced ids (`mypack/my-rule`) and return them from `registry()`;
-call `impeccable_core::rule_pack::install(&PACK)` once at startup, which is
+call `procable_core::rule_pack::install(&PACK)` once at startup, which is
 what makes `get_antipattern` resolve the pack's ids and therefore what gives
 its findings a name, description, category, and severity; then pass the pack
 to the engine being run.
@@ -186,7 +186,7 @@ Where each hook runs, and why there:
 - **Text engine** (`detect_text`): after every built-in matcher, style-block
   and CSS-in-JS pass, the design-system scan, the dedupe, and the page
   analyzers, and before inline ignores. Appending last keeps built-in output
-  identical, and being inside the waiver step means `impeccable-disable`
+  identical, and being inside the waiver step means `procable-disable`
   covers a pack's rules the same way it covers built-in ones.
 - **Static HTML engine** (`detect_html_source`): after the element rules, the
   design-system merge, the page-level checks and the pattern checks, again
@@ -217,30 +217,30 @@ over the file-scanning engines, JSON in and JSON out:
 - `detect_html_source_json(html, file_path, options_json)`
 
 Both take `{ inlineIgnores?: boolean, designSystem?: { frontmatter?, sidecar? } }`
-and return the findings array `impeccable detect --json` prints, same keys and
+and return the findings array `procable detect --json` prints, same keys and
 same order. `designSystem` carries the DESIGN.md inputs rather than a
 normalized object, because the JS API's normalized form used `Set`s and
 `Map`s that JSON cannot hold. Unparseable options fall back to the defaults.
 `antipatterns_json()` lists the built-ins followed by any pack's rows, and
 `immediate_tier_rules_json()` returns the design hook's immediate tier (the
 rule ids worth fixing at the edit site). That list lives in
-`impeccable_core::registry::IMMEDIATE_TIER_RULES`, which `impeccable-hook`
+`procable_core::registry::IMMEDIATE_TIER_RULES`, which `procable-hook`
 re-exports, so a wasm consumer reads the same one the hook runs on instead of
 keeping a copy.
 
-A pack reaches those exports through `impeccable_wasm::set_rule_pack` and
+A pack reaches those exports through `procable_wasm::set_rule_pack` and
 `exports_detect::set_static_rule_pack`, both Rust-only: the consumer is a
-crate that links `impeccable-wasm` as an rlib, registers its pack, and runs
+crate that links `procable-wasm` as an rlib, registers its pack, and runs
 `wasm-pack` over itself. There is deliberately no JS-facing setter.
 
 ```bash
-cargo build -p impeccable-wasm --features detect --target wasm32-unknown-unknown --release
+cargo build -p procable-wasm --features detect --target wasm32-unknown-unknown --release
 ```
 
 Pristine (the PR design-review bot) is the first consumer: its `rules/` crate
 carries `pristine/*` rules on all three hooks and reaches the engine through
 this feature, replacing the `detectText` call it makes into the npm
-`impeccable@3` package today.
+`procable@3` package today.
 
 ## Releases
 
@@ -254,7 +254,7 @@ Two release kinds touch the runtime, in this order:
    the version, the npm platform-package pins and a clean tree, then tags and
    pushes; `.github/workflows/release-engine.yml` builds the five targets and
    publishes the binaries with `.sha256` sidecars. The launcher, the npm shim
-   and `impeccable install` download from
+   and `procable install` download from
    `github.com/pbakaus/impeccable/releases/download/engine-v<X>/` and verify
    each binary against `skill/scripts/engine-checksums.txt`, never the
    sidecar. After the release, `node scripts/check-engine-release.mjs --record`

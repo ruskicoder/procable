@@ -13,7 +13,7 @@ Two consumers:
   runs `05-natives.js` on every new document before the page's own scripts,
   which stashes the built-ins where a site's own global `Map` or a reassigned
   `Array.from` cannot reach them.
-- `crates/bundle` (the `impeccable-bundle` library) embeds every file here
+- `crates/bundle` (the `procable-bundle` library) embeds every file here
   with `include_str!` and concatenates them, in filename order, with the wasm
   core into the in-page bundle plus the extension's `extension/detector/`
   pieces. `cargo xtask bundle` is its caller inside this workspace: it writes

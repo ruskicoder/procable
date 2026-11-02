@@ -24,7 +24,7 @@ const SKIP = !HAS_PYTHON ? 'python3 not on PATH' : process.platform === 'win32' 
 const DRIVER = `
 import importlib.util, json, sys
 spec = json.loads(sys.argv[1])
-mod_spec = importlib.util.spec_from_file_location("impeccable_design_hook", spec["plugin"])
+mod_spec = importlib.util.spec_from_file_location("procable_design_hook", spec["plugin"])
 mod = importlib.util.module_from_spec(mod_spec)
 mod_spec.loader.exec_module(mod)
 hooks = {}
@@ -78,7 +78,7 @@ function call(hook, kwargs, { cwd = project, env = {}, before = [] } = {}) {
       FAKE_TRUSTED: project,
       PYTHONPATH: stubs,
       PYTHONDONTWRITEBYTECODE: '1',
-      IMPECCABLE_HOOK_DISABLED: '',
+      PROCABLE_HOOK_DISABLED: '',
       ...env,
     },
   });
@@ -104,14 +104,14 @@ function sentEvent() {
 }
 
 function installLauncher(root) {
-  const scripts = path.join(root, 'skills/impeccable/scripts');
+  const scripts = path.join(root, 'skills/procable/scripts');
   fs.mkdirSync(scripts, { recursive: true });
-  fs.writeFileSync(path.join(scripts, 'impeccable'), FAKE_LAUNCHER, { mode: 0o755 });
+  fs.writeFileSync(path.join(scripts, 'procable'), FAKE_LAUNCHER, { mode: 0o755 });
 }
 
 describe('hermes design-hook plugin', { skip: SKIP }, () => {
   before(() => {
-    tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-hermes-plugin-')));
+    tmp = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'procable-hermes-plugin-')));
     project = path.join(tmp, 'project');
     record = path.join(tmp, 'record');
     emptyHome = path.join(tmp, 'empty-home');
@@ -149,7 +149,7 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     stdout(POST);
     const result = '{"bytes_written": 12}';
     const out = call('transform_tool_result', { tool_name: 'write_file', args: { path: 'src/App.tsx' }, result, session_id: 's1' });
-    assert.deepEqual(JSON.parse(out), { ...JSON.parse(result), impeccable: 'Gradient text in App.tsx' });
+    assert.deepEqual(JSON.parse(out), { ...JSON.parse(result), procable: 'Gradient text in App.tsx' });
     assert.deepEqual(sentEvent(), {
       hook_event_name: 'PostToolUse',
       cwd: project,
@@ -158,7 +158,7 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
       session_id: 's1',
     });
     assert.equal(fs.readFileSync(path.join(record, 'argv.txt'), 'utf8'), 'hook');
-    assert.match(fs.readFileSync(path.join(record, 'env.txt'), 'utf8'), /^IMPECCABLE_HOOK_HARNESS=hermes$/m);
+    assert.match(fs.readFileSync(path.join(record, 'env.txt'), 'utf8'), /^PROCABLE_HOOK_HARNESS=hermes$/m);
   });
 
   it('maps patch to Edit and prefers the path the tool resolved', () => {
@@ -166,7 +166,7 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     const resolved = path.join(project, 'src/styles.css');
     const result = JSON.stringify({ success: true, files_modified: [resolved] });
     const out = call('transform_tool_result', { tool_name: 'patch', args: { path: 'elsewhere.css' }, result });
-    assert.deepEqual(JSON.parse(out), { ...JSON.parse(result), impeccable: 'Gradient text in App.tsx' });
+    assert.deepEqual(JSON.parse(out), { ...JSON.parse(result), procable: 'Gradient text in App.tsx' });
     const event = sentEvent();
     assert.equal(event.tool_name, 'Edit');
     assert.equal(event.tool_input.file_path, resolved);
@@ -178,7 +178,7 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     const files = [path.join(project, 'src/a.css'), path.join(project, 'src/b.css')];
     const result = JSON.stringify({ success: true, files_modified: files });
     const out = call('transform_tool_result', { tool_name: 'patch', args: { patch: '*** Begin Patch' }, result });
-    assert.equal(JSON.parse(out).impeccable, 'Gradient text in App.tsx\n\nGradient text in App.tsx');
+    assert.equal(JSON.parse(out).procable, 'Gradient text in App.tsx\n\nGradient text in App.tsx');
     const events = fs.readFileSync(path.join(record, 'events.txt'), 'utf8').trim().split('\n').map(line => JSON.parse(line));
     assert.deepEqual(events.map(e => e.tool_input.file_path), files);
   });
@@ -215,9 +215,9 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     assert.equal(call('pre_verify', { session_id: 's4', attempt: 0, changed_paths: ['src/App.tsx'] }), null);
   });
 
-  it('spawns nothing when IMPECCABLE_HOOK_DISABLED is set', () => {
+  it('spawns nothing when PROCABLE_HOOK_DISABLED is set', () => {
     stdout(POST);
-    const env = { IMPECCABLE_HOOK_DISABLED: '1' };
+    const env = { PROCABLE_HOOK_DISABLED: '1' };
     assert.equal(call('transform_tool_result', { tool_name: 'write_file', args: { path: 'src/App.tsx' }, result: '{}' }, { env }), null);
     assert.equal(call('pre_verify', { session_id: 's5', attempt: 0, changed_paths: ['src/App.tsx'] }, { env }), null);
     assert.equal(spawned(), false);
@@ -239,7 +239,7 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     const outside = path.join(tmp, 'outside');
     fs.mkdirSync(outside, { recursive: true });
     const out = call('transform_tool_result', { tool_name: 'write_file', args: { path: 'a.tsx' }, result: '{}' }, { cwd: outside, env: { HERMES_HOME: home } });
-    assert.equal(out, '{"impeccable": "Gradient text in App.tsx"}');
+    assert.equal(out, '{"procable": "Gradient text in App.tsx"}');
     assert.equal(sentEvent().tool_input.file_path, path.join(outside, 'a.tsx'));
   });
 
@@ -247,11 +247,11 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     stdout(POST);
     const args = { tool_name: 'write_file', args: { path: 'src/App.tsx' }, result: '{}' };
     call('transform_tool_result', args);
-    assert.equal(launcherRan(), path.join(project, '.hermes/skills/impeccable/scripts/impeccable'), 'trusted');
+    assert.equal(launcherRan(), path.join(project, '.hermes/skills/procable/scripts/procable'), 'trusted');
     const home = path.join(tmp, 'hermes-home');
     installLauncher(home);
     call('transform_tool_result', args, { env: { FAKE_TRUSTED: '', HERMES_HOME: home } });
-    assert.equal(launcherRan(), path.join(home, 'skills/impeccable/scripts/impeccable'), 'untrusted falls back to the home launcher');
+    assert.equal(launcherRan(), path.join(home, 'skills/procable/scripts/procable'), 'untrusted falls back to the home launcher');
     assert.equal(call('transform_tool_result', args, { env: { FAKE_TRUSTED: '' } }), null, 'untrusted, no home launcher');
     assert.equal(spawned(), false);
   });
@@ -261,7 +261,7 @@ describe('hermes design-hook plugin', { skip: SKIP }, () => {
     const edit = ['transform_tool_result', { tool_name: 'write_file', args: { path: path.join(project, 'src/App.tsx') }, result: '{}', session_id: 's7' }];
     const out = call('pre_verify', { session_id: 's7', attempt: 0, changed_paths: [] }, { cwd: tmp, before: [edit] });
     assert.deepEqual(out, { decision: 'block', reason: 'Deep pass: 1 finding' });
-    assert.equal(launcherRan(), path.join(project, '.hermes/skills/impeccable/scripts/impeccable'));
+    assert.equal(launcherRan(), path.join(project, '.hermes/skills/procable/scripts/procable'));
     assert.equal(sentEvent().cwd, tmp);
   });
 });

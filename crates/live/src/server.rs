@@ -17,7 +17,7 @@ pub fn probe_status(port: u16, token: &str, timeout_ms: u64) -> bool {
         port,
         crate::util::encode_uri_component(token)
     );
-    let agent = impeccable_context::http::agent_builder()
+    let agent = procable_context::http::agent_builder()
         .timeout_connect(Duration::from_millis(timeout_ms))
         .timeout(Duration::from_millis(timeout_ms))
         .build();
@@ -31,7 +31,7 @@ pub fn probe_status(port: u16, token: &str, timeout_ms: u64) -> bool {
 /// None on any failure or non-2xx.
 pub fn fetch_status(port: i64, token: &str) -> Option<Value> {
     let url = format!("http://localhost:{}/status?token={}", port, token);
-    let res = impeccable_context::http::agent_builder().build().get(&url).call().ok()?;
+    let res = procable_context::http::agent_builder().build().get(&url).call().ok()?;
     if !(200..300).contains(&res.status()) {
         return None;
     }
@@ -42,7 +42,7 @@ pub fn fetch_status(port: i64, token: &str) -> Option<Value> {
 /// `res.json()`; None on any failure or non-2xx.
 pub fn post_poll(port: i64, body: &Value) -> Option<Value> {
     let url = format!("http://localhost:{}/poll", port);
-    let res = impeccable_context::http::agent_builder()
+    let res = procable_context::http::agent_builder()
         .build()
         .post(&url)
         .set("Content-Type", "application/json")
@@ -75,7 +75,7 @@ pub fn spawn_detached_with_args(cwd: &str, env: &Env, child_args: &[String]) -> 
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
-    impeccable_common::proc::detach(&mut cmd);
+    procable_common::proc::detach(&mut cmd);
     let mut child = cmd.spawn().ok()?;
     let own_pid = std::process::id() as i64;
     let deadline = Instant::now() + Duration::from_secs(10);

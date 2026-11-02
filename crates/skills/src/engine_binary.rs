@@ -3,12 +3,13 @@
 //! offline: nothing here downloads. The asset naming and the checksum manifest
 //! stay because the release workflow and the launcher contract tests use them.
 
-use impeccable_common::Io;
+use procable_common::Io;
 
 use crate::providers::Sys;
 use crate::util::{self, jsp};
 
-pub const DEFAULT_DOWNLOAD_BASE: &str = "https://github.com/pbakaus/impeccable/releases/download";
+/// Where the fork publishes engine binaries; used to name assets, never fetched at runtime.
+pub const DEFAULT_DOWNLOAD_BASE: &str = "https://github.com/ruskicoder/procable/releases/download";
 
 /// The `<os>-<arch>` tag the launcher computes (`darwin|linux|windows` x
 /// `arm64|x64`); `None` on a platform without a release asset.
@@ -34,7 +35,7 @@ pub fn platform_tag() -> Option<(&'static str, &'static str)> {
 
 /// Where the binary for `(os, arch)` lives inside a skill directory.
 pub fn binary_path(skill_dir: &str, os: &str, arch: &str) -> String {
-    let name = if os == "windows" { "impeccable.exe" } else { "impeccable" };
+    let name = if os == "windows" { "procable.exe" } else { "procable" };
     jsp::join(&[skill_dir, "scripts", "bin", &format!("{os}-{arch}"), name])
 }
 
@@ -47,7 +48,7 @@ pub fn asset_url(base: &str, version: &str, os: &str, arch: &str) -> String {
 
 fn asset_name(os: &str, arch: &str) -> String {
     let ext = if os == "windows" { ".exe" } else { "" };
-    format!("impeccable-{os}-{arch}{ext}")
+    format!("procable-{os}-{arch}{ext}")
 }
 
 /// The digest `engine-checksums.txt` records for `version` and `asset`. Lines
@@ -63,14 +64,14 @@ fn manifest_digest(manifest: &str, version: &str, asset: &str) -> Option<String>
 }
 
 /// Belt and suspenders for the executable bit: chmod +x the launcher
-/// (`scripts/impeccable`) and every staged engine binary
-/// (`scripts/bin/**/impeccable*`) inside a skill dir. Zip extraction and the
+/// (`scripts/procable`) and every staged engine binary
+/// (`scripts/bin/**/procable*`) inside a skill dir. Zip extraction and the
 /// dir copy preserve modes themselves, but any channel that loses them (a
 /// zip with no unix modes, a mode-dropping copier) would otherwise turn every
 /// hook and Setup call into "Permission denied". No-op off unix and for
 /// missing paths.
 pub fn ensure_executable_scripts(skill_dir: &str) {
-    let launcher = jsp::join(&[skill_dir, "scripts", "impeccable"]);
+    let launcher = jsp::join(&[skill_dir, "scripts", "procable"]);
     if util::exists(&launcher) {
         let _ = util::set_executable(&launcher);
     }
@@ -81,7 +82,7 @@ pub fn ensure_executable_scripts(skill_dir: &str) {
             continue;
         }
         for name in util::read_dir_names(&dir).unwrap_or_default() {
-            if name.starts_with("impeccable") {
+            if name.starts_with("procable") {
                 let _ = util::set_executable(&jsp::join(&[&dir, &name]));
             }
         }
@@ -132,33 +133,33 @@ mod tests {
     fn asset_naming_matches_launcher() {
         assert_eq!(
             asset_url(DEFAULT_DOWNLOAD_BASE, "1.2.3", "darwin", "arm64"),
-            "https://github.com/pbakaus/impeccable/releases/download/engine-v1.2.3/impeccable-darwin-arm64"
+            "https://github.com/ruskicoder/procable/releases/download/engine-v1.2.3/procable-darwin-arm64"
         );
-        assert_eq!(asset_url("http://x/", "1", "windows", "x64"), "http://x/engine-v1/impeccable-windows-x64.exe");
+        assert_eq!(asset_url("http://x/", "1", "windows", "x64"), "http://x/engine-v1/procable-windows-x64.exe");
         // The sibling binary path is joined with the host's path semantics
         // (backslashes on Windows); only the asset name is platform-keyed.
         assert_eq!(
             binary_path("/s", "linux", "x64"),
-            jsp::join(&["/s", "scripts", "bin", "linux-x64", "impeccable"])
+            jsp::join(&["/s", "scripts", "bin", "linux-x64", "procable"])
         );
         assert_eq!(
             binary_path("/s", "windows", "arm64"),
-            jsp::join(&["/s", "scripts", "bin", "windows-arm64", "impeccable.exe"])
+            jsp::join(&["/s", "scripts", "bin", "windows-arm64", "procable.exe"])
         );
     }
 
     #[test]
     fn manifest_digest_matches_version_and_asset() {
-        let manifest = "# header: 1.2.3 impeccable-linux-x64 ffff\n\n\
-            1.2.3 impeccable-linux-x64 ABC123\n\
-            1.2.3 impeccable-windows-x64.exe def456\n\
-            1.2.2 impeccable-linux-x64 old\n";
-        assert_eq!(manifest_digest(manifest, "1.2.3", "impeccable-linux-x64").as_deref(), Some("abc123"));
-        assert_eq!(manifest_digest(manifest, "1.2.3", "impeccable-windows-x64.exe").as_deref(), Some("def456"));
-        assert_eq!(manifest_digest(manifest, "1.2.2", "impeccable-linux-x64").as_deref(), Some("old"));
-        assert_eq!(manifest_digest(manifest, "1.2.3", "impeccable-darwin-arm64"), None);
-        assert_eq!(manifest_digest(manifest, "9.9.9", "impeccable-linux-x64"), None);
-        assert_eq!(manifest_digest("# only 1.2.3 impeccable-linux-x64 ffff\n", "1.2.3", "impeccable-linux-x64"), None);
-        assert_eq!(manifest_digest("", "1.2.3", "impeccable-linux-x64"), None);
+        let manifest = "# header: 1.2.3 procable-linux-x64 ffff\n\n\
+            1.2.3 procable-linux-x64 ABC123\n\
+            1.2.3 procable-windows-x64.exe def456\n\
+            1.2.2 procable-linux-x64 old\n";
+        assert_eq!(manifest_digest(manifest, "1.2.3", "procable-linux-x64").as_deref(), Some("abc123"));
+        assert_eq!(manifest_digest(manifest, "1.2.3", "procable-windows-x64.exe").as_deref(), Some("def456"));
+        assert_eq!(manifest_digest(manifest, "1.2.2", "procable-linux-x64").as_deref(), Some("old"));
+        assert_eq!(manifest_digest(manifest, "1.2.3", "procable-darwin-arm64"), None);
+        assert_eq!(manifest_digest(manifest, "9.9.9", "procable-linux-x64"), None);
+        assert_eq!(manifest_digest("# only 1.2.3 procable-linux-x64 ffff\n", "1.2.3", "procable-linux-x64"), None);
+        assert_eq!(manifest_digest("", "1.2.3", "procable-linux-x64"), None);
     }
 }

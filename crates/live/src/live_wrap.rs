@@ -1,4 +1,4 @@
-//! JS: live-wrap.mjs -> `impeccable live-wrap` / `wrap`. Find an element in
+//! JS: live-wrap.mjs -> `procable live-wrap` / `wrap`. Find an element in
 //! source and wrap it in a variant container (or scaffold a Svelte component
 //! preview session), printing where the agent inserts variants.
 
@@ -12,11 +12,11 @@ use crate::svelte_component::{
 };
 use crate::util::{eprintln, json_compact, jsp, println, safe_read};
 use crate::wrap_common::*;
-use impeccable_common::Io;
-use impeccable_core::js::trim;
+use procable_common::Io;
+use procable_core::js::trim;
 use serde_json::{json, Map, Value};
 
-const HELP: &str = "Usage: impeccable wrap [options]
+const HELP: &str = "Usage: procable wrap [options]
 
 Find an element in source and wrap it in a variant container.
 
@@ -213,7 +213,7 @@ fn wrap_cli(args: &[String], io: &mut Io) -> i32 {
                 m = filtered[0];
             } else if filtered.is_empty() {
                 let normalized: String = {
-                    let re = regex::Regex::new(&format!("{}+", impeccable_core::js::WS)).unwrap();
+                    let re = regex::Regex::new(&format!("{}+", procable_core::js::WS)).unwrap();
                     trim(&re.replace_all(text, " ")).to_string()
                 };
                 if normalized.encode_utf16().count() < 8 {
@@ -375,32 +375,32 @@ fn wrap_cli(args: &[String], io: &mut Io) -> i32 {
     let wrapper_lines: Vec<String> = if is_jsx {
         vec![
             format!(
-                "{}<div data-impeccable-variants=\"{}\" data-impeccable-variant-count=\"{}\" {}>",
+                "{}<div data-procable-variants=\"{}\" data-procable-variant-count=\"{}\" {}>",
                 indent, id, count_s, style_contents
             ),
-            format!("{}  {} impeccable-variants-start {} {}", indent, co, id, cc),
+            format!("{}  {} procable-variants-start {} {}", indent, co, id, cc),
             format!("{}  {} Original {}", indent, co, cc),
-            format!("{}  <div data-impeccable-variant=\"original\">", indent),
+            format!("{}  <div data-procable-variant=\"original\">", indent),
             reindent_original("    "),
             format!("{}  </div>", indent),
             format!("{}  {} Variants: insert below this line {}", indent, co, cc),
-            format!("{}  {} impeccable-variants-end {} {}", indent, co, id, cc),
+            format!("{}  {} procable-variants-end {} {}", indent, co, id, cc),
             format!("{}</div>", indent),
         ]
     } else {
         vec![
-            format!("{}{} impeccable-variants-start {} {}", indent, co, id, cc),
+            format!("{}{} procable-variants-start {} {}", indent, co, id, cc),
             format!(
-                "{}<div data-impeccable-variants=\"{}\" data-impeccable-variant-count=\"{}\" {}>",
+                "{}<div data-procable-variants=\"{}\" data-procable-variant-count=\"{}\" {}>",
                 indent, id, count_s, style_contents
             ),
             format!("{}  {} Original {}", indent, co, cc),
-            format!("{}  <div data-impeccable-variant=\"original\">", indent),
+            format!("{}  <div data-procable-variant=\"original\">", indent),
             original_indented,
             format!("{}  </div>", indent),
             format!("{}  {} Variants: insert below this line {}", indent, co, cc),
             format!("{}</div>", indent),
-            format!("{}{} impeccable-variants-end {} {}", indent, co, id, cc),
+            format!("{}{} procable-variants-end {} {}", indent, co, id, cc),
         ]
     };
 
@@ -689,8 +689,8 @@ fn line_matches_manual_edit_locator(line: &str, op: &Value) -> bool {
         let tag = crate::accept_css::js_string(tag);
         let re = regex::Regex::new(&format!(
             "(?i)<{ws}*{tag}(?:[{wsc}>/]|$)",
-            ws = impeccable_core::js::WS,
-            wsc = &impeccable_core::js::WS[1..impeccable_core::js::WS.len() - 1],
+            ws = procable_core::js::WS,
+            wsc = &procable_core::js::WS[1..procable_core::js::WS.len() - 1],
             tag = regex::escape(&tag)
         ))
         .unwrap();
@@ -704,7 +704,7 @@ fn line_matches_manual_edit_locator(line: &str, op: &Value) -> bool {
         let eid = crate::accept_css::js_string(eid);
         let re = regex::Regex::new(&format!(
             "(?-u:\\b)id{ws}*={ws}*[\"']{id}[\"']",
-            ws = impeccable_core::js::WS,
+            ws = procable_core::js::WS,
             id = regex::escape(&eid)
         ))
         .unwrap();

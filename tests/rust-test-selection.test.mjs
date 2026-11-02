@@ -63,7 +63,7 @@ describe('rust-test-selection', () => {
       'crates/html/src/a.rs': 'include_str!("../../../scripts/bundle-signing-keys.json")',
       'crates/comp/src/b.rs': '// rebuilt by scripts/lib/build.js; reads the project\'s "package.json"',
       'crates/tool/src/c.rs': '//! fixtures live in `tests/fixtures/antipatterns/`',
-      'crates/core/src/d.rs': 'let rel = "skill/scripts/impeccable is the launcher";',
+      'crates/core/src/d.rs': 'let rel = "skill/scripts/procable is the launcher";',
     };
     assert.deepEqual(select(['scripts/test-rust-changed.mjs', 'scripts/lib/build.js', 'package.json'], sources).names, []);
     assert.deepEqual(select(['tests/fixtures/antipatterns/x.html', 'skill/scripts/live-browser.js'], sources).names, []);
@@ -72,16 +72,16 @@ describe('rust-test-selection', () => {
 
   it('selects the known readers of paths built with chained joins', () => {
     const packages = [
-      { name: 'impeccable-core', dir: 'crates/core', deps: [] },
-      { name: 'impeccable-html', dir: 'crates/html', deps: ['impeccable-core'] },
-      { name: 'impeccable-comp', dir: 'crates/comp', deps: [] },
+      { name: 'procable-core', dir: 'crates/core', deps: [] },
+      { name: 'procable-html', dir: 'crates/html', deps: ['procable-core'] },
+      { name: 'procable-comp', dir: 'crates/comp', deps: [] },
     ];
     const { selected } = selectCrates({
       changed: ['tests/oracle/vectors/calls/engines.static-html.css-cascade/cssPropToCamel.jsonl'],
       packages,
       searchCrates: () => [],
     });
-    assert.deepEqual([...selected.keys()].sort(), ['impeccable-core', 'impeccable-html']);
+    assert.deepEqual([...selected.keys()].sort(), ['procable-core', 'procable-html']);
     // Every row must name a workspace crate, or a rename silently drops it.
     const real = readdirSync('crates').flatMap((dir) => {
       try {

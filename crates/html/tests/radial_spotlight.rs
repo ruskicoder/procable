@@ -2,7 +2,7 @@
 //! finding when it is prominent — bright against the surface it paints on,
 //! not scaled away by opacity, and sitting behind copy.
 
-use impeccable_html::{detect_html_source, DetectHtmlOptions};
+use procable_html::{detect_html_source, DetectHtmlOptions};
 use std::path::Path;
 
 fn glow_snippets(body_css: &str, body_html: &str) -> Vec<String> {

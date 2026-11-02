@@ -1,6 +1,6 @@
 /**
  * Tests for syncRootCommands. The post-merge release sync must mirror
- * generated provider command files (e.g. OpenCode's commands/impeccable.md)
+ * generated provider command files (e.g. OpenCode's commands/procable.md)
  * into the tracked root harness folders, or direct GitHub / submodule /
  * npx-skills installs ship OpenCode without the slash command bridge (#483).
  */
@@ -24,11 +24,11 @@ describe('syncRootCommands', () => {
   test('mirrors generated command files into the root harness folder', () => {
     const dist = mkdtempSync(join(tmpdir(), 'imp-sync-dist-'));
     const root = mkdtempSync(join(tmpdir(), 'imp-sync-root-'));
-    setupDist(dist, 'opencode', '.opencode', { 'impeccable.md': 'bridge v1\n' });
+    setupDist(dist, 'opencode', '.opencode', { 'procable.md': 'bridge v1\n' });
     try {
       const synced = syncRootCommands(dist, root, [{ provider: 'opencode', configDir: '.opencode' }]);
       expect(synced).toEqual(['.opencode']);
-      expect(readFileSync(join(root, '.opencode', 'commands', 'impeccable.md'), 'utf8')).toBe('bridge v1\n');
+      expect(readFileSync(join(root, '.opencode', 'commands', 'procable.md'), 'utf8')).toBe('bridge v1\n');
     } finally {
       rmSync(dist, { recursive: true, force: true });
       rmSync(root, { recursive: true, force: true });
@@ -38,15 +38,15 @@ describe('syncRootCommands', () => {
   test('preserves repo-local or pinned command files already at the destination', () => {
     const dist = mkdtempSync(join(tmpdir(), 'imp-sync-dist-'));
     const root = mkdtempSync(join(tmpdir(), 'imp-sync-root-'));
-    setupDist(dist, 'opencode', '.opencode', { 'impeccable.md': 'bridge v2\n' });
+    setupDist(dist, 'opencode', '.opencode', { 'procable.md': 'bridge v2\n' });
     const destDir = join(root, '.opencode', 'commands');
     mkdirSync(destDir, { recursive: true });
-    writeFileSync(join(destDir, 'impeccable-audit.md'), 'pinned by user\n');
-    writeFileSync(join(destDir, 'impeccable.md'), 'stale bridge\n');
+    writeFileSync(join(destDir, 'procable-audit.md'), 'pinned by user\n');
+    writeFileSync(join(destDir, 'procable.md'), 'stale bridge\n');
     try {
       syncRootCommands(dist, root, [{ provider: 'opencode', configDir: '.opencode' }]);
-      expect(readFileSync(join(destDir, 'impeccable.md'), 'utf8')).toBe('bridge v2\n');
-      expect(readFileSync(join(destDir, 'impeccable-audit.md'), 'utf8')).toBe('pinned by user\n');
+      expect(readFileSync(join(destDir, 'procable.md'), 'utf8')).toBe('bridge v2\n');
+      expect(readFileSync(join(destDir, 'procable-audit.md'), 'utf8')).toBe('pinned by user\n');
     } finally {
       rmSync(dist, { recursive: true, force: true });
       rmSync(root, { recursive: true, force: true });
@@ -56,7 +56,7 @@ describe('syncRootCommands', () => {
   test('skips providers whose dist variant has no commands dir', () => {
     const dist = mkdtempSync(join(tmpdir(), 'imp-sync-dist-'));
     const root = mkdtempSync(join(tmpdir(), 'imp-sync-root-'));
-    setupDist(dist, 'opencode', '.opencode', { 'impeccable.md': 'bridge\n' });
+    setupDist(dist, 'opencode', '.opencode', { 'procable.md': 'bridge\n' });
     setupDist(dist, 'claude-code', '.claude', null);
     try {
       const synced = syncRootCommands(dist, root, [

@@ -1,9 +1,9 @@
 //! Replays the recorded JS call vectors through the Rust port and requires
 //! every one to match. Vectors live at
 //! `tests/oracle/vectors/calls/<module>/<fn>.jsonl` in this repo;
-//! `IMPECCABLE_PUBLIC_REPO` overrides the root for an out-of-tree checkout.
+//! `PROCABLE_PUBLIC_REPO` overrides the root for an out-of-tree checkout.
 
-use impeccable_core::vectors::{call, KNOWN_FUNCTIONS};
+use procable_core::vectors::{call, KNOWN_FUNCTIONS};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -54,7 +54,7 @@ fn without_retired(v: &Value) -> Value {
     )
 }
 
-/// The repo root. `IMPECCABLE_PUBLIC_REPO` overrides it for an out-of-tree
+/// The repo root. `PROCABLE_PUBLIC_REPO` overrides it for an out-of-tree
 /// checkout.
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("..").join("..")
@@ -62,7 +62,7 @@ fn repo_root() -> PathBuf {
 
 fn vectors_dir() -> Option<PathBuf> {
     let mut candidates: Vec<PathBuf> = Vec::new();
-    if let Ok(p) = std::env::var("IMPECCABLE_PUBLIC_REPO") {
+    if let Ok(p) = std::env::var("PROCABLE_PUBLIC_REPO") {
         candidates.push(PathBuf::from(p));
     }
     candidates.push(repo_root());
@@ -144,7 +144,7 @@ fn same(a: &Canon, b: &Canon) -> bool {
 fn replay_recorded_vectors() {
     let Some(dir) = vectors_dir() else {
         panic!(
-            "vectors dir not found; set IMPECCABLE_PUBLIC_REPO to a checkout of this repo that has \
+            "vectors dir not found; set PROCABLE_PUBLIC_REPO to a checkout of this repo that has \
              tests/oracle/vectors/calls (generate with `node tests/oracle/vectors/record-calls.mjs`)"
         );
     };

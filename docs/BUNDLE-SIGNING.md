@@ -1,6 +1,6 @@
 # Skill bundle signatures
 
-`impeccable install`, `update`, and `check` authenticate a remote skill ZIP
+`procable install`, `update`, and `check` authenticate a remote skill ZIP
 before extracting it. `universal.zip.sig.json` is an Ed25519 signature over
 the ZIP's SHA-256 digest, byte length, release version, artifact name, and key
 ID. The engine trusts only `scripts/bundle-signing-keys.json`, compiled into
@@ -21,15 +21,15 @@ Set references, not key material, in your shell:
 
 ```sh
 export OP_ACCOUNT='<account ID or sign-in address>'
-export IMPECCABLE_SIGNING_KEY_REF='op://<vault ID>/<item ID>/private-key'
+export PROCABLE_SIGNING_KEY_REF='op://<vault ID>/<item ID>/private-key'
 bun run release:skill
 ```
 
 For a persistent setup on your machine, use local Git settings instead:
 
 ```sh
-git config --local impeccable.signingAccount '<account ID or sign-in address>'
-git config --local impeccable.signingKeyRef 'op://<vault ID>/<item ID>/private-key'
+git config --local procable.signingAccount '<account ID or sign-in address>'
+git config --local procable.signingKeyRef 'op://<vault ID>/<item ID>/private-key'
 ```
 
 Those values stay in `.git/config`, outside version control. Environment
@@ -56,9 +56,9 @@ node scripts/sign-bundle.mjs 4.2.0 /path/to/universal.zip
 Check the resulting sidecar against the Rust verifier and compiled public key:
 
 ```sh
-IMPECCABLE_VERIFY_BUNDLE=/path/to/universal.zip \
-IMPECCABLE_VERIFY_BUNDLE_VERSION=4.2.0 \
-cargo test -p impeccable-skills verifies_reviewed_release_with_production_keyring -- --ignored
+PROCABLE_VERIFY_BUNDLE=/path/to/universal.zip \
+PROCABLE_VERIFY_BUNDLE_VERSION=4.2.0 \
+cargo test -p procable-skills verifies_reviewed_release_with_production_keyring -- --ignored
 ```
 
 This creates only the local sidecar. It neither uploads it nor replaces the
@@ -90,7 +90,7 @@ state are separate work. Signatures do not establish that authored skill
 content is safe. Separately downloaded engine binaries are covered only
 through the `scripts/engine-checksums.txt` digests the signed bundle carries.
 
-`IMPECCABLE_BUNDLE_PATH` and `impeccable link` are explicit local-development
+`PROCABLE_BUNDLE_PATH` and `procable link` are explicit local-development
 trust paths. They continue to accept unsigned local files/directories. Do not
 use those overrides to get around a failed remote verification. There is no
 unsigned-network fallback or skip-signature flag.
@@ -104,7 +104,7 @@ fields are rejected. The signature payload is UTF-8 with LF line endings
 and a final LF:
 
 ```text
-impeccable-skill-bundle-v1
+procable-skill-bundle-v1
 <keyId>
 skill-v<version>
 universal.zip

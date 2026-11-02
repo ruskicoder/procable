@@ -3,7 +3,7 @@
  *
  * This is intentionally opt-in and provider-backed: it narrows the failure
  * where the accepted source has been carbonized cleanly but the browser still
- * exposes the accepted element under stale data-impeccable runtime wrappers.
+ * exposes the accepted element under stale data-procable runtime wrappers.
  *
  * Run with:
  *   set -a; source .env.local; set +a
@@ -50,7 +50,7 @@ describe('live-e2e accept cleanup regression', () => {
   it('cleans accepted LLM DOM wrappers after carbonize cleanup', async (t) => {
     const fixture = readFixture(FIXTURE_NAME);
     const llmConfig = resolveLlmAgentConfig({
-      provider: process.env.IMPECCABLE_E2E_LLM_PROVIDER || 'deepseek',
+      provider: process.env.PROCABLE_E2E_LLM_PROVIDER || 'deepseek',
     });
     const agent = await createLlmAgent({
       config: llmConfig,
@@ -96,7 +96,7 @@ describe('live-e2e accept cleanup regression', () => {
       const sourceFile = await locateSessionFile(tmp);
       assert.match(
         readFileSync(sourceFile, 'utf-8'),
-        /data-impeccable-variants="/,
+        /data-procable-variants="/,
         'variant wrapper should be present before accept',
       );
 
@@ -104,19 +104,19 @@ describe('live-e2e accept cleanup regression', () => {
       await clickNext(page);
       assert.equal(await getVisibleVariant(page), 2, 'variant 2 visible after one Next');
 
-      const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('impeccable-live-session') || 'null'));
+      const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('procable-live-session') || 'null'));
       assert.ok(saved?.id && /^[a-zA-Z0-9_-]+$/.test(saved.id), 'cycling session has a safe durable id');
-      const snapshotPath = join(appRoot, '.impeccable/live/sessions', `${saved.id}.snapshot.json`);
+      const snapshotPath = join(appRoot, '.procable/live/sessions', `${saved.id}.snapshot.json`);
 
       t.diagnostic('Accepting variant 2');
       await clickAccept(page, { expectedVariant: 2 });
 
       t.diagnostic('Waiting for accept + carbonize cleanup to land in source');
       const finalSource = await waitForSourceClean(sourceFile, 30_000);
-      assert.doesNotMatch(finalSource, /data-impeccable-variants="/, 'source variants wrapper removed');
-      assert.doesNotMatch(finalSource, /impeccable-variants-start/, 'source variants markers removed');
-      assert.doesNotMatch(finalSource, /impeccable-carbonize-start/, 'source carbonize markers removed');
-      assert.doesNotMatch(finalSource, /data-impeccable-variant="/, 'source variant wrapper removed');
+      assert.doesNotMatch(finalSource, /data-procable-variants="/, 'source variants wrapper removed');
+      assert.doesNotMatch(finalSource, /procable-variants-start/, 'source variants markers removed');
+      assert.doesNotMatch(finalSource, /procable-carbonize-start/, 'source carbonize markers removed');
+      assert.doesNotMatch(finalSource, /data-procable-variant="/, 'source variant wrapper removed');
       assert.match(finalSource, /<h1[^>]*(class|className)="[^"]*\bhero-title\b[^"]*"/);
 
       await waitForAcceptedDomClean(page, PICK_SELECTOR, {
@@ -135,7 +135,7 @@ describe('live-e2e accept cleanup regression', () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
       } while (Date.now() < deadline);
       assert.equal(snapshot.phase, 'completed', 'accept must reach durable completed phase without forcing completion');
-      assert.doesNotMatch(readFileSync(sourceFile, 'utf8'), /data-impeccable-[\w-]+\s*=/, 'accepted source contains no reserved runtime attributes');
+      assert.doesNotMatch(readFileSync(sourceFile, 'utf8'), /data-procable-[\w-]+\s*=/, 'accepted source contains no reserved runtime attributes');
       t.diagnostic(`Durable completion verified for ${saved.id}`);
     } finally {
       await teardown();
@@ -201,7 +201,7 @@ async function waitForAcceptedDomClean(page, selector, { timeoutMs, sourceFile, 
       (sel) => {
         const matches = [...document.querySelectorAll(sel)];
         return matches.length > 0
-          && matches.every((el) => !el.closest('[data-impeccable-variants],[data-impeccable-variant],[data-impeccable-carbonize]'));
+          && matches.every((el) => !el.closest('[data-procable-variants],[data-procable-variant],[data-procable-carbonize]'));
       },
       selector,
       { timeout: timeoutMs },
@@ -221,26 +221,26 @@ async function waitForAcceptedDomClean(page, selector, { timeoutMs, sourceFile, 
 async function collectAcceptedDomDiagnostic(page, selector) {
   return page.evaluate((sel) => {
     const matches = [...document.querySelectorAll(sel)];
-    const clean = matches.filter((el) => !el.closest('[data-impeccable-variants],[data-impeccable-variant],[data-impeccable-carbonize]'));
-    const stale = matches.filter((el) => el.closest('[data-impeccable-variants],[data-impeccable-variant],[data-impeccable-carbonize]'));
+    const clean = matches.filter((el) => !el.closest('[data-procable-variants],[data-procable-variant],[data-procable-carbonize]'));
+    const stale = matches.filter((el) => el.closest('[data-procable-variants],[data-procable-variant],[data-procable-carbonize]'));
     const local = {};
     for (const key of [
-      'impeccable-live-session',
-      'impeccable-live-session-handled',
-      'impeccable-live-session-scroll',
+      'procable-live-session',
+      'procable-live-session-handled',
+      'procable-live-session-scroll',
     ]) {
       local[key] = localStorage.getItem(key);
     }
     return {
       cleanMatchCount: clean.length,
       staleMatchCount: stale.length,
-      remainingVariantsWrapperCount: document.querySelectorAll('[data-impeccable-variants]').length,
-      remainingVariantWrapperCount: document.querySelectorAll('[data-impeccable-variant]').length,
-      liveBarText: document.querySelector('#impeccable-live-bar')?.textContent || '',
+      remainingVariantsWrapperCount: document.querySelectorAll('[data-procable-variants]').length,
+      remainingVariantWrapperCount: document.querySelectorAll('[data-procable-variant]').length,
+      liveBarText: document.querySelector('#procable-live-bar')?.textContent || '',
       localStorage: local,
       heroHtml: matches.map((el) => el.outerHTML.slice(0, 500)),
       staleAncestorHtml: stale.map((el) => {
-        const ancestor = el.closest('[data-impeccable-variants],[data-impeccable-variant]');
+        const ancestor = el.closest('[data-procable-variants],[data-procable-variant]');
         return ancestor ? ancestor.outerHTML.slice(0, 700) : '';
       }),
     };
@@ -248,10 +248,10 @@ async function collectAcceptedDomDiagnostic(page, selector) {
 }
 
 function isSourceClean(source) {
-  return !source.includes('data-impeccable-variants=')
-    && !source.includes('impeccable-variants-start')
-    && !source.includes('impeccable-carbonize-start')
-    && !source.includes('data-impeccable-variant=');
+  return !source.includes('data-procable-variants=')
+    && !source.includes('procable-variants-start')
+    && !source.includes('procable-carbonize-start')
+    && !source.includes('data-procable-variant=');
 }
 
 async function waitForSourceClean(filePath, timeoutMs) {
@@ -269,9 +269,9 @@ async function locateSessionFile(tmp) {
   for (const file of walkSources(tmp)) {
     const body = readFileSync(file, 'utf-8');
     if (
-      body.includes('data-impeccable-variants=')
-      || body.includes('impeccable-carbonize-start')
-      || body.includes('impeccable-variants-start')
+      body.includes('data-procable-variants=')
+      || body.includes('procable-carbonize-start')
+      || body.includes('procable-variants-start')
     ) {
       return file;
     }

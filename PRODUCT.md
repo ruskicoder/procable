@@ -1,6 +1,6 @@
 # Product
 
-<!-- impeccable:product-schema 1 -->
+<!-- procable:product-schema 1 -->
 
 ## Platform
 
@@ -12,15 +12,15 @@ Designers, product managers, and engineers who use AI coding tools (Cursor, Clau
 
 ## Product Purpose
 
-Impeccable gives builders a shared design vocabulary with their AI, delivered as a plug-and-play skill that works in every major AI coding harness. Success is measured in two ways: (1) the user can steer AI output with design precision instead of vague prose, and (2) the AI produces interfaces that pass professional design review, not "looks like an AI made it" output.
+Procable gives builders a shared design vocabulary with their AI, delivered as a plug-and-play skill that works in every major AI coding harness. Success is measured in two ways: (1) the user can steer AI output with design precision instead of vague prose, and (2) the AI produces interfaces that pass professional design review, not "looks like an AI made it" output.
 
 ## Positioning
 
-Impeccable combines an opinionated design skill, live browser iteration, and deterministic anti-pattern detection in one source-first system that is transformed for supported AI coding harnesses. The repository ships the same design vocabulary through harness-native distributions instead of maintaining unrelated prompts for each tool.
+Procable combines an opinionated design skill, live browser iteration, and deterministic anti-pattern detection in one source-first system that is transformed for supported AI coding harnesses. The repository ships the same design vocabulary through harness-native distributions instead of maintaining unrelated prompts for each tool.
 
 ## Operating Context
 
-Builders install Impeccable from the repository or package, run `/impeccable init` once to record product truth, then direct design work through the shared command vocabulary. They may iterate against a runnable interface in live mode and use the CLI or browser extension for deterministic checks. Maintainers author the canonical skill under `skill/`; build scripts derive provider distributions, site assets, and validation output.
+Builders install Procable from the repository or package, run `/procable init` once to record product truth, then direct design work through the shared command vocabulary. They may iterate against a runnable interface in live mode and use the CLI or browser extension for deterministic checks. Maintainers author the canonical skill under `skill/`; build scripts derive provider distributions, site assets, and validation output.
 
 ## Capabilities and Constraints
 
@@ -31,15 +31,15 @@ Builders install Impeccable from the repository or package, run `/impeccable ini
 
 ## Brand Commitments
 
-Expert, opinionated, refined. Impeccable speaks with an authoritative design voice: confident taste, editorial quality, zero hedging. It's the design director in the room who knows exactly what's wrong and how to fix it. The tone is **direct** (no "maybe consider"), **specific** (no "improve the vibe"), and **rooted in craft** (no hype, no hedging).
+Expert, opinionated, refined. Procable speaks with an authoritative design voice: confident taste, editorial quality, zero hedging. It's the design director in the room who knows exactly what's wrong and how to fix it. The tone is **direct** (no "maybe consider"), **specific** (no "improve the vibe"), and **rooted in craft** (no hype, no hedging).
 
 Three-word personality: **expert, decisive, editorial**.
 
-The site and brand must be the antithesis of everything Impeccable critiques. Specifically, avoid:
+The site and brand must be the antithesis of everything Procable critiques. Specifically, avoid:
 
 - **Generic AI tool marketing**: dark mode with purple gradients, neon accents, glassmorphism, glowing particles, cyan-on-black.
 - **SaaS landing-page clichés**: hero-metric layouts, identical-card feature grids, sparkline decorations, "boost your productivity" copy.
-- **Hedging language**: "might", "could", "consider", "perhaps". Impeccable is opinionated — it picks a direction and commits.
+- **Hedging language**: "might", "could", "consider", "perhaps". Procable is opinionated — it picks a direction and commits.
 - **Educational framing**: this product is for people who already know they have a problem; we solve it, we don't teach it.
 - **Over-decoration**: every visual element must earn its place. No ornament for ornament's sake.
 
@@ -47,7 +47,7 @@ The site and brand must be the antithesis of everything Impeccable critiques. Sp
 
 - `README.md` documents the public command set, supported installation paths, and deterministic detector behavior.
 - `skill/` contains the canonical guidance and command references; `tests/` contains regression coverage for its build and runtime behavior.
-- `site/` is the public product surface and a direct demonstration of the design standard Impeccable advocates.
+- `site/` is the public product surface and a direct demonstration of the design standard Procable advocates.
 - `cli/` and `extension/` are working detector implementations, not roadmap claims.
 - The existing product record names no customer testimonials or quantified outcome studies. Future surfaces must not fabricate them.
 

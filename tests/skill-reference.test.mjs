@@ -45,7 +45,7 @@ describe('skill reference authoring contracts', () => {
 
   it('collects the existing-DESIGN.md choice before the documenter writes', () => {
     const newWork = readFileSync(join(ROOT, 'skill/reference/new-work.md'), 'utf-8').replace(/\r\n?/g, '\n');
-    const documenter = readFileSync(join(ROOT, 'skill/agents/impeccable-documenter.md'), 'utf-8').replace(/\r\n?/g, '\n');
+    const documenter = readFileSync(join(ROOT, 'skill/agents/procable-documenter.md'), 'utf-8').replace(/\r\n?/g, '\n');
     const handoff = newWork.match(/After the last correction[\s\S]*?<!-- rule:skill-documenter-records-the-world -->/)?.[0] ?? '';
     const inputContract = documenter.match(/## Input Contract\n([\s\S]*?)\n## Workflow/)?.[1] ?? '';
 

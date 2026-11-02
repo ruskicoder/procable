@@ -64,34 +64,34 @@ fn free_port() -> u16 {
 
 #[test]
 fn live_server_source_ignores_and_poller_fields() {
-    let dir = std::env::temp_dir().join(format!("impeccable-live-sec-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-live-sec-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(dir.join("prototype")).unwrap();
     let dir = std::fs::canonicalize(&dir).unwrap();
     std::fs::write(dir.join("prototype/index.html"), "<h1>page</h1>\n").unwrap();
-    std::fs::create_dir_all(dir.join(".impeccable/live")).unwrap();
+    std::fs::create_dir_all(dir.join(".procable/live")).unwrap();
     std::fs::write(
-        dir.join(".impeccable/config.json"),
+        dir.join(".procable/config.json"),
         r#"{"detector":{"ignoreRules":["ai-color-palette"],"ignoreValues":[{"rule":"gradient-text","value":"*","files":["prototype/**"],"reason":"local"}]}}"#,
     )
     .unwrap();
     std::fs::write(
-        dir.join(".impeccable/live/config.json"),
+        dir.join(".procable/live/config.json"),
         r#"{"files":["prototype/*.html"],"insertBefore":"</body>","commentSyntax":"html"}"#,
     )
     .unwrap();
 
     let port = free_port();
-    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let mut child = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .args(["live-server", &format!("--port={}", port)])
         .current_dir(&dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
         .expect("spawn live-server");
 
-    let pid_file = dir.join(".impeccable/live/server.json");
+    let pid_file = dir.join(".procable/live/server.json");
     let run = || -> Result<(), String> {
         if !wait_for(&pid_file, 10) {
             return Err("server pid file never appeared".into());
@@ -108,7 +108,7 @@ fn live_server_source_ignores_and_poller_fields() {
         assert!(body.contains("<h1>page</h1>"));
 
         // ...but not through a symlink that leaves the workspace (#618).
-        let outside = std::env::temp_dir().join(format!("impeccable-live-outside-{}", std::process::id()));
+        let outside = std::env::temp_dir().join(format!("procable-live-outside-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&outside);
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::write(outside.join("secret.txt"), "OUTSIDE SECRET").unwrap();
@@ -132,12 +132,12 @@ fn live_server_source_ignores_and_poller_fields() {
         // part (#639).
         let (st, live_js) = http(port, "GET", &format!("/live.js?token={}", token), None);
         assert_eq!(st, 200);
-        assert!(live_js.contains("window.__IMPECCABLE_PROJECT_IGNORES__ = "), "prelude field present");
+        assert!(live_js.contains("window.__PROCABLE_PROJECT_IGNORES__ = "), "prelude field present");
         assert!(live_js.contains("\"ignoreRules\":[\"ai-color-palette\"]"), "waivers serialized");
         assert!(live_js.contains("\"roots\":[\"prototype/\"]"), "served roots derived from files globs");
         assert!(live_js.contains("\"pageFiles\":[\"prototype/index.html\"]"), "page identities expanded");
         assert!(!live_js.contains("\"reason\""), "reason stays local");
-        assert!(live_js.contains("impeccable live script part: project-ignores (live-browser-ignores.js)"));
+        assert!(live_js.contains("procable live script part: project-ignores (live-browser-ignores.js)"));
 
         // Page-controlled poller fields are stripped at ingest (#488).
         let event = format!(
@@ -191,13 +191,13 @@ fn manual_edit_discard_with_ref_keeps_sibling_edits() {
         }
     }
 
-    let dir = std::env::temp_dir().join(format!("impeccable-live-discard-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!("procable-live-discard-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
-    let child = std::process::Command::new(env!("CARGO_BIN_EXE_impeccable"))
+    let child = std::process::Command::new(env!("CARGO_BIN_EXE_procable"))
         .arg("live-server")
         .current_dir(&dir)
-        .env("IMPECCABLE_LIVE_COPY_AGENT", "off")
+        .env("PROCABLE_LIVE_COPY_AGENT", "off")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
@@ -211,7 +211,7 @@ fn manual_edit_discard_with_ref_keeps_sibling_edits() {
         .expect("spawn reaper");
     let _server = Server { child, reaper, dir: dir.clone() };
 
-    let pid_file = dir.join(".impeccable/live/server.json");
+    let pid_file = dir.join(".procable/live/server.json");
     assert!(wait_for(&pid_file, 10), "server pid file never appeared");
     let info: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(&pid_file).unwrap()).unwrap();
     let port = info["port"].as_u64().expect("port") as u16;
@@ -235,7 +235,7 @@ fn manual_edit_discard_with_ref_keeps_sibling_edits() {
         ops.collect()
     };
     let pending = || -> serde_json::Value {
-        let path = dir.join(".impeccable/live/pending-manual-edits.json");
+        let path = dir.join(".procable/live/pending-manual-edits.json");
         let buffer: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
         rows(&buffer["entries"])
     };

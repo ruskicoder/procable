@@ -20,27 +20,27 @@ static VAR_P_RE: Lazy<Regex> =
 fn forbidden() -> Vec<(Marker, &'static str)> {
     vec![
         (
-            Marker::Text("impeccable-variants-start"),
+            Marker::Text("procable-variants-start"),
             "variant wrapper comment left in source",
         ),
         (
-            Marker::Text("impeccable-variants-end"),
+            Marker::Text("procable-variants-end"),
             "variant wrapper comment left in source",
         ),
         (
-            Marker::Text("impeccable-carbonize-start"),
+            Marker::Text("procable-carbonize-start"),
             "carbonize block not rewritten into permanent form",
         ),
         (
-            Marker::Text("impeccable-carbonize-end"),
+            Marker::Text("procable-carbonize-end"),
             "carbonize block not rewritten into permanent form",
         ),
         (
-            Marker::Text("impeccable-param-values"),
+            Marker::Text("procable-param-values"),
             "param-values comment not baked and removed",
         ),
         (
-            Marker::Text("data-impeccable-"),
+            Marker::Text("data-procable-"),
             "live-mode plumbing attribute left on markup",
         ),
         (
@@ -52,7 +52,7 @@ fn forbidden() -> Vec<(Marker, &'static str)> {
             "preview parameter variable not baked to a literal",
         ),
         (
-            Marker::Text("--impeccable-variant-ready"),
+            Marker::Text("--procable-variant-ready"),
             "preview readiness sentinel left in CSS",
         ),
     ]
@@ -69,7 +69,7 @@ pub fn verify_accepted_source(text: &str) -> (bool, Vec<Value>) {
                 Marker::Re(re, label) => (re.is_match(line), *label),
             };
             if hit {
-                let trimmed = impeccable_context::util::js_trim(line);
+                let trimmed = procable_context::util::js_trim(line);
                 let excerpt: String = trimmed.chars().take(120).collect();
                 findings.push(
                     json!({ "marker": label, "line": i + 1, "excerpt": excerpt, "why": why }),

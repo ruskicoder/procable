@@ -1,6 +1,6 @@
 //! Offline diagnostic using a frozen static entry. Not a production CLI verb.
-//! cargo run -p impeccable --example capture_snapshot -- request.json new-output-dir
-use impeccable::{
+//! cargo run -p procable --example capture_snapshot -- request.json new-output-dir
+use procable::{
     asset_capture::CdpAssetRenderer,
     capture_snapshot::{HtmlSnapshot, SnapshotSelection},
 };

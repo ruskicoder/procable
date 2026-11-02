@@ -1,4 +1,4 @@
-use impeccable_browser::{cdp::Browser, discovery};
+use procable_browser::{cdp::Browser, discovery};
 use std::time::Duration;
 
 #[test]

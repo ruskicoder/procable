@@ -201,7 +201,7 @@ const GEOMETRY_JS: &str = r#"(() => {
     out.originX = Math.min(0, window.scrollX);
     if (window.scrollX !== sx) window.scrollTo({ left: sx, top: sy, behavior: 'instant' });
   }
-  try { delete window.__impeccableShotScroller; } catch (e) {}
+  try { delete window.__procableShotScroller; } catch (e) {}
   // A document that scrolls a viewport's quarter or more is the page. One
   // that scrolls a few rows (a body margin around a 100vh shell, a URL-bar
   // gap) may still keep its content in a frame, which then has to hold more
@@ -234,7 +234,7 @@ const GEOMETRY_JS: &str = r#"(() => {
   }
   if (best) {
     const r = best.getBoundingClientRect();
-    window.__impeccableShotScroller = best;
+    window.__procableShotScroller = best;
     out.scroller = {
       top: r.top + best.clientTop,
       clientHeight: best.clientHeight,
@@ -246,7 +246,7 @@ const GEOMETRY_JS: &str = r#"(() => {
 })()"#;
 
 const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) => {
-  const el = useScroller ? window.__impeccableShotScroller : null;
+  const el = useScroller ? window.__procableShotScroller : null;
   if (useScroller && !el) throw new Error('the page scroller is gone');
   if (el) {
     window.scrollTo({ left: x, top: docY || 0, behavior: 'instant' });
@@ -284,7 +284,7 @@ const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) =>
     return false;
   };
   // The first tile keeps where every positioned box sits in the viewport.
-  if (!hideFixed && !window.__impeccableShotAnchors) {
+  if (!hideFixed && !window.__procableShotAnchors) {
     const boxes = [];
     for (const node of deepAll()) {
       const position = getComputedStyle(node).position;
@@ -292,7 +292,7 @@ const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) =>
       const r = node.getBoundingClientRect();
       boxes.push([node, r.left, r.top]);
     }
-    window.__impeccableShotAnchors = { x: pos.x, y: pos.y, boxes };
+    window.__procableShotAnchors = { x: pos.x, y: pos.y, boxes };
   }
   // Chrome that paints where the viewport is (a chat widget, a cookie bar)
   // lands on every tile; a beyond-viewport capture shows it once, at the top.
@@ -308,10 +308,10 @@ const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) =>
     if (cs.position !== 'sticky') return false;
     const offset = parseFloat(cs.top);
     if (!Number.isFinite(offset) || Math.abs(r.top - offset) >= 0.5) return false;
-    const anchors = window.__impeccableShotAnchors;
+    const anchors = window.__procableShotAnchors;
     return !!anchors && anchors.y + anchorTop < pos.y - 0.5;
   };
-  if (hideFixed && !window.__impeccableShotHidden) {
+  if (hideFixed && !window.__procableShotHidden) {
     const hidden = [];
     const hide = node => {
       hidden.push([node, node.style.getPropertyValue('opacity'), node.style.getPropertyPriority('opacity')]);
@@ -341,7 +341,7 @@ const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) =>
     // it did not move while the page did. So is a sticky box the document's
     // scroll has stuck at its offset, though it sat lower on the first tile
     // (a section bar under a header that scrolls away).
-    const anchors = window.__impeccableShotAnchors;
+    const anchors = window.__procableShotAnchors;
     if (anchors && Math.abs(pos.x - anchors.x) + Math.abs(pos.y - anchors.y) >= 1) {
       for (const [node, left, top] of anchors.boxes) {
         if (!node.isConnected || (el && holds(node, el))) continue;
@@ -350,16 +350,16 @@ const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) =>
         if (Math.abs(r.left - left) + Math.abs(r.top - top) < 0.5 || (!el && stuckSincePainted(node, r, top))) hide(node);
       }
     }
-    window.__impeccableShotHidden = hidden;
+    window.__procableShotHidden = hidden;
     await frame();
-  } else if (hideFixed && !el && window.__impeccableShotHidden && window.__impeccableShotAnchors) {
+  } else if (hideFixed && !el && window.__procableShotHidden && window.__procableShotAnchors) {
     // Each later tile: a sticky box that sticks only now (a section bar
     // further down) goes too, once its place at the top of its section is on
     // an earlier tile. Once hidden it stays hidden.
-    const hidden = window.__impeccableShotHidden;
+    const hidden = window.__procableShotHidden;
     const done = new Set(hidden.map(h => h[0]));
     let added = false;
-    for (const [node, , top] of window.__impeccableShotAnchors.boxes) {
+    for (const [node, , top] of window.__procableShotAnchors.boxes) {
       if (done.has(node) || !node.isConnected) continue;
       const r = node.getBoundingClientRect();
       if (r.width < 1 || r.height < 1) continue;
@@ -374,17 +374,17 @@ const SCROLL_TO_JS: &str = r#"(async ({ x, y, useScroller, hideFixed, docY }) =>
 })"#;
 
 const RESTORE_JS: &str = r#"(({ scrollTop }) => {
-  const hidden = window.__impeccableShotHidden;
+  const hidden = window.__procableShotHidden;
   if (hidden) {
     for (const [node, value, priority] of hidden.reverse()) {
       if (value) node.style.setProperty('opacity', value, priority);
       else node.style.removeProperty('opacity');
     }
-    try { delete window.__impeccableShotHidden; } catch (e) {}
+    try { delete window.__procableShotHidden; } catch (e) {}
   }
-  try { delete window.__impeccableShotAnchors; } catch (e) {}
+  try { delete window.__procableShotAnchors; } catch (e) {}
   window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
-  const el = window.__impeccableShotScroller;
+  const el = window.__procableShotScroller;
   if (el) el.scrollTo({ left: el.scrollLeft, top: scrollTop, behavior: 'instant' });
 })"#;
 
@@ -485,7 +485,7 @@ const ELEMENT_INTO_VIEW_JS: &str = r#"(async (resolve, { selector, identity, nod
 /// last tile's hiding left this element covered or hidden: 0 when the last
 /// tile serves it.
 const HIDE_COVERS_JS: &str = r#"(async (resolve, { selector, identity, node }, check) => {
-  if (!check) window.__impeccableShotTileCovers = [];
+  if (!check) window.__procableShotTileCovers = [];
   let el;
   try {
     el = resolve(selector, identity, node);
@@ -566,7 +566,7 @@ const HIDE_COVERS_JS: &str = r#"(async (resolve, { selector, identity, node }, c
   if (check) {
     // Whether the last tile serves this element too: it hid every layer
     // over this one, and none that holds it.
-    const tile = window.__impeccableShotTileCovers || [];
+    const tile = window.__procableShotTileCovers || [];
     if (tile.some(layer => holds(layer, el))) return 1;
     return covers.filter(layer => !tile.includes(layer)).length;
   }
@@ -575,8 +575,8 @@ const HIDE_COVERS_JS: &str = r#"(async (resolve, { selector, identity, node }, c
     hidden.push([layer, layer.style.getPropertyValue('opacity'), layer.style.getPropertyPriority('opacity')]);
     layer.style.setProperty('opacity', '0', 'important');
   }
-  window.__impeccableShotCovers = hidden;
-  window.__impeccableShotTileCovers = covers;
+  window.__procableShotCovers = hidden;
+  window.__procableShotTileCovers = covers;
   if (hidden.length) {
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(resolve, 50))));
   }
@@ -591,25 +591,25 @@ const HIDE_COVERS_JS: &str = r#"(async (resolve, { selector, identity, node }, c
 
 /// Undo [`HIDE_COVERS_JS`].
 const RESTORE_COVERS_JS: &str = r#"(() => {
-  const hidden = window.__impeccableShotCovers;
+  const hidden = window.__procableShotCovers;
   if (hidden) {
     for (const [node, value, priority] of hidden.reverse()) {
       if (value) node.style.setProperty('opacity', value, priority);
       else node.style.removeProperty('opacity');
     }
   }
-  try { delete window.__impeccableShotCovers; } catch (e) {}
+  try { delete window.__procableShotCovers; } catch (e) {}
 })()"#;
 
 /// Forget the last tile's covers ([`HIDE_COVERS_JS`]) once the shots are done.
-const FORGET_COVERS_JS: &str = "(() => { try { delete window.__impeccableShotTileCovers; } catch (e) {} })()";
+const FORGET_COVERS_JS: &str = "(() => { try { delete window.__procableShotTileCovers; } catch (e) {} })()";
 
 /// Capture the page, cut at `max_height`. See the module docs for the method.
 pub fn capture_full_page(page: &mut Page<'_>, max_height: f64, quality: u32) -> CdpResult<Screenshot> {
     let geometry = Geometry::from_value(&page.evaluate_value(GEOMETRY_JS)?);
     let shot = capture_with(page, &geometry, max_height, quality);
     let _ = page.evaluate(
-        "(() => { try { delete window.__impeccableShotScroller; delete window.__impeccableShotProbe; } catch (e) {} })()",
+        "(() => { try { delete window.__procableShotScroller; delete window.__procableShotProbe; } catch (e) {} })()",
     );
     shot
 }
@@ -725,9 +725,9 @@ const PROBE_LAYOUT_JS: &str = r#"((pick) => {
         if (el instanceof HTMLElement && el !== document.body && el !== document.documentElement) seen.add(el);
       }
     }
-    window.__impeccableShotProbe = [...seen];
+    window.__procableShotProbe = [...seen];
   }
-  const probe = window.__impeccableShotProbe || [];
+  const probe = window.__procableShotProbe || [];
   return probe.map(el => {
     if (!el.isConnected) return null;
     let x = 0;

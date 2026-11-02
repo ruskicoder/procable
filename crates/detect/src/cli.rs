@@ -4,9 +4,9 @@
 use std::collections::BTreeSet;
 use std::io::Write;
 
-use impeccable_common::Io;
-use impeccable_core::findings::Finding;
-use impeccable_core::registry::{all_antipatterns, filter_by_scopes, rule_scopes};
+use procable_common::Io;
+use procable_core::findings::Finding;
+use procable_core::registry::{all_antipatterns, filter_by_scopes, rule_scopes};
 use serde_json::Value;
 
 use crate::config::{
@@ -31,7 +31,7 @@ use crate::list_rules::{
 };
 use crate::util::{exists, re, D};
 
-pub const USAGE: &str = "Usage: impeccable detect [options] [file-or-dir-or-url...]
+pub const USAGE: &str = "Usage: procable detect [options] [file-or-dir-or-url...]
 
 Scan files or URLs for UI anti-patterns and design quality issues.
 
@@ -48,8 +48,8 @@ Options:
                       e.g. --viewport 390x844 for a mobile-width pass
   --no-config         Do not apply project config, detector ignores, inline
                       ignore comments, or DESIGN.md
-  --no-inline-ignores Do not honor in-file impeccable-disable* ignore comments
-  --no-design-system  Do not load local DESIGN.md / .impeccable/design.json context
+  --no-inline-ignores Do not honor in-file procable-disable* ignore comments
+  --no-design-system  Do not load local DESIGN.md / .procable/design.json context
   --no-advisory       Suppress advisory findings entirely (e.g. em-dash overuse)
   --no-consent-hiding URL scans: keep known consent managers' banners
                       (OneTrust, Cookiebot, ...) on the page instead of hiding
@@ -84,16 +84,16 @@ Exit status:
   Operational failure takes precedence when a multi-target scan is partial.
 
 Project config:
-  Respects .impeccable/config.json and .impeccable/config.local.json detector
+  Respects .procable/config.json and .procable/config.local.json detector
   settings: detector.ignoreRules, detector.ignoreFiles, detector.ignoreValues,
   and detector.designSystem.enabled.
 
 Inline ignores:
   In-file comments waive a finding where it lives and travel with the file:
-    <!-- impeccable-disable overused-font -- exported brand doc -->
-    .brand { font-family: Inter } /* impeccable-disable-line overused-font */
-    // impeccable-disable-next-line bounce-easing: intentional bounce
-  impeccable-disable applies to the whole file; -line / -next-line are scoped.
+    <!-- procable-disable overused-font -- exported brand doc -->
+    .brand { font-family: Inter } /* procable-disable-line overused-font */
+    // procable-disable-next-line bounce-easing: intentional bounce
+  procable-disable applies to the whole file; -line / -next-line are scoped.
   List one or more rule ids (comma-separated), or omit them / use * for all.
 
 Detection modes:
@@ -105,14 +105,14 @@ Detection modes:
                  DevTools port and scanned like a URL
 
 Examples:
-  impeccable detect src/
-  impeccable detect index.html
-  impeccable detect https://example.com
-  impeccable detect --cdp 9222 --target \"My App\" --json
-  impeccable detect --json .
-  impeccable detect --github src/
-  impeccable detect --list-rules
-  impeccable detect --no-config src/
+  procable detect src/
+  procable detect index.html
+  procable detect https://example.com
+  procable detect --cdp 9222 --target \"My App\" --json
+  procable detect --json .
+  procable detect --github src/
+  procable detect --list-rules
+  procable detect --no-config src/
 ";
 
 /// Remove every `--name <value>` / `--name=<value>` from `args`. `None` when
@@ -163,7 +163,7 @@ fn expand_joined_url_targets(targets: Vec<String>) -> Vec<String> {
             continue;
         }
         let parts: Vec<&str> = WS_RUN_RE
-            .split(impeccable_core::js::trim(&target))
+            .split(procable_core::js::trim(&target))
             .filter(|p| !p.is_empty())
             .collect();
         if parts.len() > 1 && parts.iter().all(|p| URL_RE.is_match(p)) {
@@ -233,7 +233,7 @@ fn format_findings_body(findings: &[&Finding]) -> Vec<String> {
             let line = if item.line != 0.0 && !item.line.is_nan() {
                 format!(
                     "line {}: ",
-                    impeccable_core::js::number_to_string(item.line)
+                    procable_core::js::number_to_string(item.line)
                 )
             } else {
                 String::new()
@@ -430,8 +430,8 @@ impl<'a> Ctx<'a> {
 
 re!(VIEWPORT_RE, format!("^({D}{{2,5}})[xX]({D}{{2,5}})$"));
 re!(URL_RE, "^(?i:https?|file)://");
-re!(WHITESPACE_RE, impeccable_core::js::WS.to_string());
-re!(WS_RUN_RE, format!("{}+", impeccable_core::js::WS));
+re!(WHITESPACE_RE, procable_core::js::WS.to_string());
+re!(WS_RUN_RE, format!("{}+", procable_core::js::WS));
 re!(FILE_URL_RE, "^(?i:file):");
 
 /// `fileURLToPath` for the `file:` URLs the CLI accepts; None when it can't map.
@@ -538,7 +538,7 @@ fn detect_cli(args_in: &[String], io: &mut Io, engines: &Engines) -> Result<i32,
         let parsed: Vec<String> = match value {
             Some(v) if !v.starts_with("--") => v
                 .split(',')
-                .map(|s| impeccable_core::js::trim(s).to_string())
+                .map(|s| procable_core::js::trim(s).to_string())
                 .filter(|s| !s.is_empty())
                 .collect(),
             _ => vec![],
@@ -613,7 +613,7 @@ fn detect_cli(args_in: &[String], io: &mut Io, engines: &Engines) -> Result<i32,
     };
     let target_filter = match target_filter {
         None => None,
-        Some(Some(v)) if !impeccable_core::js::trim(&v).is_empty() => Some(v),
+        Some(Some(v)) if !procable_core::js::trim(&v).is_empty() => Some(v),
         Some(_) => {
             io.err("Error: --target requires a substring of the page's URL or title, e.g. --target localhost:5173\n");
             return Err(Exit(1));
@@ -636,7 +636,7 @@ fn detect_cli(args_in: &[String], io: &mut Io, engines: &Engines) -> Result<i32,
         design_system: None,
         viewport,
         profile: None,
-        // The `impeccable` binary installs no rule pack; a library caller that
+        // The `procable` binary installs no rule pack; a library caller that
         // does sets this before handing the options to an engine.
         rule_pack: None,
         keep_consent_banners: has(&args, "--no-consent-hiding"),
@@ -886,7 +886,7 @@ fn regex_only_note(n: usize, exts: &BTreeSet<String>, ports: &BTreeSet<u32>) -> 
     );
     if ports.is_empty() {
         note.push_str(
-            "For the full check, scan the running dev server (npx impeccable detect http://localhost:PORT) or a static site's built .html.\n",
+            "For the full check, scan the running dev server (npx procable detect http://localhost:PORT) or a static site's built .html.\n",
         );
     } else {
         // One URL per scanned project, so a run over a Vite app and a Next
@@ -897,7 +897,7 @@ fn regex_only_note(n: usize, exts: &BTreeSet<String>, ports: &BTreeSet<u32>) -> 
             "For the full check, scan each running app:\n"
         });
         for p in ports {
-            note.push_str(&format!("  npx impeccable detect http://localhost:{p}\n"));
+            note.push_str(&format!("  npx procable detect http://localhost:{p}\n"));
         }
     }
     let templates: Vec<&str> = listed
@@ -907,7 +907,7 @@ fn regex_only_note(n: usize, exts: &BTreeSet<String>, ports: &BTreeSet<u32>) -> 
         .collect();
     if let Some(first) = templates.first() {
         note.push_str(&format!(
-            "{} files can take the HTML engine instead: add {{ \"ext\": \"{first}\", \"engine\": \"html\" }} under detector.extensions in .impeccable/config.json (trades the regex rules and line numbers for the element rules).\n",
+            "{} files can take the HTML engine instead: add {{ \"ext\": \"{first}\", \"engine\": \"html\" }} under detector.extensions in .procable/config.json (trades the regex rules and line numbers for the element rules).\n",
             templates.join("/")
         ));
     }
@@ -1006,7 +1006,7 @@ fn scan_targets(
                     let probe = is_port_listening(fw.port, Some(fw.fingerprint));
                     let msg = if probe.listening && probe.matched {
                         format!(
-                            "\n{} dev server detected on localhost:{}.\nFor more accurate results, scan the running site:\n  npx impeccable detect http://localhost:{}\n\n",
+                            "\n{} dev server detected on localhost:{}.\nFor more accurate results, scan the running site:\n  npx procable detect http://localhost:{}\n\n",
                             fw.name, fw.port, fw.port
                         )
                     } else if probe.listening && !probe.matched {
@@ -1019,7 +1019,7 @@ fn scan_targets(
                         )
                     } else {
                         format!(
-                            "\n{} project detected ({}).\nStart the dev server and scan via URL for best results:\n  npx impeccable detect http://localhost:{}\n\n",
+                            "\n{} project detected ({}).\nStart the dev server and scan via URL for best results:\n  npx procable detect http://localhost:{}\n\n",
                             fw.name,
                             jsp::basename(&fw.config_path),
                             fw.port
@@ -1138,7 +1138,7 @@ fn confirm(io: &mut Io, question: &str) -> bool {
     // Only reached when stdin is a TTY, so a direct line read is what the
     // JS readline does too.
     let _ = std::io::stdin().read_line(&mut answer);
-    let a = impeccable_core::js::trim(&answer);
+    let a = procable_core::js::trim(&answer);
     a.is_empty() || a.eq_ignore_ascii_case("y") || a.eq_ignore_ascii_case("yes")
 }
 
@@ -1187,7 +1187,7 @@ mod design_note_tests {
 
     #[test]
     fn the_purple_note_follows_only_a_scan_that_ran() {
-        let dir = std::env::temp_dir().join(format!("impeccable-design-note-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("procable-design-note-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         std::fs::write(dir.join("DESIGN.md"), "---\ncolors:\n  primary: \"#5c2d91\"\n---\n# Design\n").unwrap();

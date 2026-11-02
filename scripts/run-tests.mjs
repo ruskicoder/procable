@@ -22,7 +22,7 @@ const REPO_ROOT = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 // and client-side network deadlines in place, a wedged tool or an orphaned
 // grandchild can keep a runner alive forever; this cap guarantees the sweep
 // terminates. Per-suite `wallClockMs` overrides it; the env var overrides both.
-const DEFAULT_WALL_CLOCK_MS = Number(process.env.IMPECCABLE_TEST_WALL_CLOCK_MS) || 1_200_000;
+const DEFAULT_WALL_CLOCK_MS = Number(process.env.PROCABLE_TEST_WALL_CLOCK_MS) || 1_200_000;
 
 const args = process.argv.slice(2);
 
@@ -193,7 +193,7 @@ function runProcess(cmd, args, { env, wallClockMs }) {
  * ports.
  */
 async function assertNoLeakedServers(runId, suiteName) {
-  if (!runId || process.env.IMPECCABLE_SKIP_LEAK_CHECK === '1') return;
+  if (!runId || process.env.PROCABLE_SKIP_LEAK_CHECK === '1') return;
   // A server asked to stop needs a moment to actually go.
   let leaked = [];
   for (let attempt = 0; attempt < 10; attempt += 1) {
@@ -208,14 +208,14 @@ async function assertNoLeakedServers(runId, suiteName) {
   for (const { pid, command } of leaked) console.error(`  pid ${pid}  ${command}`);
   console.error('They have been killed. A live server outliving its suite means a teardown path');
   console.error('was skipped; see tests/lib/live-servers.mjs for how servers are meant to be tracked.');
-  console.error('Set IMPECCABLE_SKIP_LEAK_CHECK=1 to bypass this check.');
+  console.error('Set PROCABLE_SKIP_LEAK_CHECK=1 to bypass this check.');
   process.exit(1);
 }
 
 /**
  * `bun run test:cleanup`: kill live servers this checkout's tests left behind.
  *
- * Scoped to servers carrying this checkout's `IMPECCABLE_TEST_REPO` marker, so
+ * Scoped to servers carrying this checkout's `PROCABLE_TEST_REPO` marker, so
  * a live session the developer started themselves in this same repo is not a
  * candidate. A server from a run that predates the marker is not found here and
  * has to be killed by hand.

@@ -4,9 +4,9 @@
 
 use serde_json::{Map, Value};
 
-pub use impeccable_context::util::{iso_now, now_ms, safe_read};
-pub use impeccable_core::js_ext_b::utf16_len;
-pub use impeccable_detect::jsp;
+pub use procable_context::util::{iso_now, now_ms, safe_read};
+pub use procable_core::js_ext_b::utf16_len;
+pub use procable_detect::jsp;
 
 /// JS `str.slice(start, end)` in UTF-16 code units (non-negative bounds only).
 pub fn slice_utf16(s: &str, start: usize, end: usize) -> String {
@@ -71,7 +71,7 @@ pub fn truthy_value(v: Option<&Value>) -> bool {
 
 /// `String(v)` for a JSON value (JS coercion).
 pub fn js_string(v: &Value) -> String {
-    impeccable_detect::util::js_string(v)
+    procable_detect::util::js_string(v)
 }
 
 /// `fs.existsSync`.

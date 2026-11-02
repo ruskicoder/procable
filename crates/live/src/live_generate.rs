@@ -1,4 +1,4 @@
-//! `impeccable live-generate`: agent-initiated element targeting for the
+//! `procable live-generate`: agent-initiated element targeting for the
 //! `generate` command.
 //!
 //! Asks the live overlay to find an element by CSS selector, scroll to it,
@@ -15,24 +15,24 @@ use crate::paths::read_live_server_info;
 use crate::roots::enter_live_root;
 use crate::util::println;
 use crate::vocabulary::VISUAL_ACTIONS;
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
 use std::time::{Duration, Instant};
 
-const HELP: &str = "Usage: impeccable live-generate --selector <css> [--text <snippet>] [--index <n>] [--action <name>] [--count <n>] [--prompt <text>] [--dry-run] [--wait-for-browser <ms>] [--no-live-bar] [--boot] [--open] [--target <path>]
+const HELP: &str = "Usage: procable live-generate --selector <css> [--text <snippet>] [--index <n>] [--action <name>] [--count <n>] [--prompt <text>] [--dry-run] [--wait-for-browser <ms>] [--no-live-bar] [--boot] [--open] [--target <path>]
 
 Flags:
-  --boot             optional; run the generate lane's boot first (impeccable live
+  --boot             optional; run the generate lane's boot first (procable live
                      --allow-missing-context --dev-url --no-live-bar, with --target
                      when given), reusing a running helper; the boot's context and
                      devUrl ride along in the output as `boot`
   --open             optional; when no page with the overlay is connected, open the
-                     dev URL in the browser (IMPECCABLE_BROWSER, then `browser` in
-                     .impeccable/config.local.json or config.json, then BROWSER, then
+                     dev URL in the browser (PROCABLE_BROWSER, then `browser` in
+                     .procable/config.local.json or config.json, then BROWSER, then
                      the platform opener) and wait for it (60 s unless
                      --wait-for-browser says otherwise). On a harness with its own
                      browser (Cursor, Claude Code) the flag is ignored unless
-                     IMPECCABLE_BROWSER or the config's `browser` names one: the
+                     PROCABLE_BROWSER or the config's `browser` names one: the
                      page comes from the harness browser, never a second window
   --target <path>    optional; the file that renders the element (the boot's --target)
   --dev-url <url>    optional; the dev server you already know (a server the
@@ -41,7 +41,7 @@ Flags:
   --selector <css>   required; resolved with document.querySelectorAll
   --text <snippet>   optional; keeps only matches whose textContent contains it
   --index <n>        optional; 1-based pick among the remaining matches
-  --action <name>    optional; one of the live action vocabulary (default: impeccable)
+  --action <name>    optional; one of the live action vocabulary (default: procable)
   --count <n>        optional; variants to request, 1-8 (default: 3)
   --prompt <text>    optional; freeform direction, same as typing before Go
   --dry-run          optional; resolve and report without starting anything
@@ -319,10 +319,10 @@ fn run_boot(args: &[String], original_cwd: &std::path::Path, io: &Io, dev_url_hi
     if let Some(hint) = dev_url_hint {
         // The known server first, the usual ports behind it, unless the
         // caller already narrowed the list.
-        if !env.contains_key("IMPECCABLE_DEV_URL_CANDIDATES") {
+        if !env.contains_key("PROCABLE_DEV_URL_CANDIDATES") {
             let mut list = vec![hint.trim_end_matches('/').to_string() + "/"];
             list.extend(crate::dev_url::candidates(None));
-            env.insert("IMPECCABLE_DEV_URL_CANDIDATES".into(), list.join(","));
+            env.insert("PROCABLE_DEV_URL_CANDIDATES".into(), list.join(","));
         }
     }
     let (mut child, captured) = Io::captured("", original_cwd.to_path_buf(), env);
@@ -338,13 +338,13 @@ fn run_boot(args: &[String], original_cwd: &std::path::Path, io: &Io, dev_url_hi
             "error": "boot_failed",
             "exitCode": code,
             "detail": if err.trim().is_empty() { out.trim().to_string() } else { err.trim().to_string() },
-            "_instructions": "The live boot did not produce a verdict. Run `impeccable live --allow-missing-context --dev-url --no-live-bar` on its own, read its output, and fix what it names before rerunning this command.",
+            "_instructions": "The live boot did not produce a verdict. Run `procable live --allow-missing-context --dev-url --no-live-bar` on its own, read its output, and fix what it names before rerunning this command.",
         }));
     };
     if payload.get("ok").and_then(Value::as_bool) != Some(true) {
         let error = payload.get("error").and_then(Value::as_str).unwrap_or("").to_string();
         let text = match error.as_str() {
-            "config_missing" | "config_invalid" => "The live config is missing or invalid: follow reference/live-setup.md to create .impeccable/live/config.json, then rerun this command.",
+            "config_missing" | "config_invalid" => "The live config is missing or invalid: follow reference/live-setup.md to create .procable/live/config.json, then rerun this command.",
             "target_selection_required" => "Several apps live here: ask the user which one, then rerun this command with --target <a file inside that app>.",
             "context_missing" => "The boot refused for missing context even though this verb asks it to proceed; rerun with the boot's own flags to see why.",
             _ => "The boot refused; its fields say why. Fix that, then rerun this command.",
@@ -389,7 +389,7 @@ fn fetch_generate_event(port: i64, token: &str, session_id: &str, budget: Durati
             crate::live_poll::DEFAULT_EVENT_LEASE_MS,
             crate::live_poll::form_encode(session_id)
         );
-        let agent = impeccable_context::http::agent_builder()
+        let agent = procable_context::http::agent_builder()
             .timeout(Duration::from_millis(slice + 30_000))
             .build();
         let Ok(res) = agent.get(&url).call() else { return None };
@@ -460,14 +460,14 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
             "_instructions": "Pass --selector with a CSS selector for the element to target. Derive it from the page source: prefer an id, a unique class, or a landmark section, and add --text \"<visible text>\" when the class repeats.",
         }));
     }
-    let action = flag(&flags, "action").unwrap_or("impeccable").to_string();
+    let action = flag(&flags, "action").unwrap_or("procable").to_string();
     if !VISUAL_ACTIONS.contains(&action.as_str()) {
         return fail(io, json!({
             "ok": false,
             "error": "invalid_action",
             "action": action,
             "validActions": VISUAL_ACTIONS,
-            "_instructions": "Map the request wording onto the closest listed action (bold -> bolder, quiet/calmer -> quieter, simplify -> distill). When no action fits, use --action impeccable and carry the wording via --prompt.",
+            "_instructions": "Map the request wording onto the closest listed action (bold -> bolder, quiet/calmer -> quieter, simplify -> distill). When no action fits, use --action procable and carry the wording via --prompt.",
         }));
     }
     let count = match flag(&flags, "count") {
@@ -506,7 +506,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
     let (Some(port), Some(token)) = (port, token) else {
         return fail(io, server_not_running(&me));
     };
-    let harness = impeccable_context::provider::detect(&env, &cwd).id;
+    let harness = procable_context::provider::detect(&env, &cwd).id;
     // Every verdict from here on repeats what the boot found, so a refusal
     // still hands the caller its context and dev URL.
     let with_boot = |mut v: Map<String, Value>| -> Value {
@@ -528,7 +528,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
         if let Some(h) = &dev_url_hint {
             candidates.push(h.trim_end_matches('/').to_string() + "/");
         }
-        candidates.extend(crate::dev_url::candidates(env.get("IMPECCABLE_DEV_URL_CANDIDATES").map(String::as_str)));
+        candidates.extend(crate::dev_url::candidates(env.get("PROCABLE_DEV_URL_CANDIDATES").map(String::as_str)));
         if let Some(u) = crate::dev_url::probe(&candidates, &token) {
             return (Some(u), true);
         }
@@ -537,7 +537,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
 
     // A harness with its own browser never gets a second window from this
     // verb: `--open` there is ignored unless the user chose a browser
-    // explicitly (IMPECCABLE_BROWSER or the config's `browser`; the generic
+    // explicitly (PROCABLE_BROWSER or the config's `browser`; the generic
     // BROWSER variable is not that choice).
     let harness_has_browser = matches!(harness.as_str(), "cursor" | "claude-code");
     let open_ignored = flags.open && harness_has_browser && crate::browser_open::explicit_browser(&cwd, &env).is_none();
@@ -701,7 +701,7 @@ pub fn run(args: &[String], io: &mut Io) -> i32 {
     }
 
     let url = format!("http://127.0.0.1:{}/agent-target", port);
-    let agent = impeccable_context::http::agent_builder()
+    let agent = procable_context::http::agent_builder()
         .timeout(Duration::from_millis(REQUEST_TIMEOUT_MS))
         .build();
     let sent = agent
@@ -817,7 +817,7 @@ mod tests {
         m.insert("error".into(), json!("dev_server_gone"));
         m.insert("devUrl".into(), json!("http://127.0.0.1:5173/"));
         m.insert("harness".into(), json!("cursor"));
-        let text = instructions_for(&m, "impeccable").unwrap();
+        let text = instructions_for(&m, "procable").unwrap();
         assert!(text.contains("stopped answering"), "{text}");
         assert!(text.contains("http://127.0.0.1:5173/"), "{text}");
         assert!(text.contains("background terminal") && text.contains("--dev-url"), "{text}");
@@ -830,19 +830,19 @@ mod tests {
         m.insert("error".into(), json!("browser_needed"));
         m.insert("devUrl".into(), json!("http://127.0.0.1:5173/"));
         m.insert("harness".into(), json!("cursor"));
-        let cursor = instructions_for(&m, "impeccable").unwrap();
+        let cursor = instructions_for(&m, "procable").unwrap();
         assert!(cursor.contains("browser_navigate"), "{cursor}");
         assert!(cursor.contains("--wait-for-browser 60000"), "{cursor}");
         assert!(!cursor.contains("--open"), "a harness with a browser is never told to open a second one: {cursor}");
         m.insert("harness".into(), json!("claude-code"));
-        let claude = instructions_for(&m, "impeccable").unwrap();
+        let claude = instructions_for(&m, "procable").unwrap();
         assert!(claude.contains("Browser pane") && claude.contains("navigate") && claude.contains("preview_start"), "{claude}");
         assert!(!claude.contains("--open"), "{claude}");
         m.insert("harness".into(), json!("codex"));
-        let codex = instructions_for(&m, "impeccable").unwrap();
+        let codex = instructions_for(&m, "procable").unwrap();
         assert!(codex.contains("--open") && codex.contains("give the user"), "{codex}");
         m.insert("harness".into(), json!("source"));
-        let other = instructions_for(&m, "impeccable").unwrap();
+        let other = instructions_for(&m, "procable").unwrap();
         assert!(other.contains("browser tool") && other.contains("--open"), "{other}");
     }
 
@@ -854,7 +854,7 @@ mod tests {
         m.insert("devUrl".into(), json!("http://127.0.0.1:5173/"));
         m.insert("harness".into(), json!("cursor"));
         m.insert("openIgnored".into(), json!("harness browser"));
-        let text = instructions_for(&m, "impeccable").unwrap();
+        let text = instructions_for(&m, "procable").unwrap();
         assert!(text.starts_with("--open was ignored"), "{text}");
         assert!(text.contains("browser_navigate"), "{text}");
     }
@@ -865,10 +865,10 @@ mod tests {
         m.insert("ok".into(), json!(false));
         m.insert("error".into(), json!("no_dev_server"));
         m.insert("harness".into(), json!("claude-code"));
-        let text = instructions_for(&m, "impeccable").unwrap();
+        let text = instructions_for(&m, "procable").unwrap();
         assert!(text.contains("preview_start") && text.contains("--dev-url"), "{text}");
         m.insert("harness".into(), json!("cursor"));
-        let text = instructions_for(&m, "impeccable").unwrap();
+        let text = instructions_for(&m, "procable").unwrap();
         assert!(text.contains("background terminal") && text.contains("--dev-url"), "{text}");
     }
 
@@ -877,15 +877,15 @@ mod tests {
         let mut m = Map::new();
         m.insert("ok".into(), json!(false));
         m.insert("error".into(), json!("browser_timeout"));
-        let text = instructions_for(&m, "impeccable").unwrap();
+        let text = instructions_for(&m, "procable").unwrap();
         assert!(text.contains("no session was started"), "{text}");
     }
 
     #[test]
     fn busy_instructions_tell_the_agent_whose_session_is_in_the_way() {
-        let own = instructions_for(&busy("agent_target_in_flight"), "impeccable").unwrap();
+        let own = instructions_for(&busy("agent_target_in_flight"), "procable").unwrap();
         assert!(own.contains("already acting on another generate request"), "{own}");
-        let user = instructions_for(&busy("session_active"), "impeccable").unwrap();
+        let user = instructions_for(&busy("session_active"), "procable").unwrap();
         assert!(user.contains("browser state CONFIGURING"), "{user}");
     }
 }

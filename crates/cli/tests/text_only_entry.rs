@@ -1,12 +1,12 @@
 //! A first viewport built entirely in code (no raster region) through the real
 //! browser: native capture, the hero gate's readings, and an accepted review.
-use impeccable::entry_capture::CdpEntryRenderer;
-use impeccable::reviewed_entry::ReviewedEntryRenderer;
-use impeccable_comp::{png_io, raster};
-use impeccable_common::Io;
-use impeccable_comp_verbs::asset_capture::capture_sha256;
-use impeccable_comp_verbs::build_phase;
-use impeccable_comp_verbs::entry_capture::{EntryRenderer, EntryRequest, EntryStage};
+use procable::entry_capture::CdpEntryRenderer;
+use procable::reviewed_entry::ReviewedEntryRenderer;
+use procable_comp::{png_io, raster};
+use procable_common::Io;
+use procable_comp_verbs::asset_capture::capture_sha256;
+use procable_comp_verbs::build_phase;
+use procable_comp_verbs::entry_capture::{EntryRenderer, EntryRequest, EntryStage};
 use serde_json::{Value, json};
 #[path = "support/capture_service.rs"]
 #[allow(dead_code)]
@@ -21,7 +21,7 @@ use std::{
 };
 
 static NEXT: AtomicUsize = AtomicUsize::new(0);
-const SPEC: &str = ".impeccable/build/spec.json";
+const SPEC: &str = ".procable/build/spec.json";
 const PAGE: &str = "<!doctype html><style>html,body{margin:0;background:#f4f4f0;font:16px/1.2 sans-serif}\
 header{position:absolute;left:16px;top:16px;width:208px;height:24px;background:#181c24}\
 h1{position:absolute;left:16px;top:64px;width:208px;height:40px;margin:0;background:#1e5ac8}</style>\
@@ -42,8 +42,8 @@ impl Fixture {
         ));
         let project = dir.join("project");
         let home = dir.join("home");
-        fs::create_dir_all(project.join(".impeccable/build")).unwrap();
-        fs::create_dir_all(project.join(".impeccable/review")).unwrap();
+        fs::create_dir_all(project.join(".procable/build")).unwrap();
+        fs::create_dir_all(project.join(".procable/review")).unwrap();
         fs::create_dir_all(&home).unwrap();
         fs::write(project.join("index.html"), PAGE).unwrap();
         let comp = png_io::encode_png(&raster::create_image(240, 160, [244, 244, 240, 255]), &[]).unwrap();
@@ -76,7 +76,7 @@ impl Fixture {
         let env = HashMap::from([
             ("HOME".to_string(), self.home.display().to_string()),
             ("USERPROFILE".to_string(), self.home.display().to_string()),
-            ("IMPECCABLE_NATIVE_CAPTURE".to_string(), "1".to_string()),
+            ("PROCABLE_NATIVE_CAPTURE".to_string(), "1".to_string()),
         ]);
         let (mut io, captured) = Io::captured("", self.project.clone(), env);
         let argv: Vec<String> = args.iter().map(|a| a.to_string()).collect();
@@ -95,7 +95,7 @@ impl Fixture {
     }
     fn record_hero_with(&self, renderer: &dyn EntryRenderer) -> (bool, String, Value) {
         let (code, text) = self.run_with(&["record", "hero", "--min", "0.95"], renderer);
-        let report = fs::read(self.project.join(".impeccable/review/diff/hero/report.json"))
+        let report = fs::read(self.project.join(".procable/review/diff/hero/report.json"))
             .ok()
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or(Value::Null);
@@ -107,10 +107,10 @@ impl Fixture {
     fn session(&self) -> PathBuf {
         let project = self.project.canonicalize().unwrap();
         let key = capture_sha256(format!("{}\0hero", project.display()).as_bytes());
-        self.home.join(".impeccable/component-reviews").join(key)
+        self.home.join(".procable/component-reviews").join(key)
     }
     fn approve(&self, screenshot: &[u8]) {
-        fs::write(self.project.join(".impeccable/review/hero.json"), br#"{"id":"hero"}"#).unwrap();
+        fs::write(self.project.join(".procable/review/hero.json"), br#"{"id":"hero"}"#).unwrap();
         let session = self.session();
         fs::create_dir_all(session.join("blobs")).unwrap();
         let png = capture_sha256(screenshot);
@@ -134,7 +134,7 @@ impl Drop for Fixture {
 }
 
 fn browser_available() -> bool {
-    if impeccable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
+    if procable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
         eprintln!("skip: browser unavailable");
         return false;
     }
@@ -312,20 +312,20 @@ fn text_only_page_is_served_the_hero_review_dependencies() {
     let captured = CdpEntryRenderer.capture_entry(&f.request(EntryStage::Hero)).unwrap();
     assert_eq!(captured.evidence().report["dependencyPolicy"], "static-inventory");
     // The review declared only the stylesheet: the script is undeclared, as in the review.
-    fs::write(f.project.join(".impeccable/review/hero.json"), serde_json::to_vec(&manifest(&["style.css"])).unwrap()).unwrap();
+    fs::write(f.project.join(".procable/review/hero.json"), serde_json::to_vec(&manifest(&["style.css"])).unwrap()).unwrap();
     let e = refusal(&f);
     assert!(e.contains("undeclared dependency: /extra.js"), "{e}");
     // Declared, it loads; the manifest is bound to the capture.
-    fs::write(f.project.join(".impeccable/review/hero.json"), serde_json::to_vec(&manifest(&["style.css", "extra.js"])).unwrap()).unwrap();
+    fs::write(f.project.join(".procable/review/hero.json"), serde_json::to_vec(&manifest(&["style.css", "extra.js"])).unwrap()).unwrap();
     let captured = CdpEntryRenderer.capture_entry(&f.request(EntryStage::Hero)).unwrap();
     assert_eq!(captured.evidence().report["dependencyPolicy"], "hero-review-manifest");
     let served: Vec<_> = captured.evidence().report["servedToPage"].as_array().unwrap().iter().filter_map(|f| f["path"].as_str()).collect();
     assert_eq!(served, ["extra.js", "index.html", "style.css"]);
     captured.verify_current().unwrap();
-    fs::write(f.project.join(".impeccable/review/hero.json"), serde_json::to_vec(&manifest(&["style.css"])).unwrap()).unwrap();
+    fs::write(f.project.join(".procable/review/hero.json"), serde_json::to_vec(&manifest(&["style.css"])).unwrap()).unwrap();
     assert!(captured.verify_current().is_err());
     // A declared dependency outside the static inventory is never served.
-    fs::write(f.project.join(".impeccable/review/hero.json"), serde_json::to_vec(&manifest(&[".env"])).unwrap()).unwrap();
+    fs::write(f.project.join(".procable/review/hero.json"), serde_json::to_vec(&manifest(&[".env"])).unwrap()).unwrap();
     let e = refusal(&f);
     assert!(e.contains(".env") && e.contains("never served"), "{e}");
 }
@@ -560,9 +560,9 @@ fn host_capture_service_carries_a_text_only_hero_and_binds_its_accepted_review()
     assert_eq!(audit["ok"], true, "{audit}");
     let saved: Vec<_> = audit["savedEvidence"].as_array().unwrap().iter().filter_map(|e| e["path"].as_str()).collect();
     for name in ["inputs.json", "human-approved.png", "hero.png", "hero-observations.json"] {
-        assert!(saved.contains(&format!(".impeccable/review/native/hero/{name}").as_str()), "{saved:?}");
+        assert!(saved.contains(&format!(".procable/review/native/hero/{name}").as_str()), "{saved:?}");
     }
-    assert_eq!(fs::read_to_string(f.project.join(".impeccable/review/native/hero/hero-observations.json")).unwrap().trim(), "[]");
+    assert_eq!(fs::read_to_string(f.project.join(".procable/review/native/hero/hero-observations.json")).unwrap().trim(), "[]");
 }
 
 #[test]
@@ -570,7 +570,7 @@ fn capture_clock_is_pinned_and_an_approved_review_lends_its_instant() {
     if !browser_available() {
         return;
     }
-    use impeccable::entry_capture::CaptureClock;
+    use procable::entry_capture::CaptureClock;
     let f = Fixture::new();
     // The bars' widths follow the hour, as a page that prints "open now" does:
     // one through `new Date()`, one through an argument-less Intl format.

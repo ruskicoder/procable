@@ -1,9 +1,9 @@
 # Skill-behavior tests
 
-LLM-backed scenarios that verify how the impeccable skill drives context,
+LLM-backed scenarios that verify how the procable skill drives context,
 command-reference, new-work, and native-platform loading. Each scenario runs
 against the default Anthropic, OpenAI, and Google models. DeepSeek remains
-available through `IMPECCABLE_SKILL_BEHAVIOR_MODELS`.
+available through `PROCABLE_SKILL_BEHAVIOR_MODELS`.
 
 These are the tests you re-run when you refactor anything in SKILL.md's
 `## Setup` section. They fail when the agent stops following the loading
@@ -13,25 +13,25 @@ contract.
 
 ```bash
 bun run test:skill-behavior
-IMPECCABLE_SKILL_BEHAVIOR_VERBOSE=1 bun run test:skill-behavior   # dump per-scenario traces
-IMPECCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5 bun run test:skill-behavior   # scope to one model
-IMPECCABLE_SKILL_BEHAVIOR_EFFORT=xhigh bun run test:skill-behavior             # OpenAI reasoning effort (default: high)
+PROCABLE_SKILL_BEHAVIOR_VERBOSE=1 bun run test:skill-behavior   # dump per-scenario traces
+PROCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5 bun run test:skill-behavior   # scope to one model
+PROCABLE_SKILL_BEHAVIOR_EFFORT=xhigh bun run test:skill-behavior             # OpenAI reasoning effort (default: high)
 ```
 
 Requires `.env` at repo root with at least one of `ANTHROPIC_API_KEY`,
 `OPENAI_API_KEY`, `GOOGLE_CLOUD_API_KEY`, `DEEPSEEK_API_KEY`. Providers without a key are
 skipped, not failed.
 
-Also requires the engine binary (`bun run fetch:engine`, or `IMPECCABLE_BIN`).
-The staged skill dir ships the launcher (`scripts/impeccable`); the harness
-exports `IMPECCABLE_BIN` into every bash call the agent makes, so the launcher
+Also requires the engine binary (`bun run fetch:engine`, or `PROCABLE_BIN`).
+The staged skill dir ships the launcher (`scripts/procable`); the harness
+exports `PROCABLE_BIN` into every bash call the agent makes, so the launcher
 resolves the binary in the generated fixture without a download. Without a
 binary the suites skip.
 
 To run a single scenario against one model:
 
 ```bash
-IMPECCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5 IMPECCABLE_SKILL_BEHAVIOR_VERBOSE=1 \
+PROCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5 PROCABLE_SKILL_BEHAVIOR_VERBOSE=1 \
   node --test --test-timeout=600000 --test-name-pattern="scenario 6" tests/skill-behavior/scenarios.test.mjs
 ```
 
@@ -40,11 +40,11 @@ IMPECCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5 IMPECCABLE_SKILL_BEHAVIOR_VERBO
 `bun run test:skill-activation` is a separate opt-in suite for the frontmatter
 `description` in `skill/SKILL.src.md`, the one line every harness loads into
 every session. It does not load the skill body. It simulates the selection
-step: a system prompt lists twelve skills (impeccable plus eleven neighbours
+step: a system prompt lists twelve skills (procable plus eleven neighbours
 such as frontend-dev, docs-writer, dataviz and brand-identity, from
 `activation-cases.mjs`), the user message is one request, and the model has a
 `Skill` tool beside Read, Edit, Write and Bash. An activation is a `Skill` call
-naming `impeccable`; starting the work directly or loading another skill is a
+naming `procable`; starting the work directly or loading another skill is a
 miss.
 
 The 54 cases are 34 positives (every command family, five document-shaped
@@ -141,7 +141,7 @@ bun run test:skill-workflow
 ```
 
 This separately billed suite defaults to Claude only; use
-`IMPECCABLE_SKILL_BEHAVIOR_MODELS` to explicitly choose another model or sweep.
+`PROCABLE_SKILL_BEHAVIOR_MODELS` to explicitly choose another model or sweep.
 It preflights a local server and Chromium before each provider turn, exposing
 real desktop/mobile screenshot and PNG viewing tools. Text-only fixtures use
 system fonts and block external browser requests. No extra skill prose is added.
@@ -228,7 +228,7 @@ themselves; this does not establish an all-green full-workflow matrix.
 
 The focused Anthropic live-accept test now verifies the durable session reaches
 `completed`, not just clean source/DOM. Its agent instruction had recommended
-`data-impeccable-e2e-variant`, inside the reserved runtime namespace; the test
+`data-procable-e2e-variant`, inside the reserved runtime namespace; the test
 prompt now uses a permanent `data-design-variant` styling hook. The strengthened
 test passed in 14s without forced completion. The full non-billed suite passed.
 No runtime or skill source was changed for this correction.
@@ -236,7 +236,7 @@ No runtime or skill source was changed for this correction.
 Claude post-review controls: new world passed in 77s, writing token-bearing
 DESIGN.md and the v2 sidecar; approved redesign failed in 16s. The latter read the
 page and old system, then wrote prose-only DESIGN.md without consulting the
-documentation spec or creating `.impeccable/design.json`, and claimed nothing
+documentation spec or creating `.procable/design.json`, and claimed nothing
 remained outstanding. This is a missing required artifact, not merely missing
 reference coverage. The test stays red; no retry was purchased. Release remains
 held pending disposition. These are synthetic post-review checkpoints, not
@@ -254,7 +254,7 @@ failure still blocks treating this batch as an all-green skill release gate.
 ### Targeted redesign handoff correction
 
 The parent handoff now explicitly requires token-bearing DESIGN.md and
-`.impeccable/design.json` for approved system changes and verifies those outputs
+`.procable/design.json` for approved system changes and verifies those outputs
 before completion. It is nine words shorter; the agent and schema files did not
 change. One unchanged-assertion Claude retest finished in 65s: it read document.md
 and wrote both artifacts, but still skipped the degraded wrapper, so that
@@ -278,7 +278,7 @@ full-build rerun was purchased. Build and generated-skill validation passed.
 Each scenario:
 
 1. `prepareWorkspace()` uses the production transformer to build current source
-   into an independent `<workspace>/.claude/skills/impeccable`. References have
+   into an independent `<workspace>/.claude/skills/procable`. References have
    resolved placeholders and generated degraded reviewer/documenter files.
    Host-specific blocks are omitted: this is a neutral API harness, not an exact
    Claude/Codex/Gemini host simulation. It optionally seeds project fixtures.
@@ -295,11 +295,11 @@ The trace is the source of truth, not the model's free-form reply.
 File tools are workspace-scoped; bash is a real host shell, **not a security
 sandbox**. Use disposable synthetic fixtures. Shell helpers do not inherit
 provider API keys/auth tokens; model calls still use the parent's keys. The
-harness always sets `IMPECCABLE_QUESTION_DISABLED=1` for shell calls so real
+harness always sets `PROCABLE_QUESTION_DISABLED=1` for shell calls so real
 decision pages cannot wait for a nonexistent browser user. The engine returns
 its genuine structured-question fallback; browser decisions have separate E2E.
 
-Set `IMPECCABLE_SKILL_BEHAVIOR_TRACE_DIR=<directory>` to retain per-turn JSON
+Set `PROCABLE_SKILL_BEHAVIOR_TRACE_DIR=<directory>` to retain per-turn JSON
 with model, prompt, tool results, response ordering, usage, and finish reason.
 Progress and failed turns retain their tool traces too; only completed turns
 carry the full response sequence and final usage.
@@ -382,26 +382,26 @@ results remain the completed measurements.
 
 | # | Setup | Assertion |
 |---|---|---|
-| 1 | empty workspace | runs `impeccable context`; loads `reference/init.md` before implementation; automation is not an init bypass |
-| 2 | PRODUCT.md only | runs `impeccable context` 1-3 times; loads `reference/new-work.md` to resolve visual authority, establish a world when needed, and develop the surface |
-| 3 | PRODUCT.md + DESIGN.md | runs `impeccable context` 1-3 times; receives the committed design system and loads `reference/new-work.md` for the task-scoped concept |
-| 4 | PRODUCT.md + DESIGN.md, context already loaded in turn 1 | turn 2 does **not** re-run `impeccable context` |
-| 5 | PRODUCT.md without the legacy `## Register` field and no DESIGN.md | runs `impeccable context`; greenfield craft loads `reference/new-work.md`, not init, to establish the missing world |
-| 6 | PRODUCT.md + DESIGN.md + a minimal `index.html`; prompt is `/impeccable polish` | loads `reference/polish.md` |
-| 7 | same fixture; prompt is `/impeccable audit` | loads `reference/audit.md` |
-| 8 | PRODUCT.md + DESIGN.md + a SvelteKit scaffold (`src/app.css`, components, `+page.svelte`); prompt is `/impeccable polish src/routes/+page.svelte` | reads at least one project code file (CSS / component / page) — not just the skill's reference files |
-| 9 | PRODUCT.md + `index.html` + a seeded update cache with a newer version (`skillVersion` copy-mode so `impeccable context` has a `SKILL.md` to version-check against); prompt is `/impeccable polish index.html` | `impeccable context` runs and its output carries the `UPDATE_AVAILABLE` directive (proven via captured bash output); the agent does **not** auto-run `npx impeccable update` (it must ask first) |
-| 10 | no PRODUCT.md + a minimal `index.html`; prompt is `/impeccable polish index.html` | runs `impeccable context`, loads `reference/polish.md`, and does **not** divert into `reference/init.md` |
-| 11 | empty workspace; prompt is `/impeccable shape ...` | runs `impeccable context`; resolves `reference/init.md` before planning the surface |
-| 12 | empty workspace; prompt is natural-language build intent with no command word | runs `impeccable context`; resolves `reference/init.md` before implementation |
-| 13 | empty workspace; prompt is `/impeccable teach` | runs `impeccable context` and diverts into `reference/init.md` because `teach` aliases `init` |
-| 14 | PRODUCT.md with `## Platform: ios` (native iOS app); prompt is `/impeccable craft a tide detail screen` | `impeccable context` runs and emits the contents of `reference/ios.md` directly, placing native conventions in context without a second model-directed read |
-| 15 | same iOS fixture; prompt is `/impeccable audit` | agent loads `reference/audit.native.md` (the Commands-table native variant, routed instead of `audit.md`) |
+| 1 | empty workspace | runs `procable context`; loads `reference/init.md` before implementation; automation is not an init bypass |
+| 2 | PRODUCT.md only | runs `procable context` 1-3 times; loads `reference/new-work.md` to resolve visual authority, establish a world when needed, and develop the surface |
+| 3 | PRODUCT.md + DESIGN.md | runs `procable context` 1-3 times; receives the committed design system and loads `reference/new-work.md` for the task-scoped concept |
+| 4 | PRODUCT.md + DESIGN.md, context already loaded in turn 1 | turn 2 does **not** re-run `procable context` |
+| 5 | PRODUCT.md without the legacy `## Register` field and no DESIGN.md | runs `procable context`; greenfield craft loads `reference/new-work.md`, not init, to establish the missing world |
+| 6 | PRODUCT.md + DESIGN.md + a minimal `index.html`; prompt is `/procable polish` | loads `reference/polish.md` |
+| 7 | same fixture; prompt is `/procable audit` | loads `reference/audit.md` |
+| 8 | PRODUCT.md + DESIGN.md + a SvelteKit scaffold (`src/app.css`, components, `+page.svelte`); prompt is `/procable polish src/routes/+page.svelte` | reads at least one project code file (CSS / component / page) — not just the skill's reference files |
+| 9 | PRODUCT.md + `index.html` + a seeded update cache with a newer version (`skillVersion` copy-mode so `procable context` has a `SKILL.md` to version-check against); prompt is `/procable polish index.html` | `procable context` runs and its output carries the `UPDATE_AVAILABLE` directive (proven via captured bash output); the agent does **not** auto-run `npx procable update` (it must ask first) |
+| 10 | no PRODUCT.md + a minimal `index.html`; prompt is `/procable polish index.html` | runs `procable context`, loads `reference/polish.md`, and does **not** divert into `reference/init.md` |
+| 11 | empty workspace; prompt is `/procable shape ...` | runs `procable context`; resolves `reference/init.md` before planning the surface |
+| 12 | empty workspace; prompt is natural-language build intent with no command word | runs `procable context`; resolves `reference/init.md` before implementation |
+| 13 | empty workspace; prompt is `/procable teach` | runs `procable context` and diverts into `reference/init.md` because `teach` aliases `init` |
+| 14 | PRODUCT.md with `## Platform: ios` (native iOS app); prompt is `/procable craft a tide detail screen` | `procable context` runs and emits the contents of `reference/ios.md` directly, placing native conventions in context without a second model-directed read |
+| 15 | same iOS fixture; prompt is `/procable audit` | agent loads `reference/audit.native.md` (the Commands-table native variant, routed instead of `audit.md`) |
 | 16 | existing surface, with and without PRODUCT.md; asks where to start | completes relevant advice without edits, interviews, critique archives, menu scans, or explicit invented refinement prerequisites; reference coverage is diagnostic |
 | 17 | existing surface; asks whether critique is required before polish | completes read-only advice distinguishing assessment from implementation and explaining critique is optional; reference coverage is diagnostic |
 | 18 | existing surface; explicitly requests polish followed by a next-command recommendation | loads `polish.md` rather than substituting workflow advice for the requested work |
 | 19 | tiny spacing edit with PRODUCT.md + DESIGN.md; Bash denied, a real-loader success control, a denied-launcher planning-only case, and a denied-launcher documentation case (PRODUCT.md + index.html, no DESIGN.md) | edits require successful playbook/craft-floor reads and a pre-edit denial warning; planning stays read-only and skips craft-floor; documentation requires successful document.md and source reads before any DESIGN.md write, with the denial disclosed before the first tool call after the denied launcher |
-| 20 | PRODUCT.md + DESIGN.md + `index.html`; prompt is `/impeccable generate 2 bold variants of the hero heading` | loads `reference/generate.md`, and before any `live.md` read (live.md alone is the misroute) |
+| 20 | PRODUCT.md + DESIGN.md + `index.html`; prompt is `/procable generate 2 bold variants of the hero heading` | loads `reference/generate.md`, and before any `live.md` read (live.md alone is the misroute) |
 | 21 | same fixture; prompt is natural language with no command word ("Show me a few quieter versions of the hero heading in the browser so I can pick one.") | infers `reference/generate.md` before any `live.md` read |
 | 22 | same fixture; prompt is `Make the hero heading bolder.` | does **not** load `reference/generate.md` (a plain refinement stays out of live); which playbook the refinement lands on is existing routing's business, not this guard's |
 
@@ -492,14 +492,14 @@ Keep #744 open; evaluate activation separately with #375.
 To repeat only these cases (provider keys and an engine binary required):
 
 ```sh
-IMPECCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5,gpt-5.6-terra,gemini-3.7-flash,deepseek-v4-flash \
+PROCABLE_SKILL_BEHAVIOR_MODELS=claude-sonnet-5,gpt-5.6-terra,gemini-3.7-flash,deepseek-v4-flash \
   node --test --test-name-pattern='scenario 19:' tests/skill-behavior/scenarios.test.mjs
 ```
 
 ### Degraded documentation case (#789)
 
 A fourth scenario 19 case covers the documentation branch: launcher denied,
-PRODUCT.md plus an incumbent `index.html`, prompt `/impeccable document`.
+PRODUCT.md plus an incumbent `index.html`, prompt `/procable document`.
 It requires an actual denied context attempt, successful `document.md` and
 source reads before the DESIGN.md write, the denial disclosed before the
 first tool call after the denied launcher, and an untouched PRODUCT.md.
@@ -518,7 +518,7 @@ On 2026-09-24 S16 and S17 failed on every provider, main included, for a test re
 
 The four cases in scenarios 16-18 are new; prior scenario results do not
 establish their behavior. The advice-only assertions inspect write-tool calls
-and file mutations from bash (excluding context's internal `.impeccable/`
+and file mutations from bash (excluding context's internal `.procable/`
 state, but not critique reports), require an actual answer, and reject
 interviews and menu scans. Scenario 18 checks command-reference precedence;
 it does not assert completion of a full polish pass. These cases allow only
@@ -568,7 +568,7 @@ they fail scenarios by stopping mid-run or archiving a report without stating
 it, which is model-floor behavior rather than a skill-text defect. Their columns
 stay here because they are the record of what a weaker model does with this text,
 and that is the useful part. Reproduce with
-`IMPECCABLE_SKILL_BEHAVIOR_MODELS=gpt-5.6-luna,deepseek-v4-flash`.
+`PROCABLE_SKILL_BEHAVIOR_MODELS=gpt-5.6-luna,deepseek-v4-flash`.
 
 Against the current default lineup, two cells are the known floor:
 `redesign replaces DESIGN` is flaky on every model, and `critique closes` is
@@ -623,7 +623,7 @@ Scenarios 9 and 15 both failed on sonnet when this baseline was first measured,
 and the two causes are worth keeping because neither was where it looked:
 
 - **9 was a real defect in the directive.** `UPDATE_AVAILABLE` said to ask the
-  user, then "If they agree, run `npx impeccable update`", then to continue
+  user, then "If they agree, run `npx procable update`", then to continue
   without waiting. With no wait there is no agreement to read, so the command
   was the only concrete instruction left standing and sonnet ran it. Fixed by
   removing the command from the turn entirely rather than by strengthening the
@@ -640,7 +640,7 @@ and the two causes are worth keeping because neither was where it looked:
 The general lesson is worth more than either fix: **an assertion reports the
 property it checks, not the reason it failed.** Both of these read as routing
 defects and neither was one. Pull the trace before writing the diagnosis, and
-prefer `IMPECCABLE_SKILL_BEHAVIOR_VERBOSE=1` over inference from the message.
+prefer `PROCABLE_SKILL_BEHAVIOR_VERBOSE=1` over inference from the message.
 
 Gemini cells marked `on 3.5` were measured on the superseded `gemini-3.5-flash`
 and have not been re-run on 3.6. That distinction is not pedantic. `critique
@@ -654,7 +654,7 @@ lineup. Only the scenarios under investigation were scoped per model. The rows
 are worth keeping anyway, since a scenario absent from the table is easy to
 mistake for a scenario that passed.
 
-**`bolder refinement`, deepseek-v4-flash.** The model runs `impeccable context`, reads
+**`bolder refinement`, deepseek-v4-flash.** The model runs `procable context`, reads
 `bolder.md`, `craft-floor.md`, and `current.html`, then ends its turn without
 editing anything: empty `writePaths`, no `ask_user_question` call, well short of
 the 16-step cap. Confirmed identical on HEAD with `bolder.md` reverted, so it is
@@ -718,7 +718,7 @@ Both files honor `--test-name-pattern`, which is much cheaper than a full sweep
 when bisecting one scenario:
 
 ```bash
-IMPECCABLE_QUESTION_DISABLED=1 CI=1 IMPECCABLE_SKILL_BEHAVIOR_MODELS=deepseek-v4-flash \
+PROCABLE_QUESTION_DISABLED=1 CI=1 PROCABLE_SKILL_BEHAVIOR_MODELS=deepseek-v4-flash \
   node --test --test-timeout=300000 --test-force-exit \
   --test-name-pattern="bolder refinement" tests/skill-workflow/full-build.test.mjs
 ```
@@ -740,14 +740,14 @@ and truncating it costs you the per-model attribution.
 
 Captured after moving sub-command reference loading from step 4 to step 2
 of Setup (so the agent loads `reference/<command>.md` right after
-`impeccable context`, before "doing the work" preempts it), and tightening
+`procable context`, before "doing the work" preempts it), and tightening
 step 3 to require at least one project code read even when a sub-command
 reference loads first. Use this table when comparing pre/post refactor:
 a regression is "more failures than baseline", not "any failures at all".
 
 | Scenario | claude-haiku-4-5 | gpt-5.4-mini | gemini-3.1-flash-lite |
 |---|---|---|---|
-| 1 (no context) | pass (rare flake — agent stops after `impeccable context` without loading `init.md`) | pass | pass |
+| 1 (no context) | pass (rare flake — agent stops after `procable context` without loading `init.md`) | pass | pass |
 | 2 (product only) | pass | pass | pass |
 | 3 (product + design) | pass | pass | pass (rare flake — sub-command ref loads but world ref doesn't) |
 | 4 (already loaded) | pass | pass | pass |

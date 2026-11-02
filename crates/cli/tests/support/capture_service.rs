@@ -1,8 +1,8 @@
 //! The host capture service as NATIVE-CAPTURE.md describes it: the engine
 //! binary's `capture-server <registered-project> <ready-file>`, a host-generated
 //! capability, and a client configured only through the port and capability.
-use impeccable::capture_service::RemoteEntryRenderer;
-use impeccable_comp_verbs::asset_capture::capture_sha256;
+use procable::capture_service::RemoteEntryRenderer;
+use procable_comp_verbs::asset_capture::capture_sha256;
 use serde_json::Value;
 use std::{
     collections::HashMap,
@@ -31,19 +31,19 @@ impl CaptureService {
         std::fs::create_dir_all(&dir).unwrap();
         let ready = dir.join("ready.json");
         let key = capture_sha256(nonce.as_bytes());
-        let mut command = Command::new(env!("CARGO_BIN_EXE_impeccable"));
+        let mut command = Command::new(env!("CARGO_BIN_EXE_procable"));
         command
             .arg("capture-server")
             .arg(project)
             .arg(&ready)
-            .env("IMPECCABLE_CAPTURE_CAPABILITY", &key)
-            .env_remove("IMPECCABLE_COMPONENT_REVIEW_PENDING")
-            .env_remove("IMPECCABLE_CAPTURE_REVIEW_SESSION")
+            .env("PROCABLE_CAPTURE_CAPABILITY", &key)
+            .env_remove("PROCABLE_COMPONENT_REVIEW_PENDING")
+            .env_remove("PROCABLE_CAPTURE_REVIEW_SESSION")
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::inherit());
         if let Some(session) = session {
-            command.env("IMPECCABLE_CAPTURE_REVIEW_SESSION", session);
+            command.env("PROCABLE_CAPTURE_REVIEW_SESSION", session);
         }
         let mut child = command.spawn().expect("start capture-server");
         let started = Instant::now();
@@ -76,8 +76,8 @@ impl CaptureService {
     /// The client exactly as build-phase builds it from the host's environment.
     pub fn renderer(&self) -> RemoteEntryRenderer {
         let env = HashMap::from([
-            ("IMPECCABLE_CAPTURE_PORT".to_string(), self.port.to_string()),
-            ("IMPECCABLE_CAPTURE_CAPABILITY".to_string(), self.key.clone()),
+            ("PROCABLE_CAPTURE_PORT".to_string(), self.port.to_string()),
+            ("PROCABLE_CAPTURE_CAPABILITY".to_string(), self.key.clone()),
         ]);
         RemoteEntryRenderer::from_env(&env).unwrap().expect("service configured")
     }

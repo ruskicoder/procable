@@ -1,4 +1,4 @@
-//! JS: live-insert.mjs -> `impeccable live-insert` / `insert`. Find an anchor
+//! JS: live-insert.mjs -> `procable live-insert` / `insert`. Find an anchor
 //! element in source and splice an insert-variant wrapper before or after
 //! it (no original variant), or scaffold a Svelte insert session.
 
@@ -10,10 +10,10 @@ use crate::svelte_component::{
 };
 use crate::util::{eprintln, json_compact, jsp, println, safe_read};
 use crate::wrap_common::*;
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Map, Value};
 
-const HELP: &str = "Usage: impeccable live-insert [options]
+const HELP: &str = "Usage: procable live-insert [options]
 
 Find an anchor element in source and splice an insert-variant wrapper.
 
@@ -49,7 +49,7 @@ pub fn build_insert_wrapper_lines(
         "style=\"display: contents\""
     };
     let attrs = format!(
-        "data-impeccable-variants=\"{}\" data-impeccable-mode=\"insert\" data-impeccable-variant-count=\"{}\" {}",
+        "data-procable-variants=\"{}\" data-procable-mode=\"insert\" data-procable-variant-count=\"{}\" {}",
         id,
         count_text(count),
         style_contents
@@ -58,18 +58,18 @@ pub fn build_insert_wrapper_lines(
     if is_jsx {
         return vec![
             format!("{}<div {}>", indent, attrs),
-            format!("{}  {} impeccable-variants-start {} {}", indent, co, id, cc),
+            format!("{}  {} procable-variants-start {} {}", indent, co, id, cc),
             format!("{}  {} Variants: insert below this line {}", indent, co, cc),
-            format!("{}  {} impeccable-variants-end {} {}", indent, co, id, cc),
+            format!("{}  {} procable-variants-end {} {}", indent, co, id, cc),
             format!("{}</div>", indent),
         ];
     }
     vec![
-        format!("{}{} impeccable-variants-start {} {}", indent, co, id, cc),
+        format!("{}{} procable-variants-start {} {}", indent, co, id, cc),
         format!("{}<div {}>", indent, attrs),
         format!("{}  {} Variants: insert below this line {}", indent, co, cc),
         format!("{}</div>", indent),
-        format!("{}{} impeccable-variants-end {} {}", indent, co, id, cc),
+        format!("{}{} procable-variants-end {} {}", indent, co, id, cc),
     ]
 }
 

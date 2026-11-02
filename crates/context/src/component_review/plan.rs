@@ -5,8 +5,8 @@ use super::manifest::{digest, relative, valid_box};
 use serde_json::{json, Value};
 use std::path::Path;
 
-pub const SPEC: &str = ".impeccable/build/spec.json";
-pub const DEFAULT_OUT: &str = ".impeccable/review/components.json";
+pub const SPEC: &str = ".procable/build/spec.json";
+pub const DEFAULT_OUT: &str = ".procable/review/components.json";
 
 fn raster(kind: &str) -> bool {
     matches!(kind, "plate" | "image" | "texture")
@@ -59,7 +59,7 @@ fn clamp_box(b: &Value) -> Value {
     json!({"x":x,"y":y,"w":n("w").min(1. - x),"h":n("h").min(1. - y)})
 }
 fn png_size(bytes: &[u8]) -> Option<(u64, u64)> {
-    (impeccable_comp::png_io::is_png(bytes) && bytes.len() >= 24).then(|| {
+    (procable_comp::png_io::is_png(bytes) && bytes.len() >= 24).then(|| {
         (u64::from(u32::from_be_bytes(bytes[16..20].try_into().unwrap())),
          u64::from(u32::from_be_bytes(bytes[20..24].try_into().unwrap())))
     })
@@ -102,7 +102,7 @@ pub fn build(cwd: &Path) -> Result<Value, String> {
         .map_err(|_| format!("no measured spec at {SPEC}; run comp-spec --comp <png> --regions <json> first"))?;
     let spec: Value = serde_json::from_slice(&bytes).map_err(|e| format!("{SPEC}: {e}"))?;
     let regions = spec["regions"].as_array().ok_or("measured spec needs regions")?;
-    let state = super::store::read(&project.join(".impeccable/build/state.json")).unwrap_or(Value::Null);
+    let state = super::store::read(&project.join(".procable/build/state.json")).unwrap_or(Value::Null);
     let comp = spec["comp"].as_str().or_else(|| state["comp"].as_str()).filter(|s| !s.is_empty())
         .ok_or("the spec names no comp; rerun comp-spec --comp <png> --regions <json>")?;
     let comp = project_path(&roots, comp);

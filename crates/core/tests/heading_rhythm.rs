@@ -6,9 +6,9 @@
 //! once the rule pass ran after the reveal sweep and the check started seeing
 //! sections that used to sit at opacity 0.
 
-use impeccable_core::browser::fake_dom::FakeDom;
-use impeccable_core::browser::page_checks::check_heading_rhythm_dom;
-use impeccable_core::browser::ElId;
+use procable_core::browser::fake_dom::FakeDom;
+use procable_core::browser::page_checks::check_heading_rhythm_dom;
+use procable_core::browser::ElId;
 
 const W: f64 = 800.0;
 const LONG: &str = "A closing paragraph of the previous block of content that runs well past eighty characters.";
@@ -491,7 +491,7 @@ fn a_box_framed_on_its_other_sides_above_is_content_not_a_rule() {
         let mut p = crowded_pair();
         let (sec, y) = p.case(240.0);
         p.el(sec, "p", (0.0, y, W, 48.0), &[], LONG);
-        p.el(sec, "pre", (0.0, y + 48.0, W, 54.0), styles, "npx impeccable detect src/");
+        p.el(sec, "pre", (0.0, y + 48.0, W, 54.0), styles, "npx procable detect src/");
         p.el(sec, "h2", (0.0, y + 114.0, W, 32.0), &[("fontSize", "24px")], "Heading Under A Framed Block");
         p.el(sec, "p", (0.0, y + 182.0, W, 48.0), &[], LONG);
         p

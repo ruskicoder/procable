@@ -1,12 +1,12 @@
 //! Diagnostic asset capture over isolated Chromium. No approval policy lives here.
 use base64::Engine;
-use impeccable_browser::{
+use procable_browser::{
     cdp::{Browser, IsolatedWorld, Page, Viewport},
     discovery,
     response_capture::ResponseEvidence,
 };
-use impeccable_comp::{png_io, raster::Image};
-use impeccable_comp_verbs::asset_capture::{
+use procable_comp::{png_io, raster::Image};
+use procable_comp_verbs::asset_capture::{
     AssetCapture, AssetCaptureRequest, AssetRenderer, CaptureImage, capture_sha256 as hash,
 };
 use serde_json::{Value, json};
@@ -23,7 +23,7 @@ pub struct CdpAssetRenderer {
 impl CdpAssetRenderer {
     pub fn from_process_env() -> Self {
         Self {
-            env: impeccable_common::process_env(),
+            env: procable_common::process_env(),
             raster_coverage: None,
             clock_ms: None,
         }
@@ -109,7 +109,7 @@ impl AssetRenderer for CdpAssetRenderer {
                 r#"Promise.race([(async()=>{await document.fonts.ready;await Promise.all([...document.images].filter(i=>{const b=i.getBoundingClientRect();return b.width>0&&b.height>0&&b.x<innerWidth&&b.y<innerHeight&&b.right>0&&b.bottom>0;}).map(i=>i.decode().catch(()=>{})));return true;})(),new Promise((_,reject)=>setTimeout(()=>reject(Error('capture resources did not settle')),5000))])"#,
             )?;
             let key = format!(
-                "__impeccable_capture_{}",
+                "__procable_capture_{}",
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap_or_default()

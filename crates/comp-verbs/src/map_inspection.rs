@@ -3,8 +3,8 @@ use crate::{
     comp_spec::{self, is_kind, is_raster_kind},
     util::{arg, flag},
 };
-use impeccable_common::Io;
-use impeccable_comp::{
+use procable_common::Io;
+use procable_comp::{
     png_io,
     raster::{self as r, Image},
 };
@@ -163,7 +163,7 @@ fn inspect(comp: &Image, input: &Value, comp_path: &str) -> Value {
     )
     .expect("individually validated regions");
     spec["regions"] = json!(measured);
-    let group_issues = impeccable_comp::review_groups::issues(&measured);
+    let group_issues = procable_comp::review_groups::issues(&measured);
     let invalid_groups: HashSet<String> = group_issues.iter().filter_map(|(id, _)| {
         measured.iter().find(|r| r["id"] == *id).and_then(|r| r["reviewGroup"].as_str()).map(String::from)
     }).collect();
@@ -287,7 +287,7 @@ fn contains(a: &Value, b: &Value) -> bool {
 }
 
 fn save_reference(path: &Path, image: &Image, source: &str) -> Result<(), String> {
-    let bytes = png_io::encode_png(image, &[("impeccable:crop-of".into(), source.into())])?;
+    let bytes = png_io::encode_png(image, &[("procable:crop-of".into(), source.into())])?;
     std::fs::write(path, bytes).map_err(|e| e.to_string())
 }
 
@@ -405,7 +405,7 @@ fn write_report_contents(dir: &Path, comp: &Image, report: &mut Value) -> Result
         .replace('&', "\\u0026")
         .replace('<', "\\u003c")
         .replace('>', "\\u003e");
-    // The page is standalone: the design-system kit (vendored from impeccable-site, the source of
+    // The page is standalone: the design-system kit (vendored from procable-site, the source of
     // truth) is inlined, and the three licensed fonts ship beside it.
     let kit = [
         include_str!("../../../ui/component-review/vendor/kinpaku-tokens.css"),
@@ -446,7 +446,7 @@ pub fn run(argv: &[String], io: &mut Io, comp: &Image, comp_path: &str) -> i32 {
         let input: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
         let mut report = inspect(comp, &input, comp_path);
         let default = format!(
-            ".impeccable/build/map-inspections/{}-{}",
+            ".procable/build/map-inspections/{}-{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap_or_default()
@@ -499,7 +499,7 @@ pub fn run(argv: &[String], io: &mut Io, comp: &Image, comp_path: &str) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use impeccable_comp::raster::create_image;
+    use procable_comp::raster::create_image;
 
     #[test]
     fn sheet_panes_match_original_and_real_reference_at_the_same_scale() {
@@ -519,7 +519,7 @@ mod tests {
 
     #[test]
     fn comparison_sheets_paginate_masked_assets_and_keep_reference_provenance() {
-        let root = std::env::temp_dir().join(format!("impeccable-sheet-test-{}-{}", std::process::id(),
+        let root = std::env::temp_dir().join(format!("procable-sheet-test-{}-{}", std::process::id(),
             std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
         let image = create_image(300, 100, [240, 240, 240, 255]);
         let mut regions: Vec<Value> = (0..7).map(|n| json!({"id":format!("art-{n}"),"kind":"image",
@@ -536,7 +536,7 @@ mod tests {
         assert_eq!(ids, (0..7).map(|n|format!("art-{n}")).collect::<Vec<_>>());
         for sheet in sheets {
             let png = png_io::decode_png(&std::fs::read(root.join(sheet["path"].as_str().unwrap())).unwrap()).unwrap();
-            assert_eq!(png.text.get("impeccable:crop-of").map(String::as_str), Some("comp.png"));
+            assert_eq!(png.text.get("procable:crop-of").map(String::as_str), Some("comp.png"));
             assert!(sheet["regionIds"].as_array().unwrap().len() <= 6);
         }
         assert_eq!(report["regions"].as_array().unwrap().len(), 9);
@@ -612,7 +612,7 @@ mod tests {
     #[test]
     fn map_inspection_writes_only_new_reference_artifacts_and_escapes_labels() {
         let root = std::env::temp_dir().join(format!(
-            "impeccable-map-test-{}-{}",
+            "procable-map-test-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -623,9 +623,9 @@ mod tests {
         let image = create_image(100, 100, [240, 240, 240, 255]);
         let input = json!({"regions":[{"id":"</script><script>alert(1)</script>","kind":"image","note":"room photograph","pixelBox":{"x":10,"y":10,"w":20,"h":20}}]});
         std::fs::write(root.join("regions.json"), input.to_string()).unwrap();
-        std::fs::create_dir_all(root.join(".impeccable/build")).unwrap();
-        std::fs::write(root.join(".impeccable/build/spec.json"), "existing spec").unwrap();
-        std::fs::write(root.join(".impeccable/build/state.json"), "existing state").unwrap();
+        std::fs::create_dir_all(root.join(".procable/build")).unwrap();
+        std::fs::write(root.join(".procable/build/spec.json"), "existing spec").unwrap();
+        std::fs::write(root.join(".procable/build/state.json"), "existing state").unwrap();
         let mut io = Io::stdio();
         io.cwd = root.clone();
         io.stdout = Box::new(Vec::<u8>::new());
@@ -644,11 +644,11 @@ mod tests {
             input.to_string()
         );
         assert_eq!(
-            std::fs::read_to_string(root.join(".impeccable/build/spec.json")).unwrap(),
+            std::fs::read_to_string(root.join(".procable/build/spec.json")).unwrap(),
             "existing spec"
         );
         assert_eq!(
-            std::fs::read_to_string(root.join(".impeccable/build/state.json")).unwrap(),
+            std::fs::read_to_string(root.join(".procable/build/state.json")).unwrap(),
             "existing state"
         );
         let html = std::fs::read_to_string(root.join("inspection/index.html")).unwrap();
@@ -658,7 +658,7 @@ mod tests {
             assert!(png_io::decode_png(&bytes)
                 .unwrap()
                 .text
-                .contains_key("impeccable:crop-of"));
+                .contains_key("procable:crop-of"));
         }
         assert_eq!(
             run(&args, &mut io, &image, "comp.png"),

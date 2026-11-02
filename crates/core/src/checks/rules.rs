@@ -22,7 +22,7 @@ use regex::Regex;
 
 /// The hit and option structs these checks are written against are shared;
 /// re-exported so `checks::rules` stays one path.
-pub use impeccable_foundation::rules::types::*;
+pub use procable_foundation::rules::types::*;
 
 macro_rules! re {
     ($name:ident, $pat:expr) => {
@@ -555,7 +555,7 @@ re!(
 /// `text-gray-700` and darker: every Tailwind neutral at shade 700 and up sits
 /// under `GRAY_INK_MIN_LIGHTNESS`, so the class path skips the same
 /// near-black inks the computed-colour path does. The source-text scanner in
-/// `impeccable-detect` reads the same helper.
+/// `procable-detect` reads the same helper.
 pub fn is_near_black_neutral_class(class: &str) -> bool {
     class
         .trim()
@@ -630,7 +630,7 @@ impl SafeTagTextSeen {
     /// A hit the caller rejects never claims the page's one report of its
     /// colour pair. That ordering is the point of the callback: the engines
     /// waive findings after the rule runs — an inline
-    /// `data-impeccable-ignore` on one link, a text layer the background
+    /// `data-procable-ignore` on one link, a text layer the background
     /// walk cannot read under another — and registering the pair before
     /// those verdicts would let a single waived element silence every other
     /// element on the page wearing the same colour. `keep` is called at most
@@ -929,7 +929,7 @@ pub fn demote_low_contrast(hits: &mut [RuleHit]) {
 /// (purple heading text, a purple or violet gradient, the stock violet
 /// accents, Tailwind `purple`/`violet`/`indigo` classes), as opposed to its
 /// cyan-on-dark forms. These are the forms a project's DESIGN.md switches
-/// off when it declares a purple (see `impeccable_detect::design_system`).
+/// off when it declares a purple (see `procable_detect::design_system`).
 pub fn is_purple_palette_finding(id: &str, snippet: &str) -> bool {
     if id != "ai-color-palette" {
         return false;

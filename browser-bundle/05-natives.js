@@ -7,7 +7,7 @@
 //
 // The URL engine runs this file once more, as a script on every new document
 // before any page script (`Page::initialize` in crates/browser), and that run
-// stashes what it built on `window.__impeccableNatives`, read-only and
+// stashes what it built on `window.__procableNatives`, read-only and
 // non-enumerable. Later runs take the stash. Without one (the live script
 // tag) the current globals are used as they are: live mode sees the user's
 // own app.
@@ -23,8 +23,8 @@
 // `performance.now` or patches `Performance.prototype` is not.
 //
 // The stash is page-visible: `Object.getOwnPropertyNames(window)` lists
-// `__impeccableNatives` on every document the URL engine loads, and a page
-// that declares its own global `let __impeccableNatives` fails to load that
+// `__procableNatives` on every document the URL engine loads, and a page
+// that declares its own global `let __procableNatives` fails to load that
 // script. Both are vanishingly rare.
 //
 // The `const` at the end shadows the globals for everything after it in the
@@ -38,7 +38,7 @@
 // The builder must reach every built-in through `g`, never by bare name:
 // while it runs, the bare names are the `const` below, not yet initialized.
 
-function __impeccableBuildNatives(g) {
+function __procableBuildNatives(g) {
   const O = g.Object;
   const R = g.Reflect;
   const freeze = O.freeze;
@@ -100,13 +100,13 @@ function __impeccableBuildNatives(g) {
   });
 }
 
-const __impeccableNatives = (() => {
+const __procableNatives = (() => {
   const g = globalThis;
   try {
-    const stash = g.__impeccableNatives;
+    const stash = g.__procableNatives;
     if (stash && typeof stash === 'object') return stash;
   } catch { /* fall through */ }
-  try { return __impeccableBuildNatives(g); } catch { /* fall through */ }
+  try { return __procableBuildNatives(g); } catch { /* fall through */ }
   return {
     Map: g.Map, Set: g.Set, WeakMap: g.WeakMap, WeakSet: g.WeakSet,
     Error: g.Error, URL: g.URL, Image: g.Image, ResizeObserver: g.ResizeObserver,
@@ -124,4 +124,4 @@ const {
   Array, Object, Number, Promise, JSON, Math, Reflect, CSS, performance,
   getComputedStyle, matchMedia, setTimeout, clearTimeout, requestAnimationFrame,
   parseFloat,
-} = __impeccableNatives;
+} = __procableNatives;

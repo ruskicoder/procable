@@ -136,8 +136,8 @@ describe('Svelte live adapter DeepSeek browser sweep', () => {
       const beforeExit = await globalBarSnapshot(page);
       await clickExitLiveMode(page);
       const afterExit = await page.evaluate(() => ({
-        liveInit: window.__IMPECCABLE_LIVE_INIT__,
-        hasGlobalBar: Boolean(window.__impeccableLiveQuery?.('#impeccable-live-global-bar')),
+        liveInit: window.__PROCABLE_LIVE_INIT__,
+        hasGlobalBar: Boolean(window.__procableLiveQuery?.('#procable-live-global-bar')),
       }));
       assert.ok(beforeExit.hasBar, 'global bottom bar exists before Exit');
       assert.equal(afterExit.liveInit, false, 'live init flag clears after Exit');
@@ -172,7 +172,7 @@ function loadConsolidatedFixture() {
     stateProbe: {
       textSelector: "[data-testid='open-count']",
       expectedText: '1 offen',
-      windowProperty: '__impeccableStatefulMounts',
+      windowProperty: '__procableStatefulMounts',
       expectWindowUnchanged: true,
     },
     steer: {
@@ -201,7 +201,7 @@ async function runReplaceDiscardRecoveryFlow({ page, tmp, evidence }) {
   await waitForVisibleCycling(page, 3, { timeout: 240_000 });
   const session = await currentSveltePreviewSession(page, tmp);
   assert.equal(session.previewMode, 'svelte-component');
-  assert.match(session.previewFile, /^node_modules\/\.impeccable-live\/[^/]+\/manifest\.json$/);
+  assert.match(session.previewFile, /^node_modules\/\.procable-live\/[^/]+\/manifest\.json$/);
   assert.ok(existsSync(join(tmp, dirname(session.previewFile), 'v1.svelte')));
   assert.ok(existsSync(join(tmp, dirname(session.previewFile), 'v2.svelte')));
   assert.ok(existsSync(join(tmp, dirname(session.previewFile), 'v3.svelte')));
@@ -238,7 +238,7 @@ async function runEditCopyFlow({ page, tmp, live, evidence }) {
   await editTextLeaf(page, '.expense-row strong', 'Design snack cancelled');
   await clickEditBadgeAction(page, 'Cancel');
   await page.waitForFunction(
-    () => !window.__impeccableLiveQuery('[data-impeccable-editable="true"]'),
+    () => !window.__procableLiveQuery('[data-procable-editable="true"]'),
     null,
     { timeout: 5_000 },
   );
@@ -269,7 +269,7 @@ async function runEditCopyFlow({ page, tmp, live, evidence }) {
   await waitForApplyDockHidden(page, { timeout: 60_000 });
   const sourceAfter = readFileSync(join(tmp, ROUTE_FILE), 'utf-8');
   assert.match(sourceAfter, /Design snack approved/, 'DeepSeek Apply writes edited copy to source');
-  assert.doesNotMatch(sourceAfter, /contenteditable|data-impeccable-editable|data-impeccable-original-text|impeccable-variants/, 'manual Apply does not leak live scaffolding');
+  assert.doesNotMatch(sourceAfter, /contenteditable|data-procable-editable|data-procable-original-text|procable-variants/, 'manual Apply does not leak live scaffolding');
 }
 
 async function runAnnotationGenerateFlow({ page, tmp, evidence }) {
@@ -302,7 +302,7 @@ async function runAcceptReplaceFlow({ page, tmp, evidence }) {
   await waitForBarHidden(page, { timeout: 20_000 }).catch(() => {});
   const source = readFileSync(join(tmp, ROUTE_FILE), 'utf-8');
   assert.match(source, /expense-row/, 'accepted replace stays in real Svelte source');
-  assert.doesNotMatch(source, /data-impeccable-variants|impeccable-variants-start|data-impeccable-variant=/, 'accepted replace source is clean');
+  assert.doesNotMatch(source, /data-procable-variants|procable-variants-start|data-procable-variant=/, 'accepted replace source is clean');
   assert.equal(existsSync(join(tmp, dirname(session.previewFile))), false, 'temp Svelte preview folder deleted after accept');
   return session;
 }
@@ -347,7 +347,7 @@ async function runInsertFlowWithRecovery({ page, tmp, evidence }) {
   await waitForBarHidden(page, { timeout: 20_000 }).catch(() => {});
   const source = readFileSync(join(tmp, ROUTE_FILE), 'utf-8');
   assert.match(source, /automatisch|synchron|sync|abgeglichen|shared expenses/i, 'accepted insert content lands in real source');
-  assert.doesNotMatch(source, /data-impeccable-variants|impeccable-variants-start|data-impeccable-variant=/, 'accepted insert source is clean');
+  assert.doesNotMatch(source, /data-procable-variants|procable-variants-start|data-procable-variant=/, 'accepted insert source is clean');
   assert.equal(existsSync(join(tmp, dirname(session.previewFile))), false, 'insert temp Svelte preview folder deleted after accept');
   return session;
 }
@@ -355,19 +355,19 @@ async function runInsertFlowWithRecovery({ page, tmp, evidence }) {
 async function assertSvelteAdapterInjection(tmp) {
   const appHtml = readFileSync(join(tmp, APP_HTML), 'utf-8');
   const layout = readFileSync(join(tmp, LAYOUT_FILE), 'utf-8');
-  assert.doesNotMatch(appHtml, /live\.js|impeccable-live-start/, 'Svelte adapter leaves src/app.html untouched');
-  assert.match(layout, /ImpeccableLiveRoot|impeccable-live-svelte-start/, 'Svelte adapter patches layout with live root');
+  assert.doesNotMatch(appHtml, /live\.js|procable-live-start/, 'Svelte adapter leaves src/app.html untouched');
+  assert.match(layout, /ProcableLiveRoot|procable-live-svelte-start/, 'Svelte adapter patches layout with live root');
 }
 
 async function assertShadowChrome(page) {
   const result = await page.evaluate(() => {
-    const host = document.getElementById('impeccable-live-root');
+    const host = document.getElementById('procable-live-root');
     const root = host?.shadowRoot;
     return {
       hasHost: Boolean(host),
       hasShadowRoot: Boolean(root),
-      hasGlobalBar: Boolean(root?.getElementById('impeccable-live-global-bar')),
-      documentHasGlobalBar: Boolean(document.querySelector('#impeccable-live-global-bar')),
+      hasGlobalBar: Boolean(root?.getElementById('procable-live-global-bar')),
+      documentHasGlobalBar: Boolean(document.querySelector('#procable-live-global-bar')),
     };
   });
   assert.equal(result.hasHost, true);
@@ -381,7 +381,7 @@ async function assertHostileCssIsolation(page) {
   const before = await globalBarSnapshot(page);
   const hostileStyle = await page.addStyleTag({
     content: `
-      button, div, input, svg, #impeccable-live-root, impeccable-live-root * {
+      button, div, input, svg, #procable-live-root, procable-live-root * {
         display: block !important;
         color: rgb(255, 0, 255) !important;
         background: rgb(0, 255, 255) !important;
@@ -414,7 +414,7 @@ async function waitForGlobalBarStable(page) {
   await installLiveQueryHelpers(page);
   await page.waitForFunction(
     () => {
-      const bar = window.__impeccableLiveQuery?.('#impeccable-live-global-bar');
+      const bar = window.__procableLiveQuery?.('#procable-live-global-bar');
       if (!bar) return false;
       const opacity = Number.parseFloat(getComputedStyle(bar).opacity || '0');
       return opacity >= 0.999;
@@ -427,12 +427,12 @@ async function waitForGlobalBarStable(page) {
 async function assertSelectedElementChrome(page) {
   await installLiveQueryHelpers(page);
   const result = await page.evaluate(() => {
-    const q = window.__impeccableLiveQuery;
-    const bar = q('#impeccable-live-bar');
-    const picker = q('#impeccable-live-picker');
-    const badge = q('#impeccable-live-edit-badge');
-    const highlight = q('#impeccable-live-highlight');
-    const input = q('#impeccable-live-input');
+    const q = window.__procableLiveQuery;
+    const bar = q('#procable-live-bar');
+    const picker = q('#procable-live-picker');
+    const badge = q('#procable-live-edit-badge');
+    const highlight = q('#procable-live-highlight');
+    const input = q('#procable-live-input');
     return {
       hasBar: Boolean(bar),
       barText: bar?.textContent || '',
@@ -461,7 +461,7 @@ async function assertSelectedElementChrome(page) {
 async function selectAction(page, label) {
   await installLiveQueryHelpers(page);
   const opened = await page.evaluate(() => {
-    const bar = window.__impeccableLiveQuery('#impeccable-live-bar');
+    const bar = window.__procableLiveQuery('#procable-live-bar');
     const btn = [...(bar?.querySelectorAll('button') || [])].find((candidate) => /▾|▼/.test(candidate.textContent || ''));
     if (!btn) return false;
     btn.click();
@@ -470,7 +470,7 @@ async function selectAction(page, label) {
   assert.equal(opened, true, 'action picker button opens');
   await page.waitForFunction(
     (expected) => {
-      const picker = window.__impeccableLiveQuery('#impeccable-live-picker');
+      const picker = window.__procableLiveQuery('#procable-live-picker');
       return picker?.style.display !== 'none'
         && [...picker.querySelectorAll('button')].some((btn) => (btn.textContent || '').includes(expected));
     },
@@ -478,7 +478,7 @@ async function selectAction(page, label) {
     { timeout: 5_000 },
   );
   const clicked = await page.evaluate((expected) => {
-    const picker = window.__impeccableLiveQuery('#impeccable-live-picker');
+    const picker = window.__procableLiveQuery('#procable-live-picker');
     const btn = [...(picker?.querySelectorAll('button') || [])].find((candidate) => (candidate.textContent || '').includes(expected));
     if (!btn) return false;
     btn.click();
@@ -489,7 +489,7 @@ async function selectAction(page, label) {
 
 async function clickEditBadgeAction(page, label) {
   const clicked = await page.evaluate((expected) => {
-    const badge = window.__impeccableLiveQuery('#impeccable-live-edit-badge');
+    const badge = window.__procableLiveQuery('#procable-live-edit-badge');
     const btn = [...(badge?.querySelectorAll('button') || [])].find((candidate) => (candidate.textContent || '').includes(expected));
     if (!btn) return false;
     btn.click();
@@ -503,7 +503,7 @@ async function clickPendingTrash(page) {
     .then((d) => d.accept())
     .catch(() => {});
   const clicked = await page.evaluate(() => {
-    const dock = window.__impeccableLiveQuery('#impeccable-live-pending-dock');
+    const dock = window.__procableLiveQuery('#procable-live-pending-dock');
     const btn = [...(dock?.querySelectorAll('button') || [])].find((candidate) => /Discard (copy )?edits/i.test(candidate.getAttribute('aria-label') || candidate.title || ''));
     if (!btn) return false;
     btn.click();
@@ -524,7 +524,7 @@ async function waitForVisibleCycling(page, count, { timeout }) {
   await waitForCycling(page, count, { timeout });
   await page.waitForFunction(
     (expectedCount) => {
-      const bar = window.__impeccableLiveQuery?.('#impeccable-live-bar');
+      const bar = window.__procableLiveQuery?.('#procable-live-bar');
       if (!bar) return false;
       const style = getComputedStyle(bar);
       return style.display !== 'none'
@@ -540,7 +540,7 @@ async function waitForVisibleCycling(page, count, { timeout }) {
 async function assertVariantCounter(page, variant, count) {
   await page.waitForFunction(
     ({ variant, count }) => {
-      const bar = window.__impeccableLiveQuery('#impeccable-live-bar');
+      const bar = window.__procableLiveQuery('#procable-live-bar');
       if (!bar || !(bar.textContent || '').includes(`${variant}/${count}`)) return false;
       const style = getComputedStyle(bar);
       return style.display !== 'none'
@@ -563,8 +563,8 @@ async function revealExpenseRow(page) {
 async function assertRecoverableMessage(page, variant, count) {
   await page.waitForFunction(
     ({ variant, count }) => {
-      const bar = window.__impeccableLiveQuery('#impeccable-live-bar');
-      const raw = localStorage.getItem('impeccable-live-session');
+      const bar = window.__procableLiveQuery('#procable-live-bar');
+      const raw = localStorage.getItem('procable-live-session');
       let saved = null;
       try { saved = raw ? JSON.parse(raw) : null; } catch {}
       return Boolean(
@@ -582,7 +582,7 @@ async function assertRecoverableMessage(page, variant, count) {
 
 async function currentSveltePreviewSession(page, tmp) {
   const saved = await page.evaluate(() => {
-    const raw = localStorage.getItem('impeccable-live-session');
+    const raw = localStorage.getItem('procable-live-session');
     return raw ? JSON.parse(raw) : null;
   });
   assert.ok(saved?.id, 'live session is stored locally');
@@ -603,7 +603,7 @@ async function waitForSvelteAcceptComplete(tmp, session, { timeout }) {
       snapshot?.phase === 'completed'
       && snapshot.sourceFile === ROUTE_FILE
       && !existsSync(manifestPath)
-      && !/data-impeccable-variants|impeccable-variants-start|data-impeccable-variant=/.test(source)
+      && !/data-procable-variants|procable-variants-start|data-procable-variant=/.test(source)
     ) {
       return;
     }
@@ -616,8 +616,8 @@ function assertCompletedRealSource(tmp, id) {
   const snapshot = readSessionSnapshot(tmp, id);
   assert.equal(snapshot?.phase, 'completed');
   assert.equal(snapshot.sourceFile, ROUTE_FILE);
-  assert.doesNotMatch(snapshot.sourceFile || '', /node_modules\/\.impeccable-live/);
-  assert.match(snapshot.previewFile || '', /node_modules\/\.impeccable-live\/[^/]+\/manifest\.json/);
+  assert.doesNotMatch(snapshot.sourceFile || '', /node_modules\/\.procable-live/);
+  assert.match(snapshot.previewFile || '', /node_modules\/\.procable-live\/[^/]+\/manifest\.json/);
 }
 
 function assertDiscardedSession(tmp, id) {
@@ -626,7 +626,7 @@ function assertDiscardedSession(tmp, id) {
 }
 
 function readSessionSnapshot(tmp, id) {
-  const file = join(tmp, '.impeccable/live/sessions', `${id}.snapshot.json`);
+  const file = join(tmp, '.procable/live/sessions', `${id}.snapshot.json`);
   if (!existsSync(file)) return null;
   return JSON.parse(readFileSync(file, 'utf-8'));
 }
@@ -661,7 +661,7 @@ async function getPendingDockCount(live) {
 }
 
 async function assertNoCyclingZero(page) {
-  const text = await page.evaluate(() => window.__impeccableLiveQuery('#impeccable-live-bar')?.textContent || '');
+  const text = await page.evaluate(() => window.__procableLiveQuery('#procable-live-bar')?.textContent || '');
   assert.doesNotMatch(text, /0\s*\/\s*0/);
 }
 
@@ -673,7 +673,7 @@ async function assertNoRawSvelteExpressions(page) {
 async function readStateProbe(page) {
   return page.evaluate(() => ({
     openCount: document.querySelector('[data-testid="open-count"]')?.textContent?.trim(),
-    mounts: window.__impeccableStatefulMounts,
+    mounts: window.__procableStatefulMounts,
   }));
 }
 
@@ -690,7 +690,7 @@ async function assertStateProbeUnchanged(page, expected, message) {
 
 function assertFinalSourceClean(tmp) {
   const source = readFileSync(join(tmp, ROUTE_FILE), 'utf-8');
-  assert.doesNotMatch(source, /node_modules\/\.impeccable-live|data-impeccable-variants|impeccable-variants-start|data-impeccable-variant=/);
+  assert.doesNotMatch(source, /node_modules\/\.procable-live|data-procable-variants|procable-variants-start|data-procable-variant=/);
 }
 
 function latestJournalEvent(tmp, predicate) {
@@ -712,7 +712,7 @@ async function waitForLatestJournalEvent(tmp, predicate, { timeout = 20_000 } = 
 }
 
 function readJournalEvents(tmp) {
-  const dir = join(tmp, '.impeccable/live/sessions');
+  const dir = join(tmp, '.procable/live/sessions');
   if (!existsSync(dir)) return [];
   const events = [];
   for (const file of readdirSync(dir).filter((name) => name.endsWith('.jsonl'))) {
@@ -731,7 +731,7 @@ function readJournalEvents(tmp) {
 async function globalBarSnapshot(page) {
   await installLiveQueryHelpers(page);
   return page.evaluate(() => {
-    const bar = window.__impeccableLiveQuery('#impeccable-live-global-bar');
+    const bar = window.__procableLiveQuery('#procable-live-global-bar');
     if (!bar) return { hasBar: false };
     const rect = bar.getBoundingClientRect();
     const style = getComputedStyle(bar);
@@ -786,15 +786,15 @@ function createEvidenceWriter({ page, tmp, live, consoleErrors }) {
       try { await page.screenshot({ path: join(dir, 'page.png'), fullPage: true }); } catch {}
       try {
         const dom = await page.evaluate(() => {
-          const host = document.getElementById('impeccable-live-root');
+          const host = document.getElementById('procable-live-root');
           const shadow = host?.shadowRoot;
           return {
             url: location.href,
             bodyText: document.body.textContent?.replace(/\s+/g, ' ').trim().slice(0, 4000),
             appHtml: document.body.innerHTML.slice(0, 12000),
             shadowHtml: shadow?.innerHTML.slice(0, 12000) || null,
-            liveState: window.__IMPECCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
-            localSession: localStorage.getItem('impeccable-live-session'),
+            liveState: window.__PROCABLE_LIVE_CHROME_CORE__?.debugState?.() || null,
+            localSession: localStorage.getItem('procable-live-session'),
           };
         });
         writeFileSync(join(dir, 'dom.json'), JSON.stringify(dom, null, 2) + '\n');
@@ -806,8 +806,8 @@ function createEvidenceWriter({ page, tmp, live, consoleErrors }) {
       copyIfExists(join(tmp, APP_HTML), join(dir, 'app.html'));
       copyIfExists(join(tmp, LAYOUT_FILE), join(dir, 'layout.svelte'));
       copyIfExists(join(tmp, ROUTE_FILE), join(dir, 'page.svelte'));
-      copyDirIfExists(join(tmp, '.impeccable/live/sessions'), join(dir, 'sessions'));
-      copyDirIfExists(join(tmp, 'node_modules/.impeccable-live'), join(dir, 'impeccable-live-preview'));
+      copyDirIfExists(join(tmp, '.procable/live/sessions'), join(dir, 'sessions'));
+      copyDirIfExists(join(tmp, 'node_modules/.procable-live'), join(dir, 'procable-live-preview'));
       writeFileSync(join(dir, 'preview-files.json'), JSON.stringify(listPreviewFiles(tmp), null, 2) + '\n');
       try {
         const status = await fetch(`http://127.0.0.1:${live.port}/status?token=${encodeURIComponent(live.token)}`).then((res) => res.json());
@@ -818,7 +818,7 @@ function createEvidenceWriter({ page, tmp, live, consoleErrors }) {
 }
 
 function listPreviewFiles(tmp) {
-  const root = join(tmp, 'node_modules/.impeccable-live');
+  const root = join(tmp, 'node_modules/.procable-live');
   if (!existsSync(root)) return [];
   const out = [];
   walk(root, (file) => out.push(relative(tmp, file).split('\\').join('/')));
@@ -852,7 +852,7 @@ function git(cwd, args) {
 }
 
 function createArtifactRoot() {
-  const explicit = process.env.IMPECCABLE_SVELTE_DEEPSEEK_ARTIFACT_DIR;
+  const explicit = process.env.PROCABLE_SVELTE_DEEPSEEK_ARTIFACT_DIR;
   if (explicit) return explicit;
   const base = join(REPO_ROOT, 'tmp/svelte-live-adapter-deepseek');
   for (const round of ['round-1', 'round-2']) {

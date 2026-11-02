@@ -1,5 +1,5 @@
 //! Native transport evidence: read the response that was rendered, never refetch.
-use impeccable_browser::{cdp::Browser, discovery};
+use procable_browser::{cdp::Browser, discovery};
 use std::collections::HashMap;
 use std::sync::{
     Arc,

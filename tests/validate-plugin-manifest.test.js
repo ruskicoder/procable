@@ -20,7 +20,7 @@ import {
 const REPO_ROOT = path.resolve(import.meta.dir, '..');
 
 const GOOD_MANIFEST = {
-  name: 'impeccable',
+  name: 'procable',
   description: 'Test plugin',
   version: '4.0.4',
   author: { name: 'Paul Bakaus' },
@@ -54,7 +54,7 @@ function writeFixture(root, { manifest = GOOD_MANIFEST, sourceAgents = [], shipp
 describe('collectPluginManifestFindings', () => {
   let root;
   beforeEach(() => {
-    root = fs.mkdtempSync(path.join(os.tmpdir(), 'impeccable-manifest-'));
+    root = fs.mkdtempSync(path.join(os.tmpdir(), 'procable-manifest-'));
   });
   afterEach(() => {
     fs.rmSync(root, { recursive: true, force: true });
@@ -112,20 +112,20 @@ describe('collectPluginManifestFindings', () => {
 
   test('a claude-name rename expects the emitted filename, not the source basename', () => {
     writeFixture(root, {
-      sourceAgents: [{ file: 'reviewer.md', frontmatter: 'claude-name: impeccable-reviewer' }],
-      shippedAgents: ['impeccable-reviewer.md'],
+      sourceAgents: [{ file: 'reviewer.md', frontmatter: 'claude-name: procable-reviewer' }],
+      shippedAgents: ['procable-reviewer.md'],
     });
     expect(collectPluginManifestFindings(root)).toEqual([]);
   });
 
   test('a claude-name rename that is not shipped is reported under the emitted filename', () => {
     writeFixture(root, {
-      sourceAgents: [{ file: 'reviewer.md', frontmatter: 'claude-name: impeccable-reviewer' }],
+      sourceAgents: [{ file: 'reviewer.md', frontmatter: 'claude-name: procable-reviewer' }],
       shippedAgents: [],
     });
     const findings = collectPluginManifestFindings(root);
     expect(findings).toHaveLength(1);
-    expect(findings[0].relPath).toBe('plugin/agents/impeccable-reviewer.md');
+    expect(findings[0].relPath).toBe('plugin/agents/procable-reviewer.md');
     expect(findings[0].reason).toMatch(/skill\/agents\/reviewer\.md/);
   });
 
@@ -170,7 +170,7 @@ describe('collectPluginManifestFindings', () => {
   });
 
   test('valid JSON that is not an object is a finding, not a thrown stack', () => {
-    for (const raw of ['null', '"impeccable"', '42', '["./agents/reviewer.md"]']) {
+    for (const raw of ['null', '"procable"', '42', '["./agents/reviewer.md"]']) {
       writeFixture(root, { manifest: raw });
       const findings = collectPluginManifestFindings(root);
       expect(findings).toHaveLength(1);

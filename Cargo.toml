@@ -1,29 +1,29 @@
-# The impeccable runtime: one Cargo workspace next to the skill it powers.
-# `cargo build --release -p impeccable` produces the engine binary the launcher
-# (skill/scripts/impeccable) runs. See docs/ENGINE.md.
+# The procable runtime: one Cargo workspace next to the skill it powers.
+# `cargo build --release -p procable` produces the engine binary the launcher
+# (skill/scripts/procable) runs. See docs/ENGINE.md.
 [workspace]
 resolver = "2"
 members = ["crates/*"]
 
 [workspace.package]
-version = "0.1.18"
+version = "0.2.0"
 edition = "2021"
 license = "Apache-2.0"
 publish = false
 
 [workspace.dependencies]
-impeccable-foundation = { path = "crates/foundation" }
-impeccable-common = { path = "crates/common" }
-impeccable-core = { path = "crates/core" }
-impeccable-detect = { path = "crates/detect" }
-impeccable-html = { path = "crates/html" }
-impeccable-browser = { path = "crates/browser" }
-impeccable-live = { path = "crates/live" }
-impeccable-context = { path = "crates/context" }
-impeccable-hook = { path = "crates/hook" }
-impeccable-comp = { path = "crates/comp" }
-impeccable-comp-verbs = { path = "crates/comp-verbs" }
-impeccable-bundle = { path = "crates/bundle" }
+procable-foundation = { path = "crates/foundation" }
+procable-common = { path = "crates/common" }
+procable-core = { path = "crates/core" }
+procable-detect = { path = "crates/detect" }
+procable-html = { path = "crates/html" }
+procable-browser = { path = "crates/browser" }
+procable-live = { path = "crates/live" }
+procable-context = { path = "crates/context" }
+procable-hook = { path = "crates/hook" }
+procable-comp = { path = "crates/comp" }
+procable-comp-verbs = { path = "crates/comp-verbs" }
+procable-bundle = { path = "crates/bundle" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 thiserror = "2"

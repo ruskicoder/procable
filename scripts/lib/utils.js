@@ -7,7 +7,7 @@ import { PROVIDERS } from './transformers/providers.js';
 // excludes them from dist, and the harness-sync step preserves them across
 // the rm+recopy so local state isn't destroyed on every rebuild.
 // - config.json: legacy live-mode inject target list for existing projects.
-//   New installs write project config at .impeccable/live/config.json instead.
+//   New installs write project config at .procable/live/config.json instead.
 export const PER_PROJECT_SCRIPT_ARTIFACTS = new Set(['config.json']);
 
 // Platform binaries under `scripts/bin/<os>-<arch>/` are fetched per machine
@@ -236,7 +236,7 @@ export function readFilesRecursive(dir, fileList = []) {
 }
 
 /**
- * Read and parse the impeccable skill source.
+ * Read and parse the procable skill source.
  * After v3.0 the repo holds exactly one user-invocable skill, flat at skill/.
  * Returns { skills: [oneEntry] } so downstream array-shaped consumers stay happy.
  *
@@ -245,7 +245,7 @@ export function readFilesRecursive(dir, fileList = []) {
  * and copies that directory verbatim. If `skill/SKILL.md` existed, `npx skills`
  * would install the UNCOMPILED source (unresolved `{{placeholders}}` and
  * `{{scripts_path}}`). Naming it `SKILL.src.md` hides it from discovery so the CLI falls
- * through to a compiled harness dir (`.agents/skills/impeccable`) instead.
+ * through to a compiled harness dir (`.agents/skills/procable`) instead.
  */
 export function readSourceFiles(rootDir) {
   const skillDir = path.join(rootDir, 'skill');
@@ -328,7 +328,7 @@ export function readSourceFiles(rootDir) {
   }
 
   skills.push({
-    name: frontmatter.name || 'impeccable',
+    name: frontmatter.name || 'procable',
     description: frontmatter.description || '',
     license: frontmatter.license || '',
     compatibility: frontmatter.compatibility || '',
@@ -668,14 +668,14 @@ function escapeRegex(str) {
 }
 
 const EXCLUDED_FROM_SUGGESTIONS = new Set([
-  'impeccable',               // foundational skill, not a steering command
-  'teach-impeccable',         // deprecated shim
+  'procable',               // foundational skill, not a steering command
+  'teach-procable',         // deprecated shim
   'frontend-design',          // deprecated shim
 ]);
 
-// Sub-commands of /impeccable that should appear in {{available_commands}}.
+// Sub-commands of /procable that should appear in {{available_commands}}.
 // These are the commands that audit/critique/etc. reference when suggesting next steps.
-const IMPECCABLE_SUB_COMMANDS = [
+const PROCABLE_SUB_COMMANDS = [
   'adapt', 'animate', 'audit', 'bolder', 'clarify', 'colorize',
   'critique', 'delight', 'distill', 'document', 'harden', 'layout',
   'onboard', 'optimize', 'overdrive', 'polish', 'quieter', 'shape', 'typeset',
@@ -686,15 +686,15 @@ export function replacePlaceholders(content, provider, commandNames = [], allSki
   const cmdPrefix = placeholders.command_prefix || '/';
 
   // Build the available_commands list.
-  // After the v3.0 consolidation, commands are sub-commands of /impeccable.
-  // If there's only one user-invocable skill (impeccable), generate sub-command references.
+  // After the v3.0 consolidation, commands are sub-commands of /procable.
+  // If there's only one user-invocable skill (procable), generate sub-command references.
   // Otherwise fall back to listing skill names (backwards compat for forks).
   const nonExcluded = commandNames.filter(n => !EXCLUDED_FROM_SUGGESTIONS.has(n));
   let commandList;
   if (nonExcluded.length === 0) {
-    // Single-skill architecture: list sub-commands as /impeccable <sub>
-    commandList = IMPECCABLE_SUB_COMMANDS
-      .map(n => `${cmdPrefix}impeccable ${n}`)
+    // Single-skill architecture: list sub-commands as /procable <sub>
+    commandList = PROCABLE_SUB_COMMANDS
+      .map(n => `${cmdPrefix}procable ${n}`)
       .join(', ');
   } else {
     // Multi-skill architecture (backwards compat)
@@ -710,9 +710,9 @@ export function replacePlaceholders(content, provider, commandNames = [], allSki
 
   // Replace `/skillname` invocations with the correct command prefix for this provider
   // (e.g., `/normalize` → `$normalize` for Codex). Require the slash to be
-  // outside a path or URL so `.github/hooks/impeccable.json`,
-  // `.codex/skills/impeccable`, and the launcher invocation
-  // `{{scripts_path}}/impeccable <verb>` (a `}}`-preceded path segment,
+  // outside a path or URL so `.github/hooks/procable.json`,
+  // `.codex/skills/procable`, and the launcher invocation
+  // `{{scripts_path}}/procable <verb>` (a `}}`-preceded path segment,
   // resolved after this pass) remain untouched.
   if (cmdPrefix !== '/' && allSkillNames.length > 0) {
     const sorted = [...allSkillNames].sort((a, b) => b.length - a.length);
@@ -734,16 +734,16 @@ export function replacePlaceholders(content, provider, commandNames = [], allSki
  * heuristics can collide with regex literals and runtime paths. Only exact
  * marker lines are replaced. The shipped scripts today (the launcher and the
  * page JS) carry no marker; the binary derives its provider from its install
- * path or IMPECCABLE_PROVIDER_ID at run time.
+ * path or PROCABLE_PROVIDER_ID at run time.
  */
 export function replaceScriptProviderMarker(content, provider, buildProvider = provider) {
   const placeholders = PROVIDER_PLACEHOLDERS[provider] || PROVIDER_PLACEHOLDERS.cursor;
   const commandPrefix = placeholders.command_prefix || '/';
-  const prefixMarker = "export const IMPECCABLE_COMMAND_PREFIX = '/'; // @impeccable-provider-command-prefix";
-  const providerMarker = "export const IMPECCABLE_PROVIDER_ID = 'source'; // @impeccable-provider-id";
+  const prefixMarker = "export const PROCABLE_COMMAND_PREFIX = '/'; // @procable-provider-command-prefix";
+  const providerMarker = "export const PROCABLE_PROVIDER_ID = 'source'; // @procable-provider-id";
   return content
-    .replace(prefixMarker, `export const IMPECCABLE_COMMAND_PREFIX = ${JSON.stringify(commandPrefix)};`)
-    .replace(providerMarker, `export const IMPECCABLE_PROVIDER_ID = ${JSON.stringify(buildProvider)};`);
+    .replace(prefixMarker, `export const PROCABLE_COMMAND_PREFIX = ${JSON.stringify(commandPrefix)};`)
+    .replace(providerMarker, `export const PROCABLE_PROVIDER_ID = ${JSON.stringify(buildProvider)};`);
 }
 
 /**

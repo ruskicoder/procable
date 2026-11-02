@@ -5,12 +5,12 @@ the JS goldens; read this before touching a crate.
 
 ## Sources of truth
 
-- JS source: the public repo checkout (`../impeccable-second` locally,
-  `../impeccable` in CI; env `IMPECCABLE_PUBLIC_REPO` overrides).
+- JS source: the public repo checkout (`../procable-second` locally,
+  `../procable` in CI; env `PROCABLE_PUBLIC_REPO` overrides).
 - Contract: `docs/CLI-CONTRACT.md` in the public repo. Every verb's argv, env,
   stdout/stderr, exit codes, files, network.
 - Goldens: `tests/oracle/` in the public repo. `node tests/oracle/run.mjs`
-  with `IMPECCABLE_BIN=<path to our binary>` replays every case and diffs.
+  with `PROCABLE_BIN=<path to our binary>` replays every case and diffs.
 - Function vectors: `tests/oracle/vectors/calls/<module>/<fn>.jsonl`, generated
   by `node tests/oracle/vectors/record-calls.mjs` (needs the JS engine present).
   `crates/core/tests/vectors.rs` replays them.
@@ -22,7 +22,7 @@ the JS goldens; read this before touching a crate.
    change a threshold, message string, or ordering while porting.
 2. Improvements go through `tests/oracle/DELTAS.md` in the public repo, one
    line per case id, after review. Until then the golden wins.
-3. JS number and string semantics live in `impeccable_core::js`
+3. JS number and string semantics live in `procable_core::js`
    (`number_to_string`, `to_fixed`, `parse_float`, `parse_int`, `trim`,
    `to_lower_case`). Use them everywhere output text is produced; never
    `format!("{}", f64)` a value that ends up in stdout or a snippet.
@@ -64,7 +64,7 @@ the JS goldens; read this before touching a crate.
 ## Windows
 
 The JS ran on Node, which picks `path.win32` on Windows and `path.posix`
-elsewhere. `impeccable_common::jsp` does the same: the top-level functions
+elsewhere. `procable_common::jsp` does the same: the top-level functions
 (`join`, `resolve`, `relative`, `dirname`, `basename`, `extname`,
 `normalize`, `is_absolute`, `SEP`) dispatch on `cfg!(windows)`; the two
 implementations sit under `jsp::posix` and `jsp::win32`, each with tests whose
@@ -82,7 +82,7 @@ expected values came from `node -p "path.win32.X(...)"`. Rules:
    `process.cwd()`. Callers that only pass absolute paths may hand in `"/"`;
    on Windows that is the drive-less root, exactly what `path.win32.resolve('/')`
    yields with no cwd for the device.
-4. Process plumbing that differs per OS lives in `impeccable_common::proc`:
+4. Process plumbing that differs per OS lives in `procable_common::proc`:
    `kill0` / `pid_reachable` (`process.kill(pid, 0)`; OpenProcess on Windows),
    `terminate` (`process.kill(pid)`), `detach` (`spawn({ detached: true })`:
    `setsid` on unix, `DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP` on
@@ -92,7 +92,7 @@ expected values came from `node -p "path.win32.X(...)"`. Rules:
    `cmd.exe /d /s /c`), `node_exe` (`node.exe`), `tool_on_path`
    (`which` / `where`).
 5. Chrome discovery already carries the Windows candidate list; the launcher
-   for Windows is `launcher/impeccable.cmd`.
+   for Windows is `launcher/procable.cmd`.
 
 Cross-checking from macOS or Linux: `rustup target add x86_64-pc-windows-msvc`
 then `cargo check --workspace --target x86_64-pc-windows-msvc`. `ring`

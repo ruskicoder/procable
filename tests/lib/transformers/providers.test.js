@@ -83,7 +83,7 @@ for (const [key, config] of Object.entries(PROVIDERS)) {
           body: 'Ask {{model}}.',
           userInvocable: true,
           argumentHint: '[target]',
-          allowedTools: ['Bash(npx impeccable *)'],
+          allowedTools: ['Bash(npx procable *)'],
         }], TEST_DIR);
         const content = fs.readFileSync(skillPath(config, 'test'), 'utf-8');
         expect(content).toContain('argument-hint: "[target]"');
@@ -96,20 +96,20 @@ for (const [key, config] of Object.entries(PROVIDERS)) {
     if (key === 'dsh') {
       test('uses DSH tools and resource paths without installing unsupported hooks or agents', () => {
         transform([{
-          name: 'impeccable',
+          name: 'procable',
           description: 'Test',
           userInvocable: true,
           allowedTools: 'Bash',
-          body: '{{ask_instruction}} Run `{{scripts_path}}/impeccable context`.',
-          references: [{ name: 'polish', content: 'Run `{{scripts_path}}/impeccable detect`.', filePath: '/fake/polish.md' }],
+          body: '{{ask_instruction}} Run `{{scripts_path}}/procable context`.',
+          references: [{ name: 'polish', content: 'Run `{{scripts_path}}/procable detect`.', filePath: '/fake/polish.md' }],
         }], TEST_DIR);
-        const content = fs.readFileSync(skillPath(config, 'impeccable'), 'utf8');
+        const content = fs.readFileSync(skillPath(config, 'procable'), 'utf8');
         expect(content).toContain('Ask with the ask_user_question tool');
-        expect(content).toContain('.dsh/skills/impeccable/scripts/impeccable context');
+        expect(content).toContain('.dsh/skills/procable/scripts/procable context');
         expect(parseFrontmatter(content).frontmatter['allowed-tools']).toBeUndefined();
         const root = path.join(TEST_DIR, 'dsh', '.dsh');
-        expect(fs.readFileSync(path.join(root, 'skills/impeccable/reference/polish.md'), 'utf8'))
-          .toContain('.dsh/skills/impeccable/scripts/impeccable detect');
+        expect(fs.readFileSync(path.join(root, 'skills/procable/reference/polish.md'), 'utf8'))
+          .toContain('.dsh/skills/procable/scripts/procable detect');
         expect(fs.readdirSync(root)).toEqual(['skills']);
         expect(config.emitHooks).toBeUndefined();
         expect(config.agentFormat).toBeUndefined();

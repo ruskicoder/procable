@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Impeccable",
+  "name": "Procable",
   "description": "Detect common UI anti-patterns in any web page",
   "version": "1.4.0",
   "permissions": [

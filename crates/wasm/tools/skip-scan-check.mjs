@@ -26,7 +26,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const engineRoot = path.resolve(here, '../../..');
 // The fixtures and puppeteer live in this repo; --public points at another
 // checkout (an older one, for A/B against the pre-Rust engine).
-const publicRepo = path.resolve(flag('--public') || process.env.IMPECCABLE_PUBLIC_REPO || engineRoot);
+const publicRepo = path.resolve(flag('--public') || process.env.PROCABLE_PUBLIC_REPO || engineRoot);
 const require = createRequire(path.join(publicRepo, 'package.json'));
 const puppeteer = require('puppeteer');
 
@@ -56,17 +56,17 @@ try {
   await page.setViewport({ width: 1280, height: 1000 });
   await page.goto(`http://127.0.0.1:${port}/visual-contrast.html`, { waitUntil: 'load' });
   await page.evaluate(() => {
-    document.documentElement.dataset.impeccableExtension = 'true';
-    window.__impeccableMessages = [];
+    document.documentElement.dataset.procableExtension = 'true';
+    window.__procableMessages = [];
     window.addEventListener('message', event => {
-      if (event.source !== window || !event.data?.source?.startsWith('impeccable-')) return;
-      window.__impeccableMessages.push(event.data);
+      if (event.source !== window || !event.data?.source?.startsWith('procable-')) return;
+      window.__procableMessages.push(event.data);
     });
   });
   await page.evaluate(BUNDLE);
   const resultsFor = (scanId) => page.evaluate((id) => (
-    (window.__impeccableMessages || [])
-      .filter(m => m.source === 'impeccable-results' && m.scanId === id)
+    (window.__procableMessages || [])
+      .filter(m => m.source === 'procable-results' && m.scanId === id)
       .map(m => ({
         count: m.count,
         types: (m.findings || []).flatMap(g => (g.findings || []).map(f => f.type || f.id)),
@@ -78,7 +78,7 @@ try {
   // ignoreFiles-waived page must not do.
   await page.evaluate(() => {
     window.postMessage({
-      source: 'impeccable-command',
+      source: 'procable-command',
       action: 'scan',
       config: { scanId: 'vc-skip-1', visualContrast: true, visualContrastMaxCandidates: 20 },
     }, '*');
@@ -102,7 +102,7 @@ try {
   // findings, no markers.
   await page.evaluate(() => {
     window.postMessage({
-      source: 'impeccable-command',
+      source: 'procable-command',
       action: 'scan',
       config: { scanId: 'vc-skip-2', visualContrast: true, visualContrastMaxCandidates: 20, skipScan: true },
     }, '*');
@@ -120,7 +120,7 @@ try {
     fail(`expected every skipScan results post to stay empty, got: ${JSON.stringify(skipped)}`);
   }
   const overlays = await page.evaluate(() =>
-    document.querySelectorAll('.impeccable-overlay, .impeccable-label').length);
+    document.querySelectorAll('.procable-overlay, .procable-label').length);
   if (overlays === 0) {
     console.log('OK   no markers on the skipScan page');
   } else {

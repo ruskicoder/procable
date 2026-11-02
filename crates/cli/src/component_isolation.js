@@ -59,15 +59,15 @@
   }
   // Apply only after reading all original computed styles. Descendant components
   // keep their layout space but cannot paint inside their parent's preview.
-  if (document.querySelector('[data-impeccable-capture]')) throw Error('Reserved capture attribute is already present.');
+  if (document.querySelector('[data-procable-capture]')) throw Error('Reserved capture attribute is already present.');
   elements.forEach((element, index) => {
     element.style.setProperty('visibility', visibility[index].main, 'important');
-    element.setAttribute('data-impeccable-capture', String(index));
+    element.setAttribute('data-procable-capture', String(index));
   });
   const style = document.createElement('style');
   // Explicit pseudo-element visibility can otherwise escape its hidden owner.
   style.textContent = elements.map((_, index) => ['::before','::after','::marker'].map((pseudo, p) =>
-    `[data-impeccable-capture="${index}"]${pseudo}{visibility:${visibility[index].pseudo[p]}!important}`).join('')).join('');
+    `[data-procable-capture="${index}"]${pseudo}{visibility:${visibility[index].pseudo[p]}!important}`).join('')).join('');
   document.head.append(style);
   // A body's background can propagate to the viewport despite visibility:hidden.
   // Neither document root is a component; leave the capture canvas transparent.

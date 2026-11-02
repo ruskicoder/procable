@@ -15,7 +15,7 @@ use crate::checks::rules::{
     is_emoji_only_text, is_glyph_only_text, text_fill_is_transparent, TRANSPARENT_INK_FLOOR,
 };
 use crate::color::{contrast_ratio, parse_gradient_colors, parse_rgb, split_top_level_commas, Rgba};
-use impeccable_foundation::css::measures::{data_svg_intrinsic_size, ICON_MAX_PX};
+use procable_foundation::css::measures::{data_svg_intrinsic_size, ICON_MAX_PX};
 use crate::constants::{SAFE_TAGS, WCAG_LARGE_BOLD_TEXT_PX, WCAG_LARGE_TEXT_PX};
 use crate::js::{self, math_max, math_min, math_round, number_to_string, parse_float, parse_int, to_fixed, WS};
 use crate::js_ext_a::{num_truthy, split_ws};
@@ -27,7 +27,7 @@ use serde_json::{json, Map, Value};
 
 /// The plans and rects this subsystem passes around are shared; re-exported
 /// so `browser::visual` stays one path.
-pub use impeccable_foundation::browser::visual::*;
+pub use procable_foundation::browser::visual::*;
 
 macro_rules! re {
     ($name:ident, $pat:expr) => {
@@ -52,8 +52,8 @@ re!(
 );
 
 pub const OVERLAY_SELECTOR: &str =
-    ".impeccable-overlay, .impeccable-label, .impeccable-banner, .impeccable-tooltip";
-pub const LIVE_SELECTOR: &str = "[id^=\"impeccable-live-\"]";
+    ".procable-overlay, .procable-label, .procable-banner, .procable-tooltip";
+pub const LIVE_SELECTOR: &str = "[id^=\"procable-live-\"]";
 /// The reason a stacked gradient is left to the screenshot check.
 const STACKED_GRADIENTS: &str = "stacked gradients need screenshot pixels";
 
@@ -551,7 +551,7 @@ fn detached_paint(dom: &dyn Dom, node: ElId, text: &Rect) -> Option<Paint> {
 }
 
 fn is_svg(dom: &dyn Dom, node: ElId) -> bool {
-    dom.namespace_uri(node) == impeccable_foundation::browser::snapshot::NS_SVG
+    dom.namespace_uri(node) == procable_foundation::browser::snapshot::NS_SVG
 }
 
 /// Where a layer paints against the fills around it, for a layer whose
@@ -6201,15 +6201,15 @@ mod tests {
         let (_, body) = d.with_page();
         d.set_style(body, "backgroundColor", "rgb(255, 255, 255)");
         let svg = d.add(Some(body), "svg");
-        d.el_mut(svg).ns = impeccable_foundation::browser::snapshot::NS_SVG.to_string();
+        d.el_mut(svg).ns = procable_foundation::browser::snapshot::NS_SVG.to_string();
         d.set_rect(svg, 100.0, 2000.0, 48.0, 48.0);
         d.set_styles(svg, &[("backgroundColor", "rgba(0, 0, 0, 0)"), ("opacity", "1")]);
         let circle = d.add(Some(svg), "circle");
-        d.el_mut(circle).ns = impeccable_foundation::browser::snapshot::NS_SVG.to_string();
+        d.el_mut(circle).ns = procable_foundation::browser::snapshot::NS_SVG.to_string();
         d.set_rect(circle, 100.0, 2000.0, 48.0, 48.0);
         d.set_styles(circle, &[("backgroundColor", "rgba(0, 0, 0, 0)"), ("opacity", "1")]);
         let text = text_run(&mut d, svg, "text", "M", (114.0, 2012.0, 20.0, 24.0));
-        d.el_mut(text).ns = impeccable_foundation::browser::snapshot::NS_SVG.to_string();
+        d.el_mut(text).ns = procable_foundation::browser::snapshot::NS_SVG.to_string();
         assert_eq!(layer_under_text_found(&d, text), (LayerUnder::Unmodelled, Some(circle)));
         // The same shape drawn behind a whole section is decoration.
         d.set_rect(circle, 0.0, 1500.0, 1280.0, 1200.0);

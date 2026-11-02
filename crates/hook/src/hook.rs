@@ -1,10 +1,10 @@
-//! JS: skill/scripts/hook.mjs (`impeccable hook`) and hook-lib.mjs
+//! JS: skill/scripts/hook.mjs (`procable hook`) and hook-lib.mjs
 //! `runHook` / `runStopHook`: the PostToolUse per-edit pass and the Stop deep
 //! pass. Always exits 0; stdout is one JSON document or nothing.
 
-use impeccable_core::findings::Finding;
-use impeccable_core::js;
-use impeccable_detect::file_system::uses_html_engine;
+use procable_core::findings::Finding;
+use procable_core::js;
+use procable_detect::file_system::uses_html_engine;
 use serde_json::{Map, Value};
 use std::collections::HashMap;
 
@@ -83,7 +83,7 @@ pub fn run_hook(rt: &Runtime, stdin: &str) -> RunResult {
     audit.insert("ts".into(), Value::String(iso_now()));
     audit.insert("event".into(), Value::String("PostToolUse".into()));
 
-    if depth_is_set(rt.env("IMPECCABLE_HOOK_DEPTH")) || depth_is_set(rt.env("CLAUDE_HOOK_DEPTH")) {
+    if depth_is_set(rt.env("PROCABLE_HOOK_DEPTH")) || depth_is_set(rt.env("CLAUDE_HOOK_DEPTH")) {
         return result(
             &audit,
             vec![
@@ -92,7 +92,7 @@ pub fn run_hook(rt: &Runtime, stdin: &str) -> RunResult {
             ],
         );
     }
-    if truthy(rt.env("IMPECCABLE_HOOK_DISABLED")) {
+    if truthy(rt.env("PROCABLE_HOOK_DISABLED")) {
         return result(
             &audit,
             vec![
@@ -188,7 +188,7 @@ pub fn run_hook(rt: &Runtime, stdin: &str) -> RunResult {
         );
     }
 
-    // Several Impeccable hooks can fire for one edit (home and project
+    // Several Procable hooks can fire for one edit (home and project
     // manifests, a plugin and a project hook): only the first scans.
     if crate::hook_claim::claim_event(rt, &raw_event, &project_cwd, &primary_files) == crate::hook_claim::Claim::Duplicate {
         return result(
@@ -215,7 +215,7 @@ pub fn run_hook(rt: &Runtime, stdin: &str) -> RunResult {
     let mut suppression_winner: Option<String> = None;
     let mut clean_ack_deduped = false;
     let mut skipped_bytes: u64 = 0;
-    let quiet_mode = truthy(rt.env("IMPECCABLE_HOOK_QUIET")) || config.quiet;
+    let quiet_mode = truthy(rt.env("PROCABLE_HOOK_QUIET")) || config.quiet;
     let mut detector_threw_any = false;
     let mut last_skip = "no-scannable-file";
     let mut live_preview_edit: Option<String> = None;
@@ -502,16 +502,16 @@ pub fn run_hook(rt: &Runtime, stdin: &str) -> RunResult {
         }
     }
 
-    // JS: an already-present `.impeccable/` dir marks a project that opted
+    // JS: an already-present `.procable/` dir marks a project that opted
     // in (issues #344, #305). An existing cache file also counts as opted
-    // in: under IMPECCABLE_CACHE_ROOT (issue #422) state lives outside the
+    // in: under PROCABLE_CACHE_ROOT (issue #422) state lives outside the
     // project, so the project dir alone can't carry the marker — without
     // this, clean-edit editCount bumps would stop persisting the moment
     // state relocates. Under stock paths the cache sits inside
-    // `.impeccable/`, so the extra check changes nothing there.
+    // `.procable/`, so the extra check changes nothing there.
     let wants_persist = deferred_total > 0
         || (cache_dirty
-            && (exists(&jsp::join(&[&project_cwd, ".impeccable"])) || exists(&get_cache_path(&project_cwd))));
+            && (exists(&jsp::join(&[&project_cwd, ".procable"])) || exists(&get_cache_path(&project_cwd))));
     if wants_persist && persist_cache(rt, &project_cwd, &cache) {
         record_session_root(rt, harness, &session_value, &project_cwd);
     }
@@ -628,7 +628,7 @@ pub fn run_stop_hook(rt: &Runtime, stdin: &str) -> RunResult {
     audit.insert("ts".into(), Value::String(iso_now()));
     audit.insert("event".into(), Value::String("Stop".into()));
 
-    if depth_is_set(rt.env("IMPECCABLE_HOOK_DEPTH")) || depth_is_set(rt.env("CLAUDE_HOOK_DEPTH")) {
+    if depth_is_set(rt.env("PROCABLE_HOOK_DEPTH")) || depth_is_set(rt.env("CLAUDE_HOOK_DEPTH")) {
         return result(
             &audit,
             vec![
@@ -637,7 +637,7 @@ pub fn run_stop_hook(rt: &Runtime, stdin: &str) -> RunResult {
             ],
         );
     }
-    if truthy(rt.env("IMPECCABLE_HOOK_DISABLED")) {
+    if truthy(rt.env("PROCABLE_HOOK_DISABLED")) {
         return result(
             &audit,
             vec![
@@ -738,7 +738,7 @@ pub fn run_stop_hook(rt: &Runtime, stdin: &str) -> RunResult {
             ],
         ))
     };
-    if std::path::Path::new(&session_cwd).join(".impeccable/build/state.json").is_file() {
+    if std::path::Path::new(&session_cwd).join(".procable/build/state.json").is_file() {
         if let Some(skip) = native_skip(&audit, &session_cwd, &mut platform_memo) { return skip; }
     }
     let mut cache = read_cache(&session_cwd);
@@ -753,7 +753,7 @@ pub fn run_stop_hook(rt: &Runtime, stdin: &str) -> RunResult {
     if stop_hook_active {
         return result(&audit, vec![("skipped", Value::from("stop-hook-active")), ("durationMs", ms_since(started))]);
     }
-    if truthy(rt.env("IMPECCABLE_HOOK_COMPLETION_ONLY")) {
+    if truthy(rt.env("PROCABLE_HOOK_COMPLETION_ONLY")) {
         return result(&audit, vec![("skipped", Value::from("no-build-continuation")), ("durationMs", ms_since(started))]);
     }
     // The roots to scan: the nearest one from the session cwd up whose cache
@@ -1026,14 +1026,14 @@ fn is_stop_event(stdin: &str) -> bool {
     }
 }
 
-/// `impeccable hook` (hook.mjs main). Returns the exit code (always 0).
-pub fn run(rt: &Runtime, stdin: &str, io: &mut impeccable_common::Io) -> i32 {
+/// `procable hook` (hook.mjs main). Returns the exit code (always 0).
+pub fn run(rt: &Runtime, stdin: &str, io: &mut procable_common::Io) -> i32 {
     if let Ok(Value::Object(event)) = serde_json::from_str::<Value>(stdin) {
         if event.get("hook_event_name").and_then(Value::as_str) == Some("BeforeTool")
             && resolve_harness(rt, Some(&event)) == "gemini" {
             // String checks first: this fires before every Gemini shell call.
             if let Some(output) = crate::build_completion::gemini_shell_identity(rt, &event) {
-                if !truthy(rt.env("IMPECCABLE_HOOK_DISABLED")) && read_config(&rt.proc_cwd).enabled {
+                if !truthy(rt.env("PROCABLE_HOOK_DISABLED")) && read_config(&rt.proc_cwd).enabled {
                     io.out(&format!("{output}\n"));
                 }
             }
@@ -1041,7 +1041,7 @@ pub fn run(rt: &Runtime, stdin: &str, io: &mut impeccable_common::Io) -> i32 {
         }
         if event.get("hook_event_name").and_then(Value::as_str) == Some("SessionStart") {
             let cwd = rt.resolve(&[event.get("cwd").and_then(Value::as_str).unwrap_or(&rt.proc_cwd)]);
-            if !truthy(rt.env("IMPECCABLE_HOOK_DISABLED")) && resolve_harness(rt, Some(&event)) == "claude"
+            if !truthy(rt.env("PROCABLE_HOOK_DISABLED")) && resolve_harness(rt, Some(&event)) == "claude"
                 && read_config(&cwd).enabled {
                 if let Some(session) = event.get("session_id").and_then(Value::as_str) {
                     crate::build_completion::persist_session_identity(rt, session);
@@ -1050,7 +1050,7 @@ pub fn run(rt: &Runtime, stdin: &str, io: &mut impeccable_common::Io) -> i32 {
             return 0;
         }
     }
-    // JS: process.env.IMPECCABLE_HOOK_DEPTH = process.env.IMPECCABLE_HOOK_DEPTH || '1'
+    // JS: process.env.PROCABLE_HOOK_DEPTH = process.env.PROCABLE_HOOK_DEPTH || '1'
     // is exported for child processes; this binary spawns none, so the
     // pre-mutation snapshot in `rt.env` is the only value that matters.
     let result = if is_stop_event(stdin) {

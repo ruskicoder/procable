@@ -67,7 +67,7 @@ export const PROVIDERS = {
     displayName: 'Codex',
     frontmatterFields: [],
     // Codex's validator rejects unknown top-level keys. Version remains
-    // available to Impeccable's updater under the spec-defined metadata map.
+    // available to Procable's updater under the spec-defined metadata map.
     versionInMetadata: true,
     writeOpenAIMetadata: true,
     // No agentFormat: the Codex subagent ships nested inside the skill's own
@@ -101,7 +101,7 @@ export const PROVIDERS = {
     agentFormat: 'copilot-agent-md',
     emitHooks: 'github',
     // GitHub Copilot discovers repo-level hooks under `.github/hooks/*.json`.
-    hooksManifestRel: 'hooks/impeccable.json',
+    hooksManifestRel: 'hooks/procable.json',
   },
   kiro: {
     provider: 'kiro',
@@ -189,7 +189,7 @@ export const PROVIDERS = {
     emitHooks: 'grok',
     // Grok discovers project hooks from `.grok/hooks/*.json` (not a single
     // settings.json). Claude tool-name matchers alias to Grok tools.
-    hooksManifestRel: 'hooks/impeccable.json',
+    hooksManifestRel: 'hooks/procable.json',
   },
   antigravity: {
     provider: 'antigravity',
@@ -210,7 +210,7 @@ export const PROVIDERS = {
     // The design hook ships as a Python plugin (skill/hermes-plugin/) under
     // .hermes/plugins/, since Hermes hooks are in-process plugin callbacks.
     frontmatterFields: ['license', 'compatibility', 'metadata'],
-    pluginPayload: { source: 'hermes-plugin', dest: 'plugins/impeccable-design-hook' },
+    pluginPayload: { source: 'hermes-plugin', dest: 'plugins/procable-design-hook' },
   },
   devin: {
     provider: 'devin',

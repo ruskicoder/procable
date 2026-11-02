@@ -37,7 +37,7 @@ const CONTEXT_MATCH_PER_HINT: usize = 2;
 const SKIP_DIRS: [&str; 11] = [
     "node_modules",
     ".git",
-    ".impeccable",
+    ".procable",
     ".astro",
     ".next",
     ".nuxt",
@@ -88,7 +88,7 @@ pub(crate) fn js_string(v: Option<&Value>) -> String {
         Some(Value::Bool(b)) => b.to_string(),
         Some(Value::Number(n)) => n
             .as_f64()
-            .map(impeccable_context::util::js_number_to_string)
+            .map(procable_context::util::js_number_to_string)
             .unwrap_or_default(),
         Some(Value::String(s)) => s.clone(),
         Some(Value::Array(a)) => a
@@ -304,7 +304,7 @@ fn ref_key(v: Option<&Value>) -> String {
 }
 
 static ORIGINAL_TEXT_ATTR: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"data-impeccable-original-text="([^"]*)""#).unwrap());
+    Lazy::new(|| Regex::new(r#"data-procable-original-text="([^"]*)""#).unwrap());
 static TEXT_CHUNK_SPLIT: Lazy<Regex> = Lazy::new(|| Regex::new(r"\s{2,}|\n|\t").unwrap());
 
 fn build_context_hints_by_ref(entry: &Value) -> HashMap<String, Vec<Value>> {
@@ -698,7 +698,7 @@ fn match_for_index(file: &SearchFile, index: usize, kind: &str, needle: &str) ->
         "file": file.relative_file,
         "line": line,
         "needle": needle,
-        "excerpt": utf16_slice(impeccable_context::util::js_trim(&line_text), 240),
+        "excerpt": utf16_slice(procable_context::util::js_trim(&line_text), 240),
     })
 }
 

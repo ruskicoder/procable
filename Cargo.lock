@@ -530,34 +530,34 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable"
-version = "0.1.18"
+name = "procable"
+version = "0.2.0"
 dependencies = [
  "base64",
- "impeccable-browser",
- "impeccable-common",
- "impeccable-comp",
- "impeccable-comp-verbs",
- "impeccable-context",
- "impeccable-core",
- "impeccable-detect",
- "impeccable-hook",
- "impeccable-html",
- "impeccable-live",
- "impeccable-skills",
+ "procable-browser",
+ "procable-common",
+ "procable-comp",
+ "procable-comp-verbs",
+ "procable-context",
+ "procable-core",
+ "procable-detect",
+ "procable-hook",
+ "procable-html",
+ "procable-live",
+ "procable-skills",
  "serde_json",
  "sha2",
 ]
 
 [[package]]
-name = "impeccable-browser"
-version = "0.1.18"
+name = "procable-browser"
+version = "0.2.0"
 dependencies = [
  "base64",
  "image",
- "impeccable-common",
- "impeccable-core",
- "impeccable-detect",
+ "procable-common",
+ "procable-core",
+ "procable-detect",
  "percent-encoding",
  "png",
  "serde_json",
@@ -567,17 +567,17 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-bundle"
-version = "0.1.18"
+name = "procable-bundle"
+version = "0.2.0"
 dependencies = [
  "base64",
- "impeccable-core",
+ "procable-core",
  "serde_json",
 ]
 
 [[package]]
-name = "impeccable-common"
-version = "0.1.18"
+name = "procable-common"
+version = "0.2.0"
 dependencies = [
  "getrandom 0.2.17",
  "libc",
@@ -586,8 +586,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-comp"
-version = "0.1.18"
+name = "procable-comp"
+version = "0.2.0"
 dependencies = [
  "image",
  "once_cell",
@@ -598,13 +598,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-comp-verbs"
-version = "0.1.18"
+name = "procable-comp-verbs"
+version = "0.2.0"
 dependencies = [
  "image",
- "impeccable-common",
- "impeccable-comp",
- "impeccable-context",
+ "procable-common",
+ "procable-comp",
+ "procable-context",
  "once_cell",
  "regex",
  "serde",
@@ -614,13 +614,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-context"
-version = "0.1.18"
+name = "procable-context"
+version = "0.2.0"
 dependencies = [
  "flate2",
- "impeccable-common",
- "impeccable-comp",
- "impeccable-core",
+ "procable-common",
+ "procable-comp",
+ "procable-core",
  "once_cell",
  "regex",
  "rustls-native-certs",
@@ -634,12 +634,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-core"
-version = "0.1.18"
+name = "procable-core"
+version = "0.2.0"
 dependencies = [
  "cssparser",
- "impeccable-core",
- "impeccable-foundation",
+ "procable-core",
+ "procable-foundation",
  "once_cell",
  "regex",
  "serde",
@@ -647,11 +647,11 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-detect"
-version = "0.1.18"
+name = "procable-detect"
+version = "0.2.0"
 dependencies = [
- "impeccable-common",
- "impeccable-core",
+ "procable-common",
+ "procable-core",
  "once_cell",
  "regex",
  "serde",
@@ -659,8 +659,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-foundation"
-version = "0.1.18"
+name = "procable-foundation"
+version = "0.2.0"
 dependencies = [
  "cssparser",
  "once_cell",
@@ -672,14 +672,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-hook"
-version = "0.1.18"
+name = "procable-hook"
+version = "0.2.0"
 dependencies = [
- "impeccable-common",
- "impeccable-comp-verbs",
- "impeccable-context",
- "impeccable-core",
- "impeccable-detect",
+ "procable-common",
+ "procable-comp-verbs",
+ "procable-context",
+ "procable-core",
+ "procable-detect",
  "libc",
  "once_cell",
  "regex",
@@ -688,16 +688,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-html"
-version = "0.1.18"
+name = "procable-html"
+version = "0.2.0"
 dependencies = [
  "cssparser",
  "ego-tree",
  "html5ever",
- "impeccable-common",
- "impeccable-core",
- "impeccable-detect",
- "impeccable-html",
+ "procable-common",
+ "procable-core",
+ "procable-detect",
+ "procable-html",
  "indexmap",
  "once_cell",
  "regex",
@@ -709,14 +709,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-live"
-version = "0.1.18"
+name = "procable-live"
+version = "0.2.0"
 dependencies = [
  "getrandom 0.2.17",
- "impeccable-common",
- "impeccable-context",
- "impeccable-core",
- "impeccable-hook",
+ "procable-common",
+ "procable-context",
+ "procable-core",
+ "procable-hook",
  "markup5ever",
  "once_cell",
  "regex",
@@ -728,12 +728,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-skills"
-version = "0.1.18"
+name = "procable-skills"
+version = "0.2.0"
 dependencies = [
- "impeccable-common",
- "impeccable-context",
- "impeccable-detect",
+ "procable-common",
+ "procable-context",
+ "procable-detect",
  "libc",
  "once_cell",
  "regex",
@@ -747,13 +747,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "impeccable-wasm"
-version = "0.1.18"
+name = "procable-wasm"
+version = "0.2.0"
 dependencies = [
- "impeccable-core",
- "impeccable-detect",
- "impeccable-html",
- "impeccable-wasm",
+ "procable-core",
+ "procable-detect",
+ "procable-html",
+ "procable-wasm",
  "serde_json",
  "wasm-bindgen",
 ]
@@ -1813,9 +1813,9 @@ checksum = "3ad82d2a33cdc9674dc7465672f271e096168fcdbe0f799d9e6db8c5892679dc"
 
 [[package]]
 name = "xtask"
-version = "0.1.18"
+version = "0.2.0"
 dependencies = [
- "impeccable-bundle",
+ "procable-bundle",
 ]
 
 [[package]]

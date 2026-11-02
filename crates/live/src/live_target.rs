@@ -2,9 +2,9 @@
 //! script directly does nothing, so the verb prints nothing and exits 0.
 
 use crate::util::{jsp, Env};
-use impeccable_common::Io;
-use impeccable_context::context::resolve_project_root;
-use impeccable_context::target_args::{parse_target_path, TargetOptions};
+use procable_common::Io;
+use procable_context::context::resolve_project_root;
+use procable_context::target_args::{parse_target_path, TargetOptions};
 
 pub struct LiveTarget {
     pub original_cwd: String,
@@ -42,7 +42,7 @@ pub fn resolve_live_target(cwd: &str, args: &[String], env: &Env) -> Result<Live
     })
 }
 
-/// `impeccable live-target`: no CLI entry in the JS module.
+/// `procable live-target`: no CLI entry in the JS module.
 pub fn run(_args: &[String], _io: &mut Io) -> i32 {
     0
 }

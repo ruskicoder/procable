@@ -1,8 +1,8 @@
 /**
- * Impeccable Live Variant Mode - Browser Script
+ * Procable Live Variant Mode - Browser Script
  *
  * Injected into the user's page via <script src="http://localhost:PORT/live.js">.
- * The server prepends window.__IMPECCABLE_TOKEN__ and window.__IMPECCABLE_PORT__
+ * The server prepends window.__PROCABLE_TOKEN__ and window.__PROCABLE_PORT__
  * before this code.
  *
  * UI: a single floating bar that morphs between three states -
@@ -15,19 +15,19 @@
 
   // Take the helper token out of the global before anything else, including
   // on the double-init return below: each served copy re-prepends it.
-  const TOKEN = window.__IMPECCABLE_TOKEN__;
-  try { delete window.__IMPECCABLE_TOKEN__; } catch { /* non-configurable */ }
+  const TOKEN = window.__PROCABLE_TOKEN__;
+  try { delete window.__PROCABLE_TOKEN__; } catch { /* non-configurable */ }
 
   // Guard against double-init. Bun's HTML loader may process the <script> tag
   // and create a bundled copy alongside the external load, or HMR may re-execute.
   // Check BEFORE reading port to catch all cases.
-  if (window.__IMPECCABLE_LIVE_INIT__) return;
-  window.__IMPECCABLE_LIVE_INIT__ = true;
+  if (window.__PROCABLE_LIVE_INIT__) return;
+  window.__PROCABLE_LIVE_INIT__ = true;
 
-  const PORT = window.__IMPECCABLE_PORT__;
-  const APP_ROOT = window.__IMPECCABLE_APP_ROOT__ || null;
+  const PORT = window.__PROCABLE_PORT__;
+  const APP_ROOT = window.__PROCABLE_APP_ROOT__ || null;
   if (!TOKEN || !PORT) {
-    window.__IMPECCABLE_LIVE_INIT__ = false; // reset so the real load can init
+    window.__PROCABLE_LIVE_INIT__ = false; // reset so the real load can init
     return;
   }
 
@@ -61,12 +61,12 @@
   // z-index: detect overlays use 99999, so our UI must be above them
   const Z = { highlight: 100001, bar: 100005, picker: 100007, toast: 100010 };
   const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out-quint
-  const PREFIX = 'impeccable-live';
+  const PREFIX = 'procable-live';
   // A removed element stays in the DOM, hidden by this attribute, so a
   // framework that owns the node never reconciles against a missing child;
   // Undo and Discard restore it by dropping the attribute.
-  const REMOVED_ATTR = 'data-impeccable-removed';
-  const IMPECCABLE_COMMAND = (window.__IMPECCABLE_COMMAND_PREFIX__ || '/') + 'impeccable';
+  const REMOVED_ATTR = 'data-procable-removed';
+  const PROCABLE_COMMAND = (window.__PROCABLE_COMMAND_PREFIX__ || '/') + 'procable';
   const PICK_CURSOR_STYLE_ID = PREFIX + '-pick-cursor-style';
   const MANUAL_APPLY_STATE_TTL_MS = 15 * 60 * 1000;
   // No idFactory: the session helper's default works on plain-HTTP origins,
@@ -75,18 +75,18 @@
   try { liveStorage = window.localStorage; } catch { /* storage denied */ }
   let sessionState = null;
   try {
-    sessionState = window.__IMPECCABLE_LIVE_SESSION__?.createLiveBrowserSessionState({
+    sessionState = window.__PROCABLE_LIVE_SESSION__?.createLiveBrowserSessionState({
       prefix: PREFIX,
       storage: liveStorage,
     });
   } catch (err) {
-    console.error('[impeccable] Live mode could not create its session state.', err);
-    window.__IMPECCABLE_LIVE_INIT__ = false; // let a later injection retry
+    console.error('[procable] Live mode could not create its session state.', err);
+    window.__PROCABLE_LIVE_INIT__ = false; // let a later injection retry
     return;
   }
   if (!sessionState) {
-    console.error('[impeccable] live-browser-session.js was not loaded. Live mode cannot start safely.');
-    window.__IMPECCABLE_LIVE_INIT__ = false;
+    console.error('[procable] live-browser-session.js was not loaded. Live mode cannot start safely.');
+    window.__PROCABLE_LIVE_INIT__ = false;
     return;
   }
   const HIGHLIGHT_TRANSITION =
@@ -104,11 +104,11 @@
 
   // Command vocabulary (values + labels + icons) comes from the canonical source,
   // skill/scripts/live/vocabulary.mjs, which live-server.mjs serializes into
-  // window.__IMPECCABLE_VOCAB__ when it serves /live.js (same injection path as
+  // window.__PROCABLE_VOCAB__ when it serves /live.js (same injection path as
   // the token/port above, so it is always present here). The icons stack above
   // each chip label and recolor to C.brand when selected (strokes use
   // currentColor). ACTIONS drives the picker grid; ICONS maps value -> svg.
-  const VOCAB = Array.isArray(window.__IMPECCABLE_VOCAB__) ? window.__IMPECCABLE_VOCAB__ : [];
+  const VOCAB = Array.isArray(window.__PROCABLE_VOCAB__) ? window.__PROCABLE_VOCAB__ : [];
   const ICONS = {};
   const ACTIONS = VOCAB.map((c) => {
     ICONS[c.value] = c.icon;
@@ -119,15 +119,15 @@
   // one owns) comes from the canonical source, skill/scripts/live/ui-surfaces.mjs,
   // which the /live.js assembler serializes into these globals alongside the
   // token/port/vocabulary. This file is served raw and injected as a classic
-  // script, so it cannot import that module; the private impeccable-site repo
+  // script, so it cannot import that module; the private procable-site repo
   // imports it directly to check its Live UI lab holds a snapshot for every
   // surface, which only works while the list has exactly one definition.
   // Add a surface in ui-surfaces.mjs, not here.
-  const LIVE_CHROME_MOUNT_CONTRACT = Array.isArray(window.__IMPECCABLE_LIVE_MOUNT_CONTRACT__)
-    ? window.__IMPECCABLE_LIVE_MOUNT_CONTRACT__
+  const LIVE_CHROME_MOUNT_CONTRACT = Array.isArray(window.__PROCABLE_LIVE_MOUNT_CONTRACT__)
+    ? window.__PROCABLE_LIVE_MOUNT_CONTRACT__
     : ['root', 'transport', 'state', 'actions'];
-  const LIVE_UI_SURFACES = Array.isArray(window.__IMPECCABLE_LIVE_UI_SURFACES__)
-    ? window.__IMPECCABLE_LIVE_UI_SURFACES__
+  const LIVE_UI_SURFACES = Array.isArray(window.__PROCABLE_LIVE_UI_SURFACES__)
+    ? window.__PROCABLE_LIVE_UI_SURFACES__
     : [];
   const LIVE_UI_COMPONENT_IDS = [...new Set(LIVE_UI_SURFACES.flatMap((surface) => surface.ids))];
 
@@ -225,7 +225,7 @@
   let variantSelectionPromise = null;
   let recoveringEmptyCycling = false;
   let hasProjectContext = false;
-  let selectedAction = 'impeccable';
+  let selectedAction = 'procable';
   let selectedCount = 3;
   const browserOwner = sessionState.owner;
   let checkpointTimer = null;
@@ -238,9 +238,9 @@
   let scrollLockAnchorTop = null;
   let scrollLockRaf = null;
   let scrollLockAbort = null;
-  const SCROLL_ANCHOR_LOCK_ID = 'impeccable-scroll-anchor-lock';
-  const VARIANT_STATE_STYLE_ID = 'impeccable-variant-state';
-  const DISCARD_STATE_STYLE_ID = 'impeccable-discard-state';
+  const SCROLL_ANCHOR_LOCK_ID = 'procable-scroll-anchor-lock';
+  const VARIANT_STATE_STYLE_ID = 'procable-variant-state';
+  const DISCARD_STATE_STYLE_ID = 'procable-discard-state';
   const HANDLED_WRAPPER_RELOAD_KEY = PREFIX + '-handled-wrapper-reload';
 
   // Dedicated key for scroll position - SEPARATE from LS_KEY so that
@@ -289,14 +289,14 @@
   // Helpers
   //
 
-  const domHelpers = window.__IMPECCABLE_LIVE_DOM__?.createLiveBrowserDomHelpers({
+  const domHelpers = window.__PROCABLE_LIVE_DOM__?.createLiveBrowserDomHelpers({
     prefix: PREFIX,
     skipTags: SKIP_TAGS,
     document,
   });
   if (!domHelpers) {
-    console.error('[impeccable] live-browser-dom.js was not loaded. Live mode cannot start safely.');
-    window.__IMPECCABLE_LIVE_INIT__ = false;
+    console.error('[procable] live-browser-dom.js was not loaded. Live mode cannot start safely.');
+    window.__PROCABLE_LIVE_INIT__ = false;
     return;
   }
   const {
@@ -322,9 +322,9 @@
     stopFocusOutIntoChrome,
   } = domHelpers;
 
-  window.__IMPECCABLE_LIVE_CHROME_CORE__ = {
+  window.__PROCABLE_LIVE_CHROME_CORE__ = {
     version: 1,
-    adapter: window.__IMPECCABLE_LIVE_ADAPTER__ || 'dom',
+    adapter: window.__PROCABLE_LIVE_ADAPTER__ || 'dom',
     mountContract: LIVE_CHROME_MOUNT_CONTRACT,
     surfaces: LIVE_UI_SURFACES,
     componentIds: LIVE_UI_COMPONENT_IDS,
@@ -404,7 +404,7 @@
 
   function showHighlight(el) {
     if (!el || !highlightEl) return;
-    if (el.hasAttribute?.('data-impeccable-insert-placeholder')) return;
+    if (el.hasAttribute?.('data-procable-insert-placeholder')) return;
     const r = el.getBoundingClientRect();
     const top = (r.top - 2) + 'px', left = (r.left - 2) + 'px';
     const width = (r.width + 4) + 'px', height = (r.height + 4) + 'px';
@@ -627,7 +627,7 @@
     if (!annotActive) return;
 
     // 0) Insert placeholder edge resize - wins over draw / pins.
-    const resizeEdge = e.target.closest?.('[data-impeccable-placeholder-resize]')?.dataset.impeccablePlaceholderResize;
+    const resizeEdge = e.target.closest?.('[data-procable-placeholder-resize]')?.dataset.procablePlaceholderResize;
     if (resizeEdge && configureKind === 'insert' && placeholderElement) {
       startPlaceholderEdgeResize(resizeEdge, e);
       return;
@@ -983,13 +983,13 @@
     for (const removed of root.querySelectorAll('[' + REMOVED_ATTR + ']')) removed.remove();
     root.removeAttribute(REMOVED_ATTR);
     unwrapMixedContentTextNodes(root);
-    const nodes = [root, ...root.querySelectorAll('[data-impeccable-editable], [data-impeccable-original-text], [data-impeccable-text-wrap]')];
+    const nodes = [root, ...root.querySelectorAll('[data-procable-editable], [data-procable-original-text], [data-procable-text-wrap]')];
     for (const node of nodes) {
-      const runtimeEditable = node.hasAttribute('data-impeccable-editable')
-        || node.hasAttribute('data-impeccable-original-text');
-      node.removeAttribute('data-impeccable-editable');
-      node.removeAttribute('data-impeccable-original-text');
-      node.removeAttribute('data-impeccable-text-wrap');
+      const runtimeEditable = node.hasAttribute('data-procable-editable')
+        || node.hasAttribute('data-procable-original-text');
+      node.removeAttribute('data-procable-editable');
+      node.removeAttribute('data-procable-original-text');
+      node.removeAttribute('data-procable-text-wrap');
       if (runtimeEditable) {
         node.removeAttribute('contenteditable');
         if (node.style) {
@@ -1504,7 +1504,7 @@
 
   function selectionTagLabel(el) {
     if (!el) return '';
-    if (el.hasAttribute?.('data-impeccable-insert-placeholder')) return 'slot';
+    if (el.hasAttribute?.('data-procable-insert-placeholder')) return 'slot';
     return el.tagName.toLowerCase();
   }
 
@@ -1905,7 +1905,7 @@
   }
 
   function applyPlaceholderSizingStyles(placeholder, sizing) {
-    placeholder.dataset.impeccablePlaceholderWidth = sizing.kind;
+    placeholder.dataset.procablePlaceholderWidth = sizing.kind;
     placeholder.style.flex = '';
     placeholder.style.minWidth = '';
     placeholder.style.maxWidth = '';
@@ -1923,14 +1923,14 @@
 
   function materializePlaceholderWidth(placeholder) {
     if (!placeholder) return;
-    const kind = placeholder.dataset.impeccablePlaceholderWidth;
+    const kind = placeholder.dataset.procablePlaceholderWidth;
     if (!placeholderWidthIsImplicit(kind)) return;
     const w = Math.max(PLACEHOLDER_MIN_WIDTH, Math.round(placeholder.offsetWidth));
     placeholder.style.flex = '';
     placeholder.style.minWidth = '';
     placeholder.style.maxWidth = '';
     placeholder.style.width = w + 'px';
-    placeholder.dataset.impeccablePlaceholderWidth = 'explicit';
+    placeholder.dataset.procablePlaceholderWidth = 'explicit';
   }
 
   function canCreateInsert({ prompt, comments, strokes }) {
@@ -2093,7 +2093,7 @@
    */
   function setLiveState(next) {
     state = next;
-    window.__IMPECCABLE_LIVE_STATE__ = next;
+    window.__PROCABLE_LIVE_STATE__ = next;
     retryDeclinedAgentTargets();
     syncPageInteractionCursor();
     // Whether a queued steer is still behind a generation is a function of this
@@ -2120,7 +2120,7 @@
     if (currentSessionId && (state === 'GENERATING' || state === 'CYCLING')) {
       const wrapper = findVariantsWrapper(currentSessionId);
       if (wrapper) {
-        const variantCount = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])').length;
+        const variantCount = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])').length;
         if (variantCount > 0 && visibleVariant > 0) {
           const visEl = pickVariantContent(wrapper, visibleVariant);
           if (visEl) return visEl;
@@ -2190,14 +2190,14 @@
   function isInsertGeneratingSession() {
     if (state !== 'GENERATING' || !currentSessionId) return false;
     const wrapper = findVariantsWrapper(currentSessionId);
-    return !!wrapper && wrapper.dataset.impeccableMode === 'insert';
+    return !!wrapper && wrapper.dataset.procableMode === 'insert';
   }
 
   /** Recreate the dotted placeholder if Astro/Vite HMR removed it mid-generation. */
   function ensureInsertPlaceholder() {
     if (!isInsertGeneratingSession()) return placeholderElement;
     const wrapper = findVariantsWrapper(currentSessionId);
-    const variantCount = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])').length;
+    const variantCount = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])').length;
     if (variantCount > 0) return placeholderElement;
     if (placeholderElement && document.body.contains(placeholderElement)) return placeholderElement;
 
@@ -2262,7 +2262,7 @@
       if (spec.right != null) handle.style.right = spec.right + 'px';
       if (spec.width != null) handle.style.width = spec.width + 'px';
       if (spec.height != null) handle.style.height = spec.height + 'px';
-      handle.dataset.impeccablePlaceholderResize = spec.edge;
+      handle.dataset.procablePlaceholderResize = spec.edge;
       handle.setAttribute('aria-label', 'Resize placeholder');
       handle.title = 'Drag to resize';
       placeholderResizeLayerEl.appendChild(handle);
@@ -2317,7 +2317,7 @@
     });
     const placeholder = document.createElement('div');
     placeholder.id = PREFIX + '-insert-placeholder';
-    placeholder.setAttribute('data-impeccable-insert-placeholder', 'true');
+    placeholder.setAttribute('data-procable-insert-placeholder', 'true');
     placeholder.setAttribute('aria-hidden', 'true');
     Object.assign(placeholder.style, {
       boxSizing: 'border-box',
@@ -2435,10 +2435,10 @@
     const s = document.createElement('style');
     s.id = PREFIX + '-configure-input-style';
     s.textContent =
-      '@keyframes impeccable-configure-voice-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }' +
+      '@keyframes procable-configure-voice-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }' +
       '#' + PREFIX + '-input, #' + PREFIX + '-insert-input { box-sizing: border-box; height: ' + CONFIGURE_ROW_TRACK_H + '; line-height: ' + CONFIGURE_ROW_TRACK_H + '; padding: 0; margin: 0; caret-color: ' + CONFIGURE_PILL_TEXT + '; }' +
       '#' + PREFIX + '-input::placeholder, #' + PREFIX + '-insert-input::placeholder { color: ' + BP.textDim + '; opacity: 1; }' +
-      '#' + PREFIX + '-configure-voice[data-listening="true"] svg, #' + PREFIX + '-insert-voice[data-listening="true"] svg { animation: impeccable-configure-voice-pulse 1.1s ease-in-out infinite; }' +
+      '#' + PREFIX + '-configure-voice[data-listening="true"] svg, #' + PREFIX + '-insert-voice[data-listening="true"] svg { animation: procable-configure-voice-pulse 1.1s ease-in-out infinite; }' +
       '@media (prefers-reduced-motion: reduce) { #' + PREFIX + '-configure-voice[data-listening="true"] svg, #' + PREFIX + '-insert-voice[data-listening="true"] svg { animation: none; opacity: 1; } }' +
       '#' + PREFIX + '-configure-voice:hover, #' + PREFIX + '-insert-voice:hover { background: oklch(27% 0 0); color: ' + BP.accent + '; }';
     uiAppendStyle(s);
@@ -2762,7 +2762,7 @@
           width: '11px', height: '11px', borderRadius: '50%',
           border: '1.5px solid ' + BP.hairline,
           borderTopColor: BP.accent,
-          animation: 'impeccable-spin 0.6s linear infinite',
+          animation: 'procable-spin 0.6s linear infinite',
           boxSizing: 'border-box', flexShrink: '0',
         });
         spinner.setAttribute('aria-hidden', 'true');
@@ -2868,7 +2868,7 @@
       width: '14px', height: '14px', borderRadius: '50%',
       border: '2px solid ' + BP.hairline,
       borderTopColor: BP.accent,
-      animation: 'impeccable-spin 0.6s linear infinite',
+      animation: 'procable-spin 0.6s linear infinite',
       flexShrink: '0',
     });
     row.appendChild(spinner);
@@ -3099,7 +3099,7 @@
     if (recoveringEmptyCycling) return;
     recoveringEmptyCycling = true;
     try {
-      console.warn('[impeccable] Refusing to render empty variant cycling state:', reason);
+      console.warn('[procable] Refusing to render empty variant cycling state:', reason);
       const message = 'No variants were mounted. Please try again.';
       if (svelteComponentSession?.sessionId === currentSessionId) {
         resetSvelteComponentSession(currentSessionId, message);
@@ -3118,8 +3118,8 @@
   // Variants may declare a parameter manifest via a JSON attribute on the
   // variant wrapper:
   //
-  //   <div data-impeccable-variant="1"
-  //        data-impeccable-params='[{"id":"density","kind":"steps",...}]'>
+  //   <div data-procable-variant="1"
+  //        data-procable-params='[{"id":"density","kind":"steps",...}]'>
   //
   // The panel docks to the right edge of the outline during CYCLING and
   // exposes 2-5 coarse knobs. Values apply to the variant wrapper so scoped
@@ -3221,11 +3221,11 @@
     }
     const wrapper = findVariantsWrapper(currentSessionId);
     if (!wrapper) return null;
-    return wrapper.querySelector('[data-impeccable-variant="' + visibleVariant + '"]');
+    return wrapper.querySelector('[data-procable-variant="' + visibleVariant + '"]');
   }
 
   function parseVariantParams(variantEl) {
-    // Svelte component variants can't carry a `data-impeccable-params` attribute:
+    // Svelte component variants can't carry a `data-procable-params` attribute:
     // the compiler reads `{` inside attribute values as expression delimiters, so
     // JSON-with-braces breaks the build. For that path the params live in a sidecar
     // params.json keyed by variant number, loaded into the session at mount time.
@@ -3235,13 +3235,13 @@
       return Array.isArray(params) ? params : [];
     }
     if (!variantEl) return [];
-    const raw = variantEl.getAttribute('data-impeccable-params');
+    const raw = variantEl.getAttribute('data-procable-params');
     if (!raw) return [];
     try {
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : [];
     } catch (err) {
-      console.warn('[impeccable] Invalid data-impeccable-params JSON:', err.message);
+      console.warn('[procable] Invalid data-procable-params JSON:', err.message);
       return [];
     }
   }
@@ -3257,7 +3257,7 @@
       variantEl.setAttribute(attr, String(value));
     }
     // Svelte component variants are client-mounted into
-    // [data-impeccable-component-mount] with no [data-impeccable-variant="N"]
+    // [data-procable-component-mount] with no [data-procable-variant="N"]
     // wrapper for the state stylesheet to target, and the element is not SSR'd,
     // so there is no React hydration to mismatch. Drive range/toggle --p-* inline
     // on the mounted element so scoped preview CSS resolves them.
@@ -3531,7 +3531,7 @@
       for (const node of children) {
         if (node.nodeType === 3 && /\S/.test(node.nodeValue || '')) {
           const wrap = document.createElement('span');
-          wrap.dataset.impeccableTextWrap = 'true';
+          wrap.dataset.procableTextWrap = 'true';
           wrap.textContent = node.nodeValue;
           rootEl.insertBefore(wrap, node);
           rootEl.removeChild(node);
@@ -3539,14 +3539,14 @@
       }
     }
     for (const child of Array.from(rootEl.children)) {
-      if (!child.dataset || !child.dataset.impeccableTextWrap) {
+      if (!child.dataset || !child.dataset.procableTextWrap) {
         wrapMixedContentTextNodes(child);
       }
     }
   }
   function unwrapMixedContentTextNodes(rootEl) {
     if (!rootEl || rootEl.nodeType !== 1) return;
-    const wraps = rootEl.querySelectorAll('[data-impeccable-text-wrap="true"]');
+    const wraps = rootEl.querySelectorAll('[data-procable-text-wrap="true"]');
     for (const wrap of wraps) {
       const parent = wrap.parentNode;
       if (!parent) continue;
@@ -3568,8 +3568,8 @@
       row.inlineWhiteSpace = row.el.style.whiteSpace;
       row.el.style.whiteSpace = getComputedStyle(row.el).whiteSpace;
       row.el.setAttribute('contenteditable', 'true');
-      row.el.dataset.impeccableEditable = 'true';
-      row.el.dataset.impeccableOriginalText = row.text;
+      row.el.dataset.procableEditable = 'true';
+      row.el.dataset.procableOriginalText = row.text;
       row.el.style.userSelect = 'text';
       row.el.style.cursor = 'text';
       row.el.style.outline = 'none';
@@ -3581,8 +3581,8 @@
     for (const row of inlineEditRows) {
       if (activeElementDeep() === row.el) row.el.blur();
       row.el.removeAttribute('contenteditable');
-      delete row.el.dataset.impeccableEditable;
-      delete row.el.dataset.impeccableOriginalText;
+      delete row.el.dataset.procableEditable;
+      delete row.el.dataset.procableOriginalText;
       row.el.style.whiteSpace = row.inlineWhiteSpace || '';
       row.el.style.userSelect = '';
       row.el.style.cursor = '';
@@ -3650,7 +3650,7 @@
   function restoreInlineEditDrafts() {
     for (const row of inlineEditRows) {
       if (inlineEditDrafts.has(row.el)) {
-        row.el.textContent = row.el.dataset.impeccableOriginalText;
+        row.el.textContent = row.el.dataset.procableOriginalText;
       }
     }
   }
@@ -3782,7 +3782,7 @@
     if (!el.classList || el.classList.length === 0) return '';
     const classes = [];
     for (const cls of el.classList) {
-      if (!cls || cls.indexOf('impeccable-') === 0) continue;
+      if (!cls || cls.indexOf('procable-') === 0) continue;
       classes.push(normalizeDocumentRefToken(cls));
       if (classes.length === 2) break;
     }
@@ -3814,7 +3814,7 @@
       ref: documentRefForElement(el),
       tagName: el.tagName ? el.tagName.toLowerCase() : null,
       id: el.id || null,
-      classes: el.classList ? [...el.classList].filter((cls) => cls.indexOf('impeccable-') !== 0) : [],
+      classes: el.classList ? [...el.classList].filter((cls) => cls.indexOf('procable-') !== 0) : [],
       originalText,
       newText,
       textContent: (clone.textContent || '').slice(0, 500),
@@ -3834,7 +3834,7 @@
       out.push({
         ref: documentRefForElement(row.el),
         tag: row.el?.tagName ? row.el.tagName.toLowerCase() : null,
-        classes: row.el?.classList ? [...row.el.classList].filter((cls) => cls.indexOf('impeccable-') !== 0) : [],
+        classes: row.el?.classList ? [...row.el.classList].filter((cls) => cls.indexOf('procable-') !== 0) : [],
         text,
       });
       if (out.length >= 12) break;
@@ -3849,7 +3849,7 @@
       ref: documentRefForElement(el),
       tagName: el.tagName ? el.tagName.toLowerCase() : null,
       id: el.id || null,
-      classes: el.classList ? [...el.classList].filter((cls) => cls.indexOf('impeccable-') !== 0) : [],
+      classes: el.classList ? [...el.classList].filter((cls) => cls.indexOf('procable-') !== 0) : [],
       textContent: (clone.textContent || '').slice(0, 1000),
       outerHTML: (clone.outerHTML || '').slice(0, 10000) || null,
     };
@@ -3891,7 +3891,7 @@
       if (base) return base.slice(0, 200);
     }
     if (el.id) return el.id;
-    const cls = [...(el.classList || [])].find((c) => c.indexOf('impeccable-') !== 0);
+    const cls = [...(el.classList || [])].find((c) => c.indexOf('procable-') !== 0);
     if (cls) return cls;
     return normalizeManualContextText(el.textContent).slice(0, 200);
   }
@@ -3900,8 +3900,8 @@
     if (!el || !el.isConnected || own(el)) return 'no_selection';
     const tag = el.tagName.toLowerCase();
     if (tag === 'html' || tag === 'body') return 'root';
-    if (el.hasAttribute('data-impeccable-insert-placeholder')) return 'placeholder';
-    if (el.closest('[data-impeccable-variants], [data-impeccable-carbonize]')) return 'variant';
+    if (el.hasAttribute('data-procable-insert-placeholder')) return 'placeholder';
+    if (el.closest('[data-procable-variants], [data-procable-carbonize]')) return 'variant';
     return null;
   }
 
@@ -3929,7 +3929,7 @@
       ref,
       tag: target.tagName.toLowerCase(),
       elementId: target.id || null,
-      classes: [...target.classList].filter((cls) => cls.indexOf('impeccable-') !== 0),
+      classes: [...target.classList].filter((cls) => cls.indexOf('procable-') !== 0),
       originalText,
       deleted: true,
       removeElement: true,
@@ -3961,7 +3961,7 @@
       }
       stashResult = await res.json();
     } catch (err) {
-      console.error('[impeccable] element removal stash failed:', err);
+      console.error('[procable] element removal stash failed:', err);
       showToast('Remove failed - retry or cancel', 4000);
       return;
     }
@@ -4000,7 +4000,7 @@
       else updatePendingCounter(remaining);
       showToast('Restored ' + desc(target), 2500);
     } catch (err) {
-      console.error('[impeccable] undo removal failed:', err);
+      console.error('[procable] undo removal failed:', err);
       showToast('Undo failed - see console', 4000);
     }
   }
@@ -4080,7 +4080,7 @@
       showAnnotOverlay(selectedElement);
       renderEditBadge('idle');
     } catch (err) {
-      console.error('[impeccable] manual edit stash failed:', err);
+      console.error('[procable] manual edit stash failed:', err);
       const detail = String(err?.message || '');
       if (detail.includes('newText cannot contain') || detail.includes('newText cannot be empty')) {
         showToast('Save rejected: ' + detail.replace(/^manual_edits:\s*/, ''), 5500);
@@ -4136,7 +4136,7 @@
     if (uiGetById(PREFIX + '-keyframes')) return;
     const style = document.createElement('style');
     style.id = PREFIX + '-keyframes';
-    style.textContent = '@keyframes impeccable-spin { to { transform: rotate(360deg); } }';
+    style.textContent = '@keyframes procable-spin { to { transform: rotate(360deg); } }';
     uiAppendStyle(style);
   }
 
@@ -4379,7 +4379,7 @@
       const data = await res.json();
       updatePendingCounter(data.count || 0);
     } catch (err) {
-      console.warn('[impeccable] failed to fetch pending count:', err);
+      console.warn('[procable] failed to fetch pending count:', err);
     }
   }
 
@@ -4408,19 +4408,19 @@
       const remaining = remainingManualEditCount(result);
       updatePendingCounter(remaining);
       if (result.failed && result.failed.length > 0) {
-        console.warn('[impeccable] some copy edits failed:', result.failed);
+        console.warn('[procable] some copy edits failed:', result.failed);
         showToast('Applied ' + (result.applied?.length || 0) + ', ' + result.failed.length + ' failed - see console', 5000);
       } else {
         const n = Array.isArray(result.applied) ? result.applied.length : (result.cleared || 0);
         if (n > 0) {
           showToast('Applied ' + n + ' edit' + (n === 1 ? '' : 's'), 2500);
         } else {
-          console.warn('[impeccable] apply returned no verified edits:', result);
+          console.warn('[procable] apply returned no verified edits:', result);
           showToast('No edits applied - see console', 4000);
         }
       }
     } catch (err) {
-      console.error('[impeccable] commit failed:', err);
+      console.error('[procable] commit failed:', err);
       showToast('Apply failed - see console', 4000);
     } finally {
       if (waitForSseCompletion) return;
@@ -4450,7 +4450,7 @@
         showToast('Discarded ' + count + ' edit' + (count === 1 ? '' : 's'), 2500);
       }
     } catch (err) {
-      console.error('[impeccable] discard failed:', err);
+      console.error('[procable] discard failed:', err);
       showToast('Discard failed - see console', 4000);
     }
   }
@@ -4494,7 +4494,7 @@
       if (pendingRollbackBtn) pendingRollbackBtn.style.display = 'none';
       if (pendingTrashBtn) pendingTrashBtn.style.display = 'inline-flex';
     } catch (err) {
-      console.error('[impeccable] repair retry failed:', err);
+      console.error('[procable] repair retry failed:', err);
       showToast('Repair retry failed - see console', 4000);
       showManualApplyDecision({ remainingCount: count, repair: readStoredManualApplyState() });
     }
@@ -4518,7 +4518,7 @@
       updatePendingCounter(numberOrNull(result.remainingCount) || 0);
       showToast('Rolled back source; edits are still staged.', 3500);
     } catch (err) {
-      console.error('[impeccable] manual Apply rollback failed:', err);
+      console.error('[procable] manual Apply rollback failed:', err);
       showToast('Rollback failed - see console', 4000);
     }
   }
@@ -4636,7 +4636,7 @@
       }
     }
     if (failures > 0) {
-      console.warn('[impeccable] skipped unsafe copy edit DOM restore for', failures, 'edit(s). Refresh to reset the page DOM.');
+      console.warn('[procable] skipped unsafe copy edit DOM restore for', failures, 'edit(s). Refresh to reset the page DOM.');
     }
     return failures;
   }
@@ -4648,7 +4648,7 @@
   }
 
   function mixedTextWrapRestoreHint(el) {
-    if (!el || !el.dataset || el.dataset.impeccableTextWrap !== 'true' || !el.parentElement) return null;
+    if (!el || !el.dataset || el.dataset.procableTextWrap !== 'true' || !el.parentElement) return null;
     const siblings = directMixedTextRestoreNodes(el.parentElement);
     const textIndex = siblings.indexOf(el);
     return {
@@ -4681,7 +4681,7 @@
       if (node.nodeType === 3) return /\S/.test(node.nodeValue || '');
       return node.nodeType === 1
         && node.dataset
-        && node.dataset.impeccableTextWrap === 'true'
+        && node.dataset.procableTextWrap === 'true'
         && /\S/.test(node.textContent || '');
     });
   }
@@ -4919,7 +4919,7 @@
         proxy = document.createElement('button');
         proxy.type = 'button';
         proxy.tabIndex = -1;
-        proxy.dataset.impeccableEditBadgeProxy = 'true';
+        proxy.dataset.procableEditBadgeProxy = 'true';
         proxy.setAttribute('aria-hidden', 'true');
         bindEditBadgeProxy(proxy, target);
         editBadgeProxyRoot.appendChild(proxy);
@@ -4951,9 +4951,9 @@
         '#' + PREFIX + '-edit-badge button { outline: none !important; box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important; }' +
         '#' + PREFIX + '-edit-badge button:focus { outline: none !important; }' +
         '#' + PREFIX + '-edit-badge button:focus-visible { outline: none !important; }' +
-        '[data-impeccable-editable="true"] { outline: none !important; box-shadow: none !important; }' +
-        '[data-impeccable-editable="true"]:focus { outline: none !important; box-shadow: none !important; }' +
-        '[data-impeccable-editable="true"]:focus-visible { outline: none !important; box-shadow: none !important; }';
+        '[data-procable-editable="true"] { outline: none !important; box-shadow: none !important; }' +
+        '[data-procable-editable="true"]:focus { outline: none !important; box-shadow: none !important; }' +
+        '[data-procable-editable="true"]:focus-visible { outline: none !important; box-shadow: none !important; }';
       uiAppendStyle(s);
     }
   }
@@ -5201,7 +5201,7 @@
     }
     const wrapper = findVariantsWrapper(currentSessionId);
     if (!wrapper) return 0;
-    return [...wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])')]
+    return [...wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])')]
       .reduce((total, variant) => total + parseVariantParams(variant).length, 0);
   }
 
@@ -5323,8 +5323,8 @@
 
   function parseOriginalMarkupElement(originalMarkup) {
     const parser = new DOMParser();
-    const doc = parser.parseFromString('<div id="impeccable-anchor">' + originalMarkup + '</div>', 'text/html');
-    return doc.getElementById('impeccable-anchor')?.firstElementChild || null;
+    const doc = parser.parseFromString('<div id="procable-anchor">' + originalMarkup + '</div>', 'text/html');
+    return doc.getElementById('procable-anchor')?.firstElementChild || null;
   }
 
   function normalizeElementClassName(el) {
@@ -5354,7 +5354,7 @@
       && el.parentElement
       && document.body.contains(el)
       && !own(el)
-      && !el.closest?.('[data-impeccable-variants],[data-impeccable-carbonize]');
+      && !el.closest?.('[data-procable-variants],[data-procable-carbonize]');
   }
 
   function elementMatchesOriginalMarkup(liveEl, origContent) {
@@ -5479,7 +5479,7 @@
 
   function waitForVariantAnchorAndRetry({ filePath, sessionId, srcWrapper, checkpointReason }) {
     if (pendingVariantAnchorRetryObserver) pendingVariantAnchorRetryObserver.disconnect();
-    const origContent = srcWrapper?.querySelector('[data-impeccable-variant="original"] > :first-child');
+    const origContent = srcWrapper?.querySelector('[data-procable-variant="original"] > :first-child');
     if (!origContent) return;
     const originalMarkup = origContent.outerHTML;
 
@@ -5488,7 +5488,7 @@
       // A wrapper can land incomplete ("wrap HMR landed, variant insert did
       // not"); injectVariantsFromSource owns both cases - it replaces an
       // existing wrapper from source and clears recoveryWaitingForAnchor.
-      const wrapperLanded = !!document.querySelector('[data-impeccable-variants="' + sessionId + '"]');
+      const wrapperLanded = !!document.querySelector('[data-procable-variants="' + sessionId + '"]');
       if (!wrapperLanded) {
         const liveEl = resolveLiveInjectionAnchor(originalMarkup);
         if (!liveEl?.parentElement) return;
@@ -5561,7 +5561,7 @@
       }
     }
     throw Object.assign(lastErr || new Error('no module candidates'), {
-      impeccableTriedUrls: candidates,
+      procableTriedUrls: candidates,
     });
   }
 
@@ -5574,12 +5574,12 @@
       await importFirstReachable(candidates, false);
       return { ok: true };
     } catch (err) {
-      return { ok: false, tried: err.impeccableTriedUrls || candidates };
+      return { ok: false, tried: err.procableTriedUrls || candidates };
     }
   }
 
   function loadSvelteRuntime(runtimeModule, manifest) {
-    const modulePath = runtimeModule || '/src/lib/impeccable/__runtime.js';
+    const modulePath = runtimeModule || '/src/lib/procable/__runtime.js';
     if (!svelteRuntimePromise) {
       const candidates = componentModuleCandidates(manifest, modulePath, manifest?.runtimeModuleAbs);
       svelteRuntimePromise = importFirstReachable(candidates, false).then((r) => r.mod);
@@ -5588,7 +5588,7 @@
   }
 
   // Svelte component variants declare their params in a sidecar params.json under
-  // componentDir (keyed by variant number), because a `data-impeccable-params`
+  // componentDir (keyed by variant number), because a `data-procable-params`
   // attribute with JSON braces can't survive the Svelte compiler. Returns a map of
   // { "1": [...params], "2": [...] }; an empty object when the agent declared none.
   async function loadSvelteComponentParams(manifest) {
@@ -5785,7 +5785,7 @@
           // Keyed each: the key field is never rendered, so hydrate it with a
           // unique per-index value or Svelte throws each_key_duplicate.
           if (entry.item.keyField && item[entry.item.keyField] == null) {
-            item[entry.item.keyField] = 'impeccable-live-' + index;
+            item[entry.item.keyField] = 'procable-live-' + index;
           }
           return item;
         });
@@ -5903,7 +5903,7 @@
     const excludedSet = new Set(excludedEls);
     // Mark originals, clone, then strip marked clones: identity does not
     // survive cloneNode, attributes do.
-    const MARK = 'data-impeccable-hydration-excluded';
+    const MARK = 'data-procable-hydration-excluded';
     for (const el of excludedSet) { try { el.setAttribute(MARK, '1'); } catch { /* detached */ } }
     let clone;
     try {
@@ -5985,7 +5985,7 @@
       if (svelteComponentSession?.sessionId === sessionId) {
         svelteComponentSession.swapAnchor = null;
       }
-      console.error('[impeccable] Failed to mount component variant ' + variantNum + ' for ' + sessionId + ':', err);
+      console.error('[procable] Failed to mount component variant ' + variantNum + ' for ' + sessionId + ':', err);
       reportVariantMountFailed(sessionId, variantNum, moduleUrl, err);
       // Every mount failure gets the card, so the variant-switch path (which
       // used to revert with no feedback whatsoever) says what broke too.
@@ -6102,7 +6102,7 @@
       });
       if (state !== 'CYCLING') setLiveState('GENERATING');
 
-      const existingWrapper = document.querySelector('[data-impeccable-variants="' + sessionId + '"]');
+      const existingWrapper = document.querySelector('[data-procable-variants="' + sessionId + '"]');
       if (existingWrapper && svelteComponentSession?.sessionId === sessionId) {
         recoveryWaitingForAnchor = false;
         svelteComponentSession.manifest = manifest;
@@ -6128,7 +6128,7 @@
 
       const liveEl = findLiveElementForSvelteManifest(manifest);
       if (!liveEl?.parentElement) {
-        console.warn('[impeccable] Could not find original element in live DOM.');
+        console.warn('[procable] Could not find original element in live DOM.');
         arrivedVariants = availableVariants;
         expectedVariants = Number(manifest.count) || expectedVariants || arrivedVariants;
         const saved = loadSession();
@@ -6142,13 +6142,13 @@
       }
 
       const wrapper = document.createElement('div');
-      wrapper.dataset.impeccableVariants = sessionId;
-      wrapper.dataset.impeccableVariantCount = String(manifest.count || expectedVariants || 1);
-      wrapper.dataset.impeccablePreview = componentPreviewMode;
+      wrapper.dataset.procableVariants = sessionId;
+      wrapper.dataset.procableVariantCount = String(manifest.count || expectedVariants || 1);
+      wrapper.dataset.procablePreview = componentPreviewMode;
       wrapper.style.display = 'contents';
 
       const mountTarget = document.createElement('div');
-      mountTarget.dataset.impeccableComponentMount = sessionId;
+      mountTarget.dataset.procableComponentMount = sessionId;
       mountTarget.style.display = 'contents';
       wrapper.appendChild(mountTarget);
 
@@ -6211,9 +6211,9 @@
       positionBar();
       saveSession();
       completeParameterGenerationIfReady();
-      console.log('[impeccable] Mounted ' + arrivedVariants + ' ' + manifest.framework + ' component variants.');
+      console.log('[procable] Mounted ' + arrivedVariants + ' ' + manifest.framework + ' component variants.');
     } catch (err) {
-      console.error('[impeccable] Failed to mount component-preview variants:', err);
+      console.error('[procable] Failed to mount component-preview variants:', err);
       // Report the manifest PATH, never the fetch URL: that URL carries the
       // live helper token and this string is journaled.
       reportVariantMountFailed(sessionId, visibleVariant || 1, manifestPath, err);
@@ -6391,7 +6391,7 @@
       borderRadius: '5px', padding: '4px 10px', cursor: 'pointer',
     });
     retry.textContent = 'Retry';
-    retry.dataset.impeccableMountRetry = 'true';
+    retry.dataset.procableMountRetry = 'true';
     retry.addEventListener('click', (e) => { e.stopPropagation(); retryMountErrorCard(); });
     actions.appendChild(retry);
     card.appendChild(actions);
@@ -6428,11 +6428,11 @@
       if (svelteComponentSession?.sessionId === sessionId) {
         teardownSvelteComponentSession(true);
       } else {
-        const orphan = document.querySelector('[data-impeccable-variants="' + sessionId + '"]');
+        const orphan = document.querySelector('[data-procable-variants="' + sessionId + '"]');
         if (orphan) orphan.remove();
       }
     } catch (err) {
-      console.warn('[impeccable] Svelte component abort cleanup failed:', err);
+      console.warn('[procable] Svelte component abort cleanup failed:', err);
     }
     hideShaderOverlay();
     if (pendingSvelteComponentRetryObserver) { pendingSvelteComponentRetryObserver.disconnect(); pendingSvelteComponentRetryObserver = null; }
@@ -6462,11 +6462,11 @@
       if (svelteComponentSession?.sessionId === sessionId) {
         teardownSvelteComponentSession(true);
       } else {
-        const orphan = document.querySelector('[data-impeccable-variants="' + sessionId + '"]');
+        const orphan = document.querySelector('[data-procable-variants="' + sessionId + '"]');
         if (orphan) orphan.remove();
       }
     } catch (err) {
-      console.warn('[impeccable] Svelte component reset cleanup failed:', err);
+      console.warn('[procable] Svelte component reset cleanup failed:', err);
     }
     hideShaderOverlay();
     if (variantObserver) { variantObserver.disconnect(); variantObserver = null; }
@@ -6507,7 +6507,7 @@
   function discardOrphanedSession(reason) {
     const sessionId = currentSessionId;
     if (!sessionId) return;
-    console.warn('[impeccable] Discarding orphaned session ' + sessionId + ': ' + reason);
+    console.warn('[procable] Discarding orphaned session ' + sessionId + ': ' + reason);
     sendEvent({ type: 'discard', id: sessionId, orphaned: true }).catch(() => {});
     markSessionHandled();
     cleanup({ instantChrome: true });
@@ -6520,9 +6520,9 @@
 
   function sourceHasSessionWrapper(text, sessionId) {
     const src = String(text || '');
-    return src.indexOf('data-impeccable-variants="' + sessionId + '"') !== -1
-      || src.indexOf("data-impeccable-variants='" + sessionId + "'") !== -1
-      || src.indexOf('impeccable-variants-start ' + sessionId) !== -1;
+    return src.indexOf('data-procable-variants="' + sessionId + '"') !== -1
+      || src.indexOf("data-procable-variants='" + sessionId + "'") !== -1
+      || src.indexOf('procable-variants-start ' + sessionId) !== -1;
   }
 
   /**
@@ -6563,7 +6563,7 @@
     const onUnreadable = (detail) => {
       if (!stillActive()) return;
       if (attempt < COMPLETED_SOURCE_FALLBACK_RETRIES) { retryLater(); return; }
-      console.warn('[impeccable] Could not read source to check the variant wrapper; keeping the session: ' + detail);
+      console.warn('[procable] Could not read source to check the variant wrapper; keeping the session: ' + detail);
       showToast('Could not read the source file to check this session; it stays open and is checked again on the next event.', 5500);
     };
     fetch(url)
@@ -6591,9 +6591,9 @@
     }
 
     const previousVisibleVariant = currentSessionId === sessionId ? visibleVariant : 0;
-    const variants = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])');
+    const variants = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])');
     arrivedVariants = variants.length;
-    expectedVariants = parseInt(wrapper.dataset.impeccableVariantCount || arrivedVariants);
+    expectedVariants = parseInt(wrapper.dataset.procableVariantCount || arrivedVariants);
     if (arrivedVariants <= 0) {
       if (state === 'GENERATING') {
         // Mid-generation the source legitimately holds a scaffold wrapper
@@ -6602,7 +6602,7 @@
         // in-flight generation; stay in GENERATING — the variant observer
         // is armed and the server re-delivers a missed `done`.
         if (!opts.generationCompleted) {
-          console.log('[impeccable] Source has scaffold but no variants yet; still generating.');
+          console.log('[procable] Source has scaffold but no variants yet; still generating.');
           return;
         }
         // Generation finished, yet the read shows only the scaffold: the
@@ -6611,7 +6611,7 @@
         // here would strand the tab in GENERATING forever.
         const attempt = opts.attempt || 0;
         if (attempt < COMPLETED_SOURCE_FALLBACK_RETRIES) {
-          console.log('[impeccable] Generation is done but source shows no variants yet; retrying read ('
+          console.log('[procable] Generation is done but source shows no variants yet; retrying read ('
             + (attempt + 1) + '/' + COMPLETED_SOURCE_FALLBACK_RETRIES + ').');
           setTimeout(() => {
             if (state !== 'GENERATING' || currentSessionId !== sessionId) return;
@@ -6642,7 +6642,7 @@
     positionBar();
     saveSession();
     completeParameterGenerationIfReady();
-    console.log('[impeccable] Injected ' + arrivedVariants + ' variants from source file.');
+    console.log('[procable] Injected ' + arrivedVariants + ' variants from source file.');
   }
 
   /**
@@ -6664,7 +6664,7 @@
     rememberSessionFileMeta({ file: filePath });
     if (isJsxSourceFile(filePath)) {
       const liveWrapper = findVariantsWrapper(sessionId);
-      if (liveWrapper && liveWrapper.querySelector('[data-impeccable-variant]:not([data-impeccable-variant="original"])')) {
+      if (liveWrapper && liveWrapper.querySelector('[data-procable-variant]:not([data-procable-variant="original"])')) {
         completeSourceInjection(liveWrapper, sessionId, { ...opts, filePath });
         return;
       }
@@ -6687,7 +6687,7 @@
           );
           return;
         }
-        if (liveWrapper.dataset.impeccableMode !== 'insert') {
+        if (liveWrapper.dataset.procableMode !== 'insert') {
           recoverEmptyCycling('source-fallback-empty');
         }
         return;
@@ -6702,17 +6702,17 @@
       .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
       .then(html => {
         const parser = new DOMParser();
-        const startMark = '<!-- impeccable-variants-start ' + sessionId + ' -->';
-        const endMark = '<!-- impeccable-variants-end ' + sessionId + ' -->';
+        const startMark = '<!-- procable-variants-start ' + sessionId + ' -->';
+        const endMark = '<!-- procable-variants-end ' + sessionId + ' -->';
         const startIdx = html.indexOf(startMark);
         const endIdx = html.indexOf(endMark);
         const block = startIdx !== -1 && endIdx !== -1 && endIdx > startIdx
           ? html.slice(startIdx + startMark.length, endIdx).trim()
           : html;
         const doc = parser.parseFromString(block, 'text/html');
-        const srcWrapper = doc.querySelector('[data-impeccable-variants="' + sessionId + '"]');
+        const srcWrapper = doc.querySelector('[data-procable-variants="' + sessionId + '"]');
         if (!srcWrapper) {
-          console.warn('[impeccable] Variant wrapper not found in source file.');
+          console.warn('[procable] Variant wrapper not found in source file.');
           // A resumed cycling session whose wrapper is gone from source is an
           // ORPHAN: the file was edited or regenerated out from under it, so
           // no reload, HMR push, or server restart can ever complete it, and
@@ -6744,12 +6744,12 @@
         }
 
         const wrapper = srcWrapper.cloneNode(true);
-        const origContent = srcWrapper.querySelector('[data-impeccable-variant="original"] > :first-child');
+        const origContent = srcWrapper.querySelector('[data-procable-variant="original"] > :first-child');
         if (!origContent) return;
 
         const liveEl = resolveLiveInjectionAnchor(origContent.outerHTML);
         if (!liveEl) {
-          console.warn('[impeccable] Could not find original element in live DOM.');
+          console.warn('[procable] Could not find original element in live DOM.');
           enterRecoveryWaitingForAnchor({
             filePath,
             sessionId,
@@ -6764,7 +6764,7 @@
         completeSourceInjection(wrapper, sessionId, { ...opts, filePath });
       })
       .catch(err => {
-        console.error('[impeccable] Failed to fetch source:', err);
+        console.error('[procable] Failed to fetch source:', err);
         showToast('Could not load variants. Try refreshing the page.', 5000);
       });
   }
@@ -6889,7 +6889,7 @@
     if (!currentSessionId) return;
     if (svelteComponentSession?.sessionId === currentSessionId) {
       const anchor = resolveSvelteComponentAnchor();
-      if (anchor && !anchor.__impeccableFrozenAnchor) selectedElement = anchor;
+      if (anchor && !anchor.__procableFrozenAnchor) selectedElement = anchor;
       return;
     }
     const wrapper = findVariantsWrapper(currentSessionId);
@@ -6904,10 +6904,10 @@
     }
     const wrapper = findVariantsWrapper(sessionId);
     if (!wrapper) return 0;
-    const variants = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])');
+    const variants = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])');
     for (const variant of variants) {
       if (!isVariantShown(variant)) continue;
-      const idx = parseInt(variant.dataset.impeccableVariant || '0', 10);
+      const idx = parseInt(variant.dataset.procableVariant || '0', 10);
       if (idx > 0) return idx;
     }
     return 0;
@@ -6921,7 +6921,7 @@
   // (it wraps all of them and gets correct bounds).
   function pickVariantContent(wrapper, index) {
     if (!wrapper) return null;
-    const variantDiv = wrapper.querySelector('[data-impeccable-variant="' + index + '"]');
+    const variantDiv = wrapper.querySelector('[data-procable-variant="' + index + '"]');
     if (!variantDiv) return null;
     const NON_VISUAL = new Set(['STYLE', 'SCRIPT', 'LINK', 'META', 'TEMPLATE']);
     const visual = [];
@@ -6945,13 +6945,13 @@
   const VARIANT_SHOW_DECL = 'display: block !important;';
 
   // Build a direct-child variant selector for a session. With `num`, targets a
-  // single variant (`… > [data-impeccable-variant="N"]`); without it, targets
-  // every variant via the bare `[data-impeccable-variant]` attribute.
+  // single variant (`… > [data-procable-variant="N"]`); without it, targets
+  // every variant via the bare `[data-procable-variant]` attribute.
   function variantStateSelector(sessionId, num) {
-    const wrapper = '[data-impeccable-variants="' + sessionId + '"]';
+    const wrapper = '[data-procable-variants="' + sessionId + '"]';
     const variant = num == null
-      ? '[data-impeccable-variant]'
-      : '[data-impeccable-variant="' + num + '"]';
+      ? '[data-procable-variant]'
+      : '[data-procable-variant="' + num + '"]';
     return wrapper + ' > ' + variant;
   }
 
@@ -6980,7 +6980,7 @@
 
     // Hide every variant except the visible one (incl. the SSR'd "original").
     const hideOthers = variantStateSelector(sessionId)
-      + ':not([data-impeccable-variant="' + num + '"]) { ' + VARIANT_HIDE_DECL + ' }';
+      + ':not([data-procable-variant="' + num + '"]) { ' + VARIANT_HIDE_DECL + ' }';
 
     // Force-show the visible variant (beats the source inline display:none on
     // v2/v3) and apply its knob values as custom properties.
@@ -7006,10 +7006,10 @@
       styleEl.id = discardStateStyleId(sessionId);
       (document.head || document.documentElement).appendChild(styleEl);
     }
-    styleEl.dataset.impeccableDiscardSession = sessionId;
-    const wrapper = '[data-impeccable-variants="' + sessionId + '"]';
-    styleEl.textContent = wrapper + ' > [data-impeccable-variant]:not([data-impeccable-variant="original"]) { display:none !important; }\n'
-      + wrapper + ' > [data-impeccable-variant="original"] { display:block !important; }';
+    styleEl.dataset.procableDiscardSession = sessionId;
+    const wrapper = '[data-procable-variants="' + sessionId + '"]';
+    styleEl.textContent = wrapper + ' > [data-procable-variant]:not([data-procable-variant="original"]) { display:none !important; }\n'
+      + wrapper + ' > [data-procable-variant="original"] { display:block !important; }';
   }
 
   function removeDiscardStateStylesheet(sessionId) {
@@ -7024,12 +7024,12 @@
    */
   function discardedWrappers(sessionId) {
     if (!sessionId) return [];
-    return [...document.querySelectorAll('[data-impeccable-variants="' + sessionId + '"]')];
+    return [...document.querySelectorAll('[data-procable-variants="' + sessionId + '"]')];
   }
 
   function releaseDiscardedStaticWrapper(wrapper) {
     if (!wrapper) return;
-    const orig = wrapper.querySelector('[data-impeccable-variant="original"]');
+    const orig = wrapper.querySelector('[data-procable-variant="original"]');
     const content = orig?.firstElementChild;
     if (content && wrapper.parentElement) {
       wrapper.parentElement.replaceChild(content, wrapper);
@@ -7053,7 +7053,7 @@
   function watchForDiscardedFrameworkWrapperRemoval(sessionId) {
     if (!sessionId || !document.body) return;
     if (discardedFrameworkWrapperWatchers.has(sessionId)) return;
-    const selector = '[data-impeccable-variants="' + sessionId + '"]';
+    const selector = '[data-procable-variants="' + sessionId + '"]';
     let observer = null;
     let timer = null;
     const stopWatching = function() {
@@ -7152,12 +7152,12 @@
 
     scrollLockObserver = new MutationObserver((mutations) => {
       for (const m of mutations) {
-        if (m.target?.closest?.('[data-impeccable-variants="' + sessionId + '"]')) {
+        if (m.target?.closest?.('[data-procable-variants="' + sessionId + '"]')) {
           schedule('mutation-in-wrapper');
           return;
         }
         for (const n of m.addedNodes) {
-          if (n.nodeType === 1 && (n.matches?.('[data-impeccable-variants="' + sessionId + '"]') || n.querySelector?.('[data-impeccable-variants="' + sessionId + '"]'))) {
+          if (n.nodeType === 1 && (n.matches?.('[data-procable-variants="' + sessionId + '"]') || n.querySelector?.('[data-procable-variants="' + sessionId + '"]'))) {
             schedule('wrapper-added');
             return;
           }
@@ -7240,7 +7240,7 @@
   // or one match this is exactly the querySelector it replaces.
   //
   // Every lookup of the ACTIVE session's wrapper goes through here. The
-  // remaining raw `[data-impeccable-variants=...]` uses are deliberate: bare
+  // remaining raw `[data-procable-variants=...]` uses are deliberate: bare
   // existence checks, selector strings for stylesheets and observers (which
   // want to cover every match), `querySelectorAll` sweeps, and the parsed
   // source document, which is not this document.
@@ -7248,7 +7248,7 @@
     const matches = document.querySelectorAll(selector);
     if (matches.length < 2) return matches[0] || null;
     for (const candidate of matches) {
-      if (candidate.querySelector('[data-impeccable-variant]:not([data-impeccable-variant="original"])')) {
+      if (candidate.querySelector('[data-procable-variant]:not([data-procable-variant="original"])')) {
         return candidate;
       }
     }
@@ -7258,12 +7258,12 @@
   /** The wrapper holding `sessionId`'s variants, or null without an id. */
   function findVariantsWrapper(sessionId) {
     if (!sessionId) return null;
-    return pickPopulatedVariantsWrapper('[data-impeccable-variants="' + sessionId + '"]');
+    return pickPopulatedVariantsWrapper('[data-procable-variants="' + sessionId + '"]');
   }
 
   /** Any live variant wrapper, for the resume paths that have no id yet. */
   function findAnyVariantsWrapper() {
-    return pickPopulatedVariantsWrapper('[data-impeccable-variants]');
+    return pickPopulatedVariantsWrapper('[data-procable-variants]');
   }
 
   function startVariantObserver(sessionId) {
@@ -7272,22 +7272,22 @@
     const obs = new MutationObserver((mutations) => {
       if (updating) return;
 
-      // Only react to mutations that add nodes with data-impeccable-variant,
+      // Only react to mutations that add nodes with data-procable-variant,
       // or mutations inside the variant wrapper. Ignore our own bar/UI changes.
       let dominated = false;
       for (const m of mutations) {
-        if (m.target.closest?.('[data-impeccable-variants]')) { dominated = true; break; }
+        if (m.target.closest?.('[data-procable-variants]')) { dominated = true; break; }
         for (const n of m.addedNodes) {
           if (n.nodeType !== 1) continue;
           // Direct hit: the added node itself is the wrapper or a variant.
-          if (n.dataset?.impeccableVariants || n.dataset?.impeccableVariant) {
+          if (n.dataset?.procableVariants || n.dataset?.procableVariant) {
             dominated = true; break;
           }
           // Subtree hit: framework HMR (notably SvelteKit) sometimes replaces
           // a whole subtree where the wrapper is a descendant of the added
           // node. Without this check, the observer ignores those mutations
           // and the session stays in GENERATING forever.
-          if (n.querySelector?.('[data-impeccable-variants],[data-impeccable-variant]')) {
+          if (n.querySelector?.('[data-procable-variants],[data-procable-variant]')) {
             dominated = true; break;
           }
         }
@@ -7298,14 +7298,14 @@
       const wrapper = findVariantsWrapper(sessionId);
       if (!wrapper) return;
 
-      const variants = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])');
+      const variants = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])');
       const count = variants.length;
 
       // Re-anchor selectedElement if it was detached by live-wrap's HMR swap.
       // Without this, the shader / highlight / bar track a zero-rect phantom
       // and the overlay appears frozen.
       if (selectedElement && !document.body.contains(selectedElement)) {
-        const isInsert = wrapper.dataset.impeccableMode === 'insert';
+        const isInsert = wrapper.dataset.procableMode === 'insert';
         if (isInsert) {
           const visEl = count > 0 ? pickVariantContent(wrapper, visibleVariant || 1) : null;
           if (visEl) {
@@ -7343,7 +7343,7 @@
         if (visEl) selectedElement = visEl;
       }
 
-      const expected = parseInt(wrapper.dataset.impeccableVariantCount || '0');
+      const expected = parseInt(wrapper.dataset.procableVariantCount || '0');
       if (expected > 0) expectedVariants = expected;
       completeParameterGenerationIfReady();
 
@@ -7351,7 +7351,7 @@
         setLiveState('CYCLING');
         recoveryWaitingForAnchor = false;
         hideShaderOverlay();
-        if (wrapper.dataset.impeccableMode === 'insert') finalizeInsertSession();
+        if (wrapper.dataset.procableMode === 'insert') finalizeInsertSession();
         updateSelectedElement();
         showOrUpdateCyclingBar();
         disableInlineEdit();
@@ -7389,7 +7389,7 @@
         positionBar();
         if (state === 'CONFIGURING') positionEditBadge();
         const hiTarget = resolveBarAnchor();
-        if (hiTarget && !hiTarget.hasAttribute?.('data-impeccable-insert-placeholder')) {
+        if (hiTarget && !hiTarget.hasAttribute?.('data-procable-insert-placeholder')) {
           showHighlight(hiTarget);
         } else {
           hideHighlight();
@@ -7439,7 +7439,7 @@
     return {
       tag: el.tagName.toLowerCase(),
       id: el.id || null,
-      classes: [...el.classList].filter((c) => !c.startsWith('impeccable-')),
+      classes: [...el.classList].filter((c) => !c.startsWith('procable-')),
       text: (el.textContent || '').trim().slice(0, 80),
     };
   }
@@ -7518,7 +7518,7 @@
   let agentTargetForGo = null;
 
   // The helper's word on its global bar. The generate lane asks the helper
-  // to keep it out of the way (`impeccable live --no-live-bar`, or an agent
+  // to keep it out of the way (`procable live --no-live-bar`, or an agent
   // target carrying hideLiveBar), and the helper tells every connected tab
   // at once (`live_bar`) and every later connection on `connected`, so the
   // bar stays hidden in every tab, through reloads, the accept, and the
@@ -7833,8 +7833,8 @@
           hasProjectContext = !!msg.hasProjectContext;
           // The generate lane runs without PRODUCT.md by design and never
           // sends the user to init, so its quiet chrome skips this notice.
-          if (!hasProjectContext && !liveBarHiddenByHelper) showToast(`No PRODUCT.md found. Variants will be brand-agnostic. Run ${IMPECCABLE_COMMAND} init to generate one.`, 7000);
-          console.log('[impeccable] Live mode connected.');
+          if (!hasProjectContext && !liveBarHiddenByHelper) showToast(`No PRODUCT.md found. Variants will be brand-agnostic. Run ${PROCABLE_COMMAND} init to generate one.`, 7000);
+          console.log('[procable] Live mode connected.');
           syncAgentPollingUi(!!msg.agentPolling);
           startAgentStatusPoll();
           restoreFromActiveSessions(msg.activeSessions, 'sse_connected');
@@ -7986,7 +7986,7 @@
           // no hint their variant was never written (issue #384).
           if (awaitingAcceptResult?.id && msg.id === awaitingAcceptResult.id) {
             awaitingAcceptResult = null;
-            console.error('[impeccable] Accept failed after teardown:', msg.message);
+            console.error('[procable] Accept failed after teardown:', msg.message);
             // Hedged on purpose: a carbonize-phase failure raises this same
             // error after the source WAS promoted, so "was not saved" would
             // overclaim. Normalize the server message's terminal punctuation
@@ -7996,7 +7996,7 @@
             break;
           }
           if (maybeCompleteSteer(msg)) break;
-          console.error('[impeccable] Error:', msg.message);
+          console.error('[procable] Error:', msg.message);
           showToast('Error: ' + msg.message, 5000);
           // An agent error reply is terminal for the session it names: tear
           // it down exactly like 'discarded' (cleanup includes clearSession),
@@ -8021,11 +8021,11 @@
     evtSource.onerror = () => {
       sseRetries++;
       if (sseRetries <= SSE_MAX_RETRIES) {
-        console.log('[impeccable] SSE connection lost. Retry ' + sseRetries + '/' + SSE_MAX_RETRIES + '...');
+        console.log('[procable] SSE connection lost. Retry ' + sseRetries + '/' + SSE_MAX_RETRIES + '...');
         return; // EventSource auto-reconnects
       }
       // Server is gone. Clean up gracefully.
-      console.log('[impeccable] Live server unreachable. Cleaning up UI.');
+      console.log('[procable] Live server unreachable. Cleaning up UI.');
       evtSource.close();
       evtSource = null;
       handleServerLost();
@@ -8050,7 +8050,7 @@
     // resume after a helper restart or page reload instead of treating a
     // transient disconnect as an explicit discard.
     selectedElement = null;
-    selectedAction = 'impeccable';
+    selectedAction = 'procable';
     setLiveState(recoveryState);
     if (currentSessionId) saveSession();
   }
@@ -8066,10 +8066,10 @@
     msg.token = TOKEN;
     function handleFailure(err) {
       if (opts && opts.throwOnError) {
-        console.error('[impeccable] Failed to send event:', err);
+        console.error('[procable] Failed to send event:', err);
         throw err;
       }
-      console.debug('[impeccable] Dropped optional live event:', err);
+      console.debug('[procable] Dropped optional live event:', err);
       return null;
     }
     // Token in the query string as well as the body: the URL token is what
@@ -8114,7 +8114,7 @@
 
   function abandonSupersededGo(sessionId) {
     if (sessionId !== currentSessionId) return;
-    console.warn('[impeccable] The helper already answered this agent target; clearing session ' + sessionId + '.');
+    console.warn('[procable] The helper already answered this agent target; clearing session ' + sessionId + '.');
     markSessionHandled();
     cleanup({ instantChrome: true });
     showToast('The helper already answered this request, so this session was cleared. Pick an element to start fresh.', 6000);
@@ -8124,7 +8124,7 @@
   function abandonForeignSession(sessionId) {
     if (abandonedForeignSessionId === sessionId || sessionId !== currentSessionId) return;
     abandonedForeignSessionId = sessionId;
-    console.warn('[impeccable] The live server has no record of session ' + sessionId + '; clearing stale local state.');
+    console.warn('[procable] The live server has no record of session ' + sessionId + '; clearing stale local state.');
     markSessionHandled();
     cleanup({ instantChrome: true });
     showToast('A saved live session belonged to a different project, so it was cleared. Pick an element to start fresh.', 6000);
@@ -8409,7 +8409,7 @@
       if (e.key !== 'Escape') return;
       e.preventDefault();
       e.stopPropagation();
-      const original = e.target.dataset.impeccableOriginalText;
+      const original = e.target.dataset.procableOriginalText;
       if (original !== undefined) e.target.textContent = original;
       // Programmatic textContent doesn't fire the 'input' event, so the draft
       // map would otherwise hold the pre-cancel value and Apply would commit
@@ -8859,11 +8859,11 @@
   function shouldUseAncestorCropShaderProxy(el) {
     // TODO: Enable this proxy for React/Vue/etc. adapters once their live
     // preview mounts are covered by the same shader regression checks.
-    const adapter = String(window.__IMPECCABLE_LIVE_ADAPTER__ || '').toLowerCase();
+    const adapter = String(window.__PROCABLE_LIVE_ADAPTER__ || '').toLowerCase();
     if (adapter === 'svelte' || adapter === 'sveltekit') return true;
     if (isFrameworkComponentPreviewMode(currentPreviewMode) || svelteComponentSession) return true;
-    const wrapper = el?.closest?.('[data-impeccable-variants]');
-    return isFrameworkComponentPreviewMode(wrapper?.dataset?.impeccablePreview);
+    const wrapper = el?.closest?.('[data-procable-variants]');
+    return isFrameworkComponentPreviewMode(wrapper?.dataset?.procablePreview);
   }
 
   function paintsShaderProxySurface(node) {
@@ -8946,7 +8946,7 @@
         try {
           return await hideCaptureChromeForShaderProxy(() => captureElementFromRenderedAncestor(ms, el, opts));
         } catch (err) {
-          console.warn('[impeccable] Svelte ancestor crop capture failed, falling back to element capture:', err);
+          console.warn('[procable] Svelte ancestor crop capture failed, falling back to element capture:', err);
         }
       }
       const bg = resolveCanvasBackground(el);
@@ -9010,7 +9010,7 @@
     try {
       ({ blob, paper } = await captureElementToBlob(el, snapshot, rect));
     } catch (err) {
-      console.warn('[impeccable] capture failed, proceeding without screenshot:', err);
+      console.warn('[procable] capture failed, proceeding without screenshot:', err);
     }
     // Light up the shader overlay the moment capture is ready - no reason to
     // wait for the upload to complete before the user sees something alive.
@@ -9032,10 +9032,10 @@
           const { path: p } = await uploadRes.json();
           screenshotPath = p;
         } else {
-          console.warn('[impeccable] annotation upload failed:', uploadRes.status);
+          console.warn('[procable] annotation upload failed:', uploadRes.status);
         }
       } catch (err) {
-        console.warn('[impeccable] annotation upload failed:', err);
+        console.warn('[procable] annotation upload failed:', err);
       }
     }
     // Annotated requests must wait for capture + upload because the screenshot
@@ -9400,7 +9400,7 @@ void main() {
       gl.enableVertexAttribArray(uvLoc);
       gl.vertexAttribPointer(uvLoc, 2, gl.FLOAT, false, 16, 8);
     } catch (err) {
-      console.warn('[impeccable] shader setup failed:', err);
+      console.warn('[procable] shader setup failed:', err);
       canvas.remove();
       return;
     }
@@ -9411,7 +9411,7 @@ void main() {
     try {
       bitmap = await createImageBitmap(blob);
     } catch (err) {
-      console.warn('[impeccable] shader bitmap decode failed:', err);
+      console.warn('[procable] shader bitmap decode failed:', err);
       if (abandoned(canvas, gl)) return;
       const lose = gl.getExtension?.('WEBGL_lose_context');
       try { lose?.loseContext(); } catch {}
@@ -9490,7 +9490,7 @@ void main() {
     const acceptedSessionId = currentSessionId;
     const acceptedVariant = visibleVariant;
     const acceptedIsSvelteComponent = svelteComponentSession?.sessionId === acceptedSessionId
-      || isFrameworkComponentPreviewMode(acceptWrapper?.dataset?.impeccablePreview);
+      || isFrameworkComponentPreviewMode(acceptWrapper?.dataset?.procablePreview);
     const acceptedSnapshot = snapshotAcceptedVariantDom(acceptedSessionId, acceptedVariant);
 
     setLiveState('SAVING');
@@ -9513,7 +9513,7 @@ void main() {
         // the background; the foreground picker is free immediately.
         markSessionHandled();
         setLiveState('CONFIRMED');
-        document.documentElement.dataset.impeccableAcceptToPickingMs = String(Date.now() - acceptPayload.clientSentAt);
+        document.documentElement.dataset.procableAcceptToPickingMs = String(Date.now() - acceptPayload.clientSentAt);
         awaitingAcceptResult = { id: acceptedSessionId };
         scheduleAcceptCleanup(pending);
       })
@@ -9573,7 +9573,7 @@ void main() {
 
   function snapshotAcceptedVariantDom(sessionId, variantId) {
     const wrapper = findVariantsWrapper(sessionId);
-    const accepted = wrapper?.querySelector?.('[data-impeccable-variant="' + variantId + '"]');
+    const accepted = wrapper?.querySelector?.('[data-procable-variant="' + variantId + '"]');
     const root = accepted?.firstElementChild || null;
     return {
       acceptedHtml: accepted ? accepted.innerHTML : '',
@@ -9596,7 +9596,7 @@ void main() {
     if (!pending?.acceptedSelector) return false;
     const matches = [...document.querySelectorAll(pending.acceptedSelector)];
     return matches.length > 0
-      && matches.every((el) => !el.closest('[data-impeccable-variants],[data-impeccable-variant],[data-impeccable-carbonize]'));
+      && matches.every((el) => !el.closest('[data-procable-variants],[data-procable-variant],[data-procable-carbonize]'));
   }
 
   function ensureAcceptedDomClean(pending, recoveryRevision) {
@@ -9624,7 +9624,7 @@ void main() {
     }
     for (const wrapper of wrappers) {
       if (!wrapper?.isConnected) continue;
-      const accepted = wrapper.querySelector?.('[data-impeccable-variant="' + variantId + '"]');
+      const accepted = wrapper.querySelector?.('[data-procable-variant="' + variantId + '"]');
       if (!accepted) {
         wrapper.remove();
         continue;
@@ -9642,8 +9642,8 @@ void main() {
   function findAcceptedRuntimeWrappers(sessionId) {
     if (!sessionId) return [];
     return [...new Set([
-      ...document.querySelectorAll('[data-impeccable-variants="' + sessionId + '"]'),
-      ...document.querySelectorAll('[data-impeccable-carbonize="' + sessionId + '"]'),
+      ...document.querySelectorAll('[data-procable-variants="' + sessionId + '"]'),
+      ...document.querySelectorAll('[data-procable-carbonize="' + sessionId + '"]'),
     ])];
   }
 
@@ -9672,7 +9672,7 @@ void main() {
   function reloadAfterMissingAcceptedDom(pending, recoveryRevision) {
     if (deferredRecoverySuperseded(pending?.id, recoveryRevision)) return;
     if (acceptedDomAlreadyClean(pending)) return;
-    if (pending?.id && document.querySelector('[data-impeccable-variants="' + pending.id + '"]')) return;
+    if (pending?.id && document.querySelector('[data-procable-variants="' + pending.id + '"]')) return;
     location.reload();
   }
 
@@ -9694,7 +9694,7 @@ void main() {
     sessionOrigin = null;
     editBadgeSuppressed = false;
     parameterReadyAnnouncedSession = null;
-    selectedAction = 'impeccable';
+    selectedAction = 'procable';
     pendingAcceptedSession = null;
     renderEditBadge('hidden');
     setLiveState('PICKING');
@@ -9703,15 +9703,15 @@ void main() {
   function commitAcceptedVariantToDom(sessionId, variantId) {
     const wrapper = findVariantsWrapper(sessionId);
     if (!wrapper) return false;
-    const accepted = wrapper.querySelector('[data-impeccable-variant="' + variantId + '"]');
+    const accepted = wrapper.querySelector('[data-procable-variant="' + variantId + '"]');
     if (!accepted || !accepted.firstElementChild) return false;
     const parent = wrapper.parentElement;
     if (!parent) return false;
 
-    const style = wrapper.querySelector('style[data-impeccable-css]');
-    if (style && !document.querySelector('style[data-impeccable-accepted-css="' + sessionId + '"]')) {
+    const style = wrapper.querySelector('style[data-procable-css]');
+    if (style && !document.querySelector('style[data-procable-accepted-css="' + sessionId + '"]')) {
       const promotedStyle = style.cloneNode(true);
-      promotedStyle.setAttribute('data-impeccable-accepted-css', sessionId);
+      promotedStyle.setAttribute('data-procable-accepted-css', sessionId);
       parent.insertBefore(promotedStyle, wrapper);
     }
 
@@ -9937,7 +9937,7 @@ void main() {
 
   function restoreFromActiveSessions(activeSessions, reason) {
     const wrapper = findAnyVariantsWrapper();
-    if (wrapper && !isFrameworkComponentPreviewMode(wrapper.dataset.impeccablePreview)) return false;
+    if (wrapper && !isFrameworkComponentPreviewMode(wrapper.dataset.procablePreview)) return false;
     if (svelteComponentSession?.sessionId === currentSessionId) return false;
     return restoreSessionWithoutWrapper(reason || 'sse_connected', activeSessions);
   }
@@ -9964,7 +9964,7 @@ void main() {
       ? currentPreviewFile
       : (summary.sourceFile || summary.previewFile || currentSourceFile || currentPreviewFile);
     if (!file) return;
-    console.log('[impeccable] Reconnected after generation completed; recovering variants from source.');
+    console.log('[procable] Reconnected after generation completed; recovering variants from source.');
     setTimeout(() => {
       if (sessionId !== currentSessionId || state !== 'GENERATING') return;
       if (arrivedVariants > 0 && arrivedVariants >= expectedVariants) return;
@@ -10007,7 +10007,7 @@ void main() {
     // is that project's leftover, never a session this server can complete;
     // resuming it freezes the picker behind an unfinishable banner.
     if (saved?.appRoot && APP_ROOT && saved.appRoot !== APP_ROOT) {
-      console.warn('[impeccable] Ignoring saved live session from another project (' + saved.appRoot + ').');
+      console.warn('[procable] Ignoring saved live session from another project (' + saved.appRoot + ').');
       sessionState.clearSession();
       return null;
     }
@@ -10120,7 +10120,7 @@ void main() {
     sessionOrigin = null;
     editBadgeSuppressed = false;
     parameterReadyAnnouncedSession = null;
-    selectedAction = 'impeccable';
+    selectedAction = 'procable';
     renderEditBadge('hidden');
     setLiveState('PICKING');
   }
@@ -10204,7 +10204,7 @@ void main() {
   //
 
   // Resume an active variant session after HMR/page reload.
-  // If a [data-impeccable-variants] wrapper exists in the DOM, the agent wrote
+  // If a [data-procable-variants] wrapper exists in the DOM, the agent wrote
   // variants before HMR fired. Pick up where we left off.
   function handledWrapperReloadKey(sessionId) {
     return HANDLED_WRAPPER_RELOAD_KEY + ':' + sessionId;
@@ -10229,8 +10229,8 @@ void main() {
   }
 
   function scheduleHandledRuntimeWrapperReload(wrapper, recoveryRevision = liveInteractionRevision) {
-    const sessionId = wrapper?.dataset?.impeccableVariants
-      || wrapper?.dataset?.impeccableCarbonize;
+    const sessionId = wrapper?.dataset?.procableVariants
+      || wrapper?.dataset?.procableCarbonize;
     if (!sessionId || !isSessionHandled(sessionId)) return false;
     if (deferredRecoverySuperseded(sessionId, recoveryRevision)) return true;
 
@@ -10255,8 +10255,8 @@ void main() {
         return;
       }
       const staleWrapper = document.querySelector(
-        '[data-impeccable-variants="' + sessionId + '"],'
-        + '[data-impeccable-carbonize="' + sessionId + '"]',
+        '[data-procable-variants="' + sessionId + '"],'
+        + '[data-procable-carbonize="' + sessionId + '"]',
       );
       if (staleWrapper) location.reload();
       else {
@@ -10275,8 +10275,8 @@ void main() {
 
     const findHandledWrapper = function() {
       const wrapper = document.querySelector(
-        '[data-impeccable-variants="' + sessionId + '"],'
-        + '[data-impeccable-carbonize="' + sessionId + '"]',
+        '[data-procable-variants="' + sessionId + '"],'
+        + '[data-procable-carbonize="' + sessionId + '"]',
       );
       if (wrapper) scheduleHandledRuntimeWrapperReload(wrapper, recoveryRevision);
     };
@@ -10297,8 +10297,8 @@ void main() {
   }
 
   function restoreSessionSupersedingHandledWrapper(runtimeWrapper) {
-    const handledSessionId = runtimeWrapper?.dataset?.impeccableVariants
-      || runtimeWrapper?.dataset?.impeccableCarbonize;
+    const handledSessionId = runtimeWrapper?.dataset?.procableVariants
+      || runtimeWrapper?.dataset?.procableCarbonize;
     if (!handledSessionId || !isSessionHandled(handledSessionId)) return false;
 
     // Accept releases the picker before carbonize finishes, so a replacement
@@ -10318,7 +10318,7 @@ void main() {
     // DOM reconstruction to diagnose.
     const resumeReason = opts.reason || 'browser_resumed';
     const wrapper = findAnyVariantsWrapper();
-    const runtimeWrapper = wrapper || document.querySelector('[data-impeccable-carbonize]');
+    const runtimeWrapper = wrapper || document.querySelector('[data-procable-carbonize]');
     if (restoreSessionSupersedingHandledWrapper(runtimeWrapper)) return true;
     if (scheduleHandledRuntimeWrapperReload(runtimeWrapper, recoveryRevision)) return false;
     if (!wrapper) {
@@ -10330,18 +10330,18 @@ void main() {
       return false;
     }
 
-    const sessionId = wrapper.dataset.impeccableVariants;
+    const sessionId = wrapper.dataset.procableVariants;
 
     // Don't resume if this session was already accepted/discarded
     if (isSessionHandled(sessionId)) return false;
 
     // Svelte component sessions can't be resumed by counting DOM children: the
-    // wrapper holds a single mount target, not [data-impeccable-variant] nodes,
+    // wrapper holds a single mount target, not [data-procable-variant] nodes,
     // and a page reload unmounts every compiled variant. Counting children here
     // would strand the bar in CYCLING at 0/0. If there's no live in-memory mount
     // for this wrapper, it's an orphan (reload / failed mount): drop it and let
     // the live-server's SSE re-inject the manifest if the session is still live.
-    if (isFrameworkComponentPreviewMode(wrapper.dataset.impeccablePreview)
+    if (isFrameworkComponentPreviewMode(wrapper.dataset.procablePreview)
         && svelteComponentSession?.sessionId !== sessionId) {
       wrapper.remove();
       if (restoreSessionWithoutWrapper('browser_resumed_svelte_orphan_wrapper')) return true;
@@ -10350,12 +10350,12 @@ void main() {
       return false;
     }
 
-    if (isFrameworkComponentPreviewMode(wrapper.dataset.impeccablePreview)) {
+    if (isFrameworkComponentPreviewMode(wrapper.dataset.procablePreview)) {
       if (!svelteComponentSession?.mountedVariant) {
         return true;
       }
       currentSessionId = sessionId;
-      expectedVariants = Number(wrapper.dataset.impeccableVariantCount)
+      expectedVariants = Number(wrapper.dataset.procableVariantCount)
         || Number(svelteComponentSession.manifest?.count)
         || expectedVariants
         || 1;
@@ -10379,8 +10379,8 @@ void main() {
     }
 
     currentSessionId = sessionId;
-    expectedVariants = parseInt(wrapper.dataset.impeccableVariantCount || '0');
-    const variants = wrapper.querySelectorAll('[data-impeccable-variant]:not([data-impeccable-variant="original"])');
+    expectedVariants = parseInt(wrapper.dataset.procableVariantCount || '0');
+    const variants = wrapper.querySelectorAll('[data-procable-variant]:not([data-procable-variant="original"])');
     arrivedVariants = variants.length;
 
     // Restore state from localStorage if available
@@ -10409,7 +10409,7 @@ void main() {
     }
 
     // Find the visible variant's content element for highlight positioning.
-    const isInsert = wrapper.dataset.impeccableMode === 'insert';
+    const isInsert = wrapper.dataset.procableMode === 'insert';
     const visEl = visibleVariant > 0 ? pickVariantContent(wrapper, visibleVariant) : null;
     const origEl = pickVariantContent(wrapper, 'original');
     setLiveState(resumedState);
@@ -10482,7 +10482,7 @@ void main() {
               showShaderOverlay(shaderTarget, blob, rect, paper);
             }
           } catch (err) {
-            console.warn('[impeccable] shader resume failed:', err);
+            console.warn('[procable] shader resume failed:', err);
           }
         })();
       }
@@ -10511,8 +10511,8 @@ void main() {
   let activeDetectScanId = null;
   let pendingDetectScanId = null;
   const DETECT_EMPTY_MESSAGE = 'No detector issues found.';
-  const PICK_PREFS_KEY = 'impeccable-live-pick';
-  const INTERACTION_PREFS_KEY = 'impeccable-live-interaction';
+  const PICK_PREFS_KEY = 'procable-live-pick';
+  const INTERACTION_PREFS_KEY = 'procable-live-interaction';
   const PLACEHOLDER_DEFAULT_HEIGHT = 80;
   const PLACEHOLDER_MIN_HEIGHT = 48;
   const PLACEHOLDER_MIN_WIDTH = 120;
@@ -10630,10 +10630,10 @@ void main() {
   // dark pages. This keeps the bar from fighting with the host design.
   function detectPageTheme() {
     try {
-      // Dev override: set localStorage 'impeccable-dev-theme' to 'light' or
+      // Dev override: set localStorage 'procable-dev-theme' to 'light' or
       // 'dark' to preview the opposite palette without actually changing the
       // page bg. Used for screenshots and theme QA.
-      const override = localStorage.getItem('impeccable-dev-theme');
+      const override = localStorage.getItem('procable-dev-theme');
       if (override === 'light' || override === 'dark') return override;
 
       // Walk body → html, taking the first opaque background. The browser's
@@ -10931,8 +10931,8 @@ void main() {
   }
 
   function attachSteerFocusGuard() {
-    if (window.__IMPECCABLE_STEER_FOCUS_GUARD__) return;
-    window.__IMPECCABLE_STEER_FOCUS_GUARD__ = true;
+    if (window.__PROCABLE_STEER_FOCUS_GUARD__) return;
+    window.__PROCABLE_STEER_FOCUS_GUARD__ = true;
 
     document.addEventListener('mousedown', (e) => {
       notePagePointerDown(e);
@@ -10975,12 +10975,12 @@ void main() {
   }
 
   function steerFocusDebugEnabled() {
-    try { return localStorage.getItem('impeccable-steer-debug') === '1'; } catch { return false; }
+    try { return localStorage.getItem('procable-steer-debug') === '1'; } catch { return false; }
   }
 
   function steerFocusLog(reason, extra) {
     if (!steerFocusDebugEnabled()) return;
-    console.log('[impeccable.steer]', reason, {
+    console.log('[procable.steer]', reason, {
       state,
       pickActive,
       pageChatReady: !!pageChatInput,
@@ -10993,8 +10993,8 @@ void main() {
 
   function attachSteerFocusDebug() {
     if (!steerFocusDebugEnabled()) return;
-    if (window.__IMPECCABLE_STEER_FOCUS_DEBUG__) return;
-    window.__IMPECCABLE_STEER_FOCUS_DEBUG__ = true;
+    if (window.__PROCABLE_STEER_FOCUS_DEBUG__) return;
+    window.__PROCABLE_STEER_FOCUS_DEBUG__ = true;
     document.addEventListener('focusin', (e) => {
       if (!pageChatInput) return;
       steerFocusLog('focusin', { target: steerFocusTargetLabel(e.target) });
@@ -11113,7 +11113,7 @@ void main() {
         width: '4px', height: '4px', borderRadius: '50%',
         background: P.patinaPale,
         boxShadow: '0 0 6px ' + P.patinaSoft,
-        animation: 'impeccable-steer-dot 1.05s ease-in-out ' + (i * 0.14) + 's infinite',
+        animation: 'procable-steer-dot 1.05s ease-in-out ' + (i * 0.14) + 's infinite',
       }));
     }
     return wrap;
@@ -11436,7 +11436,7 @@ void main() {
 
     rec.onerror = (event) => {
       const code = event.error || 'unknown';
-      console.warn('[impeccable.voice] recognition error:', code);
+      console.warn('[procable.voice] recognition error:', code);
       const message = steerVoiceErrorMessage(code);
       stopVoice({ suppressSubmit: true, message: message || undefined });
     };
@@ -11450,7 +11450,7 @@ void main() {
     try {
       rec.start();
     } catch (err) {
-      console.warn('[impeccable.voice] start failed:', err);
+      console.warn('[procable.voice] start failed:', err);
       stopVoice({
         suppressSubmit: true,
         message: err?.message?.includes('already started')
@@ -11680,13 +11680,13 @@ void main() {
       const s = document.createElement('style');
       s.id = PREFIX + '-page-chat-style';
       s.textContent =
-        '@keyframes impeccable-steer-dot { 0%, 70%, 100% { opacity: 0.28; transform: scale(0.82); } 35% { opacity: 1; transform: scale(1); } }' +
-        '@keyframes impeccable-steer-processing { 0%, 100% { border-color: oklch(70% 0.12 188 / 0.28); box-shadow: 0 0 0 0 oklch(70% 0.12 188 / 0); } 50% { border-color: oklch(82% 0.07 188 / 0.55); box-shadow: 0 0 14px oklch(70% 0.12 188 / 0.18); } }' +
-        '@keyframes impeccable-voice-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }' +
-        '#' + PREFIX + '-page-chat[data-processing="true"] { animation: impeccable-steer-processing 1.6s ease-in-out infinite; }' +
+        '@keyframes procable-steer-dot { 0%, 70%, 100% { opacity: 0.28; transform: scale(0.82); } 35% { opacity: 1; transform: scale(1); } }' +
+        '@keyframes procable-steer-processing { 0%, 100% { border-color: oklch(70% 0.12 188 / 0.28); box-shadow: 0 0 0 0 oklch(70% 0.12 188 / 0); } 50% { border-color: oklch(82% 0.07 188 / 0.55); box-shadow: 0 0 14px oklch(70% 0.12 188 / 0.18); } }' +
+        '@keyframes procable-voice-pulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }' +
+        '#' + PREFIX + '-page-chat[data-processing="true"] { animation: procable-steer-processing 1.6s ease-in-out infinite; }' +
         '@media (prefers-reduced-motion: reduce) { #' + PREFIX + '-page-chat[data-processing="true"] { animation: none; border-color: oklch(70% 0.12 188 / 0.45); } #' + PREFIX + '-page-chat[data-processing="true"] [aria-hidden="true"] span { animation: none; opacity: 0.85; } }' +
         '#' + PREFIX + '-page-chat[data-voice-listening="true"] { border-color: oklch(70% 0.12 188 / 0.45); }' +
-        '#' + PREFIX + '-page-chat-voice[data-listening="true"] svg { animation: impeccable-voice-pulse 1.1s ease-in-out infinite; }' +
+        '#' + PREFIX + '-page-chat-voice[data-listening="true"] svg { animation: procable-voice-pulse 1.1s ease-in-out infinite; }' +
         '@media (prefers-reduced-motion: reduce) { #' + PREFIX + '-page-chat-voice[data-listening="true"] svg { animation: none; opacity: 1; } }' +
         '#' + PREFIX + '-page-chat-input::placeholder { color: oklch(72% 0 0); opacity: 1; }' +
         '#' + PREFIX + '-page-chat-input { caret-color: oklch(84% 0.19 80.46); }' +
@@ -11767,7 +11767,7 @@ void main() {
     steerFocusLog('page-chat-mounted', {});
   }
 
-  // Impeccable mark - same paths as site/components/Header.astro + favicon.svg.
+  // Procable mark - same paths as site/components/Header.astro + favicon.svg.
   function brandMarkSvg(color = C.brand, size = 18) {
     return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" aria-hidden="true">
       <path d="M5 2.5 L13.5 2.5 L5.5 21.5 L5 21.5 Q2.5 21.5 2.5 19 L2.5 5 Q2.5 2.5 5 2.5 Z"/>
@@ -11804,8 +11804,8 @@ void main() {
     // The tooltip is mouse-only, so carry the same distinction in the label or
     // screen-reader users are left with the vaguer of the two readings.
     globalBarBrandEl.setAttribute('aria-label', agentStatusMessage
-      ? 'Impeccable live mode - ' + (agentHasWorkInFlight() ? 'agent is working' : 'agent not polling')
-      : 'Impeccable live mode');
+      ? 'Procable live mode - ' + (agentHasWorkInFlight() ? 'agent is working' : 'agent not polling')
+      : 'Procable live mode');
     globalBarBrandEl.removeAttribute('title');
     globalBarBrandEl.style.cursor = agentStatusMessage ? 'help' : 'default';
     const mark = globalBarBrandEl.querySelector('[data-brand-mark]');
@@ -11926,8 +11926,8 @@ void main() {
         '  outline: none;' +
         '  box-shadow: 0 0 0 2px ' + P.accentSoft + ', 0 0 0 3px ' + P.accent + ';' +
         '}' +
-        '@keyframes impeccable-agent-dot { 0%, 100% { opacity: 0.45; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1); } }' +
-        '#' + PREFIX + '-global-bar-brand[data-agent-connected="false"] [data-agent-dot] { animation: impeccable-agent-dot 1.4s ease-in-out infinite; }' +
+        '@keyframes procable-agent-dot { 0%, 100% { opacity: 0.45; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1); } }' +
+        '#' + PREFIX + '-global-bar-brand[data-agent-connected="false"] [data-agent-dot] { animation: procable-agent-dot 1.4s ease-in-out infinite; }' +
         '@media (prefers-reduced-motion: reduce) { #' + PREFIX + '-global-bar-brand[data-agent-connected="false"] [data-agent-dot] { animation: none; opacity: 0.9; } }';
       uiAppendStyle(s);
     }
@@ -11935,7 +11935,7 @@ void main() {
     // The generate lane's helper says so in the served script itself, so a
     // lane session never draws the bar at all; every other session mounts
     // it exactly as before.
-    const barHiddenFromStart = window.__IMPECCABLE_LIVE_BAR_HIDDEN__ === true;
+    const barHiddenFromStart = window.__PROCABLE_LIVE_BAR_HIDDEN__ === true;
     globalBarEl = el('div', {
       position: 'fixed', bottom: '14px', left: '50%',
       transform: 'translateX(-50%) translateY(20px)',
@@ -11961,7 +11961,7 @@ void main() {
       globalBarEl.dataset.liveBarDisplay = 'flex';
     }
 
-    // Brand mark - kinpaku Impeccable icon (site header / favicon paths).
+    // Brand mark - kinpaku Procable icon (site header / favicon paths).
     const brand = el('span', {
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
       alignSelf: 'stretch', position: 'relative',
@@ -11973,7 +11973,7 @@ void main() {
     brand.id = PREFIX + '-global-bar-brand';
     brand.dataset.agentConnected = 'false';
     brand.setAttribute('role', 'img');
-    brand.setAttribute('aria-label', 'Impeccable live mode - agent not polling');
+    brand.setAttribute('aria-label', 'Procable live mode - agent not polling');
 
     const brandMark = el('span', {
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -12150,7 +12150,7 @@ void main() {
       borderTopColor: 'transparent',
       color: C.ink,
       opacity: '0.9',
-      animation: 'impeccable-spin 0.6s linear infinite',
+      animation: 'procable-spin 0.6s linear infinite',
       flex: '0 0 auto',
       boxSizing: 'border-box',
     });
@@ -12402,13 +12402,13 @@ void main() {
     }
 
     // When pick/insert is active, make detect overlays click-through
-    document.querySelectorAll('.impeccable-overlay').forEach(o => {
+    document.querySelectorAll('.procable-overlay').forEach(o => {
       o.style.pointerEvents = (pickActive || insertActive) ? 'none' : '';
     });
     syncPageInteractionCursor();
   }
 
-  let detectReady = false; // true once detect script posts 'impeccable-ready'
+  let detectReady = false; // true once detect script posts 'procable-ready'
   let detectPendingScan = false; // scan requested before script was ready
 
   function requestDetectScan() {
@@ -12417,19 +12417,19 @@ void main() {
     pendingDetectScanId = scanId;
     // Send the project's detector waivers with the scan so the overlay
     // filters the same findings the CLI and the edit hook do (issue #639).
-    // live-browser-ignores.js resolves .impeccable config for this page:
+    // live-browser-ignores.js resolves .procable config for this page:
     // ignoreRules suppress outright, wildcard ignoreValues suppress their
     // rule in the files they name, ignoreFiles that name the page skip the
     // scan wholesale, and the rest match on the finding's own value inside
     // the detector. Guarded twice: a stale cached live.js without the
     // resolver part still scans, and a resolver that throws must not brick
     // the detect toggle; both degrade to an unfiltered scan.
-    const ignoresApi = window.__IMPECCABLE_LIVE_IGNORES__;
+    const ignoresApi = window.__PROCABLE_LIVE_IGNORES__;
     let ignores = { disabledRules: [], disabledValues: [], skipScan: false };
     if (typeof ignoresApi?.resolveDetectIgnores === 'function') {
       try {
         ignores = ignoresApi.resolveDetectIgnores({
-          ignores: window.__IMPECCABLE_PROJECT_IGNORES__,
+          ignores: window.__PROCABLE_PROJECT_IGNORES__,
           pathname: location.pathname,
         }) || ignores;
       } catch (e) {
@@ -12437,7 +12437,7 @@ void main() {
       }
     }
     window.postMessage({
-      source: 'impeccable-command',
+      source: 'procable-command',
       action: 'scan',
       config: {
         scanId,
@@ -12463,7 +12463,7 @@ void main() {
         detectPendingScan = true;
       }
     } else {
-      window.postMessage({ source: 'impeccable-command', action: 'remove' }, '*');
+      window.postMessage({ source: 'procable-command', action: 'remove' }, '*');
       activeDetectScanId = null;
       pendingDetectScanId = null;
       detectCount = 0;
@@ -12525,14 +12525,14 @@ void main() {
     detectScriptLoaded = true;
     const s = document.createElement('script');
     s.src = 'http://localhost:' + PORT + '/detect.js';
-    s.dataset.impeccableExtension = 'true';
+    s.dataset.procableExtension = 'true';
     document.head.appendChild(s);
   }
 
   function onDetectMessage(e) {
     if (!e.data || typeof e.data.source !== 'string') return;
     // Detection script is loaded and ready
-    if (e.data.source === 'impeccable-ready') {
+    if (e.data.source === 'procable-ready') {
       detectReady = true;
       if (detectPendingScan && detectActive) {
         detectPendingScan = false;
@@ -12540,7 +12540,7 @@ void main() {
       }
     }
     // Scan results arrived
-    if (e.data.source === 'impeccable-results') {
+    if (e.data.source === 'procable-results') {
       if (!detectActive) return;
       if (activeDetectScanId && e.data.scanId !== activeDetectScanId) return;
       detectCount = e.data.count || 0;
@@ -12616,19 +12616,19 @@ void main() {
     document.removeEventListener('focusout', stopFocusOutIntoChrome, true);
     window.removeEventListener('message', onDetectMessage);
     // Remove detection overlays
-    window.postMessage({ source: 'impeccable-command', action: 'remove' }, '*');
+    window.postMessage({ source: 'procable-command', action: 'remove' }, '*');
     setLiveState('IDLE');
     document.getElementById(PICK_CURSOR_STYLE_ID)?.remove();
     removeVariantStateStylesheet();
-    window.__IMPECCABLE_LIVE_INIT__ = false;
-    console.log('[impeccable] Live mode exited.');
+    window.__PROCABLE_LIVE_INIT__ = false;
+    console.log('[procable] Live mode exited.');
   }
 
   //
-  // Design System Panel - visualizes the project's .impeccable/design.json sidecar
+  // Design System Panel - visualizes the project's .procable/design.json sidecar
   //
 
-  const DESIGN_PREFS_KEY = 'impeccable-live-design-panel';
+  const DESIGN_PREFS_KEY = 'procable-live-design-panel';
   const DESIGN_PANEL_WIDTH = 440;
 
   let designHost = null;
@@ -12637,7 +12637,7 @@ void main() {
     open: false,
     tab: 'visual',          // 'visual' | 'raw'
     parsed: null,           // parseDesignMd output (frontmatter + body sections)
-    sidecar: null,          // .impeccable/design.json v2 payload (extensions + components + narrative)
+    sidecar: null,          // .procable/design.json v2 payload (extensions + components + narrative)
     hasMd: false,
     hasSidecar: false,
     present: null,          // true/false once fetch resolves
@@ -12708,8 +12708,8 @@ void main() {
     }
   }
 
-  // Neutral panel palette - deliberately NOT Impeccable-branded. The panel is
-  // a viewer of the project's design system, not an Impeccable surface.
+  // Neutral panel palette - deliberately NOT Procable-branded. The panel is
+  // a viewer of the project's design system, not an Procable surface.
   const DP = {
     canvas:   'oklch(94% 0 0)',            // panel background
     tile:     'oklch(98.5% 0 0)',          // card-on-canvas
@@ -13108,7 +13108,7 @@ void main() {
     if (designState.present === false) {
       const empty = document.createElement('div');
       empty.className = 'empty';
-      empty.innerHTML = `<strong>No DESIGN.md yet</strong>Create one by running <code>${IMPECCABLE_COMMAND} document</code> in your terminal, then re-open this panel.`;
+      empty.innerHTML = `<strong>No DESIGN.md yet</strong>Create one by running <code>${PROCABLE_COMMAND} document</code> in your terminal, then re-open this panel.`;
       body.appendChild(empty);
       return;
     }
@@ -13138,7 +13138,7 @@ void main() {
     box.className = 'stale';
     box.innerHTML = `
       <span class="stale-dot"></span>
-      <span class="stale-text"><strong>DESIGN.md is newer than .impeccable/design.json.</strong> Run <code>${IMPECCABLE_COMMAND} document</code> to refresh the sidecar.</span>
+      <span class="stale-text"><strong>DESIGN.md is newer than .procable/design.json.</strong> Run <code>${PROCABLE_COMMAND} document</code> to refresh the sidecar.</span>
     `;
     return box;
   }
@@ -13146,7 +13146,7 @@ void main() {
   function renderParsedMdCta() {
     const box = document.createElement('div');
     box.className = 'parsed-md-cta';
-    box.innerHTML = `<strong>Basic view</strong>This panel reads the tokens in your <code>DESIGN.md</code> frontmatter. Running <code>${IMPECCABLE_COMMAND} document</code> also generates a <code>.impeccable/design.json</code> sidecar with your project's actual component snippets (button, input, nav) and tonal ramps, rendered live below the tokens.`;
+    box.innerHTML = `<strong>Basic view</strong>This panel reads the tokens in your <code>DESIGN.md</code> frontmatter. Running <code>${PROCABLE_COMMAND} document</code> also generates a <code>.procable/design.json</code> sidecar with your project's actual component snippets (button, input, nav) and tonal ramps, rendered live below the tokens.`;
     return box;
   }
 
@@ -13161,7 +13161,7 @@ void main() {
    */
   function designEmptyMessage() {
     if (designState.hasMd && !designState.hasSidecar) {
-      return 'DESIGN.md found, no structured tokens to display. Run ' + IMPECCABLE_COMMAND + ' document to generate the .impeccable/design.json sidecar.';
+      return 'DESIGN.md found, no structured tokens to display. Run ' + PROCABLE_COMMAND + ' document to generate the .procable/design.json sidecar.';
     }
     if (designState.hasMd) {
       return 'DESIGN.md and its sidecar were found, but neither carries colors, type, radii, or components to display.';
@@ -13629,7 +13629,7 @@ void main() {
 
   function cssSafe(v) {
     // Strip anything outside valid CSS value chars to prevent injection via
-    // .impeccable/design.json values rendered into inline style strings.
+    // .procable/design.json values rendered into inline style strings.
     return String(v).replace(/[<>"'`\n]/g, '');
   }
 
@@ -13827,23 +13827,23 @@ void main() {
     // Check for an active session to resume (variant wrapper already in DOM after HMR)
     const resumed = resumeSession();
     if (!resumed) {
-      console.log('[impeccable] Live variant mode ready. Hover over elements to pick one.');
+      console.log('[procable] Live variant mode ready. Hover over elements to pick one.');
     } else {
-      console.log('[impeccable] Resumed active variant session ' + currentSessionId + ' (' + arrivedVariants + '/' + expectedVariants + ' variants).');
+      console.log('[procable] Resumed active variant session ' + currentSessionId + ' (' + arrivedVariants + '/' + expectedVariants + ' variants).');
     }
 
     // SvelteKit, React, and other frameworks may restore a durable session
     // before hydration adds its variant wrapper. Keep a deferred-wrapper scout
     // whenever init did not see a runtime wrapper, even if local/server state
     // was already restored successfully. Disconnect on the first wrapper hit.
-    if (!resumed || !document.querySelector('[data-impeccable-variants],[data-impeccable-carbonize]')) {
+    if (!resumed || !document.querySelector('[data-procable-variants],[data-procable-carbonize]')) {
       const deferredResumeRevision = liveInteractionRevision;
       const scout = new MutationObserver(() => {
-        const wrapper = document.querySelector('[data-impeccable-variants],[data-impeccable-carbonize]');
+        const wrapper = document.querySelector('[data-procable-variants],[data-procable-carbonize]');
         if (!wrapper) return;
         scout.disconnect();
         if (resumeSession(deferredResumeRevision, { reason: 'browser_resumed_deferred_wrapper' })) {
-          console.log('[impeccable] Resumed deferred session ' + currentSessionId + ' (post-hydration).');
+          console.log('[procable] Resumed deferred session ' + currentSessionId + ' (post-hydration).');
         }
       });
       scout.observe(document.body, { childList: true, subtree: true });

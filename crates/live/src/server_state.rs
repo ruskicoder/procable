@@ -9,7 +9,7 @@ use crate::preflight::{build_generation_preflight, compact_error};
 use crate::session::{SessionStore, GENERATION_FENCED_SESSION_PHASES};
 use crate::util::{iso_now, jsp, now_ms, Env};
 use crate::vocabulary::VARIANT_PROGRESS_CHECKPOINT_REASONS;
-use impeccable_context::target_args::TargetOptions;
+use procable_context::target_args::TargetOptions;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -808,7 +808,7 @@ impl ServerState {
     /// Browser must answer an agent_target push within this window. The env
     /// override exists for tests; real sessions keep the default.
     pub fn agent_target_timeout_ms(&self) -> u64 {
-        env_positive_ms(&self.env, "IMPECCABLE_AGENT_TARGET_TIMEOUT_MS").unwrap_or(15_000)
+        env_positive_ms(&self.env, "PROCABLE_AGENT_TARGET_TIMEOUT_MS").unwrap_or(15_000)
     }
 
     /// A granted claim is a lease, not a lock: if the winning tab dies before
@@ -817,7 +817,7 @@ impl ServerState {
     /// browser timeout. The lease comfortably exceeds a healthy winner's
     /// worst case (claim RTT + smooth-scroll settle + Go, under 2s).
     pub fn agent_target_lease_ms(&self) -> i64 {
-        env_positive_ms(&self.env, "IMPECCABLE_AGENT_TARGET_CLAIM_LEASE_MS")
+        env_positive_ms(&self.env, "PROCABLE_AGENT_TARGET_CLAIM_LEASE_MS")
             .map(|v| v as i64)
             .unwrap_or(3_000)
     }
@@ -828,7 +828,7 @@ impl ServerState {
     /// this long after the first such report, so a page that keeps watching
     /// can still claim; a busy report answers at once regardless.
     pub fn agent_target_resolve_grace_ms(&self) -> i64 {
-        env_positive_ms(&self.env, "IMPECCABLE_AGENT_TARGET_RESOLVE_GRACE_MS")
+        env_positive_ms(&self.env, "PROCABLE_AGENT_TARGET_RESOLVE_GRACE_MS")
             .map(|v| v as i64)
             .unwrap_or(3_000)
     }
@@ -1548,7 +1548,7 @@ pub fn run_generation_preflight(
     let started = Instant::now();
     let exe = std::env::current_exe()
         .map(|p| p.to_string_lossy().into_owned())
-        .unwrap_or_else(|_| "impeccable".to_string());
+        .unwrap_or_else(|_| "procable".to_string());
     let mut child = match std::process::Command::new(&exe)
         .arg(cmd.verb)
         .args(&cmd.args)
@@ -1687,7 +1687,7 @@ pub fn resolve_project_context(
     env: &Env,
     roots: Option<&RootsManifest>,
 ) -> ProjectContext {
-    let ctx = impeccable_context::context::load_context(cwd, &TargetOptions::default(), env);
+    let ctx = procable_context::context::load_context(cwd, &TargetOptions::default(), env);
     let design_path = match &ctx.design_path {
         Some(p) => Some(jsp::resolve(cwd, &[p])),
         None => roots

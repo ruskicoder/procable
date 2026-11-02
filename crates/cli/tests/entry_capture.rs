@@ -1,9 +1,9 @@
 #[path = "support/capture_service.rs"]
 #[allow(dead_code)]
 mod capture_service;
-use impeccable::entry_capture::{CdpEntryRenderer, static_inventory};
-use impeccable_comp::{png_io, raster};
-use impeccable_comp_verbs::entry_capture::{EntryRenderer, EntryRequest, EntryStage};
+use procable::entry_capture::{CdpEntryRenderer, static_inventory};
+use procable_comp::{png_io, raster};
+use procable_comp_verbs::entry_capture::{EntryRenderer, EntryRequest, EntryStage};
 use std::{
     fs,
     path::PathBuf,
@@ -16,7 +16,7 @@ const STYLE: &str = "<!doctype html><style>body{margin:0;background:white}img{po
 struct Fixture(PathBuf, &'static str);
 impl Fixture {
     fn new() -> Self {
-        Self::with_comp(".impeccable/comp.png")
+        Self::with_comp(".procable/comp.png")
     }
     /// The comp at a project path the static inventory would otherwise serve.
     fn visible() -> Self {
@@ -33,7 +33,7 @@ impl Fixture {
             NEXT.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir_all(p.join("assets")).unwrap();
-        fs::create_dir_all(p.join(".impeccable")).unwrap();
+        fs::create_dir_all(p.join(".procable")).unwrap();
         fs::create_dir_all(p.join("node_modules")).unwrap();
         fs::write(p.join("index.html"), format!("{STYLE}{ART}")).unwrap();
         let png =
@@ -48,7 +48,7 @@ impl Fixture {
         }
         fs::write(p.join(comp_path), png_io::encode_png(&comp, &[]).unwrap()).unwrap();
         let spec = format!(r#"{{"comp":"{comp_path}","compSize":{{"width":200,"height":200}},"regions":[{{"id":"art","medium":"raster","kind":"plate","plate":"assets/art.png","px":{{"x":20,"y":20,"w":80,"h":80}}}}]}}"#);
-        fs::write(p.join(".impeccable/spec.json"), spec).unwrap();
+        fs::write(p.join(".procable/spec.json"), spec).unwrap();
         fs::write(p.join(".env"), "private").unwrap();
         fs::write(p.join("node_modules/secret.js"), "private").unwrap();
         fs::write(p.join("source.ts"), "not a browser script").unwrap();
@@ -58,7 +58,7 @@ impl Fixture {
         EntryRequest {
             root: self.0.clone(),
             artifact: "index.html".into(),
-            spec: ".impeccable/spec.json".into(),
+            spec: ".procable/spec.json".into(),
             reference: self.1.into(),
             stage,
         }
@@ -91,7 +91,7 @@ fn native_inventory_excludes_private_and_package_trees() {
 }
 #[test]
 fn entry_renderer_returns_fresh_hero_and_responsive_pixels_with_live_input_guard() {
-    if impeccable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
+    if procable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
         eprintln!("skip: browser unavailable");
         return;
     }
@@ -124,7 +124,7 @@ fn entry_renderer_returns_fresh_hero_and_responsive_pixels_with_live_input_guard
 }
 
 fn browser_available() -> bool {
-    if impeccable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
+    if procable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
         eprintln!("skip: browser unavailable");
         return false;
     }
@@ -202,8 +202,8 @@ fn a_plate_that_is_the_comp_is_refused_before_capture() {
     fs::write(f.0.join("assets/art.png"), f.comp()).unwrap();
     let e = refusal(&CdpEntryRenderer, &f, EntryStage::Hero);
     assert!(e.contains("assets/art.png") && e.contains("never the comp"), "{e}");
-    let spec = fs::read_to_string(f.0.join(".impeccable/spec.json")).unwrap().replace("assets/art.png", "comp.png");
-    fs::write(f.0.join(".impeccable/spec.json"), spec).unwrap();
+    let spec = fs::read_to_string(f.0.join(".procable/spec.json")).unwrap().replace("assets/art.png", "comp.png");
+    fs::write(f.0.join(".procable/spec.json"), spec).unwrap();
     let e = refusal(&CdpEntryRenderer, &f, EntryStage::Hero);
     assert!(e.contains("names the approved comp"), "{e}");
 }
@@ -317,7 +317,7 @@ fn host_capture_service_refuses_a_raster_page_that_shows_the_comp() {
 
 #[test]
 fn host_capture_service_keeps_one_receipt_per_raster_region() {
-    if impeccable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
+    if procable_browser::discovery::find_browser(&std::env::vars().collect()).is_err() {
         eprintln!("skip: browser unavailable");
         return;
     }

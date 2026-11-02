@@ -20,7 +20,7 @@
  * loads the same document in a hidden iframe inside its background event page.
  *
  * Needs a Rust toolchain and wasm-pack for step 1. CI matrices that already
- * ran `cargo xtask bundle` can skip it with IMPECCABLE_EXTENSION_SKIP_BUNDLE=1,
+ * ran `cargo xtask bundle` can skip it with PROCABLE_EXTENSION_SKIP_BUNDLE=1,
  * which is honored only when extension/detector/ already holds all five pieces.
  *
  * Run: node scripts/build-extension.js
@@ -42,8 +42,8 @@ const DETECTOR_DIR = path.join(EXT_DIR, 'detector');
 const DETECTOR_PIECES = ['core.js', 'core_bg.wasm', 'snapshot.js', 'overlay.js', 'antipatterns.json'];
 
 const havePieces = DETECTOR_PIECES.every((piece) => fs.existsSync(path.join(DETECTOR_DIR, piece)));
-if (process.env.IMPECCABLE_EXTENSION_SKIP_BUNDLE === '1' && havePieces) {
-  console.log('Skipping `cargo xtask bundle` (IMPECCABLE_EXTENSION_SKIP_BUNDLE=1, extension/detector/ is complete)');
+if (process.env.PROCABLE_EXTENSION_SKIP_BUNDLE === '1' && havePieces) {
+  console.log('Skipping `cargo xtask bundle` (PROCABLE_EXTENSION_SKIP_BUNDLE=1, extension/detector/ is complete)');
 } else {
   console.log('Building extension/detector/ with `cargo xtask bundle` ...');
   execSync('cargo xtask bundle', { cwd: ROOT, stdio: 'inherit' });
@@ -155,7 +155,7 @@ const firefoxManifest = {
   // Required by AMO for signing/distribution. Ignored by Chrome.
   browser_specific_settings: {
     gecko: {
-      id: 'impeccable@bakaus.com',
+      id: 'procable@bakaus.com',
       // `data_collection_permissions` (below) is required by AMO for new
       // submissions and is only honored on Firefox 140+. We set the floor to
       // 140 so the declared min version actually supports every key we ship;

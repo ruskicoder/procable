@@ -1,4 +1,4 @@
-//! JS: live-complete.mjs -> `impeccable live-complete`. The canonical durable
+//! JS: live-complete.mjs -> `procable live-complete`. The canonical durable
 //! completion acknowledgement, gated on the accepted source being clean.
 
 use crate::accept_verify::verify_accepted_file;
@@ -7,10 +7,10 @@ use crate::roots::enter_live_root;
 use crate::server::post_poll;
 use crate::session::create_live_session_store;
 use crate::util::{json_pretty, jsp, println};
-use impeccable_common::Io;
+use procable_common::Io;
 use serde_json::{json, Value};
 
-const USAGE: &str = "Usage: impeccable live-complete --id SESSION_ID [--discarded|--error MESSAGE] [--force]\n\nAppend the final durable session acknowledgement. Use after accept/discard cleanup is verified.\nCompletion is refused while the session's source file still carries live-mode leftovers\n(markers, data-p-* attributes, unbaked --p-* vars); fix the file or pass --force.";
+const USAGE: &str = "Usage: procable live-complete --id SESSION_ID [--discarded|--error MESSAGE] [--force]\n\nAppend the final durable session acknowledgement. Use after accept/discard cleanup is verified.\nCompletion is refused while the session's source file still carries live-mode leftovers\n(markers, data-p-* attributes, unbaked --p-* vars); fix the file or pass --force.";
 
 struct Args {
     id: Option<String>,

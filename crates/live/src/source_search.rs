@@ -22,7 +22,7 @@ pub const SOURCE_SEARCH_DIRS: [&str; 9] = [
 ];
 
 /// JS: NEVER_SOURCE_DIRS
-pub const NEVER_SOURCE_DIRS: [&str; 3] = ["node_modules", ".git", ".impeccable"];
+pub const NEVER_SOURCE_DIRS: [&str; 3] = ["node_modules", ".git", ".procable"];
 
 const MAX_DEPTH: usize = 5;
 
@@ -73,7 +73,7 @@ fn normalize_extension_entries(entries: Option<&Value>) -> Vec<String> {
             _ => None,
         };
         let Some(raw) = raw else { continue };
-        let mut ext = impeccable_core::js::trim(raw).to_lowercase();
+        let mut ext = procable_core::js::trim(raw).to_lowercase();
         if ext.is_empty() {
             continue;
         }
@@ -89,7 +89,7 @@ fn normalize_extension_entries(entries: Option<&Value>) -> Vec<String> {
 pub fn resolve_live_template_extensions(cwd: &str) -> Vec<String> {
     let mut configured: Vec<String> = Vec::new();
     for name in ["config.json", "config.local.json"] {
-        let raw = read_json(&jsp::join(&[cwd, ".impeccable", name]));
+        let raw = read_json(&jsp::join(&[cwd, ".procable", name]));
         if let Some(Value::Object(o)) = raw {
             if let Some(Value::Object(det)) = o.get("detector") {
                 configured.extend(normalize_extension_entries(det.get("extensions")));
@@ -145,7 +145,7 @@ fn is_git_ignored(abs: &str, cwd: &str) -> bool {
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null());
-    impeccable_common::proc::hide_window(&mut cmd);
+    procable_common::proc::hide_window(&mut cmd);
     let status = cmd.status();
     matches!(status, Ok(s) if s.success())
 }
@@ -155,13 +155,13 @@ static HEADER_MARKERS: Lazy<Vec<Regex>> = Lazy::new(|| {
         Regex::new(r"(?i)@generated(?-u:\b)").unwrap(),
         Regex::new(&format!(
             r"(?-u:\b)GENERATED{}+FILE(?-u:\b)",
-            impeccable_core::js::WS
+            procable_core::js::WS
         ))
         .unwrap(),
         Regex::new(r"(?i)(?-u:\b)AUTO-?GENERATED(?-u:\b)").unwrap(),
         Regex::new(&format!(
             r"(?i)(?-u:\b)DO{ws}+NOT{ws}+EDIT(?-u:\b)",
-            ws = impeccable_core::js::WS
+            ws = procable_core::js::WS
         ))
         .unwrap(),
     ]

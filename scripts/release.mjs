@@ -31,29 +31,29 @@ const COMPONENTS = {
     tagPrefix: 'skill-v',
     label: 'Skill',
     changelogLabel: 'v',
-    // The skill's launcher and `impeccable install` dead-end without the engine
+    // The skill's launcher and `procable install` dead-end without the engine
     // release for the pinned ENGINE_VERSION. Enforce release order (D4).
     engineGated: true,
     buildCmd: 'bun run build:release',
     artifacts: ['dist/universal.zip'],
     postReleaseHint: null,
-    tweetHeader: (v) => `Impeccable v${v} is out.`,
-    tweetCta: 'Install / update: npx impeccable install',
+    tweetHeader: (v) => `Procable v${v} is out.`,
+    tweetCta: 'Install / update: npx procable install',
   },
   cli: {
     manifest: 'package.json',
     tagPrefix: 'cli-v',
     label: 'CLI',
     changelogLabel: 'CLI v',
-    // The npm shim resolves the engine binary through the @impeccable/cli-<os>-<arch>
+    // The npm shim resolves the engine binary through the @procable/cli-<os>-<arch>
     // platform packages (pinned at ENGINE_VERSION) and the dist channel; publishing
-    // it before those exist strands `npx impeccable`. Enforce release order (D4).
+    // it before those exist strands `npx procable`. Enforce release order (D4).
     engineGated: true,
     buildCmd: null,
     artifacts: [],
     postReleaseHint: 'Run `npm publish` next to push the package to the npm registry.',
-    tweetHeader: (v) => `Impeccable CLI v${v} is out.`,
-    tweetCta: 'npm i -g impeccable',
+    tweetHeader: (v) => `Procable CLI v${v} is out.`,
+    tweetCta: 'npm i -g procable',
   },
   extension: {
     manifest: 'extension/manifest.json',
@@ -67,7 +67,7 @@ const COMPONENTS = {
     artifacts: ['dist/extension.zip', 'dist/extension-firefox.zip'],
     postReleaseHint:
       'Upload `dist/extension.zip` to the Chrome Web Store dashboard, and `dist/extension-firefox.zip` to addons.mozilla.org (AMO), to publish.',
-    tweetHeader: (v) => `Impeccable browser extension v${v} is out.`,
+    tweetHeader: (v) => `Procable browser extension v${v} is out.`,
     tweetCta: null,
   },
   engine: {
@@ -79,7 +79,7 @@ const COMPONENTS = {
   },
 };
 
-const REPO_URL = 'https://github.com/pbakaus/impeccable';
+const REPO_URL = 'https://github.com/ruskicoder/procable';
 const TWEET_LIMIT = 280;
 
 const args = process.argv.slice(2);
@@ -139,7 +139,7 @@ if (cfg.sibling) {
 // It runs before the asset probe below. The local tag must be origin's, the one
 // CI built from, or the diff would compare against the wrong tree. Diffing
 // against the working tree (not HEAD) counts tracked uncommitted edits too. Set
-// IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK=1 only when the changes cannot reach the
+// PROCABLE_SKIP_ENGINE_SOURCE_CHECK=1 only when the changes cannot reach the
 // shipped binary, such as test-only edits under crates/. The paths outside the
 // workspace are the files the crates compile in with include_str! or
 // include_bytes!; tests/release.test.mjs fails when one is missing here.
@@ -151,7 +151,7 @@ const ENGINE_SOURCE_PATHS = [
   'ui/component-review/theme.css', 'ui/component-review/fonts',
   'ui/component-review/vendor/*.css', 'ui/component-review/vendor/instrument-strip.js',
 ];
-if (cfg.engineGated && process.env.IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK !== '1') {
+if (cfg.engineGated && process.env.PROCABLE_SKIP_ENGINE_SOURCE_CHECK !== '1') {
   const engineTag = `engine-v${readEngineVersion(repoRoot)}`;
   step(`Verifying engine source is unchanged since ${engineTag}`);
   const originTag = run(`git ls-remote --tags origin "refs/tags/${engineTag}"`).split('\t')[0];
@@ -177,16 +177,16 @@ if (cfg.engineGated && process.env.IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK !== '1') 
   }
   ok(`engine source unchanged since ${engineTag}`);
 } else if (cfg.engineGated) {
-  step('Skipping engine source guard (IMPECCABLE_SKIP_ENGINE_SOURCE_CHECK=1)');
+  step('Skipping engine source guard (PROCABLE_SKIP_ENGINE_SOURCE_CHECK=1)');
 }
 
 // Release-order guard (triage decision D4). Engine-gated components refuse to
 // tag/publish until the engine release for the pinned ENGINE_VERSION is fully
-// live: the five engine-v<version> release binaries + .sha256 and the five @impeccable/cli-<os>-<arch>
+// live: the five engine-v<version> release binaries + .sha256 and the five @procable/cli-<os>-<arch>
 // npm platform packages. Without this the launcher, the npm shim, and
-// `impeccable install` all dead-end. Set IMPECCABLE_SKIP_ENGINE_CHECK=1 only
+// `procable install` all dead-end. Set PROCABLE_SKIP_ENGINE_CHECK=1 only
 // when you know the assets exist and the registry probe is unreachable.
-if (cfg.engineGated && process.env.IMPECCABLE_SKIP_ENGINE_CHECK !== '1') {
+if (cfg.engineGated && process.env.PROCABLE_SKIP_ENGINE_CHECK !== '1') {
   const engineVersion = readEngineVersion(repoRoot);
   step(`Verifying engine v${engineVersion} release assets are published (D4 release-order guard)`);
   const result = await checkEngineRelease({ version: engineVersion });
@@ -195,14 +195,14 @@ if (cfg.engineGated && process.env.IMPECCABLE_SKIP_ENGINE_CHECK !== '1') {
     for (const m of result.missing) console.error(`    · ${m.what}\n        ${m.url}`);
     fail(
       `Refusing to release ${cfg.label} ${version}: engine v${engineVersion} is not fully published.\n` +
-      `  Publish engine v${engineVersion} (bun run release:engine) AND the five @impeccable/cli-<os>-<arch>\n` +
+      `  Publish engine v${engineVersion} (bun run release:engine) AND the five @procable/cli-<os>-<arch>\n` +
       '  npm platform packages first. Ordering: engine release → platform packages → skill/CLI release.\n' +
       '  See CLAUDE.md "Releases" and the engine repo docs/REVIEW-TRIAGE.md D4.'
     );
   }
   ok(`engine v${engineVersion} release assets all present`);
 } else if (cfg.engineGated) {
-  step('Skipping engine release-order guard (IMPECCABLE_SKIP_ENGINE_CHECK=1)');
+  step('Skipping engine release-order guard (PROCABLE_SKIP_ENGINE_CHECK=1)');
 }
 
 const tag = `${cfg.tagPrefix}${version}`;
@@ -252,11 +252,11 @@ if (remoteTags.split('\n').some((line) => line.endsWith(`refs/tags/${tag}`))) {
 ok('tag is free');
 
 step(`Extracting changelog entry for "${cfg.changelogLabel}${version}"`);
-// The site (and its changelog) lives in the private impeccable-site repo;
+// The site (and its changelog) lives in the private procable-site repo;
 // fall back to a sibling checkout when releasing from the public repo.
 const changelogCandidates = [
   path.join(repoRoot, 'site/pages/changelog.astro'),
-  path.join(repoRoot, '..', 'impeccable-site', 'site/pages/changelog.astro'),
+  path.join(repoRoot, '..', 'procable-site', 'site/pages/changelog.astro'),
 ];
 const changelogSource = changelogCandidates.find(p => existsSync(p)) || changelogCandidates[0];
 const changelogHtml = readFileSync(changelogSource, 'utf8');
@@ -353,7 +353,7 @@ try {
 
 console.log(`\n✓ ${cfg.label} ${version} released as ${tag}`);
 
-// npx impeccable install/update serve the version named by impeccable-site's
+// npx procable install/update serve the version named by procable-site's
 // published-skill.json, a signed pointer that never follows this release on
 // its own. Redeploying alone republishes the old pointer. Warn loudly when the
 // served version lags so a release never silently strands update users on old
@@ -366,8 +366,8 @@ if (component === 'skill' && !dryRun) {
       console.log(`✓ impeccable.style serves ${served}`);
     } else {
       console.log(`\n⚠ impeccable.style still serves ${served}, not ${version}.`);
-      console.log('  npx impeccable install/update serve the OLD version until the site\'s signed pointer moves.');
-      console.log(`  In impeccable-site, on a branch from main: bun run skill:publish-pointer ${version}`);
+      console.log('  npx procable install/update serve the OLD version until the site\'s signed pointer moves.');
+      console.log(`  In procable-site, on a branch from main: bun run skill:publish-pointer ${version}`);
       console.log('  Commit published-skill.json and merge it to main; the main deploy then serves the new version.');
       console.log('  If the pointer already names this version, check the site\'s main deploy: wait if it is running, fix it if it failed.');
     }
@@ -380,7 +380,7 @@ if (cfg.postReleaseHint) {
 }
 
 const tweet = renderTweet(cfg, version, entryHtml, tag);
-console.log(`\n--- Tweet (${tweet.length}/${TWEET_LIMIT} chars) for @impeccable_ai ---`);
+console.log(`\n--- Tweet (${tweet.length}/${TWEET_LIMIT} chars) for @procable_ai ---`);
 console.log(tweet);
 console.log('--- end tweet ---');
 
@@ -466,7 +466,7 @@ async function releaseEngine() {
 
   step('Checking package.json optionalDependencies pin the same engine version');
   const pkg = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-  const pins = Object.entries(pkg.optionalDependencies || {}).filter(([name]) => name.startsWith('@impeccable/cli-'));
+  const pins = Object.entries(pkg.optionalDependencies || {}).filter(([name]) => name.startsWith('@procable/cli-'));
   const wrong = pins.filter(([, range]) => String(range).replace(/^[^\d]*/, '') !== version);
   if (wrong.length) fail(`package.json pins ${wrong.map(([n, r]) => `${n}@${r}`).join(', ')}; expected ${version}. Bump them with ENGINE_VERSION.`);
   ok(`${pins.length} platform package pins agree`);
@@ -510,5 +510,5 @@ async function releaseEngine() {
   console.log(`\n✓ Engine ${version} tagged as ${tag}`);
   console.log(`\n→ Next step: watch the release-engine workflow (${REPO_URL}/actions/workflows/release-engine.yml).`);
   console.log(`  It publishes the five binaries + .sha256 as ${REPO_URL}/releases/tag/${tag}.`);
-  console.log('  Then publish the five @impeccable/cli-<os>-<arch> npm platform packages with `bun run release:platform-packages`, then release the CLI/skill.');
+  console.log('  Then publish the five @procable/cli-<os>-<arch> npm platform packages with `bun run release:platform-packages`, then release the CLI/skill.');
 }

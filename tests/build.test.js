@@ -392,7 +392,7 @@ describe('skill scripts payload', () => {
 
   test('ships the launcher, VERSION, page JS, and command metadata', () => {
     for (const expected of [
-      'impeccable', 'impeccable.cmd', 'VERSION', 'command-metadata.json',
+      'procable', 'procable.cmd', 'VERSION', 'command-metadata.json',
       'live-browser.js', 'live-browser-dom.js', 'live-browser-session.js', 'modern-screenshot.umd.js',
     ]) {
       expect(names.has(expected)).toBe(true);
@@ -402,7 +402,7 @@ describe('skill scripts payload', () => {
   test('ships the Windows launcher with CRLF line endings (#1098)', () => {
     // cmd.exe cannot resolve `call :label` in an LF-only batch file, so the
     // payload is CRLF whatever line endings this checkout holds.
-    const cmd = scripts.find((s) => s.name === 'impeccable.cmd');
+    const cmd = scripts.find((s) => s.name === 'procable.cmd');
     expect(cmd.content).toContain('\r\n');
     expect(cmd.content).not.toMatch(/(^|[^\r])\n/);
   });
@@ -433,7 +433,7 @@ describe('skill scripts payload', () => {
   });
 
   test('the launcher is executable and VERSION matches ENGINE_VERSION', () => {
-    const launcher = scripts.find((s) => s.name === 'impeccable');
+    const launcher = scripts.find((s) => s.name === 'procable');
     expect(launcher.mode & 0o111).not.toBe(0);
     const version = scripts.find((s) => s.name === 'VERSION');
     expect(version.content.trim()).toBe(fs.readFileSync(path.join(ROOT_DIR, 'ENGINE_VERSION'), 'utf-8').trim());
@@ -447,7 +447,7 @@ describe('degraded-mode fallback reference generation', () => {
 
   const readDegraded = (provider, configDir, role) =>
     fs.readFileSync(
-      path.join(DIST, provider, configDir, 'skills', 'impeccable', 'reference', 'degraded', `${role}.md`),
+      path.join(DIST, provider, configDir, 'skills', 'procable', 'reference', 'degraded', `${role}.md`),
       'utf-8'
     );
 
@@ -464,7 +464,7 @@ describe('degraded-mode fallback reference generation', () => {
   });
 
   test('a build emits reference/degraded/<role>.md for every agent, prefix-stripped', () => {
-    const dir = path.join(DIST, 'codex', '.codex', 'skills', 'impeccable', 'reference', 'degraded');
+    const dir = path.join(DIST, 'codex', '.codex', 'skills', 'procable', 'reference', 'degraded');
     const files = fs.readdirSync(dir).sort();
     expect(files).toEqual([
       'asset-producer.md',
@@ -492,12 +492,12 @@ describe('degraded-mode fallback reference generation', () => {
     // A synthetic agent proves the degraded path runs the same compilation as
     // ordinary reference files, with the right provider tags per target.
     const synthetic = {
-      name: 'impeccable',
+      name: 'procable',
       description: 'synthetic',
       body: 'Synthetic skill body.',
       agents: [
         {
-          name: 'impeccable-synthetic',
+          name: 'procable-synthetic',
           body: 'Shared body line.\n\n<codex>\nCODEX_ONLY_MARKER for the codex target.\n</codex>\n\nMore shared body.',
         },
       ],
@@ -507,7 +507,7 @@ describe('degraded-mode fallback reference generation', () => {
     transformers.transformClaudeCode([synthetic], synthDist);
     const read = (provider, configDir) =>
       fs.readFileSync(
-        path.join(synthDist, provider, configDir, 'skills', 'impeccable', 'reference', 'degraded', 'synthetic.md'),
+        path.join(synthDist, provider, configDir, 'skills', 'procable', 'reference', 'degraded', 'synthetic.md'),
         'utf-8'
       );
     const codex = read('codex', '.codex');
@@ -544,20 +544,20 @@ describe('GitHub Copilot custom agent generation', () => {
   test('emits .github/agents/<name>.agent.md for every shipped agent', () => {
     const files = fs.readdirSync(AGENTS_DIR).sort();
     expect(files).toEqual([
-      'impeccable-asset-producer.agent.md',
-      'impeccable-documenter.agent.md',
-      'impeccable-finish-reviewer.agent.md',
-      'impeccable-manual-edit-applier.agent.md',
+      'procable-asset-producer.agent.md',
+      'procable-documenter.agent.md',
+      'procable-finish-reviewer.agent.md',
+      'procable-manual-edit-applier.agent.md',
     ]);
   });
 
   test('frontmatter carries only name and description, description verbatim from the source', () => {
-    const source = fs.readFileSync(path.join(ROOT, 'skill', 'agents', 'impeccable-finish-reviewer.md'), 'utf-8');
+    const source = fs.readFileSync(path.join(ROOT, 'skill', 'agents', 'procable-finish-reviewer.md'), 'utf-8');
     const sourceDescription = source.match(/^description:\s*(.+)$/m)[1].trim();
 
-    const content = fs.readFileSync(path.join(AGENTS_DIR, 'impeccable-finish-reviewer.agent.md'), 'utf-8');
+    const content = fs.readFileSync(path.join(AGENTS_DIR, 'procable-finish-reviewer.agent.md'), 'utf-8');
     const frontmatter = content.split('---')[1];
-    expect(frontmatter).toContain('name: impeccable-finish-reviewer');
+    expect(frontmatter).toContain('name: procable-finish-reviewer');
     expect(frontmatter).toContain(`description: ${sourceDescription}`);
     // Copilot has no documented equivalents for these, and omitting `tools`
     // grants access to all tools; only portable fields are emitted.
@@ -576,15 +576,15 @@ describe('GitHub Copilot custom agent generation', () => {
     }
     // The asset producer's body references the skill's scripts dir; the
     // placeholder resolves to the provider-aware path.
-    const assetProducer = fs.readFileSync(path.join(AGENTS_DIR, 'impeccable-asset-producer.agent.md'), 'utf-8');
-    expect(assetProducer).toContain('.github/skills/impeccable/scripts');
+    const assetProducer = fs.readFileSync(path.join(AGENTS_DIR, 'procable-asset-producer.agent.md'), 'utf-8');
+    expect(assetProducer).toContain('.github/skills/procable/scripts');
     // A distinctive body phrase proves the agent body itself was inlined.
-    const reviewer = fs.readFileSync(path.join(AGENTS_DIR, 'impeccable-finish-reviewer.agent.md'), 'utf-8');
+    const reviewer = fs.readFileSync(path.join(AGENTS_DIR, 'procable-finish-reviewer.agent.md'), 'utf-8');
     expect(reviewer).toContain('material_fixes');
   });
 
   test('degraded fallbacks still ship for the github provider alongside the real agents', () => {
-    const degradedDir = path.join(DIST, 'github', '.github', 'skills', 'impeccable', 'reference', 'degraded');
+    const degradedDir = path.join(DIST, 'github', '.github', 'skills', 'procable', 'reference', 'degraded');
     const files = fs.readdirSync(degradedDir).sort();
     expect(files).toEqual([
       'asset-producer.md',
@@ -615,10 +615,10 @@ describe('Cursor subagent generation', () => {
   test('emits .cursor/agents/<name>.md for every shipped agent', () => {
     const files = fs.readdirSync(AGENTS_DIR).sort();
     expect(files).toEqual([
-      'impeccable-asset-producer.md',
-      'impeccable-documenter.md',
-      'impeccable-finish-reviewer.md',
-      'impeccable-manual-edit-applier.md',
+      'procable-asset-producer.md',
+      'procable-documenter.md',
+      'procable-finish-reviewer.md',
+      'procable-manual-edit-applier.md',
     ]);
   });
 
@@ -637,7 +637,7 @@ describe('Cursor subagent generation', () => {
       expect(frontmatter).not.toContain('maxTurns:');
       // The finish reviewer is the only role whose tool list has no Write or
       // Edit; it reviews, the other three write.
-      if (name === 'impeccable-finish-reviewer.md') {
+      if (name === 'procable-finish-reviewer.md') {
         expect(frontmatter).toContain('readonly: true');
       } else {
         expect(frontmatter).not.toContain('readonly:');
@@ -651,8 +651,8 @@ describe('Cursor subagent generation', () => {
       expect(content).not.toContain('{{');
       expect(content).not.toMatch(/<!--\s*rule:/);
     }
-    const assetProducer = fs.readFileSync(path.join(AGENTS_DIR, 'impeccable-asset-producer.md'), 'utf-8');
-    expect(assetProducer).toContain('.cursor/skills/impeccable/scripts');
+    const assetProducer = fs.readFileSync(path.join(AGENTS_DIR, 'procable-asset-producer.md'), 'utf-8');
+    expect(assetProducer).toContain('.cursor/skills/procable/scripts');
   });
 });
 
@@ -668,14 +668,14 @@ describe('agent bodies resolve placeholders on every surface that ships them', (
   // [emitted file, the scripts path that provider installs to]
   const SURFACES = [
     // Nested Codex .toml: the skill install is the whole delivery for these.
-    ['codex/.codex/skills/impeccable/agents/impeccable_asset_producer.toml', '.codex/skills/impeccable/scripts'],
-    ['agents/.agents/skills/impeccable/agents/impeccable_asset_producer.toml', '.agents/skills/impeccable/scripts'],
+    ['codex/.codex/skills/procable/agents/procable_asset_producer.toml', '.codex/skills/procable/scripts'],
+    ['agents/.agents/skills/procable/agents/procable_asset_producer.toml', '.agents/skills/procable/scripts'],
     // Native agent files.
-    ['claude-code/.claude/agents/impeccable-asset-producer.md', '.claude/skills/impeccable/scripts'],
-    ['github/.github/agents/impeccable-asset-producer.agent.md', '.github/skills/impeccable/scripts'],
-    ['grok/.grok/agents/impeccable-asset-producer.md', '.grok/skills/impeccable/scripts'],
+    ['claude-code/.claude/agents/procable-asset-producer.md', '.claude/skills/procable/scripts'],
+    ['github/.github/agents/procable-asset-producer.agent.md', '.github/skills/procable/scripts'],
+    ['grok/.grok/agents/procable-asset-producer.md', '.grok/skills/procable/scripts'],
     // Degraded fallback reference generated from the same agent definition.
-    ['codex/.codex/skills/impeccable/reference/degraded/asset-producer.md', '.codex/skills/impeccable/scripts'],
+    ['codex/.codex/skills/procable/reference/degraded/asset-producer.md', '.codex/skills/procable/scripts'],
   ];
 
   beforeEach(() => {
@@ -696,7 +696,7 @@ describe('agent bodies resolve placeholders on every surface that ships them', (
   test('the asset producer ships a runnable embed-prompt command, never the raw token', () => {
     for (const [relPath, scriptsPath] of SURFACES) {
       const content = fs.readFileSync(path.join(DIST, relPath), 'utf-8');
-      expect(content).toContain(`${scriptsPath}/impeccable embed-prompt`);
+      expect(content).toContain(`${scriptsPath}/procable embed-prompt`);
       expect(content).not.toContain('{{scripts_path}}');
     }
   });
@@ -713,15 +713,15 @@ describe('agent bodies resolve placeholders on every surface that ships them', (
 
   test('no emitted agent body carries an unresolved placeholder or a rule marker', () => {
     const synthetic = {
-      name: 'impeccable',
+      name: 'procable',
       description: 'synthetic',
       body: 'Synthetic skill body.',
       agents: [
         {
-          name: 'impeccable-synthetic',
-          codexName: 'impeccable_synthetic',
+          name: 'procable-synthetic',
+          codexName: 'procable_synthetic',
           description: 'synthetic agent',
-          body: 'Run `{{scripts_path}}/impeccable embed-prompt` and ask {{model}}. See [x.md]({{reference_path}}/x.md). <!-- rule:synthetic-marker -->',
+          body: 'Run `{{scripts_path}}/procable embed-prompt` and ask {{model}}. See [x.md]({{reference_path}}/x.md). <!-- rule:synthetic-marker -->',
         },
       ],
     };
@@ -730,9 +730,9 @@ describe('agent bodies resolve placeholders on every surface that ships them', (
     transformers.transformClaudeCode([synthetic], synthDist);
 
     const emitted = [
-      'codex/.codex/skills/impeccable/agents/impeccable_synthetic.toml',
-      'codex/.codex/skills/impeccable/reference/degraded/synthetic.md',
-      'claude-code/.claude/agents/impeccable-synthetic.md',
+      'codex/.codex/skills/procable/agents/procable_synthetic.toml',
+      'codex/.codex/skills/procable/reference/degraded/synthetic.md',
+      'claude-code/.claude/agents/procable-synthetic.md',
     ];
     for (const relPath of emitted) {
       const content = fs.readFileSync(path.join(synthDist, relPath), 'utf-8');
@@ -740,10 +740,10 @@ describe('agent bodies resolve placeholders on every surface that ships them', (
       expect(content).not.toMatch(/<!--\s*rule:/);
     }
     const codexToml = fs.readFileSync(
-      path.join(synthDist, 'codex/.codex/skills/impeccable/agents/impeccable_synthetic.toml'),
+      path.join(synthDist, 'codex/.codex/skills/procable/agents/procable_synthetic.toml'),
       'utf-8'
     );
-    expect(codexToml).toContain('.codex/skills/impeccable/scripts/impeccable embed-prompt');
+    expect(codexToml).toContain('.codex/skills/procable/scripts/procable embed-prompt');
     // The model name belongs to PROVIDER_PLACEHOLDERS and may change; what
     // this pins is that {{model}} resolved to something.
     expect(codexToml).toMatch(/and ask \S+\./);
@@ -763,7 +763,7 @@ describe('batch line endings', () => {
     fs.mkdirSync(path.join(dir, 'a', 'scripts'), { recursive: true });
     fs.writeFileSync(path.join(dir, 'a', 'scripts', 'good.cmd'), '@echo off\r\ncall :x\r\n');
     fs.writeFileSync(path.join(dir, 'a', 'scripts', 'bad.cmd'), '@echo off\r\ncall :x\n');
-    fs.writeFileSync(path.join(dir, 'a', 'scripts', 'impeccable'), '#!/bin/sh\nexit 0\n');
+    fs.writeFileSync(path.join(dir, 'a', 'scripts', 'procable'), '#!/bin/sh\nexit 0\n');
     const bad = utils.findBatchFilesWithBareLf([dir, path.join(dir, 'missing')]);
     expect(bad).toEqual([path.join(dir, 'a', 'scripts', 'bad.cmd')]);
   });

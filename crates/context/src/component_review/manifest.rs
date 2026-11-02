@@ -90,7 +90,7 @@ pub fn freeze(project: &Path, input: &Value) -> Result<(Value, BTreeMap<String, 
         return Err("manifest schemaVersion must be 1, 2 or 3".into());
     }
     if input["schemaVersion"] == 2 && input["stage"] == "components" {
-        return Err("schemaVersion 2 component manifests are retired. Run impeccable component-review plan to write the plan and asset review (schemaVersion 3) from the measured spec.".into());
+        return Err("schemaVersion 2 component manifests are retired. Run procable component-review plan to write the plan and asset review (schemaVersion 3) from the measured spec.".into());
     }
     if input["schemaVersion"] == 2 && input["stage"] != "hero" {
         return Err("schemaVersion 2 requires stage hero".into());
@@ -124,7 +124,7 @@ pub fn freeze(project: &Path, input: &Value) -> Result<(Value, BTreeMap<String, 
     // The component inventory is measured against this spec. Bind it centrally
     // rather than requiring every component author to repeat this dependency.
     if input["stage"] == "components" {
-        let spec_path = ".impeccable/build/spec.json";
+        let spec_path = ".procable/build/spec.json";
         comp_files.insert(spec_path.into(), pin(project, spec_path, &mut files)?);
         let spec: Value = serde_json::from_slice(&files[spec_path]).map_err(|e| e.to_string())?;
         measured_regions = spec["regions"].as_array().ok_or("measured spec needs regions")?.clone();
@@ -133,7 +133,7 @@ pub fn freeze(project: &Path, input: &Value) -> Result<(Value, BTreeMap<String, 
         let mut errors = Vec::new();
         if v3 {
             if input["specSha256"].as_str() != Some(digest(&files[spec_path]).as_str()) {
-                return Err("spec.json changed since this packet was written; run impeccable component-review plan again".into());
+                return Err("spec.json changed since this packet was written; run procable component-review plan again".into());
             }
             let listed = |key: &str| input[key].as_array().into_iter().flatten().filter_map(|c| c["id"].as_str()).map(String::from).collect::<Vec<_>>();
             let (components, code) = (listed("components"), listed("codeRegions"));
@@ -192,7 +192,7 @@ pub fn freeze(project: &Path, input: &Value) -> Result<(Value, BTreeMap<String, 
         if let Some(group) = input["components"].as_array().and_then(|cs| cs.iter().find(|c| c["id"] == region["id"]))
             .and_then(|c| c.get("reviewGroup")) { region["reviewGroup"] = group.clone(); }
     }
-    let group_issues = if v3 { vec![] } else { impeccable_comp::review_groups::issues(&measured_regions) };
+    let group_issues = if v3 { vec![] } else { procable_comp::review_groups::issues(&measured_regions) };
     if !group_issues.is_empty() {
         return Err(group_issues.iter().map(|(id, message)| format!("component {id}: {message}")).collect::<Vec<_>>().join("\n"));
     }
@@ -276,7 +276,7 @@ pub fn freeze(project: &Path, input: &Value) -> Result<(Value, BTreeMap<String, 
         c.as_object_mut().unwrap().remove("material");
         if c["preview"]["kind"] == "image" {
             let bytes = &files[&preview_path];
-            if impeccable_comp::png_io::is_png(bytes) {
+            if procable_comp::png_io::is_png(bytes) {
                 if bytes.len() < 24 {
                     return Err("truncated PNG".into());
                 }
@@ -285,7 +285,7 @@ pub fn freeze(project: &Path, input: &Value) -> Result<(Value, BTreeMap<String, 
                 if u64::from(width) * u64::from(height) > 32_000_000 {
                     return Err("PNG exceeds 32 megapixels".into());
                 }
-                let image = impeccable_comp::png_io::decode_png(bytes)?.image;
+                let image = procable_comp::png_io::decode_png(bytes)?.image;
                 let transparent = image.data.chunks_exact(4).any(|p| p[3] < 255);
                 c["material"] = json!({"format":"PNG","width":image.width,"height":image.height,"alpha":if transparent{"transparent"}else{"opaque"}});
             }

@@ -1,11 +1,11 @@
-//! Port of `cli/lib/impeccable-config.mjs`: the CLI-side reader/writer for
-//! the unified `.impeccable` config (`config.json` shared, `config.local.json`
+//! Port of `cli/lib/procable-config.mjs`: the CLI-side reader/writer for
+//! the unified `.procable` config (`config.json` shared, `config.local.json`
 //! per developer), detector ignore semantics, glob matching, and the
 //! `.git/info/exclude` handling.
 
-use impeccable_core::findings::Finding;
-use impeccable_core::js::{self, math_round, number_to_string, parse_float, parse_int};
-use impeccable_core::js_ext_b::utf16_len;
+use procable_core::findings::Finding;
+use procable_core::js::{self, math_round, number_to_string, parse_float, parse_int};
+use procable_core::js_ext_b::utf16_len;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde_json::{Map, Value};
@@ -13,14 +13,14 @@ use serde_json::{Map, Value};
 use crate::jsp;
 use crate::util::{as_plain_object, js_string, re, read_json, D, DOT, WS};
 
-/// JS: impeccable-config.mjs#getConfigPath
+/// JS: procable-config.mjs#getConfigPath
 pub fn get_config_path(root: &str) -> String {
-    jsp::join(&[root, ".impeccable", "config.json"])
+    jsp::join(&[root, ".procable", "config.json"])
 }
 
-/// JS: impeccable-config.mjs#getLocalConfigPath
+/// JS: procable-config.mjs#getLocalConfigPath
 pub fn get_local_config_path(root: &str) -> String {
-    jsp::join(&[root, ".impeccable", "config.local.json"])
+    jsp::join(&[root, ".procable", "config.local.json"])
 }
 
 /// JS `safeReadJson`: a JSON object, or None for a missing / invalid / non-object file.
@@ -230,7 +230,7 @@ fn unique_strings(values: Vec<String>) -> Vec<String> {
     out
 }
 
-/// JS: impeccable-config.mjs#readDetectionConfig
+/// JS: procable-config.mjs#readDetectionConfig
 pub fn read_detection_config(root: &str) -> DetectionConfig {
     let mut config = DetectionConfig::with_defaults();
     for file_path in [get_config_path(root), get_local_config_path(root)] {
@@ -241,7 +241,7 @@ pub fn read_detection_config(root: &str) -> DetectionConfig {
     config
 }
 
-/// JS: impeccable-config.mjs#readRawDetectionConfig
+/// JS: procable-config.mjs#readRawDetectionConfig
 pub fn read_raw_detection_config(root: &str, local: bool) -> DetectionConfig {
     let raw = safe_read_json(&if local {
         get_local_config_path(root)
@@ -254,7 +254,7 @@ pub fn read_raw_detection_config(root: &str, local: bool) -> DetectionConfig {
     config
 }
 
-/// JS: impeccable-config.mjs#writeDetectionConfig. Returns the written path.
+/// JS: procable-config.mjs#writeDetectionConfig. Returns the written path.
 pub fn write_detection_config(
     root: &str,
     detector_config: &DetectionConfig,
@@ -365,7 +365,7 @@ fn strip_detector_keys(raw: Option<&Map<String, Value>>) -> Option<Map<String, V
 re!(EDGE_QUOTE_RE, r#"^["']|["']$"#);
 re!(WS_RUN_RE, format!("{WS}+"));
 
-/// JS: impeccable-config.mjs#normalizeIgnoreValue
+/// JS: procable-config.mjs#normalizeIgnoreValue
 pub fn normalize_ignore_value(value: &str) -> String {
     let t = js::trim(value);
     let t = EDGE_QUOTE_RE.replace_all(t, "");
@@ -614,7 +614,7 @@ fn ignore_value_matches(rule: &str, entry_value: &str, finding_value: &str) -> b
     !entry_color.is_empty() && entry_color == color_ignore_key(finding_value)
 }
 
-/// JS: impeccable-config.mjs#normalizeIgnoreValueEntries over raw JSON entries.
+/// JS: procable-config.mjs#normalizeIgnoreValueEntries over raw JSON entries.
 pub fn normalize_ignore_value_entries(entries: &[Value]) -> Vec<IgnoreValueEntry> {
     let mut out = Vec::new();
     for entry in entries {
@@ -806,7 +806,7 @@ fn glob_to_regex(glob: &str) -> Option<Regex> {
     Regex::new(&re).ok()
 }
 
-/// JS: impeccable-config.mjs#matchesAnyGlob
+/// JS: procable-config.mjs#matchesAnyGlob
 pub fn matches_any_glob(file_path: &str, globs: &[String]) -> bool {
     if globs.is_empty() {
         return false;
@@ -827,7 +827,7 @@ pub fn matches_any_glob(file_path: &str, globs: &[String]) -> bool {
     false
 }
 
-/// JS: impeccable-config.mjs#shouldIgnoreDetectionFile
+/// JS: procable-config.mjs#shouldIgnoreDetectionFile
 pub fn should_ignore_detection_file(file_path: &str, root: &str, config: &DetectionConfig) -> bool {
     let globs = &config.ignore_files;
     if globs.is_empty() {
@@ -855,7 +855,7 @@ pub fn should_ignore_detection_file(file_path: &str, root: &str, config: &Detect
     false
 }
 
-/// JS: impeccable-config.mjs#filterDetectionFindings
+/// JS: procable-config.mjs#filterDetectionFindings
 pub fn filter_detection_findings(findings: Vec<Finding>, config: &DetectionConfig) -> Vec<Finding> {
     if findings.is_empty() {
         return vec![];
@@ -929,7 +929,7 @@ const DIRECT_VALUE_RULES: &[&str] = &[
     "design-system-font-size",
 ];
 
-/// JS: impeccable-config.mjs#extractFindingIgnoreValue
+/// JS: procable-config.mjs#extractFindingIgnoreValue
 pub fn extract_finding_ignore_value(finding: &Finding) -> String {
     let rule = normalize_ignore_rule(&finding.antipattern);
     if !DIRECT_VALUE_RULES.contains(&rule.as_str()) {
@@ -1029,7 +1029,7 @@ fn extract_finding_ignore_value_raw(finding: &Finding, rule: &str) -> String {
 
 /// JS `decodeURIComponent` with the source's `try { } catch { raw }` fallback.
 pub fn decode_uri_component(s: &str) -> String {
-    impeccable_core::browser::driver::decode_uri_component(s).unwrap_or_else(|| s.to_string())
+    procable_core::browser::driver::decode_uri_component(s).unwrap_or_else(|| s.to_string())
 }
 
 re!(
@@ -1043,7 +1043,7 @@ re!(
 );
 re!(MOTION_TOKEN_RE, "(?i:bounce|elastic|wobble|jiggle|spring)");
 static COMMA_WS_SPLIT_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(&format!("[,{}]+", impeccable_core::js::WS_CHARS)).unwrap());
+    Lazy::new(|| Regex::new(&format!("[,{}]+", procable_core::js::WS_CHARS)).unwrap());
 
 fn extract_motion_ignore_value(text: &str) -> String {
     if let Some(m) = ANIMATE_BOUNCE_RE.find(text) {
@@ -1070,7 +1070,7 @@ fn clean_ignore_value_display(value: &str) -> String {
     WS_RUN_RE.replace_all(&t, " ").into_owned()
 }
 
-/// JS: impeccable-config.mjs#getHookConsent
+/// JS: procable-config.mjs#getHookConsent
 pub fn get_hook_consent(root: &str) -> Option<String> {
     let mut consent = None;
     for file_path in [get_config_path(root), get_local_config_path(root)] {
@@ -1086,17 +1086,17 @@ pub fn get_hook_consent(root: &str) -> Option<String> {
     consent
 }
 
-const EXCLUDE_OPEN: &str = "# impeccable-config-ignore-start";
-const EXCLUDE_CLOSE: &str = "# impeccable-config-ignore-end";
-const EXCLUDE_PATTERNS: &[&str] = &[".impeccable/config.local.json"];
+const EXCLUDE_OPEN: &str = "# procable-config-ignore-start";
+const EXCLUDE_CLOSE: &str = "# procable-config-ignore-end";
+const EXCLUDE_PATTERNS: &[&str] = &[".procable/config.local.json"];
 
-/// JS: impeccable-config.mjs#ensureConfigGitExclude. Best effort; false when
+/// JS: procable-config.mjs#ensureConfigGitExclude. Best effort; false when
 /// there is no resolvable git dir.
 pub fn ensure_config_git_exclude(root: &str) -> bool {
     let Some(git_dir) = resolve_git_dir(root) else {
         return false;
     };
-    let target = impeccable_common::git::info_exclude(&git_dir);
+    let target = procable_common::git::info_exclude(&git_dir);
     let existing = crate::util::read_text(&target).unwrap_or_default();
     let mut block_lines = vec![EXCLUDE_OPEN];
     block_lines.extend(EXCLUDE_PATTERNS);
@@ -1208,13 +1208,13 @@ mod tests {
     #[test]
     fn detection_extensions() {
         let dir = std::env::temp_dir().join(format!(
-            "impeccable-detect-ext-{}",
+            "procable-detect-ext-{}",
             std::process::id()
         ));
-        let impeccable = dir.join(".impeccable");
-        std::fs::create_dir_all(&impeccable).unwrap();
+        let procable = dir.join(".procable");
+        std::fs::create_dir_all(&procable).unwrap();
         std::fs::write(
-            impeccable.join("config.json"),
+            procable.join("config.json"),
             r#"{"detector":{"extensions":[{"ext":".html.erb","engine":"html"},"blade.php"]}}"#,
         )
         .unwrap();
@@ -1228,7 +1228,7 @@ mod tests {
             vec![entry(".html.erb", "html"), entry(".blade.php", "html")]
         );
         std::fs::write(
-            impeccable.join("config.local.json"),
+            procable.join("config.local.json"),
             r#"{"detector":{"extensions":[{"ext":".html.erb","engine":"text"}]}}"#,
         )
         .unwrap();

@@ -1,5 +1,5 @@
 //! JS: live/frameworks/journal.mjs. Crash-safe injection journal at
-//! `.impeccable/live/inject-journal.json`: what inject wrote, so a later
+//! `.procable/live/inject-journal.json`: what inject wrote, so a later
 //! inject or `--remove` can heal orphans left by a session that never
 //! stopped.
 
@@ -10,11 +10,11 @@ use crate::util::{
 use serde_json::{json, Map, Value};
 
 pub const INJECT_JOURNAL_VERSION: i64 = 1;
-pub const INJECT_JOURNAL_RELPATH: &str = ".impeccable/live/inject-journal.json";
+pub const INJECT_JOURNAL_RELPATH: &str = ".procable/live/inject-journal.json";
 
 /// JS: injectJournalPath(cwd)
 pub fn inject_journal_path(cwd: &str) -> String {
-    jsp::join(&[cwd, ".impeccable", "live", "inject-journal.json"])
+    jsp::join(&[cwd, ".procable", "live", "inject-journal.json"])
 }
 
 /// JS: readInjectJournal(cwd): the parsed journal when it is an object with

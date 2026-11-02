@@ -27,7 +27,7 @@ export default [
     // wrap preflight against index.html) instead of timing out.
     setup: (ws) => writeJournal(ws, ID, [GEN]),
     steps: [
-      { verb: 'live-server', daemon: true, readyFile: '.impeccable/live/server.json', readyTimeoutMs: 15000 },
+      { verb: 'live-server', daemon: true, readyFile: '.procable/live/server.json', readyTimeoutMs: 15000 },
       { verb: 'live-server', args: [] },
       { verb: 'live-status', args: [] },
       { verb: 'live-poll', args: ['--timeout=8000'] },

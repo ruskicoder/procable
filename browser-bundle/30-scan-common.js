@@ -3,7 +3,7 @@
 // extension's offscreen document (60-offscreen.js): which visual-contrast
 // mode a scan runs in, the options it resolves to, which analyses the lazy
 // (scroll-into-view) pass re-tries, and the scanId echo. `config` is the
-// page's `window.__IMPECCABLE_CONFIG__` in the page and the extension's scan
+// page's `window.__PROCABLE_CONFIG__` in the page and the extension's scan
 // config offscreen.
 
 // Visual contrast has three modes. Explicit true runs the full sampled
