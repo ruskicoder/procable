@@ -94,7 +94,7 @@ Binary lookup order: `PROCABLE_BIN`, the platform package, `~/.procable/bin/<ver
 
 ## Part of Procable
 
-This CLI is part of [Procable](https://impeccable.style), a cross-provider design skill pack for AI-powered development tools. The full suite includes 24 commands for Claude, Cursor, GitHub Copilot, Gemini, Codex, Hermes Agent, Veto, and more.
+This CLI is part of [Procable](https://impeccable.style), a cross-provider design skill pack for AI-powered development tools. The full suite includes 25 commands for Claude, Cursor, GitHub Copilot, Gemini, Codex, Hermes Agent, Veto, and more.
 
 ## License
 
