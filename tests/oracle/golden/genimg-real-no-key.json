@@ -1,6 +1,6 @@
 {
   "stdout": "",
-  "stderr": "generate-image: OPENAI_API_KEY is not set; use the harness-native image tool instead.\n",
+  "stderr": "generate-image: procable runs offline and does not call an image API. Use the harness-native image tool if this session has one, else build the comp code-led.\n",
   "exit": 1,
   "signal": null,
   "files": {}

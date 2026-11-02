@@ -1,6 +1,6 @@
 {
   "stdout": "",
-  "stderr": "generate-image: could not download --ref http://127.0.0.1:9/cards/world.webp: the request failed; nothing was generated.\n",
+  "stderr": "generate-image: procable runs offline and does not call an image API. Use the harness-native image tool if this session has one, else build the comp code-led.\n",
   "exit": 1,
   "signal": null,
   "files": {}
